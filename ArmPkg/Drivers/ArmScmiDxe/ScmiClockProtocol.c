@@ -388,6 +388,53 @@ ClockRateSet (
   return Status;
 }
 
+/** Enable/Disable specified clock.
+
+  @param[in]  This        A Pointer to SCMI_CLOCK_PROTOCOL Instance.
+  @param[in]  ClockId     Identifier for the clock device.
+  @param[in]  Enable      TRUE to enable, FALSE to disable.
+
+  @retval EFI_SUCCESS          Clock enable/disable successful.
+  @retval EFI_DEVICE_ERROR     SCP returns an SCMI error.
+  @retval !(EFI_SUCCESS)       Other errors.
+**/
+STATIC
+EFI_STATUS
+ClockEnable (
+  IN SCMI_CLOCK_PROTOCOL  *This,
+  IN UINT32               ClockId,
+  IN BOOLEAN              Enable
+  )
+{
+  EFI_STATUS                  Status;
+  CLOCK_CONFIG_SET_ATTRIBUTES *ClockConfigSetAttributes;
+  SCMI_COMMAND                Cmd;
+  UINT32                      PayloadLength;
+
+  Status = ScmiCommandGetPayload ((UINT32**)&ClockConfigSetAttributes);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  // Fill arguments for clock protocol command.
+  ClockConfigSetAttributes->ClockId    = ClockId;
+  ClockConfigSetAttributes->Attributes = Enable ? BIT0 : 0;
+
+  Cmd.ProtocolId = SCMI_PROTOCOL_ID_CLOCK;
+  Cmd.MessageId  = SCMI_MESSAGE_ID_CLOCK_CONFIG_SET;
+
+  PayloadLength = sizeof (CLOCK_CONFIG_SET_ATTRIBUTES);
+
+  // Execute and wait for response on a SCMI channel.
+  Status = ScmiCommandExecute (
+             &Cmd,
+             &PayloadLength,
+             NULL
+             );
+
+  return Status;
+}
+
 // Instance of the SCMI clock management protocol.
 STATIC CONST SCMI_CLOCK_PROTOCOL ScmiClockProtocol = {
   ClockGetVersion,
@@ -395,7 +442,8 @@ STATIC CONST SCMI_CLOCK_PROTOCOL ScmiClockProtocol = {
   ClockGetClockAttributes,
   ClockDescribeRates,
   ClockRateGet,
-  ClockRateSet
+  ClockRateSet,
+  ClockEnable
  };
 
 /** Initialize clock management protocol and install protocol on a given handle.

@@ -21,7 +21,7 @@
 #include <Protocol/ArmScmi.h>
 
 #define ARM_SCMI_CLOCK_PROTOCOL_GUID { \
-  0x91ce67a8, 0xe0aa, 0x4012, {0xb9, 0x9f, 0xb6, 0xfc, 0xf3, 0x4, 0x8e, 0xaa} \
+  0xb8d8caf2, 0x9e94, 0x462c, { 0xa8, 0x34, 0x6c, 0x99, 0xfc, 0x05, 0xef, 0xcf } \
   }
 
 extern EFI_GUID gArmScmiClockProtocolGuid;
@@ -205,6 +205,24 @@ EFI_STATUS
   IN UINT64               Rate
   );
 
+/** Enable/Disable specified clock.
+
+  @param[in]  This        A Pointer to SCMI_CLOCK_PROTOCOL Instance.
+  @param[in]  ClockId     Identifier for the clock device.
+  @param[in]  Enable      TRUE to enable, FALSE to disable.
+
+  @retval EFI_SUCCESS          Clock enable/disable successful.
+  @retval EFI_DEVICE_ERROR     SCP returns an SCMI error.
+  @retval !(EFI_SUCCESS)       Other errors.
+**/
+typedef
+EFI_STATUS
+(EFIAPI *SCMI_CLOCK_ENABLE) (
+  IN SCMI_CLOCK_PROTOCOL  *This,
+  IN UINT32               ClockId,
+  IN BOOLEAN              Enable
+  );
+
 typedef struct _SCMI_CLOCK_PROTOCOL {
   SCMI_CLOCK_GET_VERSION GetVersion;
   SCMI_CLOCK_GET_TOTAL_CLOCKS GetTotalClocks;
@@ -212,6 +230,7 @@ typedef struct _SCMI_CLOCK_PROTOCOL {
   SCMI_CLOCK_DESCRIBE_RATES DescribeRates;
   SCMI_CLOCK_RATE_GET RateGet;
   SCMI_CLOCK_RATE_SET RateSet;
+  SCMI_CLOCK_ENABLE Enable;
 } SCMI_CLOCK_PROTOCOL;
 
 #endif /* ARM_SCMI_CLOCK_PROTOCOL_H_ */
