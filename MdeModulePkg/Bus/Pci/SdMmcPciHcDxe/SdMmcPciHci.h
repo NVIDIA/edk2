@@ -2,6 +2,7 @@
 
   Provides some data structure definitions used by the SD/MMC host controller driver.
 
+Copyright (c) 2018, NVIDIA CORPORATION. All rights reserved.
 Copyright (c) 2015, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
@@ -78,6 +79,9 @@ typedef enum {
 //
 #define ADMA_MAX_DATA_PER_LINE     0x10000
 
+//
+// ADMA descriptor for 32b addressing.
+//
 typedef struct {
   UINT32 Valid:1;
   UINT32 End:1;
@@ -87,7 +91,23 @@ typedef struct {
   UINT32 Reserved1:10;
   UINT32 Length:16;
   UINT32 Address;
-} SD_MMC_HC_ADMA_DESC_LINE;
+} SD_MMC_HC_ADMA_32_DESC_LINE;
+
+//
+// ADMA descriptor for 64b addressing.
+//
+typedef struct {
+  UINT32 Valid:1;
+  UINT32 End:1;
+  UINT32 Int:1;
+  UINT32 Reserved:1;
+  UINT32 Act:2;
+  UINT32 Reserved1:10;
+  UINT32 Length:16;
+  UINT32 LowerAddress;
+  UINT32 UpperAddress;
+  UINT32 Reserved2;
+} SD_MMC_HC_ADMA_64_DESC_LINE;
 
 #define SD_MMC_SDMA_BOUNDARY          512 * 1024
 #define SD_MMC_SDMA_ROUND_UP(x, n)    (((x) + n) & ~(n - 1))
@@ -144,6 +164,12 @@ typedef struct {
 #define SD_MMC_HC_CTRL_VER_400      0x03
 #define SD_MMC_HC_CTRL_VER_410      0x04
 #define SD_MMC_HC_CTRL_VER_420      0x05
+
+//
+// SD Host controller V4 Support
+//
+#define SD_MMC_HC_V4_EN             BIT12
+#define SD_MMC_HC_64_ADDR_EN        BIT13
 
 /**
   Dump the content of SD/MMC host controller's Capability Register.
