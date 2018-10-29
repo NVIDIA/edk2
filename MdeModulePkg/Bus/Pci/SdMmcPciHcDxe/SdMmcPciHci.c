@@ -818,7 +818,8 @@ SdMmcHcClockSupply (
       (ControllerVer <= SD_MMC_HC_CTRL_VER_420)) {
     ASSERT (Divisor <= 0x3FF);
     ClockCtrl = ((Divisor & 0xFF) << 8) | ((Divisor & 0x300) >> 2);
-  } else if ((ControllerVer == 0) || (ControllerVer == 1)) {
+  } else if ((ControllerVer == SD_MMC_HC_CTRL_VER_100) ||
+             (ControllerVer == SD_MMC_HC_CTRL_VER_200)) {
     //
     // Only the most significant bit can be used as divisor.
     //
@@ -995,12 +996,12 @@ SdMmcHcInitV4Enhancements (
   }
 
   if (ControllerVer >= SD_MMC_HC_CTRL_VER_400) {
-    HostCtrl2 = 0;
+    HostCtrl2 = SD_MMC_HC_V4_EN;
     //
     // Check if V4 64bit support is available
     //
-    if (Capability.SysBus64V4 == TRUE) {
-      HostCtrl2 |= SD_MMC_HC_V4_EN|SD_MMC_HC_64_ADDR_EN;
+    if (Capability.SysBus64V4 != 0) {
+      HostCtrl2 |= SD_MMC_HC_64_ADDR_EN;
       DEBUG ((DEBUG_INFO, "Enabled V4 64 bit system bus support\n"));
     }
     //
@@ -1283,11 +1284,17 @@ BuildAdmaDescTable (
   EFI_STATUS                Status;
   UINTN                     Bytes;
   UINT16                    ControllerVer;
-  BOOLEAN                   AddressingMode64 = FALSE;
-  BOOLEAN                   DataLength26 = FALSE;
-  UINT32                    AdmaMaxDataPerLine = ADMA_MAX_DATA_PER_LINE_16B;
-  UINTN                     DescSize = sizeof (SD_MMC_HC_ADMA_32_DESC_LINE);
-  VOID                      *AdmaDesc = NULL;
+  BOOLEAN                   AddressingMode64;
+  BOOLEAN                   DataLength26;
+  UINT32                    AdmaMaxDataPerLine;
+  UINTN                     DescSize;
+  VOID                      *AdmaDesc;
+
+  AddressingMode64   = FALSE;
+  DataLength26       = FALSE;
+  AdmaMaxDataPerLine = ADMA_MAX_DATA_PER_LINE_16B;
+  DescSize           = sizeof (SD_MMC_HC_ADMA_32_DESC_LINE);
+  AdmaDesc           = NULL;
 
   Data    = Trb->DataPhy;
   DataLen = Trb->DataLen;
@@ -1301,7 +1308,7 @@ BuildAdmaDescTable (
     return Status;
   }
   if (ControllerVer >= SD_MMC_HC_CTRL_VER_400) {
-    Status = SdMmcHcCheckMmioSet(PciIo, Trb->Slot, SD_MMC_HC_HOST_CTRL2, 0x2,
+    Status = SdMmcHcCheckMmioSet(PciIo, Trb->Slot, SD_MMC_HC_HOST_CTRL2, sizeof(UINT16),
                                  SD_MMC_HC_V4_EN|SD_MMC_HC_64_ADDR_EN, SD_MMC_HC_V4_EN|SD_MMC_HC_64_ADDR_EN);
     if (!EFI_ERROR (Status)) {
       AddressingMode64 = TRUE;
@@ -1311,20 +1318,32 @@ BuildAdmaDescTable (
   //
   // Check for valid ranges in 32bit ADMA Descriptor Table
   //
-  if (AddressingMode64 == FALSE &&
+  if (!AddressingMode64 &&
       ((Data >= 0x100000000ul) || ((Data + DataLen) > 0x100000000ul))) {
     return EFI_INVALID_PARAMETER;
   }
   //
-  // Address field shall be set on 32-bit boundary (Lower 2-bit is always set to 0)
+  // Check address field alignment
   //
-  if ((Data & (BIT0 | BIT1)) != 0) {
-    DEBUG ((DEBUG_INFO, "The buffer [0x%x] to construct ADMA desc is not aligned to 4 bytes boundary!\n", Data));
+  if (AddressingMode64) {
+    //
+    // Address field shall be set on 32-bit boundary (Lower 2-bit is always set to 0)
+    //
+    if ((Data & (BIT0 | BIT1 | BIT2)) != 0) {
+      DEBUG ((DEBUG_INFO, "The buffer [0x%x] to construct ADMA desc is not aligned to 8 bytes boundary!\n", Data));
+    }
+  } else {
+    //
+    // Address field shall be set on 32-bit boundary (Lower 2-bit is always set to 0)
+    //
+    if ((Data & (BIT0 | BIT1)) != 0) {
+      DEBUG ((DEBUG_INFO, "The buffer [0x%x] to construct ADMA desc is not aligned to 4 bytes boundary!\n", Data));
+    }
   }
   //
   // Detect whether 26bit data length is supported.
   //
-  Status = SdMmcHcCheckMmioSet(PciIo, Trb->Slot, SD_MMC_HC_HOST_CTRL2, 0x2,
+  Status = SdMmcHcCheckMmioSet(PciIo, Trb->Slot, SD_MMC_HC_HOST_CTRL2, sizeof(UINT16),
                                SD_MMC_HC_26_DATA_LEN_ADMA_EN, SD_MMC_HC_26_DATA_LEN_ADMA_EN);
   if (!EFI_ERROR (Status)) {
     DataLength26 = TRUE;
@@ -1368,7 +1387,7 @@ BuildAdmaDescTable (
     return EFI_OUT_OF_RESOURCES;
   }
 
-  if ((AddressingMode64 == FALSE) &&
+  if ((!AddressingMode64) &&
       (UINT64)(UINTN)Trb->AdmaDescPhy > 0x100000000ul) {
     //
     // The ADMA doesn't support 64bit addressing.
@@ -1387,7 +1406,7 @@ BuildAdmaDescTable (
 
   Remaining = DataLen;
   Address   = Data;
-  if (AddressingMode64 == FALSE) {
+  if (!AddressingMode64) {
     Trb->Adma32Desc = AdmaDesc;
     Trb->Adma64Desc = NULL;
   } else {
@@ -1395,8 +1414,8 @@ BuildAdmaDescTable (
     Trb->Adma32Desc = NULL;
   }
   for (Index = 0; Index < Entries; Index++) {
-    if (AddressingMode64 == FALSE) {
-      if (Remaining < AdmaMaxDataPerLine) {
+    if (!AddressingMode64) {
+      if (Remaining <= AdmaMaxDataPerLine) {
         Trb->Adma32Desc[Index].Valid = 1;
         Trb->Adma32Desc[Index].Act   = 2;
         if (DataLength26 == TRUE) {
@@ -1415,14 +1434,14 @@ BuildAdmaDescTable (
         Trb->Adma32Desc[Index].Address = (UINT32)Address;
       }
     } else {
-      if (Remaining < AdmaMaxDataPerLine) {
+      if (Remaining <= AdmaMaxDataPerLine) {
         Trb->Adma64Desc[Index].Valid = 1;
         Trb->Adma64Desc[Index].Act   = 2;
         if (DataLength26 == TRUE) {
           Trb->Adma64Desc[Index].UpperLength  = (UINT16)(Remaining >> 16);
         }
         Trb->Adma64Desc[Index].LowerLength  = (UINT16)(Remaining & MAX_UINT16);
-        Trb->Adma64Desc[Index].LowerAddress = (UINT32)(Address & MAX_UINT32);
+        Trb->Adma64Desc[Index].LowerAddress = (UINT32)Address;
         Trb->Adma64Desc[Index].UpperAddress = (UINT32)(Address >> 32);
         break;
       } else {
@@ -1432,7 +1451,7 @@ BuildAdmaDescTable (
           Trb->Adma64Desc[Index].UpperLength  = 0;
         }
         Trb->Adma64Desc[Index].LowerLength  = 0;
-        Trb->Adma64Desc[Index].LowerAddress = (UINT32)(Address & MAX_UINT32);
+        Trb->Adma64Desc[Index].LowerAddress = (UINT32)Address;
         Trb->Adma64Desc[Index].UpperAddress = (UINT32)(Address >> 32);
       }
     }
@@ -1739,12 +1758,16 @@ SdMmcExecTrb (
   UINT16                              Cmd;
   UINT16                              IntStatus;
   UINT32                              Argument;
-  UINT16                              BlkCount;
+  UINT32                              BlkCount;
   UINT16                              BlkSize;
   UINT16                              TransMode;
   UINT8                               HostCtrl1;
-  UINT32                              SdmaAddr;
+  UINT64                              SdmaAddr;
   UINT64                              AdmaAddr;
+  UINT16                              ControllerVer;
+  BOOLEAN                             AddressingMode64;
+
+  AddressingMode64 = FALSE;
 
   Packet = Trb->Packet;
   PciIo  = Trb->Private->PciIo;
@@ -1777,13 +1800,32 @@ SdMmcExecTrb (
 
   SdMmcHcLedOnOff (PciIo, Trb->Slot, TRUE);
 
+  Status = SdMmcHcGetControllerVersion (PciIo, Trb->Slot, &ControllerVer);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+  if (ControllerVer >= SD_MMC_HC_CTRL_VER_400) {
+    Status = SdMmcHcCheckMmioSet(PciIo, Trb->Slot, SD_MMC_HC_HOST_CTRL2, sizeof(UINT16),
+                                 SD_MMC_HC_V4_EN|SD_MMC_HC_64_ADDR_EN, SD_MMC_HC_V4_EN|SD_MMC_HC_64_ADDR_EN);
+    if (!EFI_ERROR (Status)) {
+      AddressingMode64 = TRUE;
+    }
+  }
+
   if (Trb->Mode == SdMmcSdmaMode) {
-    if ((UINT64)(UINTN)Trb->DataPhy >= 0x100000000ul) {
+    if ((!AddressingMode64) &&
+        ((UINT64)(UINTN)Trb->DataPhy >= 0x100000000ul)) {
       return EFI_INVALID_PARAMETER;
     }
 
-    SdmaAddr = (UINT32)(UINTN)Trb->DataPhy;
-    Status   = SdMmcHcRwMmio (PciIo, Trb->Slot, SD_MMC_HC_SDMA_ADDR, FALSE, sizeof (SdmaAddr), &SdmaAddr);
+    SdmaAddr = (UINT64)(UINTN)Trb->DataPhy;
+
+    if (ControllerVer >= SD_MMC_HC_CTRL_VER_400) {
+      Status = SdMmcHcRwMmio (PciIo, Trb->Slot, SD_MMC_HC_ADMA_SYS_ADDR, FALSE, sizeof (UINT64), &SdmaAddr);
+    } else {
+      Status = SdMmcHcRwMmio (PciIo, Trb->Slot, SD_MMC_HC_SDMA_ADDR, FALSE, sizeof (UINT32), &SdmaAddr);
+    }
+
     if (EFI_ERROR (Status)) {
       return Status;
     }
@@ -1813,9 +1855,13 @@ SdMmcExecTrb (
     //
     // Calcuate Block Count.
     //
-    BlkCount = (UINT16)(Trb->DataLen / Trb->BlockSize);
+    BlkCount = (Trb->DataLen / Trb->BlockSize);
   }
-  Status   = SdMmcHcRwMmio (PciIo, Trb->Slot, SD_MMC_HC_BLK_COUNT, FALSE, sizeof (BlkCount), &BlkCount);
+  if (ControllerVer >= SD_MMC_HC_CTRL_VER_410) {
+    Status = SdMmcHcRwMmio (PciIo, Trb->Slot, SD_MMC_HC_SDMA_ADDR, FALSE, sizeof (UINT32), &BlkCount);
+  } else {
+    Status = SdMmcHcRwMmio (PciIo, Trb->Slot, SD_MMC_HC_BLK_COUNT, FALSE, sizeof (UINT16), &BlkCount);
+  }
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -1911,10 +1957,11 @@ SdMmcCheckTrbResult (
   EFI_SD_MMC_PASS_THRU_COMMAND_PACKET *Packet;
   UINT16                              IntStatus;
   UINT32                              Response[4];
-  UINT32                              SdmaAddr;
+  UINT64                              SdmaAddr;
   UINT8                               Index;
   UINT8                               SwReset;
   UINT32                              PioLength;
+  UINT16                              ControllerVer;
 
   SwReset = 0;
   Packet  = Trb->Packet;
@@ -2035,8 +2082,28 @@ SdMmcCheckTrbResult (
     //
     // Update SDMA Address register.
     //
-    SdmaAddr = SD_MMC_SDMA_ROUND_UP ((UINT32)(UINTN)Trb->DataPhy, SD_MMC_SDMA_BOUNDARY);
-    Status   = SdMmcHcRwMmio (
+    SdmaAddr = SD_MMC_SDMA_ROUND_UP ((UINTN)Trb->DataPhy, SD_MMC_SDMA_BOUNDARY);
+
+    Status = SdMmcHcGetControllerVersion (
+               Private->PciIo,
+               Trb->Slot,
+               &ControllerVer
+               );
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    if (ControllerVer >= SD_MMC_HC_CTRL_VER_400) {
+      Status = SdMmcHcRwMmio (
+                 Private->PciIo,
+                 Trb->Slot,
+                 SD_MMC_HC_ADMA_SYS_ADDR,
+                 FALSE,
+                 sizeof (UINT64),
+                 &SdmaAddr
+                 );
+    } else {
+      Status = SdMmcHcRwMmio (
                  Private->PciIo,
                  Trb->Slot,
                  SD_MMC_HC_SDMA_ADDR,
@@ -2044,10 +2111,12 @@ SdMmcCheckTrbResult (
                  sizeof (UINT32),
                  &SdmaAddr
                  );
+    }
+
     if (EFI_ERROR (Status)) {
       goto Done;
     }
-    Trb->DataPhy = (UINT32)(UINTN)SdmaAddr;
+    Trb->DataPhy = (UINT64)(UINTN)SdmaAddr;
   }
 
   if ((Packet->SdMmcCmdBlk->CommandType != SdMmcCommandTypeAdtc) &&
