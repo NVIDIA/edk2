@@ -77,7 +77,8 @@ typedef enum {
 //
 // The maximum data length of each descriptor line
 //
-#define ADMA_MAX_DATA_PER_LINE     0x10000
+#define ADMA_MAX_DATA_PER_LINE_16B     SIZE_64KB
+#define ADMA_MAX_DATA_PER_LINE_26B     SIZE_64MB
 
 //
 // ADMA descriptor for 32b addressing.
@@ -88,8 +89,8 @@ typedef struct {
   UINT32 Int:1;
   UINT32 Reserved:1;
   UINT32 Act:2;
-  UINT32 Reserved1:10;
-  UINT32 Length:16;
+  UINT32 UpperLength:10;
+  UINT32 LowerLength:16;
   UINT32 Address;
 } SD_MMC_HC_ADMA_32_DESC_LINE;
 
@@ -102,11 +103,11 @@ typedef struct {
   UINT32 Int:1;
   UINT32 Reserved:1;
   UINT32 Act:2;
-  UINT32 Reserved1:10;
-  UINT32 Length:16;
+  UINT32 UpperLength:10;
+  UINT32 LowerLength:16;
   UINT32 LowerAddress;
   UINT32 UpperAddress;
-  UINT32 Reserved2;
+  UINT32 Reserved1;
 } SD_MMC_HC_ADMA_64_DESC_LINE;
 
 #define SD_MMC_SDMA_BOUNDARY          512 * 1024
@@ -158,18 +159,19 @@ typedef struct {
 //
 // SD Host controller version
 //
-#define SD_MMC_HC_CTRL_VER_100      0x00
-#define SD_MMC_HC_CTRL_VER_200      0x01
-#define SD_MMC_HC_CTRL_VER_300      0x02
-#define SD_MMC_HC_CTRL_VER_400      0x03
-#define SD_MMC_HC_CTRL_VER_410      0x04
-#define SD_MMC_HC_CTRL_VER_420      0x05
+#define SD_MMC_HC_CTRL_VER_100        0x00
+#define SD_MMC_HC_CTRL_VER_200        0x01
+#define SD_MMC_HC_CTRL_VER_300        0x02
+#define SD_MMC_HC_CTRL_VER_400        0x03
+#define SD_MMC_HC_CTRL_VER_410        0x04
+#define SD_MMC_HC_CTRL_VER_420        0x05
 
 //
-// SD Host controller V4 Support
+// SD Host controller V4 enhancements
 //
-#define SD_MMC_HC_V4_EN             BIT12
-#define SD_MMC_HC_64_ADDR_EN        BIT13
+#define SD_MMC_HC_V4_EN               BIT12
+#define SD_MMC_HC_64_ADDR_EN          BIT13
+#define SD_MMC_HC_26_DATA_LEN_ADMA_EN BIT10
 
 /**
   Dump the content of SD/MMC host controller's Capability Register.
