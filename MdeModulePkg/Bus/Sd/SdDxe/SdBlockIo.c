@@ -670,8 +670,11 @@ SdReadWrite (
     if (EFI_ERROR (Status)) {
       return Status;
     }
-    DEBUG ((DEBUG_BLKIO, "Sd%a(): Lba 0x%x BlkNo 0x%x Event %p with %r\n", IsRead ? "Read" : "Write", Lba, BlockNum, Token->Event, Status));
-
+    if (Token != NULL) {
+      DEBUG ((DEBUG_BLKIO, "Sd%a(): Lba 0x%x BlkNo 0x%x Event %p with %r\n", IsRead ? "Read" : "Write", Lba, BlockNum, Token->Event, Status));
+    } else {
+      DEBUG ((DEBUG_BLKIO, "Sd%a(): Lba 0x%x BlkNo 0x%x with %r\n", IsRead ? "Read" : "Write", Lba, BlockNum, Status));
+    }
     Lba   += BlockNum;
     Buffer = (UINT8*)Buffer + BufferSize;
     Remaining -= BlockNum;
