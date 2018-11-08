@@ -217,11 +217,11 @@ AllocateZeroPool (
   VOID *Buffer;
 
   Buffer = AllocatePool (AllocationSize);
-  if (NULL == Buffer) {
+  if (Buffer == NULL) {
     return NULL;
   }
 
-  SetMem (Buffer, AllocationSize, 0);
+  ZeroMem (Buffer, AllocationSize);
 
   return Buffer;
 }
