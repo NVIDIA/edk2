@@ -17,7 +17,7 @@
   INF_VERSION                    = 0x00010019
   BASE_NAME                      = NonDiscoverablePciDeviceDxe
   FILE_GUID                      = 71fd84cd-353b-464d-b7a4-6ea7b96995cb
-  MODULE_TYPE                    = UEFI_DRIVER
+  MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
   ENTRY_POINT                    = NonDiscoverablePciDeviceDxeEntryPoint
 
@@ -54,3 +54,6 @@
   gEdkiiNonDiscoverableUfsDeviceGuid        ## CONSUMES ## GUID
   gEdkiiNonDiscoverableUhciDeviceGuid       ## CONSUMES ## GUID
   gEdkiiNonDiscoverableXhciDeviceGuid       ## CONSUMES ## GUID
+
+[Depex]
+  gEfiCpuArchProtocolGuid
