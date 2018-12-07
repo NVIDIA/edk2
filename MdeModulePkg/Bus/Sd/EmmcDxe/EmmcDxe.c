@@ -232,12 +232,15 @@ GetEmmcModelName (
   CHAR8  String[EMMC_MODEL_NAME_MAX_LEN];
 
   ZeroMem (String, sizeof (String));
-  CopyMem (String, &Cid->OemId, sizeof (Cid->OemId));
-  String[sizeof (Cid->OemId)] = ' ';
-  CopyMem (String + sizeof (Cid->OemId) + 1, Cid->ProductName, sizeof (Cid->ProductName));
-  String[sizeof (Cid->OemId) + sizeof (Cid->ProductName)] = ' ';
-  CopyMem (String + sizeof (Cid->OemId) + sizeof (Cid->ProductName) + 1, Cid->ProductSerialNumber, sizeof (Cid->ProductSerialNumber));
-
+  if (!FeaturePcdGet (PcdSdhciDisableCidSupport)) {
+    CopyMem (String, &Cid->OemId, sizeof (Cid->OemId));
+    String[sizeof (Cid->OemId)] = ' ';
+    CopyMem (String + sizeof (Cid->OemId) + 1, Cid->ProductName, sizeof (Cid->ProductName));
+    String[sizeof (Cid->OemId) + sizeof (Cid->ProductName)] = ' ';
+    CopyMem (String + sizeof (Cid->OemId) + sizeof (Cid->ProductName) + 1, Cid->ProductSerialNumber, sizeof (Cid->ProductSerialNumber));
+  } else {
+    CopyMem (String, EMMC_CID_DISABLED_MODEL, sizeof (EMMC_CID_DISABLED_MODEL));
+  }
   AsciiStrToUnicodeStrS (String, Device->ModelName, sizeof (Device->ModelName) / sizeof (Device->ModelName[0]));
 
   return EFI_SUCCESS;
@@ -301,10 +304,12 @@ DiscoverAllPartitions (
     Device->SectorAddressing = FALSE;
   }
 
-  Cid    = &Device->Cid;
-  Status = EmmcGetCid (Device, Slot + 1, Cid);
-  if (EFI_ERROR (Status)) {
-    return Status;
+  if (!FeaturePcdGet (PcdSdhciDisableCidSupport)) {
+    Cid    = &Device->Cid;
+    Status = EmmcGetCid (Device, Slot + 1, Cid);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
   }
 
   Status = EmmcSelect (Device, Slot + 1);

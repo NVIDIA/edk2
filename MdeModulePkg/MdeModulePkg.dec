@@ -876,6 +876,12 @@
   # @Prompt SDHCI Disable 26-bit support.
   gEfiMdeModulePkgTokenSpaceGuid.PcdSdhciDisable26bitSupport|FALSE|BOOLEAN|0xF0000000
 
+  ## Indicates if SDHCI should disable checking of CID<BR><BR>
+  #   TRUE  - CID check is skipped.<BR>
+  #   FALSE - CID check occurs.<BR>
+  # @Prompt SDHCI disable CID.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSdhciDisableCidSupport|FALSE|BOOLEAN|0xF0000001
+
 [PcdsFeatureFlag.IA32, PcdsFeatureFlag.ARM, PcdsFeatureFlag.AARCH64]
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDegradeResourceForOptionRom|FALSE|BOOLEAN|0x0001003a
 

@@ -46,6 +46,7 @@
 
 [Packages]
   MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
 
 [LibraryClasses]
   DevicePathLib
@@ -67,6 +68,9 @@
   ## TO_START
   ## BY_START
   gEfiDevicePathProtocolGuid
+
+[FeaturePcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSdhciDisableCidSupport
 
 [Depex]
   TRUE
