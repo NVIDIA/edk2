@@ -617,7 +617,6 @@ SdMmcPciHcDriverBindingStart (
     }
   }
 
-  Support64BitDma = TRUE;
   for (Slot = FirstBar; Slot < (FirstBar + SlotNum); Slot++) {
     Private->Slot[Slot].Enable = TRUE;
 
@@ -649,7 +648,8 @@ SdMmcPciHcDriverBindingStart (
       Private->BaseClkFreq[Slot]
       ));
 
-    Support64BitDma &= Private->Capability[Slot].SysBus64;
+    Support64BitDma = (Private->Capability[Slot].SysBus64V3 |
+                       Private->Capability[Slot].SysBus64V4);
 
     Status = SdMmcHcGetMaxCurrent (PciIo, Slot, &Private->MaxCurrent[Slot]);
     if (EFI_ERROR (Status)) {

@@ -21,7 +21,7 @@
   BASE_NAME                      = I2cDxe
   MODULE_UNI_FILE                = I2cDxe.uni
   FILE_GUID                      = ECA2AE9E-7594-4901-871C-449DA1A11660
-  MODULE_TYPE                    = UEFI_DRIVER
+  MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
   ENTRY_POINT                    = InitializeI2c
   UNLOAD_IMAGE                   = I2cUnload
@@ -65,3 +65,5 @@
 [UserExtensions.TianoCore."ExtraFiles"]
   I2cDxeExtra.uni
 
+[Depex]
+  TRUE

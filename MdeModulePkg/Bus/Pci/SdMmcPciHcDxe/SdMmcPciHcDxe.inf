@@ -22,7 +22,7 @@
   BASE_NAME                      = SdMmcPciHcDxe
   MODULE_UNI_FILE                = SdMmcPciHcDxe.uni
   FILE_GUID                      = 8E325979-3FE1-4927-AAE2-8F5C4BD2AF0D
-  MODULE_TYPE                    = UEFI_DRIVER
+  MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
   ENTRY_POINT                    = InitializeSdMmcPciHcDxe
 
@@ -67,8 +67,14 @@
   gEfiPciIoProtocolGuid                         ## TO_START
   gEfiSdMmcPassThruProtocolGuid                 ## BY_START
 
+[FeaturePcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSdhciDisable26bitSupport
+
 # [Event]
 # EVENT_TYPE_PERIODIC_TIMER ## SOMETIMES_CONSUMES
 
 [UserExtensions.TianoCore."ExtraFiles"]
   SdMmcPciHcDxeExtra.uni
+
+[Depex]
+  TRUE

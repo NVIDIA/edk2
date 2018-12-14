@@ -21,7 +21,7 @@
   BASE_NAME                      = EmmcDxe
   MODULE_UNI_FILE                = EmmcDxe.uni
   FILE_GUID                      = 2145F72F-E6F1-4440-A828-59DC9AAB5F89
-  MODULE_TYPE                    = UEFI_DRIVER
+  MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
   ENTRY_POINT                    = InitializeEmmcDxe
 
@@ -46,6 +46,7 @@
 
 [Packages]
   MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
 
 [LibraryClasses]
   DevicePathLib
@@ -67,4 +68,10 @@
   ## TO_START
   ## BY_START
   gEfiDevicePathProtocolGuid
+
+[FeaturePcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSdhciDisableCidSupport
+
+[Depex]
+  TRUE
 

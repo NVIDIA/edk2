@@ -27,7 +27,7 @@
   BASE_NAME                      = PartitionDxe
   MODULE_UNI_FILE                = PartitionDxe.uni
   FILE_GUID                      = 1FA1F39E-FEFF-4aae-BD7B-38A070A3B609
-  MODULE_TYPE                    = UEFI_DRIVER
+  MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
   ENTRY_POINT                    = InitializePartition
 
@@ -89,3 +89,6 @@
 
 [UserExtensions.TianoCore."ExtraFiles"]
   PartitionDxeExtra.uni
+
+[Depex]
+  TRUE
