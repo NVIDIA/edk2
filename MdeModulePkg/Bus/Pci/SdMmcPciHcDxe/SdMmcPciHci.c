@@ -1196,6 +1196,8 @@ SdMmcHcInitHost (
   if (EFI_ERROR (Status)) {
     return Status;
   }
+
+  Status = SdMmcHcInitClockFreq (PciIo, Slot, Private->BaseClkFreq[Slot]);
   if (EFI_ERROR (Status)) {
     return Status;
   }
