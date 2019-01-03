@@ -351,6 +351,24 @@ SdMmcHcWaitMmioSet (
   );
 
 /**
+  Get the controller version information from the specified slot.
+
+  @param[in]  PciIo           The PCI IO protocol instance.
+  @param[in]  Slot            The slot number of the SD card to send the command to.
+  @param[out] Version         The buffer to store the version information.
+
+  @retval EFI_SUCCESS         The operation executes successfully.
+  @retval Others              The operation fails.
+
+**/
+EFI_STATUS
+SdMmcHcGetControllerVersion (
+  IN  EFI_PCI_IO_PROTOCOL  *PciIo,
+  IN  UINT8                Slot,
+  OUT UINT16               *Version
+  );
+
+/**
   Set all interrupt status bits in Normal and Error Interrupt Status Enable
   register.
 
@@ -452,6 +470,7 @@ SdMmcHcStopClock (
   @param[in] Slot           The slot number of the SD card to send the command to.
   @param[in] ClockFreq      The max clock frequency to be set. The unit is KHz.
   @param[in] BaseClkFreq    The base clock frequency of host controller in MHz.
+  @param[in] ControllerVer  The version of host controller.
 
   @retval EFI_SUCCESS       The clock is supplied successfully.
   @retval Others            The clock isn't supplied successfully.
@@ -462,7 +481,8 @@ SdMmcHcClockSupply (
   IN EFI_PCI_IO_PROTOCOL    *PciIo,
   IN UINT8                  Slot,
   IN UINT64                 ClockFreq,
-  IN UINT32                 BaseClkFreq
+  IN UINT32                 BaseClkFreq,
+  IN UINT16                 ControllerVer
   );
 
 /**
@@ -511,6 +531,7 @@ SdMmcHcSetBusWidth (
   @param[in] PciIo          The PCI IO protocol instance.
   @param[in] Slot           The slot number of the SD card to send the command to.
   @param[in] BaseClkFreq    The base clock frequency of host controller in MHz.
+  @param[in] ControllerVer  The version of host controller.
 
   @retval EFI_SUCCESS       The clock is supplied successfully.
   @retval Others            The clock isn't supplied successfully.
@@ -520,7 +541,8 @@ EFI_STATUS
 SdMmcHcInitClockFreq (
   IN EFI_PCI_IO_PROTOCOL    *PciIo,
   IN UINT8                  Slot,
-  IN UINT32                 BaseClkFreq
+  IN UINT32                 BaseClkFreq,
+  IN UINT16                 ControllerVer
   );
 
 /**

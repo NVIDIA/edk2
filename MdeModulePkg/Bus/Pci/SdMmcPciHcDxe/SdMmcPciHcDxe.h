@@ -117,8 +117,7 @@ typedef struct {
   SD_MMC_HC_SLOT                      Slot[SD_MMC_HC_MAX_SLOT];
   SD_MMC_HC_SLOT_CAP                  Capability[SD_MMC_HC_MAX_SLOT];
   UINT64                              MaxCurrent[SD_MMC_HC_MAX_SLOT];
-
-  UINT32                              ControllerVersion;
+  UINT16                              ControllerVersion[SD_MMC_HC_MAX_SLOT];
 
   //
   // Some controllers may require to override base clock frequency

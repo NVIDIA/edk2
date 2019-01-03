@@ -104,9 +104,6 @@
   gEfiSecHobDataPpiGuid                         ## SOMETIMES_CONSUMES
 
 [Pcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreMaxFvSupported                   ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreMaxPeimPerFv                     ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreMaxPpiSupported                  ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreMaxPeiStackSize                  ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreImageLoaderSearchTeSectionFirst  ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdFrameworkCompatibilitySupport           ## CONSUMES

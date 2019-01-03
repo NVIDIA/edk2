@@ -2139,6 +2139,8 @@ def PackByteFormatGUID(Guid):
 #
 def CopyDict(ori_dict):
     dict_type = ori_dict.__class__
+    if dict_type not in (dict,OrderedDict):
+        return ori_dict
     new_dict = dict_type()
     for key in ori_dict:
         if isinstance(ori_dict[key],(dict,OrderedDict)):
@@ -2146,6 +2148,12 @@ def CopyDict(ori_dict):
         else:
             new_dict[key] = ori_dict[key]
     return new_dict
+
+#
+# Remove the c/c++ comments: // and /* */
+#
+def RemoveCComments(ctext):
+    return re.sub('//.*?\n|/\*.*?\*/', '\n', ctext, flags=re.S)
 ##
 #
 # This acts like the main() function for the script, unless it is 'import'ed into another

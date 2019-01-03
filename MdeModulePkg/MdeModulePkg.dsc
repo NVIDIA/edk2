@@ -354,12 +354,10 @@
   MdeModulePkg/Universal/Network/Dhcp4Dxe/Dhcp4Dxe.inf
   MdeModulePkg/Universal/Network/DpcDxe/DpcDxe.inf
   MdeModulePkg/Universal/Network/Ip4Dxe/Ip4Dxe.inf
-  MdeModulePkg/Universal/Network/IScsiDxe/IScsiDxe.inf
   MdeModulePkg/Universal/Network/MnpDxe/MnpDxe.inf
   MdeModulePkg/Universal/Network/VlanConfigDxe/VlanConfigDxe.inf
   MdeModulePkg/Universal/Network/Mtftp4Dxe/Mtftp4Dxe.inf
   MdeModulePkg/Universal/Network/SnpDxe/SnpDxe.inf
-  MdeModulePkg/Universal/Network/Tcp4Dxe/Tcp4Dxe.inf
   MdeModulePkg/Universal/Network/Udp4Dxe/Udp4Dxe.inf
 
   MdeModulePkg/Universal/PcatSingleSegmentPciCfg2Pei/PcatSingleSegmentPciCfg2Pei.inf
@@ -422,7 +420,6 @@
   MdeModulePkg/Library/DxeCapsuleLibFmp/DxeRuntimeCapsuleLib.inf
 
 [Components.IA32, Components.X64, Components.AARCH64]
-  MdeModulePkg/Universal/Network/UefiPxeBcDxe/UefiPxeBcDxe.inf
   MdeModulePkg/Universal/DebugSupportDxe/DebugSupportDxe.inf
   MdeModulePkg/Universal/EbcDxe/EbcDxe.inf
   MdeModulePkg/Universal/EbcDxe/EbcDebugger.inf

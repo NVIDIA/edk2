@@ -15,71 +15,27 @@
     DEN0056A_System_Control_and_Management_Interface.pdf
 **/
 
-#ifndef ARM_SCMI_CLOCK_PROTOCOL_H_
-#define ARM_SCMI_CLOCK_PROTOCOL_H_
+#ifndef ARM_SCMI_CLOCK2_PROTOCOL_H_
+#define ARM_SCMI_CLOCK2_PROTOCOL_H_
 
 #include <Protocol/ArmScmi.h>
+#include <Protocol/ArmScmiClockProtocol.h>
 
-#define ARM_SCMI_CLOCK_PROTOCOL_GUID { \
-  0x91ce67a8, 0xe0aa, 0x4012, {0xb9, 0x9f, 0xb6, 0xfc, 0xf3, 0x4, 0x8e, 0xaa} \
+#define ARM_SCMI_CLOCK2_PROTOCOL_GUID { \
+  0xb8d8caf2, 0x9e94, 0x462c, { 0xa8, 0x34, 0x6c, 0x99, 0xfc, 0x05, 0xef, 0xcf } \
   }
 
-extern EFI_GUID gArmScmiClockProtocolGuid;
+extern EFI_GUID gArmScmiClock2ProtocolGuid;
 
-// Message Type for clock management protocol.
-typedef enum {
-  SCMI_MESSAGE_ID_CLOCK_ATTRIBUTES     = 0x3,
-  SCMI_MESSAGE_ID_CLOCK_DESCRIBE_RATES = 0x4,
-  SCMI_MESSAGE_ID_CLOCK_RATE_SET       = 0x5,
-  SCMI_MESSAGE_ID_CLOCK_RATE_GET       = 0x6,
-  SCMI_MESSAGE_ID_CLOCK_CONFIG_SET     = 0x7
-} SCMI_MESSAGE_ID_CLOCK;
+#define SCMI_CLOCK2_PROTOCOL_VERSION 1
 
-typedef enum {
-  SCMI_CLOCK_RATE_FORMAT_DISCRETE, // Non-linear range.
-  SCMI_CLOCK_RATE_FORMAT_LINEAR    // Linear range.
-} SCMI_CLOCK_RATE_FORMAT;
-
-// Clock management protocol version.
-#define SCMI_CLOCK_PROTOCOL_VERSION 0x10000
-
-#define SCMI_CLOCK_PROTOCOL_PENDING_ASYNC_RATES_MASK      0xFFU
-#define SCMI_CLOCK_PROTOCOL_PENDING_ASYNC_RATES_SHIFT     16
-#define SCMI_CLOCK_PROTOCOL_NUM_CLOCKS_MASK               0xFFFFU
-
-/** Total number of pending asynchronous clock rates changes
-  supported by the SCP, Attr Bits[23:16]
-*/
-#define SCMI_CLOCK_PROTOCOL_MAX_ASYNC_CLK_RATES(Attr) (                       \
-                  (Attr >> SCMI_CLOCK_PROTOCOL_PENDING_ASYNC_RATES_SHIFT) &&  \
-                   SCMI_CLOCK_PROTOCOL_PENDING_ASYNC_RATES_MASK)
-
-// Total of clock devices supported by the SCP, Attr Bits[15:0]
-#define SCMI_CLOCK_PROTOCOL_TOTAL_CLKS(Attr) (Attr & SCMI_CLOCK_PROTOCOL_NUM_CLOCKS_MASK)
-
-#pragma pack(1)
-
-/* Depending on the format (linear/non-linear) supported by a clock device
-   either Rate or Min/Max/Step triplet is valid.
-*/
-typedef struct {
-  union {
-  UINT64 Min;
-  UINT64 Rate;
-  };
-  UINT64 Max;
-  UINT64 Step;
-} SCMI_CLOCK_RATE;
-
-#pragma pack()
-
-typedef struct _SCMI_CLOCK_PROTOCOL SCMI_CLOCK_PROTOCOL;
+typedef struct _SCMI_CLOCK2_PROTOCOL SCMI_CLOCK2_PROTOCOL;
 
 // Protocol Interface functions.
 
 /** Return version of the clock management protocol supported by SCP firmware.
 
-  @param[in]  This     A Pointer to SCMI_CLOCK_PROTOCOL Instance.
+  @param[in]  This     A Pointer to SCMI_CLOCK2_PROTOCOL Instance.
 
   @param[out] Version  Version of the supported SCMI Clock management protocol.
 
@@ -89,15 +45,15 @@ typedef struct _SCMI_CLOCK_PROTOCOL SCMI_CLOCK_PROTOCOL;
 **/
 typedef
 EFI_STATUS
-(EFIAPI *SCMI_CLOCK_GET_VERSION) (
-  IN  SCMI_CLOCK_PROTOCOL  *This,
-  OUT UINT32               *Version
+(EFIAPI *SCMI_CLOCK2_GET_VERSION) (
+  IN  SCMI_CLOCK2_PROTOCOL  *This,
+  OUT UINT32                *Version
   );
 
 /** Return total number of clock devices supported by the clock management
    protocol.
 
-  @param[in]  This         A Pointer to SCMI_CLOCK_PROTOCOL Instance.
+  @param[in]  This         A Pointer to SCMI_CLOCK2_PROTOCOL Instance.
 
   @param[out] TotalClocks  Total number of clocks supported.
 
@@ -107,14 +63,14 @@ EFI_STATUS
 **/
 typedef
 EFI_STATUS
-(EFIAPI *SCMI_CLOCK_GET_TOTAL_CLOCKS) (
-  IN  SCMI_CLOCK_PROTOCOL  *This,
-  OUT UINT32               *TotalClocks
+(EFIAPI *SCMI_CLOCK2_GET_TOTAL_CLOCKS) (
+  IN  SCMI_CLOCK2_PROTOCOL  *This,
+  OUT UINT32                *TotalClocks
   );
 
 /** Return attributes of a clock device.
 
-  @param[in]  This        A Pointer to SCMI_CLOCK_PROTOCOL Instance.
+  @param[in]  This        A Pointer to SCMI_CLOCK2_PROTOCOL Instance.
   @param[in]  ClockId     Identifier for the clock device.
 
   @param[out] Enabled         If TRUE, the clock device is enabled.
@@ -127,16 +83,16 @@ EFI_STATUS
 **/
 typedef
 EFI_STATUS
-(EFIAPI *SCMI_CLOCK_GET_CLOCK_ATTRIBUTES) (
-  IN  SCMI_CLOCK_PROTOCOL  *This,
-  IN  UINT32               ClockId,
-  OUT BOOLEAN              *Enabled,
-  OUT CHAR8                *ClockAsciiName
+(EFIAPI *SCMI_CLOCK2_GET_CLOCK_ATTRIBUTES) (
+  IN  SCMI_CLOCK2_PROTOCOL  *This,
+  IN  UINT32                ClockId,
+  OUT BOOLEAN               *Enabled,
+  OUT CHAR8                 *ClockAsciiName
   );
 
 /** Return list of rates supported by a given clock device.
 
-  @param[in] This        A pointer to SCMI_CLOCK_PROTOCOL Instance.
+  @param[in] This        A pointer to SCMI_CLOCK2_PROTOCOL Instance.
   @param[in] ClockId     Identifier for the clock device.
 
   @param[out] Format      SCMI_CLOCK_RATE_FORMAT_DISCRETE: Clock device
@@ -159,18 +115,18 @@ EFI_STATUS
 **/
 typedef
 EFI_STATUS
-(EFIAPI *SCMI_CLOCK_DESCRIBE_RATES) (
-  IN     SCMI_CLOCK_PROTOCOL     *This,
+(EFIAPI *SCMI_CLOCK2_DESCRIBE_RATES) (
+  IN     SCMI_CLOCK2_PROTOCOL     *This,
   IN     UINT32                   ClockId,
-  OUT    SCMI_CLOCK_RATE_FORMAT  *Format,
-  OUT    UINT32                  *TotalRates,
-  IN OUT UINT32                  *RateArraySize,
-  OUT    SCMI_CLOCK_RATE         *RateArray
+  OUT    SCMI_CLOCK_RATE_FORMAT   *Format,
+  OUT    UINT32                   *TotalRates,
+  IN OUT UINT32                   *RateArraySize,
+  OUT    SCMI_CLOCK_RATE          *RateArray
   );
 
 /** Get clock rate.
 
-  @param[in]  This        A Pointer to SCMI_CLOCK_PROTOCOL Instance.
+  @param[in]  This        A Pointer to SCMI_CLOCK2_PROTOCOL Instance.
   @param[in]  ClockId     Identifier for the clock device.
 
   @param[out]  Rate       Clock rate.
@@ -181,15 +137,15 @@ EFI_STATUS
 **/
 typedef
 EFI_STATUS
-(EFIAPI *SCMI_CLOCK_RATE_GET) (
-  IN  SCMI_CLOCK_PROTOCOL  *This,
-  IN  UINT32               ClockId,
-  OUT UINT64               *Rate
+(EFIAPI *SCMI_CLOCK2_RATE_GET) (
+  IN  SCMI_CLOCK2_PROTOCOL  *This,
+  IN  UINT32                ClockId,
+  OUT UINT64                *Rate
   );
 
 /** Set clock rate.
 
-  @param[in]  This        A Pointer to SCMI_CLOCK_PROTOCOL Instance.
+  @param[in]  This        A Pointer to SCMI_CLOCK2_PROTOCOL Instance.
   @param[in]  ClockId     Identifier for the clock device.
   @param[in]  Rate        Clock rate.
 
@@ -199,20 +155,43 @@ EFI_STATUS
 **/
 typedef
 EFI_STATUS
-(EFIAPI *SCMI_CLOCK_RATE_SET) (
-  IN SCMI_CLOCK_PROTOCOL  *This,
-  IN UINT32               ClockId,
-  IN UINT64               Rate
+(EFIAPI *SCMI_CLOCK2_RATE_SET) (
+  IN SCMI_CLOCK2_PROTOCOL   *This,
+  IN UINT32                 ClockId,
+  IN UINT64                 Rate
   );
 
-typedef struct _SCMI_CLOCK_PROTOCOL {
-  SCMI_CLOCK_GET_VERSION GetVersion;
-  SCMI_CLOCK_GET_TOTAL_CLOCKS GetTotalClocks;
-  SCMI_CLOCK_GET_CLOCK_ATTRIBUTES GetClockAttributes;
-  SCMI_CLOCK_DESCRIBE_RATES DescribeRates;
-  SCMI_CLOCK_RATE_GET RateGet;
-  SCMI_CLOCK_RATE_SET RateSet;
-} SCMI_CLOCK_PROTOCOL;
+/** Enable/Disable specified clock.
+    Function is only available under gArmScmiClock2ProtocolGuid
 
-#endif /* ARM_SCMI_CLOCK_PROTOCOL_H_ */
+  @param[in]  This        A Pointer to SCMI_CLOCK2_PROTOCOL Instance.
+  @param[in]  ClockId     Identifier for the clock device.
+  @param[in]  Enable      TRUE to enable, FALSE to disable.
 
+  @retval EFI_SUCCESS          Clock enable/disable successful.
+  @retval EFI_DEVICE_ERROR     SCP returns an SCMI error.
+  @retval !(EFI_SUCCESS)       Other errors.
+**/
+typedef
+EFI_STATUS
+(EFIAPI *SCMI_CLOCK2_ENABLE) (
+  IN SCMI_CLOCK2_PROTOCOL   *This,
+  IN UINT32                 ClockId,
+  IN BOOLEAN                Enable
+  );
+
+typedef struct _SCMI_CLOCK2_PROTOCOL {
+  SCMI_CLOCK2_GET_VERSION           GetVersion;
+  SCMI_CLOCK2_GET_TOTAL_CLOCKS      GetTotalClocks;
+  SCMI_CLOCK2_GET_CLOCK_ATTRIBUTES  GetClockAttributes;
+  SCMI_CLOCK2_DESCRIBE_RATES        DescribeRates;
+  SCMI_CLOCK2_RATE_GET              RateGet;
+  SCMI_CLOCK2_RATE_SET              RateSet;
+
+  // Extension to original ClockProtocol, added here so SCMI_CLOCK2_PROTOCOL
+  // can be cast to SCMI_CLOCK_PROTOCOL
+  UINTN                             Version; // For future expandability
+  SCMI_CLOCK2_ENABLE                Enable;
+} SCMI_CLOCK2_PROTOCOL;
+
+#endif /* ARM_SCMI_CLOCK2_PROTOCOL_H_ */
