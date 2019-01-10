@@ -1101,7 +1101,7 @@ class FdfParser:
     def _GetNextGuid(self):
         if not self._GetNextToken():
             return False
-        if gGuidPattern.match(self._Token) is not None:
+        if GlobalData.gGuidPattern.match(self._Token) is not None:
             return True
         else:
             self._UndoToken()
@@ -1169,7 +1169,7 @@ class FdfParser:
     def _GetNextHexNumber(self):
         if not self._GetNextToken():
             return False
-        if gHexPatternAll.match(self._Token):
+        if GlobalData.gHexPatternAll.match(self._Token):
             return True
         else:
             self._UndoToken()
@@ -2589,7 +2589,7 @@ class FdfParser:
     #
     @staticmethod
     def _FileCouldHaveRelocFlag (FileType):
-        if FileType in {SUP_MODULE_SEC, SUP_MODULE_PEI_CORE, SUP_MODULE_PEIM, 'PEI_DXE_COMBO'}:
+        if FileType in {SUP_MODULE_SEC, SUP_MODULE_PEI_CORE, SUP_MODULE_PEIM, SUP_MODULE_MM_CORE_STANDALONE, 'PEI_DXE_COMBO'}:
             return True
         else:
             return False
