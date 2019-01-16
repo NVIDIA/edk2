@@ -68,11 +68,14 @@
 [LibraryClasses.common.UEFI_DRIVER]
   UefiScsiLib|MdePkg/Library/UefiScsiLib/UefiScsiLib.inf
 
-[BuildOptions.ARM.EDKII.SEC, BuildOptions.ARM.EDKII.BASE]
-  # Avoid MOVT/MOVW instruction pairs in code that may end up in the PIE
-  # executable we build for the relocatable PrePi. They are not runtime
-  # relocatable in ELF.
-  *_CLANG35_*_CC_FLAGS = -mno-movt
+[BuildOptions.common.EDKII.SEC, BuildOptions.common.EDKII.BASE]
+  #
+  # CLANG38 with LTO support enabled uses the GNU GOLD linker, which insists
+  # on emitting GOT based symbol references when running in shared mode, unless
+  # we override visibility to 'hidden' in all modules that make up the PrePi
+  # build.
+  #
+  GCC:*_CLANG38_*_CC_FLAGS = -include $(WORKSPACE)/ArmVirtPkg/Include/Platform/Hidden.h
 
 ################################################################################
 #
@@ -130,6 +133,15 @@
   gEfiNetworkPkgTokenSpaceGuid.PcdAllowHttpConnections|TRUE
 !endif
 
+  gEfiMdeModulePkgTokenSpaceGuid.PcdResetOnMemoryTypeInformationChange|FALSE
+  gEfiMdeModulePkgTokenSpaceGuid.PcdBootManagerMenuFile|{ 0x21, 0xaa, 0x2c, 0x46, 0x14, 0x76, 0x03, 0x45, 0x83, 0x6e, 0x8a, 0xb6, 0xf4, 0x66, 0x23, 0x31 }
+
+  #
+  # The maximum physical I/O addressability of the processor, set with
+  # BuildCpuHob().
+  #
+  gEmbeddedTokenSpaceGuid.PcdPrePiCpuIoSize|16
+
 [PcdsPatchableInModule.common]
   #
   # This will be overridden in the code
@@ -145,21 +157,6 @@
 
   gArmTokenSpaceGuid.PcdFdBaseAddress|0x0
   gArmTokenSpaceGuid.PcdFvBaseAddress|0x0
-
-[PcdsFixedAtBuild.AARCH64]
-
-  gEfiMdeModulePkgTokenSpaceGuid.PcdResetOnMemoryTypeInformationChange|FALSE
-  gEfiMdeModulePkgTokenSpaceGuid.PcdBootManagerMenuFile|{ 0x21, 0xaa, 0x2c, 0x46, 0x14, 0x76, 0x03, 0x45, 0x83, 0x6e, 0x8a, 0xb6, 0xf4, 0x66, 0x23, 0x31 }
-
-  #
-  # The maximum physical I/O addressability of the processor, set with
-  # BuildCpuHob().
-  #
-  gEmbeddedTokenSpaceGuid.PcdPrePiCpuIoSize|16
-
-  # KVM limits it IPA space to 40 bits (1 TB), so there is no need to
-  # support anything bigger, even if the host hardware does
-  gEmbeddedTokenSpaceGuid.PcdPrePiCpuMemorySize|40
 
 [PcdsDynamicDefault.common]
   gEfiMdePkgTokenSpaceGuid.PcdPlatformBootTimeOut|3
@@ -335,18 +332,14 @@
   MdeModulePkg/Universal/Network/VlanConfigDxe/VlanConfigDxe.inf
   MdeModulePkg/Universal/Network/Mtftp4Dxe/Mtftp4Dxe.inf
   MdeModulePkg/Universal/Network/Udp4Dxe/Udp4Dxe.inf
+  NetworkPkg/TcpDxe/TcpDxe.inf
+  NetworkPkg/UefiPxeBcDxe/UefiPxeBcDxe.inf
+  NetworkPkg/IScsiDxe/IScsiDxe.inf
 !if $(NETWORK_IP6_ENABLE) == TRUE
   NetworkPkg/Ip6Dxe/Ip6Dxe.inf
-  NetworkPkg/TcpDxe/TcpDxe.inf
   NetworkPkg/Udp6Dxe/Udp6Dxe.inf
   NetworkPkg/Dhcp6Dxe/Dhcp6Dxe.inf
   NetworkPkg/Mtftp6Dxe/Mtftp6Dxe.inf
-  NetworkPkg/UefiPxeBcDxe/UefiPxeBcDxe.inf
-  NetworkPkg/IScsiDxe/IScsiDxe.inf
-!else
-  MdeModulePkg/Universal/Network/Tcp4Dxe/Tcp4Dxe.inf
-  MdeModulePkg/Universal/Network/UefiPxeBcDxe/UefiPxeBcDxe.inf
-  MdeModulePkg/Universal/Network/IScsiDxe/IScsiDxe.inf
 !endif
 !if $(HTTP_BOOT_ENABLE) == TRUE
   NetworkPkg/DnsDxe/DnsDxe.inf

@@ -2,9 +2,8 @@
 #  Access PXE-compatible devices for network access and network booting.
 #
 #  This driver provides PXE Base Code Protocol which is used to accessing
-#  PXE-compatible device for network access or booting. It could work together
-#  with an IPv4 stack, an IPv6 stack or both.
-#
+#  PXE-compatible device for network access or booting. This driver supports
+#  both IPv4 and IPv6 network stack.
 #
 #  Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 #
@@ -55,6 +54,7 @@
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
+  NetworkPkg/NetworkPkg.dec
 
 
 [LibraryClasses]
@@ -107,5 +107,7 @@
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdTftpBlockSize      ## SOMETIMES_CONSUMES
+  gEfiNetworkPkgTokenSpaceGuid.PcdPxeTftpWindowSize    ## SOMETIMES_CONSUMES
+
 [UserExtensions.TianoCore."ExtraFiles"]
   UefiPxeBcDxeExtra.uni

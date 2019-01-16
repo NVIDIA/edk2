@@ -2,6 +2,7 @@
   Handle operations in files and directories from UDF/ECMA-167 file systems.
 
   Copyright (C) 2014-2017 Paulo Alcantara <pcacjr@zytor.com>
+  Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials are licensed and made available
   under the terms and conditions of the BSD License which accompanies this
@@ -248,7 +249,7 @@ UdfOpen (
     FileName = TempFileName + 1;
   }
 
-  StrCpyS (NewPrivFileData->FileName, UDF_PATH_LENGTH, FileName);
+  StrCpyS (NewPrivFileData->FileName, UDF_FILENAME_LENGTH, FileName);
 
   Status = GetFileSize (
     PrivFsData->BlockIo,
@@ -257,8 +258,12 @@ UdfOpen (
     &NewPrivFileData->File,
     &NewPrivFileData->FileSize
     );
-  ASSERT_EFI_ERROR (Status);
   if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: GetFileSize() fails with status - %r.\n",
+      __FUNCTION__, Status
+      ));
     goto Error_Get_File_Size;
   }
 
@@ -408,6 +413,15 @@ UdfRead (
 
         goto Done;
       }
+      //
+      // After calling function ReadDirectoryEntry(), if 'NewFileIdentifierDesc'
+      // is NULL, then the 'Status' must be EFI_OUT_OF_RESOURCES. Hence, if the
+      // code reaches here, 'NewFileIdentifierDesc' must be not NULL.
+      //
+      // The ASSERT here is for addressing a false positive NULL pointer
+      // dereference issue raised from static analysis.
+      //
+      ASSERT (NewFileIdentifierDesc != NULL);
 
       if (!IS_FID_PARENT_FILE (NewFileIdentifierDesc)) {
         break;
@@ -444,7 +458,7 @@ UdfRead (
       FreePool ((VOID *)NewFileEntryData);
       NewFileEntryData = FoundFile.FileEntry;
 
-      Status = GetFileNameFromFid (NewFileIdentifierDesc, FileName);
+      Status = GetFileNameFromFid (NewFileIdentifierDesc, ARRAY_SIZE (FileName), FileName);
       if (EFI_ERROR (Status)) {
         FreePool ((VOID *)FoundFile.FileIdentifierDesc);
         goto Error_Get_FileName;
@@ -456,7 +470,7 @@ UdfRead (
       FoundFile.FileIdentifierDesc  = NewFileIdentifierDesc;
       FoundFile.FileEntry           = NewFileEntryData;
 
-      Status = GetFileNameFromFid (FoundFile.FileIdentifierDesc, FileName);
+      Status = GetFileNameFromFid (FoundFile.FileIdentifierDesc, ARRAY_SIZE (FileName), FileName);
       if (EFI_ERROR (Status)) {
         goto Error_Get_FileName;
       }
@@ -487,6 +501,10 @@ UdfRead (
     PrivFileData->FilePosition++;
     Status = EFI_SUCCESS;
   } else if (IS_FID_DELETED_FILE (Parent->FileIdentifierDesc)) {
+    //
+    // Code should never reach here.
+    //
+    ASSERT (FALSE);
     Status = EFI_DEVICE_ERROR;
   }
 
@@ -704,7 +722,7 @@ UdfSetPosition (
     // set to the EOF.
     //
     if (Position == 0xFFFFFFFFFFFFFFFF) {
-      PrivFileData->FilePosition = PrivFileData->FileSize - 1;
+      PrivFileData->FilePosition = PrivFileData->FileSize;
     } else {
       PrivFileData->FilePosition = Position;
     }
@@ -744,19 +762,16 @@ UdfGetInfo (
   OUT     VOID               *Buffer
   )
 {
-  EFI_STATUS                  Status;
-  PRIVATE_UDF_FILE_DATA       *PrivFileData;
-  PRIVATE_UDF_SIMPLE_FS_DATA  *PrivFsData;
-  EFI_FILE_SYSTEM_INFO        *FileSystemInfo;
-  UINTN                       FileSystemInfoLength;
-  CHAR16                      *String;
-  UDF_FILE_SET_DESCRIPTOR     *FileSetDesc;
-  UINTN                       Index;
-  UINT8                       *OstaCompressed;
-  UINT8                       CompressionId;
-  UINT64                      VolumeSize;
-  UINT64                      FreeSpaceSize;
-  CHAR16                      VolumeLabel[64];
+  EFI_STATUS                    Status;
+  PRIVATE_UDF_FILE_DATA         *PrivFileData;
+  PRIVATE_UDF_SIMPLE_FS_DATA    *PrivFsData;
+  EFI_FILE_SYSTEM_INFO          *FileSystemInfo;
+  UINTN                         FileSystemInfoLength;
+  UINT64                        VolumeSize;
+  UINT64                        FreeSpaceSize;
+  EFI_FILE_SYSTEM_VOLUME_LABEL  *FileSystemVolumeLabel;
+  UINTN                         FileSystemVolumeLabelLength;
+  CHAR16                        VolumeLabel[64];
 
   if (This == NULL || InformationType == NULL || BufferSize == NULL ||
       (*BufferSize != 0 && Buffer == NULL)) {
@@ -778,42 +793,10 @@ UdfGetInfo (
       Buffer
       );
   } else if (CompareGuid (InformationType, &gEfiFileSystemInfoGuid)) {
-    String = VolumeLabel;
-
-    FileSetDesc = &PrivFsData->Volume.FileSetDesc;
-
-    OstaCompressed = &FileSetDesc->LogicalVolumeIdentifier[0];
-
-    CompressionId = OstaCompressed[0];
-    if (!IS_VALID_COMPRESSION_ID (CompressionId)) {
-      return EFI_VOLUME_CORRUPTED;
+    Status = GetVolumeLabel (&PrivFsData->Volume, ARRAY_SIZE (VolumeLabel), VolumeLabel);
+    if (EFI_ERROR (Status)) {
+      return Status;
     }
-
-    for (Index = 1; Index < 128; Index++) {
-      if (CompressionId == 16) {
-        *String = *(UINT8 *)(OstaCompressed + Index) << 8;
-        Index++;
-      } else {
-        *String = 0;
-      }
-
-      if (Index < 128) {
-        *String |= (CHAR16)(*(UINT8 *)(OstaCompressed + Index));
-      }
-
-      //
-      // Unlike FID Identifiers, Logical Volume Identifier is stored in a
-      // NULL-terminated OSTA compressed format, so we must check for the NULL
-      // character.
-      //
-      if (*String == L'\0') {
-        break;
-      }
-
-      String++;
-    }
-
-    *String = L'\0';
 
     FileSystemInfoLength = StrSize (VolumeLabel) +
                            sizeof (EFI_FILE_SYSTEM_INFO);
@@ -823,8 +806,11 @@ UdfGetInfo (
     }
 
     FileSystemInfo = (EFI_FILE_SYSTEM_INFO *)Buffer;
-    StrCpyS (FileSystemInfo->VolumeLabel, ARRAY_SIZE (VolumeLabel),
-             VolumeLabel);
+    StrCpyS (
+      FileSystemInfo->VolumeLabel,
+      (*BufferSize - SIZE_OF_EFI_FILE_SYSTEM_INFO) / sizeof (CHAR16),
+      VolumeLabel
+      );
     Status = GetVolumeSize (
       PrivFsData->BlockIo,
       PrivFsData->DiskIo,
@@ -844,6 +830,26 @@ UdfGetInfo (
     FileSystemInfo->FreeSpace   = FreeSpaceSize;
 
     *BufferSize = FileSystemInfoLength;
+    Status = EFI_SUCCESS;
+  } else if (CompareGuid (InformationType, &gEfiFileSystemVolumeLabelInfoIdGuid)) {
+    Status = GetVolumeLabel (&PrivFsData->Volume, ARRAY_SIZE (VolumeLabel), VolumeLabel);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    FileSystemVolumeLabelLength = StrSize (VolumeLabel) +
+                                  sizeof (EFI_FILE_SYSTEM_VOLUME_LABEL);
+    if (*BufferSize < FileSystemVolumeLabelLength) {
+      *BufferSize = FileSystemVolumeLabelLength;
+      return EFI_BUFFER_TOO_SMALL;
+    }
+
+    FileSystemVolumeLabel = (EFI_FILE_SYSTEM_VOLUME_LABEL *)Buffer;
+    StrCpyS (
+      FileSystemVolumeLabel->VolumeLabel,
+      (*BufferSize - SIZE_OF_EFI_FILE_SYSTEM_VOLUME_LABEL) / sizeof (CHAR16),
+      VolumeLabel
+      );
     Status = EFI_SUCCESS;
   }
 

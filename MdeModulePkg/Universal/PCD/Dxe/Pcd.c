@@ -109,6 +109,7 @@ EFI_GET_PCD_INFO_PROTOCOL  mEfiGetPcdInfoInstance = {
 };
 
 EFI_HANDLE mPcdHandle = NULL;
+UINTN      mVpdBaseAddress = 0;
 
 /**
   Main entry for PCD DXE driver.
@@ -174,6 +175,21 @@ PcdDxeInit (
     NULL,
     &Registration
     );
+
+  //
+  // Cache VpdBaseAddress in entry point for the following usage.
+  //
+
+  //
+  // PcdVpdBaseAddress64 is DynamicEx PCD only. So, DxePcdGet64Ex() is used to get its value.
+  //
+  mVpdBaseAddress = (UINTN) DxePcdGet64Ex (&gEfiMdeModulePkgTokenSpaceGuid, PcdToken (PcdVpdBaseAddress64));
+  if (mVpdBaseAddress == 0) {
+    //
+    // PcdVpdBaseAddress64 is not set, get value from PcdVpdBaseAddress.
+    //
+    mVpdBaseAddress = (UINTN) PcdGet32 (PcdVpdBaseAddress);
+  }
 
   return Status;
 }
@@ -890,6 +906,11 @@ DxePcdSet16Ex (
   IN UINT16            Value
   )
 {
+  //
+  // PcdSetNvStoreDefaultId should be set in PEI phase to take effect.
+  //
+  ASSERT (!(CompareGuid (Guid, &gEfiMdeModulePkgTokenSpaceGuid) &&
+            (ExTokenNumber == PcdToken(PcdSetNvStoreDefaultId))));
   return  ExSetValueWorker (ExTokenNumber, Guid, &Value, sizeof (Value));
 }
 

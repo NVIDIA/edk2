@@ -987,6 +987,7 @@ EfiKeyFiFoInsertOneKey (
       //
       EfiKeyFiFoForNotifyInsertOneKey (TerminalDevice->EfiKeyFiFoForNotify, Key);
       gBS->SignalEvent (TerminalDevice->KeyNotifyProcessEvent);
+      break;
     }
   }
   if (IsEfiKeyFiFoFull (TerminalDevice)) {
@@ -1200,31 +1201,6 @@ IsUnicodeFiFoFull (
   return FALSE;
 }
 
-/**
-  Count Unicode FIFO buffer.
-
-  @param  TerminalDevice       Terminal driver private structure
-
-  @return The count in bytes of Unicode FIFO.
-
-**/
-UINT8
-UnicodeFiFoGetKeyCount (
-  TERMINAL_DEV    *TerminalDevice
-  )
-{
-  UINT8 Tail;
-  UINT8 Head;
-
-  Tail  = TerminalDevice->UnicodeFiFo->Tail;
-  Head  = TerminalDevice->UnicodeFiFo->Head;
-
-  if (Tail >= Head) {
-    return (UINT8) (Tail - Head);
-  } else {
-    return (UINT8) (Tail + FIFO_MAX_NUMBER + 1 - Head);
-  }
-}
 
 /**
   Update the Unicode characters from a terminal input device into EFI Keys FIFO.

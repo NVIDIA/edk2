@@ -870,6 +870,18 @@
   # @Prompt Degrade 64-bit PCI MMIO BARs for legacy BIOS option ROMs
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDegradeResourceForOptionRom|TRUE|BOOLEAN|0x0001003a
 
+  ## Indicates if SDHCI should disable 26-bit support even on 4.10+ controllers<BR><BR>
+  #   TRUE  - 26-bit support is disabled.<BR>
+  #   FALSE - 26-bit support is enabled if controller is 4.10+.<BR>
+  # @Prompt SDHCI Disable 26-bit support.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSdhciDisable26bitSupport|FALSE|BOOLEAN|0xF0000000
+
+  ## Indicates if SDHCI should disable checking of CID<BR><BR>
+  #   TRUE  - CID check is skipped.<BR>
+  #   FALSE - CID check occurs.<BR>
+  # @Prompt SDHCI disable CID.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSdhciDisableCidSupport|FALSE|BOOLEAN|0xF0000001
+
 [PcdsFeatureFlag.IA32, PcdsFeatureFlag.ARM, PcdsFeatureFlag.AARCH64]
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDegradeResourceForOptionRom|FALSE|BOOLEAN|0x0001003a
 
@@ -932,7 +944,8 @@
   #  If enabled, accessing NULL address in UEFI or SMM code can be caught.<BR><BR>
   #    BIT0    - Enable NULL pointer detection for UEFI.<BR>
   #    BIT1    - Enable NULL pointer detection for SMM.<BR>
-  #    BIT2..6 - Reserved for future uses.<BR>
+  #    BIT2..5 - Reserved for future uses.<BR>
+  #    BIT6    - Enable non-stop mode.<BR>
   #    BIT7    - Disable NULL pointer detection just after EndOfDxe. <BR>
   #              This is a workaround for those unsolvable NULL access issues in
   #              OptionROM, boot loader, etc. It can also help to avoid unnecessary
@@ -953,6 +966,8 @@
   # before and after corresponding type of pages allocated if there's enough
   # free pages for all of them. The page allocation for the type related to
   # cleared bits keeps the same as ususal.
+  #
+  # This PCD is only valid if BIT0 and/or BIT2 are set in PcdHeapGuardPropertyMask.
   #
   # Below is bit mask for this PCD: (Order is same as UEFI spec)<BR>
   #  EfiReservedMemoryType             0x0000000000000001<BR>
@@ -983,6 +998,8 @@
   # if there's enough free memory for all of them. The pool allocation for the
   # type related to cleared bits keeps the same as ususal.
   #
+  # This PCD is only valid if BIT1 and/or BIT3 are set in PcdHeapGuardPropertyMask.
+  #
   # Below is bit mask for this PCD: (Order is same as UEFI spec)<BR>
   #  EfiReservedMemoryType             0x0000000000000001<BR>
   #  EfiLoaderCode                     0x0000000000000002<BR>
@@ -1006,14 +1023,23 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPoolType|0x0|UINT64|0x30001053
 
   ## This mask is to control Heap Guard behavior.
-  # Note that due to the limit of pool memory implementation and the alignment
-  # requirement of UEFI spec, BIT7 is a try-best setting which cannot guarantee
-  # that the returned pool is exactly adjacent to head guard page or tail guard
-  # page.
+  #
+  # Note:
+  #   a) Heap Guard is for debug purpose and should not be enabled in product
+  #      BIOS.
+  #   b) Due to the limit of pool memory implementation and the alignment
+  #      requirement of UEFI spec, BIT7 is a try-best setting which cannot
+  #      guarantee that the returned pool is exactly adjacent to head guard
+  #      page or tail guard page.
+  #   c) UEFI freed-memory guard and UEFI pool/page guard cannot be enabled
+  #      at the same time.
+  #
   #   BIT0 - Enable UEFI page guard.<BR>
   #   BIT1 - Enable UEFI pool guard.<BR>
   #   BIT2 - Enable SMM page guard.<BR>
   #   BIT3 - Enable SMM pool guard.<BR>
+  #   BIT4 - Enable UEFI freed-memory guard (Use-After-Free memory detection).<BR>
+  #   BIT6 - Enable non-stop mode.<BR>
   #   BIT7 - The direction of Guard Page for Pool Guard.
   #          0 - The returned pool is near the tail guard page.<BR>
   #          1 - The returned pool is near the head guard page.<BR>
@@ -1039,22 +1065,9 @@
   # @Prompt VPD base address.
   gEfiMdeModulePkgTokenSpaceGuid.PcdVpdBaseAddress|0x0|UINT32|0x00010010
 
-  ## Maximum number of FV is supported by PeiCore's dispatching.
-  # @Prompt Maximum number of FV supported by PeiCore.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreMaxFvSupported|6|UINT32|0x00010030
-
-  ## Maximum File count in every FV is supported by PeiCore's dispatching.
-  #  PeiCore supported File type includes PEIM, Combined PEIM and FV.
-  # @Prompt Maximum File count per FV supported by PeiCore.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreMaxPeimPerFv|32|UINT32|0x00010031
-
   ## Maximum stack size for PeiCore.
   # @Prompt Maximum stack size for PeiCore.
   gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreMaxPeiStackSize|0x20000|UINT32|0x00010032
-
-  ## Maximum PPI count is supported by PeiCore's PPI database.
-  # @Prompt Maximum PPI count supported by PeiCore.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreMaxPpiSupported|64|UINT32|0x00010033
 
   ## The maximum size of a single non-HwErr type variable.
   # @Prompt Maximum variable size.
@@ -1286,17 +1299,23 @@
   ## Set image protection policy. The policy is bitwise.
   #  If a bit is set, the image will be protected by DxeCore if it is aligned.
   #   The code section becomes read-only, and the data section becomes non-executable.
-  #  If a bit is clear, the image will not be protected.<BR><BR>
+  #  If a bit is clear, nothing will be done to image code/data sections.<BR><BR>
   #    BIT0       - Image from unknown device. <BR>
   #    BIT1       - Image from firmware volume.<BR>
+  #  <BR>
+  #  Note: If a bit is cleared, the data section could be still non-executable if
+  #  PcdDxeNxMemoryProtectionPolicy is enabled for EfiLoaderData, EfiBootServicesData
+  #  and/or EfiRuntimeServicesData.<BR>
+  #  <BR>
   # @Prompt Set image protection policy.
   # @ValidRange 0x80000002 | 0x00000000 - 0x0000001F
   gEfiMdeModulePkgTokenSpaceGuid.PcdImageProtectionPolicy|0x00000002|UINT32|0x00001047
 
   ## Set DXE memory protection policy. The policy is bitwise.
   #  If a bit is set, memory regions of the associated type will be mapped
-  #  non-executable.<BR><BR>
-  #
+  #  non-executable.<BR>
+  #  If a bit is cleared, nothing will be done to associated type of memory.<BR>
+  #  <BR>
   # Below is bit mask for this PCD: (Order is same as UEFI spec)<BR>
   #  EfiReservedMemoryType          0x0001<BR>
   #  EfiLoaderCode                  0x0002<BR>
@@ -1763,11 +1782,11 @@
 
   ## SMBIOS version.
   # @Prompt SMBIOS version.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdSmbiosVersion|0x0301|UINT16|0x00010055
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSmbiosVersion|0x0302|UINT16|0x00010055
 
   ## SMBIOS Docrev field in SMBIOS 3.0 (64-bit) Entry Point Structure.
   # @Prompt SMBIOS Docrev field in SMBIOS 3.0 (64-bit) Entry Point Structure.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdSmbiosDocRev|0x1|UINT8|0x0001006A
+  gEfiMdeModulePkgTokenSpaceGuid.PcdSmbiosDocRev|0x0|UINT8|0x0001006A
 
   ## SMBIOS produce method.
   #  BIT0 set indicates 32-bit entry point and table are produced.<BR>
@@ -1888,8 +1907,13 @@
   #  For the DxeIpl and the DxeCore are both X64, set NX for stack feature also require PcdDxeIplBuildPageTables be TRUE.<BR>
   #  For the DxeIpl and the DxeCore are both IA32 (PcdDxeIplSwitchToLongMode is FALSE), set NX for stack feature also require
   #  IA32 PAE is supported and Execute Disable Bit is available.<BR>
-  #   TRUE  - to set NX for stack.<BR>
-  #   FALSE - Not to set NX for stack.<BR>
+  #  <BR>
+  #   TRUE  - Set NX for stack.<BR>
+  #   FALSE - Do nothing for stack.<BR>
+  #  <BR>
+  #  Note: If this PCD is set to FALSE, NX could be still applied to stack due to PcdDxeNxMemoryProtectionPolicy enabled for
+  #  EfiBootServicesData.<BR>
+  #  <BR>
   # @Prompt Set NX for stack.
   gEfiMdeModulePkgTokenSpaceGuid.PcdSetNxForStack|FALSE|BOOLEAN|0x0001006f
 
@@ -1982,12 +2006,6 @@
   # @ValidList  0x80000001 | 0x0
   gEfiMdeModulePkgTokenSpaceGuid.PcdS3BootScriptTablePrivateSmmDataPtr|0x0|UINT64|0x00030001
 
-  ## This dynamic PCD hold an address to point to the memory of page table. The page table establishes a 1:1
-  #  Virtual to Physical mapping according to the processor physical address bits.
-  # @Prompt Identify Mapping Page Table pointer.
-  # @ValidList  0x80000001 | 0x0
-  gEfiMdeModulePkgTokenSpaceGuid.PcdIdentifyMappingPageTablePtr|0x0|UINT64|0x00030002
-
   ## This dynamic PCD holds the information if there is any test key used by the platform.
   # @Prompt If there is any test key used by the platform.
   gEfiMdeModulePkgTokenSpaceGuid.PcdTestKeyUsed|FALSE|BOOLEAN|0x00030003
@@ -2002,6 +2020,14 @@
   ## This dynamic PCD holds the DynamicHii PCD value. Its value is the auto generated.
   # @Prompt NV Storage Default Value Buffer
   gEfiMdeModulePkgTokenSpaceGuid.PcdNvStoreDefaultValueBuffer|{0x0}|VOID*|0x00030005
+
+  ## VPD type PCD allows a developer to point to an absolute physical address PcdVpdBaseAddress64
+  #  to store PCD value. It will be DynamicExDefault only.
+  #  It is used to set VPD region base address. So, it can't be DynamicExVpd PCD. Its value is
+  #  required to be accessed in PcdDxe driver entry point. So, its value must be set in PEI phase.
+  #  It can't depend on EFI variable service, and can't be DynamicExHii PCD.
+  # @Prompt 64bit VPD base address.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdVpdBaseAddress64|0x0|UINT64|0x00030006
 
 [UserExtensions.TianoCore."ExtraFiles"]
   MdeModulePkgExtra.uni

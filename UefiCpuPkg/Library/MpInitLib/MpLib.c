@@ -217,9 +217,9 @@ RestoreVolatileRegisters (
   CPUID_VERSION_INFO_EDX        VersionInfoEdx;
   IA32_TSS_DESCRIPTOR           *Tss;
 
-  AsmWriteCr0 (VolatileRegisters->Cr0);
   AsmWriteCr3 (VolatileRegisters->Cr3);
   AsmWriteCr4 (VolatileRegisters->Cr4);
+  AsmWriteCr0 (VolatileRegisters->Cr0);
 
   if (IsRestoreDr) {
     AsmCpuid (CPUID_VERSION_INFO, NULL, NULL, NULL, &VersionInfoEdx.Uint32);
@@ -696,7 +696,7 @@ ApWakeupFunction (
             }
           }
         }
-        SetApState (&CpuMpData->CpuData[ProcessorNumber], CpuStateIdle);
+        SetApState (&CpuMpData->CpuData[ProcessorNumber], CpuStateFinished);
       }
     }
 
@@ -1014,7 +1014,7 @@ WakeUpAP (
         CpuData = &CpuMpData->CpuData[Index];
         //
         // All AP(include disabled AP) will be woke up by INIT-SIPI-SIPI, but
-        // the AP procedure will be skipped for disabled AP because AP state 
+        // the AP procedure will be skipped for disabled AP because AP state
         // is not CpuStateReady.
         //
         if (GetApState (CpuData) == CpuStateDisabled && !WakeUpDisabledAps) {
@@ -1370,10 +1370,11 @@ CheckThisAP (
   //
   // If the AP finishes for StartupThisAP(), return EFI_SUCCESS.
   //
-  if (GetApState(CpuData) == CpuStateIdle) {
+  if (GetApState(CpuData) == CpuStateFinished) {
     if (CpuData->Finished != NULL) {
       *(CpuData->Finished) = TRUE;
     }
+    SetApState (CpuData, CpuStateIdle);
     return EFI_SUCCESS;
   } else {
     //
@@ -1434,9 +1435,10 @@ CheckAllAPs (
     // Only BSP and corresponding AP access this unit of CPU Data. This means the AP will not modify the
     // value of state after setting the it to CpuStateIdle, so BSP can safely make use of its value.
     //
-    if (GetApState(CpuData) == CpuStateIdle) {
+    if (GetApState(CpuData) == CpuStateFinished) {
       CpuMpData->RunningCount --;
       CpuMpData->CpuData[ProcessorNumber].Waiting = FALSE;
+      SetApState(CpuData, CpuStateIdle);
 
       //
       // If in Single Thread mode, then search for the next waiting AP for execution.
@@ -1558,7 +1560,7 @@ MpInitLibInitialize (
   ApLoopMode  = GetApLoopMode (&MonitorFilterSize);
 
   //
-  // Save BSP's Control registers for APs
+  // Save BSP's Control registers for APs.
   //
   SaveVolatileRegisters (&VolatileRegisters);
 
@@ -1656,6 +1658,10 @@ MpInitLibInitialize (
   //
   CopyMem ((VOID *)ApIdtBase, (VOID *)VolatileRegisters.Idtr.Base, VolatileRegisters.Idtr.Limit + 1);
   VolatileRegisters.Idtr.Base = ApIdtBase;
+  //
+  // Don't pass BSP's TR to APs to avoid AP init failure.
+  //
+  VolatileRegisters.Tr = 0;
   CopyMem (&CpuMpData->CpuData[0].VolatileRegisters, &VolatileRegisters, sizeof (VolatileRegisters));
   //
   // Set BSP basic information
@@ -1933,7 +1939,7 @@ SwitchBSPWorker (
   //
   // Wait for old BSP finished AP task
   //
-  while (GetApState (&CpuMpData->CpuData[CallerNumber]) != CpuStateIdle) {
+  while (GetApState (&CpuMpData->CpuData[CallerNumber]) != CpuStateFinished) {
     CpuPause ();
   }
 

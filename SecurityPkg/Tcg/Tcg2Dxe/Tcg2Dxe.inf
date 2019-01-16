@@ -2,9 +2,9 @@
 #  Produces Tcg2 protocol and measure boot environment
 #
 #  Spec Compliance Info:
-#    "TCG PC Client Platform Firmware Profile Specification for TPM Family 2.0 Level 00 Revision 00.21"
+#    "TCG PC Client Platform Firmware Profile Specification for TPM Family 2.0 Level 00 Revision 1.03 v51"
 #      along with
-#    "Errata for PC Client Specific Platform Firmware Profile Specification Version 1.0 Revision 0.21"
+#    "Errata for PC Client Specific Platform Firmware Profile Specification Version 1.0 Revision 1.03"
 #    "TCG EFI Protocol Specification" "Family 2.0" "Level 00 Revision 00.13"
 #
 #  This module will produce Tcg2 protocol and measure boot environment.
@@ -92,7 +92,6 @@
 [Protocols]
   gEfiTcg2ProtocolGuid                               ## PRODUCES
   gEfiTcg2FinalEventsTableGuid                       ## PRODUCES
-  gEfiAcpiTableProtocolGuid                          ## NOTIFY
   gEfiMpServiceProtocolGuid                          ## SOMETIMES_CONSUMES
   gEfiVariableWriteArchProtocolGuid                  ## NOTIFY
   gEfiResetNotificationProtocolGuid                  ## CONSUMES
@@ -101,12 +100,6 @@
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmPlatformClass                         ## SOMETIMES_CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdFirmwareDebuggerInitialized              ## SOMETIMES_CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid                          ## CONSUMES
-  gEfiSecurityPkgTokenSpaceGuid.PcdTpmBaseAddress                           ## SOMETIMES_CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemId                        ## SOMETIMES_CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemTableId                   ## SOMETIMES_CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemRevision                  ## SOMETIMES_CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorId                    ## SOMETIMES_CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorRevision              ## SOMETIMES_CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdStatusCodeSubClassTpmDevice              ## SOMETIMES_CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTcg2HashAlgorithmBitmap                  ## CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTcg2NumberOfPCRBanks                     ## CONSUMES

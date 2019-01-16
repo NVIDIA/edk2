@@ -165,6 +165,7 @@ GetFileSize (
   @param[in]   AsciiFilePath  Path of the file, ASCII encoded
   @param[in]   FileSize       Size of the file in number of bytes
   @param[in]   BlockSize      Value of the TFTP blksize option
+  @param[in]   WindowSize     Value of the TFTP window size option
   @param[out]  Data           Address where to store the address of the buffer
                               where the data of the file were downloaded in
                               case of success.
@@ -183,6 +184,7 @@ DownloadFile (
   IN   CONST CHAR8          *AsciiFilePath,
   IN   UINTN                FileSize,
   IN   UINT16               BlockSize,
+  IN   UINT16               WindowSize,
   OUT  VOID                 **Data
   );
 
@@ -216,7 +218,7 @@ EFI_MTFTP4_CONFIG_DATA DefaultMtftp4ConfigData = {
   { { 0, 0, 0, 0 } },               // GatewayIp         - Not relevant as UseDefaultSetting=TRUE
   { { 0, 0, 0, 0 } },               // ServerIp          - Not known yet
   69,                               // InitialServerPort - Standard TFTP server port
-  6,                                // TryCount          - Max number of retransmissions.
+  6,                                // TryCount          - The number of times to transmit request packets and wait for a response.
   4                                 // TimeoutValue      - Retransmission timeout in seconds.
 };
 
@@ -227,6 +229,7 @@ STATIC CONST SHELL_PARAM_ITEM ParamList[] = {
   {L"-c", TypeValue},
   {L"-t", TypeValue},
   {L"-s", TypeValue},
+  {L"-w", TypeValue},
   {NULL , TypeMax}
   };
 
@@ -239,7 +242,17 @@ STATIC CONST SHELL_PARAM_ITEM ParamList[] = {
 ///
 #define MTFTP_MIN_BLKSIZE          8
 #define MTFTP_MAX_BLKSIZE          65464
-
+///
+/// The default windowsize (1) of tftp.
+///
+#define MTFTP_DEFAULT_WINDOWSIZE   1
+///
+/// The valid range of window size option.
+/// Note that: RFC 7440 does not mention max window size value, but for the
+/// stability reason, the value is limited to 64.
+///
+#define MTFTP_MIN_WINDOWSIZE       1
+#define MTFTP_MAX_WINDOWSIZE       64
 
 /**
   Function for 'tftp' command.
@@ -288,6 +301,7 @@ RunTftp (
   VOID                    *Data;
   SHELL_FILE_HANDLE       FileHandle;
   UINT16                  BlockSize;
+  UINT16                  WindowSize;
 
   ShellStatus         = SHELL_INVALID_PARAMETER;
   ProblemParam        = NULL;
@@ -297,6 +311,7 @@ RunTftp (
   FileSize            = 0;
   DataSize            = 0;
   BlockSize           = MTFTP_DEFAULT_BLKSIZE;
+  WindowSize          = MTFTP_DEFAULT_WINDOWSIZE;
 
   //
   // Initialize the Shell library (we must be in non-auto-init...)
@@ -406,6 +421,10 @@ RunTftp (
     if (!StringToUint16 (ValueStr, &Mtftp4ConfigData.TryCount)) {
       goto Error;
     }
+
+    if (Mtftp4ConfigData.TryCount == 0) {
+      Mtftp4ConfigData.TryCount = 6;
+    }
   }
 
   ValueStr = ShellCommandLineGetValue (CheckPackage, L"-t");
@@ -428,6 +447,20 @@ RunTftp (
       goto Error;
     }
     if (BlockSize < MTFTP_MIN_BLKSIZE || BlockSize > MTFTP_MAX_BLKSIZE) {
+      ShellPrintHiiEx (
+        -1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV),
+        mTftpHiiHandle, L"tftp", ValueStr
+      );
+      goto Error;
+    }
+  }
+
+  ValueStr = ShellCommandLineGetValue (CheckPackage, L"-w");
+  if (ValueStr != NULL) {
+    if (!StringToUint16 (ValueStr, &WindowSize)) {
+      goto Error;
+    }
+    if (WindowSize < MTFTP_MIN_WINDOWSIZE || WindowSize > MTFTP_MAX_WINDOWSIZE) {
       ShellPrintHiiEx (
         -1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV),
         mTftpHiiHandle, L"tftp", ValueStr
@@ -510,7 +543,7 @@ RunTftp (
       goto NextHandle;
     }
 
-    Status = DownloadFile (Mtftp4, RemoteFilePath, AsciiRemoteFilePath, FileSize, BlockSize, &Data);
+    Status = DownloadFile (Mtftp4, RemoteFilePath, AsciiRemoteFilePath, FileSize, BlockSize, WindowSize, &Data);
     if (EFI_ERROR (Status)) {
       ShellPrintHiiEx (
         -1, -1, NULL, STRING_TOKEN (STR_TFTP_ERR_DOWNLOAD),
@@ -878,6 +911,7 @@ Error :
   @param[in]   AsciiFilePath  Path of the file, ASCII encoded
   @param[in]   FileSize       Size of the file in number of bytes
   @param[in]   BlockSize      Value of the TFTP blksize option
+  @param[in]   WindowSize     Value of the TFTP window size option
   @param[out]  Data           Address where to store the address of the buffer
                               where the data of the file were downloaded in
                               case of success.
@@ -896,6 +930,7 @@ DownloadFile (
   IN   CONST CHAR8          *AsciiFilePath,
   IN   UINTN                FileSize,
   IN   UINT16               BlockSize,
+  IN   UINT16               WindowSize,
   OUT  VOID                 **Data
   )
 {
@@ -904,8 +939,10 @@ DownloadFile (
   VOID                  *Buffer;
   DOWNLOAD_CONTEXT      *TftpContext;
   EFI_MTFTP4_TOKEN      Mtftp4Token;
-  EFI_MTFTP4_OPTION     ReqOpt;
-  UINT8                 OptBuf[10];
+  UINT8                 BlksizeBuf[10];
+  UINT8                 WindowsizeBuf[10];
+
+  ZeroMem (&Mtftp4Token, sizeof (EFI_MTFTP4_TOKEN));
 
   // Downloaded file can be large. BS.AllocatePages() is more faster
   // than AllocatePool() and avoid fragmentation.
@@ -932,19 +969,30 @@ DownloadFile (
   TftpContext->DownloadedNbOfBytes   = 0;
   TftpContext->LastReportedNbOfBytes = 0;
 
-  ZeroMem (&Mtftp4Token, sizeof (EFI_MTFTP4_TOKEN));
   Mtftp4Token.Filename    = (UINT8*)AsciiFilePath;
   Mtftp4Token.BufferSize  = FileSize;
   Mtftp4Token.Buffer      = Buffer;
   Mtftp4Token.CheckPacket = CheckPacket;
   Mtftp4Token.Context     = (VOID*)TftpContext;
-  if (BlockSize != MTFTP_DEFAULT_BLKSIZE) {
-    ReqOpt.OptionStr = (UINT8 *) "blksize";
-    AsciiSPrint ((CHAR8 *)OptBuf, sizeof (OptBuf), "%d", BlockSize);
-    ReqOpt.ValueStr  = OptBuf;
+  Mtftp4Token.OptionCount = 0;
+  Mtftp4Token.OptionList  = AllocatePool (sizeof (EFI_MTFTP4_OPTION) * 2);
+  if (Mtftp4Token.OptionList == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Error;
+  }
 
-    Mtftp4Token.OptionCount = 1;
-    Mtftp4Token.OptionList  = &ReqOpt;
+  if (BlockSize != MTFTP_DEFAULT_BLKSIZE) {
+    Mtftp4Token.OptionList[Mtftp4Token.OptionCount].OptionStr = (UINT8 *) "blksize";
+    AsciiSPrint ((CHAR8 *) BlksizeBuf, sizeof (BlksizeBuf), "%d", BlockSize);
+    Mtftp4Token.OptionList[Mtftp4Token.OptionCount].ValueStr  = BlksizeBuf;
+    Mtftp4Token.OptionCount ++;
+  }
+
+  if (WindowSize != MTFTP_DEFAULT_WINDOWSIZE) {
+    Mtftp4Token.OptionList[Mtftp4Token.OptionCount].OptionStr = (UINT8 *) "windowsize";
+    AsciiSPrint ((CHAR8 *) WindowsizeBuf, sizeof (WindowsizeBuf), "%d", WindowSize);
+    Mtftp4Token.OptionList[Mtftp4Token.OptionCount].ValueStr  = WindowsizeBuf;
+    Mtftp4Token.OptionCount ++;
   }
 
   ShellPrintHiiEx (
@@ -960,8 +1008,12 @@ DownloadFile (
 
 Error :
 
-  if (TftpContext == NULL) {
+  if (TftpContext != NULL) {
     FreePool (TftpContext);
+  }
+
+  if (Mtftp4Token.OptionList != NULL) {
+    FreePool (Mtftp4Token.OptionList);
   }
 
   if (EFI_ERROR (Status)) {

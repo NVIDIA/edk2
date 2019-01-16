@@ -52,6 +52,10 @@ GetBarResource (
 
   BarIndex -= (UINT8)Dev->BarOffset;
 
+  if (BarIndex >= Dev->BarCount) {
+    return EFI_UNSUPPORTED;
+  }
+
   for (Desc = Dev->Device->Resources;
        Desc->Desc != ACPI_END_TAG_DESCRIPTOR;
        Desc = (VOID *)((UINT8 *)Desc + Desc->Len + 3)) {
@@ -597,6 +601,19 @@ CoherentPciIoMap (
   EFI_STATUS                            Status;
   NON_DISCOVERABLE_PCI_DEVICE_MAP_INFO  *MapInfo;
 
+  if (Operation != EfiPciIoOperationBusMasterRead &&
+      Operation != EfiPciIoOperationBusMasterWrite &&
+      Operation != EfiPciIoOperationBusMasterCommonBuffer) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (HostAddress   == NULL ||
+      NumberOfBytes == NULL ||
+      DeviceAddress == NULL ||
+      Mapping       == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
   //
   // If HostAddress exceeds 4 GB, and this device does not support 64-bit DMA
   // addressing, we need to allocate a bounce buffer and copy over the data.
@@ -718,6 +735,11 @@ CoherentPciIoAllocateBuffer (
   if ((Attributes & ~(EFI_PCI_ATTRIBUTE_MEMORY_WRITE_COMBINE |
                       EFI_PCI_ATTRIBUTE_MEMORY_CACHED)) != 0) {
     return EFI_UNSUPPORTED;
+  }
+
+  if ((MemoryType != EfiBootServicesData) &&
+      (MemoryType != EfiRuntimeServicesData)) {
+    return EFI_INVALID_PARAMETER;
   }
 
   //
@@ -877,6 +899,10 @@ NonCoherentPciIoAllocateBuffer (
   NON_DISCOVERABLE_DEVICE_UNCACHED_ALLOCATION *Alloc;
   VOID                                        *AllocAddress;
 
+  if (HostAddress == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
   Dev = NON_DISCOVERABLE_PCI_DEVICE_FROM_PCI_IO(This);
 
   Status = CoherentPciIoAllocateBuffer (This, Type, MemoryType, Pages,
@@ -994,6 +1020,19 @@ NonCoherentPciIoMap (
   VOID                                  *AllocAddress;
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR       GcdDescriptor;
   BOOLEAN                               Bounce;
+
+  if (HostAddress   == NULL ||
+      NumberOfBytes == NULL ||
+      DeviceAddress == NULL ||
+      Mapping       == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (Operation != EfiPciIoOperationBusMasterRead &&
+      Operation != EfiPciIoOperationBusMasterWrite &&
+      Operation != EfiPciIoOperationBusMasterCommonBuffer) {
+    return EFI_INVALID_PARAMETER;
+  }
 
   MapInfo = AllocatePool (sizeof *MapInfo);
   if (MapInfo == NULL) {
@@ -1181,6 +1220,8 @@ PciIoGetLocation (
   OUT  UINTN                *FunctionNumber
   )
 {
+  NON_DISCOVERABLE_PCI_DEVICE         *Dev;
+
   if (SegmentNumber == NULL ||
       BusNumber == NULL ||
       DeviceNumber == NULL ||
@@ -1188,9 +1229,11 @@ PciIoGetLocation (
     return EFI_INVALID_PARAMETER;
   }
 
-  *SegmentNumber  = 0;
-  *BusNumber      = 0xff;
-  *DeviceNumber   = 0;
+  Dev = NON_DISCOVERABLE_PCI_DEVICE_FROM_PCI_IO(This);
+
+  *SegmentNumber  = 0xff;
+  *BusNumber      = Dev->UniqueId >> 5;
+  *DeviceNumber   = Dev->UniqueId & 0x1f;
   *FunctionNumber = 0;
 
   return EFI_SUCCESS;
@@ -1228,7 +1271,14 @@ PciIoAttributes (
   NON_DISCOVERABLE_PCI_DEVICE   *Dev;
   BOOLEAN                       Enable;
 
+  #define DEV_SUPPORTED_ATTRIBUTES \
+    (EFI_PCI_DEVICE_ENABLE | EFI_PCI_IO_ATTRIBUTE_DUAL_ADDRESS_CYCLE)
+
   Dev = NON_DISCOVERABLE_PCI_DEVICE_FROM_PCI_IO(This);
+
+  if ((Attributes & (~(DEV_SUPPORTED_ATTRIBUTES))) != 0) {
+    return EFI_UNSUPPORTED;
+  }
 
   Enable = FALSE;
   switch (Operation) {
@@ -1243,7 +1293,7 @@ PciIoAttributes (
     if (Result == NULL) {
       return EFI_INVALID_PARAMETER;
     }
-    *Result = EFI_PCI_DEVICE_ENABLE | EFI_PCI_IO_ATTRIBUTE_DUAL_ADDRESS_CYCLE;
+    *Result = DEV_SUPPORTED_ATTRIBUTES;
     break;
 
   case EfiPciIoAttributeOperationEnable:

@@ -50,7 +50,6 @@
 [LibraryClasses]
   BaseMemoryLib
   DebugLib
-  BaseLib
   PlatformSecLib
   PcdLib
   DebugAgentLib

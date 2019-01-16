@@ -194,9 +194,7 @@
 !endif
   VarCheckLib|MdeModulePkg/Library/VarCheckLib/VarCheckLib.inf
 
-!if $(NETWORK_IP6_ENABLE) == TRUE
   TcpIoLib|MdeModulePkg/Library/DxeTcpIoLib/DxeTcpIoLib.inf
-!endif
 
 !if $(HTTP_BOOT_ENABLE) == TRUE
   HttpLib|MdeModulePkg/Library/DxeHttpLib/DxeHttpLib.inf
@@ -444,8 +442,6 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeMemorySize|1
   gEfiMdeModulePkgTokenSpaceGuid.PcdResetOnMemoryTypeInformationChange|FALSE
   gEfiMdePkgTokenSpaceGuid.PcdMaximumGuidedExtractHandler|0x10
-  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreMaxFvSupported|6
-  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreMaxPeimPerFv|32
 !if ($(FD_SIZE_IN_KB) == 1024) || ($(FD_SIZE_IN_KB) == 2048)
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxVariableSize|0x2000
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxAuthVariableSize|0x2800
@@ -515,9 +511,7 @@
   gEfiNetworkPkgTokenSpaceGuid.PcdAllowHttpConnections|TRUE
 !endif
 
-!ifndef $(USE_OLD_SHELL)
   gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdShellFile|{ 0x83, 0xA5, 0x04, 0x7C, 0x3E, 0x9E, 0x1C, 0x4F, 0xAD, 0x65, 0xE0, 0x52, 0x68, 0xD0, 0xB4, 0xD1 }
-!endif
 
 !if $(SMM_REQUIRE) == TRUE
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmStackSize|0x4000
@@ -641,6 +635,8 @@
       HashLib|SecurityPkg/Library/HashLibBaseCryptoRouter/HashLibBaseCryptoRouterPei.inf
       NULL|SecurityPkg/Library/HashInstanceLibSha1/HashInstanceLibSha1.inf
       NULL|SecurityPkg/Library/HashInstanceLibSha256/HashInstanceLibSha256.inf
+      NULL|SecurityPkg/Library/HashInstanceLibSha384/HashInstanceLibSha384.inf
+      NULL|SecurityPkg/Library/HashInstanceLibSha512/HashInstanceLibSha512.inf
   }
 !endif
 
@@ -795,18 +791,14 @@
   MdeModulePkg/Universal/Network/Ip4Dxe/Ip4Dxe.inf
   MdeModulePkg/Universal/Network/Mtftp4Dxe/Mtftp4Dxe.inf
   MdeModulePkg/Universal/Network/Udp4Dxe/Udp4Dxe.inf
+  NetworkPkg/UefiPxeBcDxe/UefiPxeBcDxe.inf
+  NetworkPkg/TcpDxe/TcpDxe.inf
+  NetworkPkg/IScsiDxe/IScsiDxe.inf
 !if $(NETWORK_IP6_ENABLE) == TRUE
   NetworkPkg/Ip6Dxe/Ip6Dxe.inf
-  NetworkPkg/TcpDxe/TcpDxe.inf
   NetworkPkg/Udp6Dxe/Udp6Dxe.inf
   NetworkPkg/Dhcp6Dxe/Dhcp6Dxe.inf
   NetworkPkg/Mtftp6Dxe/Mtftp6Dxe.inf
-  NetworkPkg/UefiPxeBcDxe/UefiPxeBcDxe.inf
-  NetworkPkg/IScsiDxe/IScsiDxe.inf
-!else
-  MdeModulePkg/Universal/Network/Tcp4Dxe/Tcp4Dxe.inf
-  MdeModulePkg/Universal/Network/UefiPxeBcDxe/UefiPxeBcDxe.inf
-  MdeModulePkg/Universal/Network/IScsiDxe/IScsiDxe.inf
 !endif
 !if $(HTTP_BOOT_ENABLE) == TRUE
   NetworkPkg/DnsDxe/DnsDxe.inf
@@ -842,11 +834,12 @@
   OvmfPkg/Csm/Csm16/Csm16.inf
 !endif
 
-!ifndef $(USE_OLD_SHELL)
+!if $(TOOL_CHAIN_TAG) != "XCODE5"
   ShellPkg/DynamicCommand/TftpDynamicCommand/TftpDynamicCommand.inf {
     <PcdsFixedAtBuild>
       gEfiShellPkgTokenSpaceGuid.PcdShellLibAutoInitialize|FALSE
   }
+!endif
   ShellPkg/Application/Shell/Shell.inf {
     <LibraryClasses>
       ShellCommandLib|ShellPkg/Library/UefiShellCommandLib/UefiShellCommandLib.inf
@@ -869,7 +862,6 @@
       gEfiShellPkgTokenSpaceGuid.PcdShellLibAutoInitialize|FALSE
       gEfiMdePkgTokenSpaceGuid.PcdUefiLibMaxPrintBufferSize|8000
   }
-!endif
 
 !if $(SECURE_BOOT_ENABLE) == TRUE
   SecurityPkg/VariableAuthenticated/SecureBootConfigDxe/SecureBootConfigDxe.inf
@@ -944,5 +936,7 @@
       HashLib|SecurityPkg/Library/HashLibBaseCryptoRouter/HashLibBaseCryptoRouterDxe.inf
       NULL|SecurityPkg/Library/HashInstanceLibSha1/HashInstanceLibSha1.inf
       NULL|SecurityPkg/Library/HashInstanceLibSha256/HashInstanceLibSha256.inf
+      NULL|SecurityPkg/Library/HashInstanceLibSha384/HashInstanceLibSha384.inf
+      NULL|SecurityPkg/Library/HashInstanceLibSha512/HashInstanceLibSha512.inf
   }
 !endif

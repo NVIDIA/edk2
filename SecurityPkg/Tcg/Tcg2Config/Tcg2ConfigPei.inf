@@ -43,7 +43,6 @@
 [LibraryClasses]
   BaseLib
   BaseMemoryLib
-  MemoryAllocationLib
   PeiServicesLib
   PeimEntryPoint
   DebugLib
@@ -67,7 +66,6 @@
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid                 ## PRODUCES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmInitializationPolicy         ## PRODUCES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmAutoDetection                ## CONSUMES
-  gEfiSecurityPkgTokenSpaceGuid.PcdTpmBaseAddress                  ## SOMETIMES_CONSUMES
 
 [Depex]
   gEfiPeiMasterBootModePpiGuid AND

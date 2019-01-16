@@ -16,8 +16,10 @@ from Common.DataType import *
 from Common.Misc import *
 from types import *
 from collections import OrderedDict
-
+from CommonDataClass.DataClass import *
 from Workspace.BuildClassObject import PackageBuildClassObject, StructurePcd, PcdClassObject
+from Common.GlobalData import gGlobalDefines, gEcpSource
+from re import compile
 
 ## Platform build information from DEC file
 #
@@ -99,37 +101,23 @@ class DecBuildData(PackageBuildClassObject):
         self._CommonIncludes    = None
         self._LibraryClasses    = None
         self._Pcds              = None
-        self.__Macros           = None
+        self._MacroDict         = None
         self._PrivateProtocols  = None
         self._PrivatePpis       = None
         self._PrivateGuids      = None
         self._PrivateIncludes   = None
 
     ## Get current effective macros
-    def _GetMacros(self):
-        if self.__Macros is None:
-            self.__Macros = {}
-            self.__Macros.update(GlobalData.gGlobalDefines)
-        return self.__Macros
+    @property
+    def _Macros(self):
+        if self._MacroDict is None:
+            self._MacroDict = dict(gGlobalDefines)
+        return self._MacroDict
 
     ## Get architecture
-    def _GetArch(self):
+    @property
+    def Arch(self):
         return self._Arch
-
-    ## Set architecture
-    #
-    #   Changing the default ARCH to another may affect all other information
-    # because all information in a platform may be ARCH-related. That's
-    # why we need to clear all internal used members, in order to cause all
-    # information to be re-retrieved.
-    #
-    #   @param  Value   The value of ARCH
-    #
-    def _SetArch(self, Value):
-        if self._Arch == Value:
-            return
-        self._Arch = Value
-        self._Clear()
 
     ## Retrieve all information in [Defines] section
     #
@@ -144,7 +132,8 @@ class DecBuildData(PackageBuildClassObject):
         self._Header = 'DUMMY'
 
     ## Retrieve package name
-    def _GetPackageName(self):
+    @property
+    def PackageName(self):
         if self._PackageName is None:
             if self._Header is None:
                 self._GetHeaderInfo()
@@ -153,7 +142,8 @@ class DecBuildData(PackageBuildClassObject):
         return self._PackageName
 
     ## Retrieve file guid
-    def _GetFileGuid(self):
+    @property
+    def PackageName(self):
         if self._Guid is None:
             if self._Header is None:
                 self._GetHeaderInfo()
@@ -162,7 +152,8 @@ class DecBuildData(PackageBuildClassObject):
         return self._Guid
 
     ## Retrieve package version
-    def _GetVersion(self):
+    @property
+    def Version(self):
         if self._Version is None:
             if self._Header is None:
                 self._GetHeaderInfo()
@@ -171,7 +162,8 @@ class DecBuildData(PackageBuildClassObject):
         return self._Version
 
     ## Retrieve protocol definitions (name/value pairs)
-    def _GetProtocol(self):
+    @property
+    def Protocols(self):
         if self._Protocols is None:
             #
             # tdict is a special kind of dict, used for selecting correct
@@ -213,7 +205,8 @@ class DecBuildData(PackageBuildClassObject):
         return self._Protocols
 
     ## Retrieve PPI definitions (name/value pairs)
-    def _GetPpi(self):
+    @property
+    def Ppis(self):
         if self._Ppis is None:
             #
             # tdict is a special kind of dict, used for selecting correct
@@ -255,7 +248,8 @@ class DecBuildData(PackageBuildClassObject):
         return self._Ppis
 
     ## Retrieve GUID definitions (name/value pairs)
-    def _GetGuid(self):
+    @property
+    def Guids(self):
         if self._Guids is None:
             #
             # tdict is a special kind of dict, used for selecting correct
@@ -297,7 +291,8 @@ class DecBuildData(PackageBuildClassObject):
         return self._Guids
 
     ## Retrieve public include paths declared in this package
-    def _GetInclude(self):
+    @property
+    def Includes(self):
         if self._Includes is None or self._CommonIncludes is None:
             self._CommonIncludes = []
             self._Includes = []
@@ -305,7 +300,7 @@ class DecBuildData(PackageBuildClassObject):
             PublicInclues = []
             RecordList = self._RawData[MODEL_EFI_INCLUDE, self._Arch]
             Macros = self._Macros
-            Macros["EDK_SOURCE"] = GlobalData.gEcpSource
+            Macros["EDK_SOURCE"] = gEcpSource
             for Record in RecordList:
                 File = PathClass(NormPath(Record[0], Macros), self._PackageDir, Arch=self._Arch)
                 LineNo = Record[-1]
@@ -332,7 +327,8 @@ class DecBuildData(PackageBuildClassObject):
         return self._Includes
 
     ## Retrieve library class declarations (not used in build at present)
-    def _GetLibraryClass(self):
+    @property
+    def LibraryClasses(self):
         if self._LibraryClasses is None:
             #
             # tdict is a special kind of dict, used for selecting correct
@@ -356,7 +352,8 @@ class DecBuildData(PackageBuildClassObject):
         return self._LibraryClasses
 
     ## Retrieve PCD declarations
-    def _GetPcds(self):
+    @property
+    def Pcds(self):
         if self._Pcds is None:
             self._Pcds = OrderedDict()
             self._Pcds.update(self._GetPcd(MODEL_PCD_FIXED_AT_BUILD))
@@ -366,6 +363,20 @@ class DecBuildData(PackageBuildClassObject):
             self._Pcds.update(self._GetPcd(MODEL_PCD_DYNAMIC_EX))
         return self._Pcds
 
+    def ParsePcdName(self,TokenCName):
+        TokenCName = TokenCName.strip()
+        if TokenCName.startswith("["):
+            if "." in TokenCName:
+                Demesionattr = TokenCName[:TokenCName.index(".")]
+                Fields = TokenCName[TokenCName.index(".")+1:]
+            else:
+                Demesionattr = TokenCName
+                Fields = ""
+        else:
+            Demesionattr = ""
+            Fields = TokenCName
+
+        return Demesionattr,Fields
 
     def ProcessStructurePcd(self, StructurePcdRawDataSet):
         s_pcd_set = OrderedDict()
@@ -379,6 +390,8 @@ class DecBuildData(PackageBuildClassObject):
             dep_pkgs = []
             struct_pcd = StructurePcd()
             for item, LineNo in s_pcd_set[pcdname]:
+                if not item.TokenCName:
+                    continue
                 if "<HeaderFiles>" in item.TokenCName:
                     struct_pcd.StructuredPcdIncludeFile.append(item.DefaultValue)
                 elif "<Packages>" in item.TokenCName:
@@ -391,7 +404,8 @@ class DecBuildData(PackageBuildClassObject):
                     struct_pcd.PkgPath = self.MetaFile.File
                     struct_pcd.SetDecDefaultValue(item.DefaultValue)
                 else:
-                    struct_pcd.AddDefaultValue(item.TokenCName, item.DefaultValue, self.MetaFile.File, LineNo)
+                    DemesionAttr, Fields = self.ParsePcdName(item.TokenCName)
+                    struct_pcd.AddDefaultValue(Fields, item.DefaultValue, self.MetaFile.File, LineNo,DemesionAttr)
 
             struct_pcd.PackageDecs = dep_pkgs
             str_pcd_set.append(struct_pcd)
@@ -416,6 +430,7 @@ class DecBuildData(PackageBuildClassObject):
             if not (PcdCName, TokenSpaceGuid) in PcdSet:
                 PcdSet.append((PcdCName, TokenSpaceGuid))
 
+        DefinitionPosition = {}
         for PcdCName, TokenSpaceGuid in PcdSet:
             #
             # limit the ARCH to self._Arch, if no self._Arch found, tdict
@@ -442,7 +457,7 @@ class DecBuildData(PackageBuildClassObject):
                                         list(validlists),
                                         list(expressions)
                                         )
-            PcdObj.DefinitionPosition = (self.MetaFile.File, LineNo)
+            DefinitionPosition[PcdObj] = (self.MetaFile.File, LineNo)
             if "." in TokenSpaceGuid:
                 StrPcdSet.append((PcdObj, LineNo))
             else:
@@ -451,32 +466,17 @@ class DecBuildData(PackageBuildClassObject):
         StructurePcds = self.ProcessStructurePcd(StrPcdSet)
         for pcd in StructurePcds:
             Pcds[pcd.TokenCName, pcd.TokenSpaceGuidCName, self._PCD_TYPE_STRING_[Type]] = pcd
-        StructPattern = re.compile(r'[_a-zA-Z][0-9A-Za-z_]*$')
+        StructPattern = compile(r'[_a-zA-Z][0-9A-Za-z_]*$')
         for pcd in Pcds.values():
             if pcd.DatumType not in [TAB_UINT8, TAB_UINT16, TAB_UINT32, TAB_UINT64, TAB_VOID, "BOOLEAN"]:
-                if StructPattern.match(pcd.DatumType) is None:
-                    EdkLogger.error('build', FORMAT_INVALID, "DatumType only support BOOLEAN, UINT8, UINT16, UINT32, UINT64, VOID* or a valid struct name.", pcd.DefinitionPosition[0], pcd.DefinitionPosition[1])
-        for struct_pcd in Pcds.values():
-            if isinstance(struct_pcd, StructurePcd) and not struct_pcd.StructuredPcdIncludeFile:
-                EdkLogger.error("build", PCD_STRUCTURE_PCD_ERROR, "The structure Pcd %s.%s header file is not found in %s line %s \n" % (struct_pcd.TokenSpaceGuidCName, struct_pcd.TokenCName, struct_pcd.DefinitionPosition[0], struct_pcd.DefinitionPosition[1] ))
-
+                if not pcd.IsAggregateDatumType():
+                    EdkLogger.error('build', FORMAT_INVALID, "DatumType only support BOOLEAN, UINT8, UINT16, UINT32, UINT64, VOID* or a valid struct name.", DefinitionPosition[pcd][0], DefinitionPosition[pcd][1])
+                elif not pcd.IsArray() and not pcd.StructuredPcdIncludeFile:
+                    EdkLogger.error("build", PCD_STRUCTURE_PCD_ERROR, "The structure Pcd %s.%s header file is not found in %s line %s \n" % (pcd.TokenSpaceGuidCName, pcd.TokenCName, pcd.DefinitionPosition[0], pcd.DefinitionPosition[1] ))
         return Pcds
+
     @property
     def CommonIncludes(self):
         if self._CommonIncludes is None:
             self.Includes
         return self._CommonIncludes
-
-
-    _Macros = property(_GetMacros)
-    Arch = property(_GetArch, _SetArch)
-    PackageName = property(_GetPackageName)
-    Guid = property(_GetFileGuid)
-    Version = property(_GetVersion)
-
-    Protocols = property(_GetProtocol)
-    Ppis = property(_GetPpi)
-    Guids = property(_GetGuid)
-    Includes = property(_GetInclude)
-    LibraryClasses = property(_GetLibraryClass)
-    Pcds = property(_GetPcds)

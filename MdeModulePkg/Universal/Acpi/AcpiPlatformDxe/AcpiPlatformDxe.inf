@@ -24,7 +24,7 @@
 #
 # The following information is for reference only and not required by the build tools.
 #
-#  VALID_ARCHITECTURES           = IA32 X64 IPF EBC
+#  VALID_ARCHITECTURES           = IA32 X64 EBC
 #
 
 [Sources]
@@ -36,15 +36,14 @@
 
 [LibraryClasses]
   UefiLib
-  DxeServicesLib
   PcdLib
-  BaseMemoryLib
   DebugLib
   UefiBootServicesTableLib
   UefiDriverEntryPoint
 
 [Protocols]
   gEfiAcpiTableProtocolGuid                     ## CONSUMES
+  gEfiFirmwareVolume2ProtocolGuid               ## CONSUMES
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiTableStorageFile    ## CONSUMES

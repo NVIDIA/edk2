@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2007 - 2015, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 #  Portions copyright (c) 2008 - 2010, Apple Inc. All rights reserved.<BR>
 #  This program and the accompanying materials
 #  are licensed and made available under the terms and conditions of the BSD License
@@ -62,6 +62,7 @@
 #   $(BIN_DIR)          Common directory for executable files
 #   $(FV_DIR)           Directory to store flash image files
 #   $(INC)              Search path of current module
+#   $(NASM_INC)         Search nasm file path of current module
 #   $(INC_LIST)         A file containing search pathes of current module
 #   $(LIBS)             Static library files of current module
 #   $(<tool>_FLAGS)     Tools flags of current module
@@ -225,7 +226,7 @@
     <Command>
         "$(PP)" $(PP_FLAGS) $(INC) ${src} > ${d_path}(+)${s_base}.i
         Trim --trim-long --source-code -o ${d_path}(+)${s_base}.iii ${d_path}(+)${s_base}.i
-        "$(NASM)" -I${s_path}(+) $(NASM_FLAGS) -o $dst ${d_path}(+)${s_base}.iii
+        "$(NASM)" -I${s_path}(+) $(NASM_INC) $(NASM_FLAGS) -o $dst ${d_path}(+)${s_base}.iii
 
 [Device-Tree-Source-File]
     <InputFile>
@@ -269,6 +270,7 @@
         "$(SLINK)" $(SLINK_FLAGS) /OUT:${dst} @$(OBJECT_FILES_LIST)
 
     <Command.GCC, Command.GCCLD>
+        $(RM) ${dst}
         "$(SLINK)" cr ${dst} $(SLINK_FLAGS) @$(OBJECT_FILES_LIST)
     
     <Command.RVCT>
@@ -477,8 +479,8 @@
     <Command.XCODE>        
         "$(ASLCC)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj  $(ASLCC_FLAGS) $(INC) ${src}
         "$(ASLDLINK)" -o $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(ASLDLINK_FLAGS) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.obj
-        "$(MTOC)" -subsystem $(MODULE_TYPE)  $(MTOC_FLAGS) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.efi
-        "$(GENFW)" -o ${dst} -c $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.efi $(GENFW_FLAGS)
+        "$(MTOC)" -subsystem $(MODULE_TYPE)  $(MTOC_FLAGS) $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.dll $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.pecoff
+        "$(GENFW)" -o ${dst} -c $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.pecoff $(GENFW_FLAGS)
       
       
 [Masm16-Code-File]

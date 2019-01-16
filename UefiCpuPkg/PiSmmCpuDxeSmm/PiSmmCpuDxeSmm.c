@@ -237,6 +237,11 @@ SmmReadSaveState (
   if ((CpuIndex >= gSmst->NumberOfCpus) || (Buffer == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
+  //
+  // The SpeculationBarrier() call here is to ensure the above check for the
+  // CpuIndex has been completed before the execution of subsequent codes.
+  //
+  SpeculationBarrier ();
 
   //
   // Check for special EFI_SMM_SAVE_STATE_REGISTER_PROCESSOR_ID

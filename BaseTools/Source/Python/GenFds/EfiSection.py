@@ -20,7 +20,7 @@ from struct import *
 from . import Section
 from .GenFdsGlobalVariable import GenFdsGlobalVariable
 import subprocess
-from .Ffs import Ffs
+from .Ffs import SectionSuffix
 import Common.LongFilePathOs as os
 from CommonDataClass.FdfClass import EfiSectionClassObject
 from Common import EdkLogger
@@ -68,7 +68,7 @@ class EfiSection (EfiSectionClassObject):
             StringData = FfsInf.__ExtendMacro__(self.StringData)
             ModuleNameStr = FfsInf.__ExtendMacro__('$(MODULE_NAME)')
             NoStrip = True
-            if FfsInf.ModuleType in (SUP_MODULE_SEC, SUP_MODULE_PEI_CORE, SUP_MODULE_PEIM) and SectionType in (BINARY_FILE_TYPE_TE, BINARY_FILE_TYPE_PE32):
+            if FfsInf.ModuleType in (SUP_MODULE_SEC, SUP_MODULE_PEI_CORE, SUP_MODULE_PEIM, SUP_MODULE_MM_CORE_STANDALONE) and SectionType in (BINARY_FILE_TYPE_TE, BINARY_FILE_TYPE_PE32):
                 if FfsInf.KeepReloc is not None:
                     NoStrip = FfsInf.KeepReloc
                 elif FfsInf.KeepRelocFromRule is not None:
@@ -124,7 +124,7 @@ class EfiSection (EfiSectionClassObject):
                     BuildNumTuple = tuple()
 
                 Num = SecNum
-                OutputFile = os.path.join( OutputPath, ModuleName + SUP_MODULE_SEC + str(Num) + Ffs.SectionSuffix.get(SectionType))
+                OutputFile = os.path.join( OutputPath, ModuleName + SUP_MODULE_SEC + str(Num) + SectionSuffix.get(SectionType))
                 GenFdsGlobalVariable.GenerateSection(OutputFile, [], 'EFI_SECTION_VERSION',
                                                     #Ui=StringData,
                                                     Ver=BuildNum,
@@ -135,7 +135,7 @@ class EfiSection (EfiSectionClassObject):
                 for File in FileList:
                     Index = Index + 1
                     Num = '%s.%d' %(SecNum, Index)
-                    OutputFile = os.path.join(OutputPath, ModuleName + SUP_MODULE_SEC + Num + Ffs.SectionSuffix.get(SectionType))
+                    OutputFile = os.path.join(OutputPath, ModuleName + SUP_MODULE_SEC + Num + SectionSuffix.get(SectionType))
                     f = open(File, 'r')
                     VerString = f.read()
                     f.close()
@@ -164,7 +164,7 @@ class EfiSection (EfiSectionClassObject):
                     else:
                         EdkLogger.error("GenFds", GENFDS_ERROR, "File: %s miss Version Section value" %InfFileName)
                 Num = SecNum
-                OutputFile = os.path.join( OutputPath, ModuleName + SUP_MODULE_SEC + str(Num) + Ffs.SectionSuffix.get(SectionType))
+                OutputFile = os.path.join( OutputPath, ModuleName + SUP_MODULE_SEC + str(Num) + SectionSuffix.get(SectionType))
                 GenFdsGlobalVariable.GenerateSection(OutputFile, [], 'EFI_SECTION_VERSION',
                                                     #Ui=VerString,
                                                     Ver=BuildNum,
@@ -185,7 +185,7 @@ class EfiSection (EfiSectionClassObject):
                 Num = SecNum
                 if IsMakefile and StringData == ModuleNameStr:
                     StringData = "$(MODULE_NAME)"
-                OutputFile = os.path.join( OutputPath, ModuleName + SUP_MODULE_SEC + str(Num) + Ffs.SectionSuffix.get(SectionType))
+                OutputFile = os.path.join( OutputPath, ModuleName + SUP_MODULE_SEC + str(Num) + SectionSuffix.get(SectionType))
                 GenFdsGlobalVariable.GenerateSection(OutputFile, [], 'EFI_SECTION_USER_INTERFACE',
                                                      Ui=StringData, IsMakefile=IsMakefile)
                 OutputFileList.append(OutputFile)
@@ -194,7 +194,7 @@ class EfiSection (EfiSectionClassObject):
                 for File in FileList:
                     Index = Index + 1
                     Num = '%s.%d' %(SecNum, Index)
-                    OutputFile = os.path.join(OutputPath, ModuleName + SUP_MODULE_SEC + Num + Ffs.SectionSuffix.get(SectionType))
+                    OutputFile = os.path.join(OutputPath, ModuleName + SUP_MODULE_SEC + Num + SectionSuffix.get(SectionType))
                     f = open(File, 'r')
                     UiString = f.read()
                     f.close()
@@ -218,7 +218,7 @@ class EfiSection (EfiSectionClassObject):
                 Num = SecNum
                 if IsMakefile and StringData == ModuleNameStr:
                     StringData = "$(MODULE_NAME)"
-                OutputFile = os.path.join( OutputPath, ModuleName + SUP_MODULE_SEC + str(Num) + Ffs.SectionSuffix.get(SectionType))
+                OutputFile = os.path.join( OutputPath, ModuleName + SUP_MODULE_SEC + str(Num) + SectionSuffix.get(SectionType))
                 GenFdsGlobalVariable.GenerateSection(OutputFile, [], 'EFI_SECTION_USER_INTERFACE',
                                                      Ui=StringData, IsMakefile=IsMakefile)
                 OutputFileList.append(OutputFile)
@@ -239,7 +239,7 @@ class EfiSection (EfiSectionClassObject):
                     """ Copy Map file to FFS output path """
                     Index = Index + 1
                     Num = '%s.%d' %(SecNum, Index)
-                    OutputFile = os.path.join( OutputPath, ModuleName + SUP_MODULE_SEC + Num + Ffs.SectionSuffix.get(SectionType))
+                    OutputFile = os.path.join( OutputPath, ModuleName + SUP_MODULE_SEC + Num + SectionSuffix.get(SectionType))
                     File = GenFdsGlobalVariable.MacroExtend(File, Dict)
 
                     #Get PE Section alignment when align is set to AUTO

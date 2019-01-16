@@ -1,7 +1,7 @@
 /** @file
 Enable SMM profile.
 
-Copyright (c) 2012 - 2017, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2012 - 2018, Intel Corporation. All rights reserved.<BR>
 Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
 
 This program and the accompanying materials
@@ -50,6 +50,11 @@ BOOLEAN                   mBtsSupported     = TRUE;
 // The flag indicates if SMM profile starts to record data.
 //
 BOOLEAN                   mSmmProfileStart = FALSE;
+
+//
+// The flag indicates if #DB will be setup in #PF handler.
+//
+BOOLEAN                   mSetupDebugTrap = FALSE;
 
 //
 // Record the page fault exception count for one instruction execution.
@@ -229,7 +234,9 @@ DebugExceptionHandler (
   UINTN  CpuIndex;
   UINTN  PFEntry;
 
-  if (!mSmmProfileStart) {
+  if (!mSmmProfileStart &&
+      !HEAP_GUARD_NONSTOP_MODE &&
+      !NULL_DETECTION_NONSTOP_MODE) {
     return;
   }
   CpuIndex = GetCpuIndex ();
@@ -719,84 +726,6 @@ InitPaging (
 }
 
 /**
-  To find FADT in ACPI tables.
-
-  @param AcpiTableGuid   The GUID used to find ACPI table in UEFI ConfigurationTable.
-
-  @return  FADT table pointer.
-**/
-EFI_ACPI_2_0_FIXED_ACPI_DESCRIPTION_TABLE  *
-FindAcpiFadtTableByAcpiGuid (
-  IN EFI_GUID  *AcpiTableGuid
-  )
-{
-  EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER  *Rsdp;
-  EFI_ACPI_DESCRIPTION_HEADER                   *Rsdt;
-  EFI_ACPI_2_0_FIXED_ACPI_DESCRIPTION_TABLE     *Fadt;
-  UINTN                                         Index;
-  UINT32                                        Data32;
-  Rsdp  = NULL;
-  Rsdt  = NULL;
-  Fadt  = NULL;
-  //
-  // found ACPI table RSD_PTR from system table
-  //
-  for (Index = 0; Index < gST->NumberOfTableEntries; Index++) {
-    if (CompareGuid (&(gST->ConfigurationTable[Index].VendorGuid), AcpiTableGuid)) {
-      //
-      // A match was found.
-      //
-      Rsdp = gST->ConfigurationTable[Index].VendorTable;
-      break;
-    }
-  }
-
-  if (Rsdp == NULL) {
-    return NULL;
-  }
-
-  Rsdt = (EFI_ACPI_DESCRIPTION_HEADER *)(UINTN) Rsdp->RsdtAddress;
-  if (Rsdt == NULL || Rsdt->Signature != EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_TABLE_SIGNATURE) {
-    return NULL;
-  }
-
-  for (Index = sizeof (EFI_ACPI_DESCRIPTION_HEADER); Index < Rsdt->Length; Index = Index + sizeof (UINT32)) {
-
-    Data32  = *(UINT32 *) ((UINT8 *) Rsdt + Index);
-    Fadt    = (EFI_ACPI_2_0_FIXED_ACPI_DESCRIPTION_TABLE *) (UINT32 *) (UINTN) Data32;
-    if (Fadt->Header.Signature == EFI_ACPI_2_0_FIXED_ACPI_DESCRIPTION_TABLE_SIGNATURE) {
-      break;
-    }
-  }
-
-  if (Fadt == NULL || Fadt->Header.Signature != EFI_ACPI_2_0_FIXED_ACPI_DESCRIPTION_TABLE_SIGNATURE) {
-    return NULL;
-  }
-
-  return Fadt;
-}
-
-/**
-  To find FADT in ACPI tables.
-
-  @return  FADT table pointer.
-**/
-EFI_ACPI_2_0_FIXED_ACPI_DESCRIPTION_TABLE  *
-FindAcpiFadtTable (
-  VOID
-  )
-{
-  EFI_ACPI_2_0_FIXED_ACPI_DESCRIPTION_TABLE *Fadt;
-
-  Fadt = FindAcpiFadtTableByAcpiGuid (&gEfiAcpi20TableGuid);
-  if (Fadt != NULL) {
-    return Fadt;
-  }
-
-  return FindAcpiFadtTableByAcpiGuid (&gEfiAcpi10TableGuid);
-}
-
-/**
   To get system port address of the SMI Command Port in FADT table.
 
 **/
@@ -807,7 +736,9 @@ GetSmiCommandPort (
 {
   EFI_ACPI_2_0_FIXED_ACPI_DESCRIPTION_TABLE *Fadt;
 
-  Fadt = FindAcpiFadtTable ();
+  Fadt = (EFI_ACPI_2_0_FIXED_ACPI_DESCRIPTION_TABLE *) EfiLocateFirstAcpiTable (
+                                                         EFI_ACPI_2_0_FIXED_ACPI_DESCRIPTION_TABLE_SIGNATURE
+                                                         );
   ASSERT (Fadt != NULL);
 
   mSmiCommandPort = Fadt->SmiCmd;
@@ -1174,7 +1105,9 @@ InitSmmProfile (
   //
   // Skip SMM profile initialization if feature is disabled
   //
-  if (!FeaturePcdGet (PcdCpuSmmProfileEnable)) {
+  if (!FeaturePcdGet (PcdCpuSmmProfileEnable) &&
+      !HEAP_GUARD_NONSTOP_MODE &&
+      !NULL_DETECTION_NONSTOP_MODE) {
     return;
   }
 
@@ -1187,6 +1120,11 @@ InitSmmProfile (
   // Initialize profile IDT.
   //
   InitIdtr ();
+
+  //
+  // Tell #PF handler to prepare a #DB subsequently.
+  //
+  mSetupDebugTrap = TRUE;
 }
 
 /**
@@ -1292,6 +1230,46 @@ RestorePageTableBelow4G (
       PageTable[PTIndex] &= ~IA32_PG_NX;
     }
   }
+}
+
+/**
+  Handler for Page Fault triggered by Guard page.
+
+  @param  ErrorCode  The Error code of exception.
+
+**/
+VOID
+GuardPagePFHandler (
+  UINTN ErrorCode
+  )
+{
+  UINT64                *PageTable;
+  UINT64                PFAddress;
+  UINT64                RestoreAddress;
+  UINTN                 RestorePageNumber;
+  UINTN                 CpuIndex;
+
+  PageTable         = (UINT64 *)AsmReadCr3 ();
+  PFAddress         = AsmReadCr2 ();
+  CpuIndex          = GetCpuIndex ();
+
+  //
+  // Memory operation cross pages, like "rep mov" instruction, will cause
+  // infinite loop between this and Debug Trap handler. We have to make sure
+  // that current page and the page followed are both in PRESENT state.
+  //
+  RestorePageNumber = 2;
+  RestoreAddress = PFAddress;
+  while (RestorePageNumber > 0) {
+    RestorePageTableBelow4G (PageTable, RestoreAddress, CpuIndex, ErrorCode);
+    RestoreAddress += EFI_PAGE_SIZE;
+    RestorePageNumber--;
+  }
+
+  //
+  // Flush TLB
+  //
+  CpuFlushTlb ();
 }
 
 /**

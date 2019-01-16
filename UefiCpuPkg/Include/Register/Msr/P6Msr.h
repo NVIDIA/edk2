@@ -6,7 +6,7 @@
   returned is a single 32-bit or 64-bit value, then a data structure is not
   provided for that MSR.
 
-  Copyright (c) 2016 - 2017, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2016 - 2018, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -16,8 +16,8 @@
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
   @par Specification Reference:
-  Intel(R) 64 and IA-32 Architectures Software Developer's Manual, Volume 3,
-  September 2016, Chapter 35 Model-Specific-Registers (MSR), Section 35.21.
+  Intel(R) 64 and IA-32 Architectures Software Developer's Manual, Volume 4,
+  May 2018, Volume 4: Model-Specific-Registers (MSR)
 
 **/
 
@@ -48,7 +48,7 @@
    )
 
 /**
-  See Section 35.22, "MSRs in Pentium Processors.".
+  See Section 2.22, "MSRs in Pentium Processors.".
 
   @param  ECX  MSR_P6_P5_MC_ADDR (0x00000000)
   @param  EAX  Lower 32-bits of MSR value.
@@ -67,7 +67,7 @@
 
 
 /**
-  See Section 35.22, "MSRs in Pentium Processors.".
+  See Section 2.22, "MSRs in Pentium Processors.".
 
   @param  ECX  MSR_P6_P5_MC_TYPE (0x00000001)
   @param  EAX  Lower 32-bits of MSR value.
@@ -86,7 +86,7 @@
 
 
 /**
-  See Section 17.14, "Time-Stamp Counter.".
+  See Section 17.17, "Time-Stamp Counter.".
 
   @param  ECX  MSR_P6_TSC (0x00000010)
   @param  EAX  Lower 32-bits of MSR value.
@@ -1152,54 +1152,6 @@ typedef union {
   @note MSR_P6_LASTINTTOIP is defined as LASTINTTOIP in SDM.
 **/
 #define MSR_P6_LASTINTTOIP                       0x000001DE
-
-
-/**
-
-
-  @param  ECX  MSR_P6_ROB_CR_BKUPTMPDR6 (0x000001E0)
-  @param  EAX  Lower 32-bits of MSR value.
-               Described by the type MSR_P6_ROB_CR_BKUPTMPDR6_REGISTER.
-  @param  EDX  Upper 32-bits of MSR value.
-               Described by the type MSR_P6_ROB_CR_BKUPTMPDR6_REGISTER.
-
-  <b>Example usage</b>
-  @code
-  MSR_P6_ROB_CR_BKUPTMPDR6_REGISTER  Msr;
-
-  Msr.Uint64 = AsmReadMsr64 (MSR_P6_ROB_CR_BKUPTMPDR6);
-  AsmWriteMsr64 (MSR_P6_ROB_CR_BKUPTMPDR6, Msr.Uint64);
-  @endcode
-  @note MSR_P6_ROB_CR_BKUPTMPDR6 is defined as ROB_CR_BKUPTMPDR6 in SDM.
-**/
-#define MSR_P6_ROB_CR_BKUPTMPDR6                 0x000001E0
-
-/**
-  MSR information returned for MSR index #MSR_P6_ROB_CR_BKUPTMPDR6
-**/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
-    UINT32  Reserved1:2;
-    ///
-    /// [Bit 2] Fast Strings Enable bit. Default is enabled.
-    ///
-    UINT32  FastStrings:1;
-    UINT32  Reserved2:29;
-    UINT32  Reserved3:32;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32  Uint32;
-  ///
-  /// All bit fields as a 64-bit value
-  ///
-  UINT64  Uint64;
-} MSR_P6_ROB_CR_BKUPTMPDR6_REGISTER;
-
 
 /**
 

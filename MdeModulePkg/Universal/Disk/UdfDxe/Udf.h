@@ -2,6 +2,7 @@
   UDF/ECMA-167 file system driver.
 
   Copyright (C) 2014-2017 Paulo Alcantara <pcacjr@zytor.com>
+  Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials are licensed and made available
   under the terms and conditions of the BSD License which accompanies this
@@ -559,9 +560,16 @@ UdfSetPosition (
 /**
   Get information about a file.
 
+  @attention This is boundary function that may receive untrusted input.
+  @attention The input is from FileSystem.
+
+  The File Set Descriptor is external input, so this routine will do basic
+  validation for File Set Descriptor and report status.
+
   @param  This            Protocol instance pointer.
   @param  InformationType Type of information to return in Buffer.
-  @param  BufferSize      On input size of buffer, on output amount of data in buffer.
+  @param  BufferSize      On input size of buffer, on output amount of data in
+                          buffer.
   @param  Buffer          The buffer to return data.
 
   @retval EFI_SUCCESS          Data was returned.
@@ -571,7 +579,8 @@ UdfSetPosition (
   @retval EFI_VOLUME_CORRUPTED The file system structures are corrupted.
   @retval EFI_WRITE_PROTECTED  The device is write protected.
   @retval EFI_ACCESS_DENIED    The file was open for read only.
-  @retval EFI_BUFFER_TOO_SMALL Buffer was too small; required size returned in BufferSize.
+  @retval EFI_BUFFER_TOO_SMALL Buffer was too small; required size returned in
+                               BufferSize.
 
 **/
 EFI_STATUS
@@ -769,20 +778,37 @@ ReadDirectoryEntry (
   Get a filename (encoded in OSTA-compressed format) from a File Identifier
   Descriptor on an UDF volume.
 
+  @attention This is boundary function that may receive untrusted input.
+  @attention The input is from FileSystem.
+
+  The File Identifier Descriptor is external input, so this routine will do
+  basic validation for File Identifier Descriptor and report status.
+
   @param[in]   FileIdentifierDesc  File Identifier Descriptor pointer.
+  @param[in]   CharMax             The maximum number of FileName Unicode char,
+                                   including terminating null char.
   @param[out]  FileName            Decoded filename.
 
   @retval EFI_SUCCESS           Filename decoded and read.
   @retval EFI_VOLUME_CORRUPTED  The file system structures are corrupted.
+  @retval EFI_BUFFER_TOO_SMALL  The string buffer FileName cannot hold the
+                                decoded filename.
 **/
 EFI_STATUS
 GetFileNameFromFid (
   IN   UDF_FILE_IDENTIFIER_DESCRIPTOR  *FileIdentifierDesc,
+  IN   UINTN                           CharMax,
   OUT  CHAR16                          *FileName
   );
 
 /**
   Resolve a symlink file on an UDF volume.
+
+  @attention This is boundary function that may receive untrusted input.
+  @attention The input is from FileSystem.
+
+  The Path Component is external input, so this routine will do basic
+  validation for Path Component and report status.
 
   @param[in]   BlockIo        BlockIo interface.
   @param[in]   DiskIo         DiskIo interface.
@@ -875,7 +901,41 @@ SetFileInfo (
   );
 
 /**
+  Get volume label of an UDF volume.
+
+  @attention This is boundary function that may receive untrusted input.
+  @attention The input is from FileSystem.
+
+  The File Set Descriptor is external input, so this routine will do basic
+  validation for File Set Descriptor and report status.
+
+  @param[in]   Volume   Volume information pointer.
+  @param[in]   CharMax  The maximum number of Unicode char in String,
+                        including terminating null char.
+  @param[out]  String   String buffer pointer to store the volume label.
+
+  @retval EFI_SUCCESS           Volume label is returned.
+  @retval EFI_VOLUME_CORRUPTED  The file system structures are corrupted.
+  @retval EFI_BUFFER_TOO_SMALL  The string buffer String cannot hold the
+                                volume label.
+
+**/
+EFI_STATUS
+GetVolumeLabel (
+  IN   UDF_VOLUME_INFO  *Volume,
+  IN   UINTN            CharMax,
+  OUT  CHAR16           *String
+  );
+
+/**
   Get volume and free space size information of an UDF volume.
+
+  @attention This is boundary function that may receive untrusted input.
+  @attention The input is from FileSystem.
+
+  The Logical Volume Descriptor and the Logical Volume Integrity Descriptor are
+  external inputs, so this routine will do basic validation for both descriptors
+  and report status.
 
   @param[in]   BlockIo        BlockIo interface.
   @param[in]   DiskIo         DiskIo interface.

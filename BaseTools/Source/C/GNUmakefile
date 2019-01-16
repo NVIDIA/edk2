@@ -49,21 +49,15 @@ all: makerootdir subdirs
 
 LIBRARIES = Common
 VFRAUTOGEN = VfrCompile/VfrLexer.h
-# NON_BUILDABLE_APPLICATIONS = GenBootSector BootSectImage
 APPLICATIONS = \
   BrotliCompress \
   VfrCompile \
-  GnuGenBootSector \
-  BootSectImage \
-  EfiLdrImage \
   EfiRom \
   GenFfs \
   GenFv \
   GenFw \
-  GenPage \
   GenSec \
   GenCrc32 \
-  GenVtf \
   LzmaCompress \
   Split \
   TianoCompress \

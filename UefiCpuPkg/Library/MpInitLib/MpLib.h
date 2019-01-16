@@ -89,6 +89,7 @@ typedef enum {
   CpuStateIdle,
   CpuStateReady,
   CpuStateBusy,
+  CpuStateFinished,
   CpuStateDisabled
 } CPU_STATE;
 
@@ -257,7 +258,7 @@ struct _CPU_MP_DATA {
   // Whether need to use Init-Sipi-Sipi to wake up the APs.
   // Two cases need to set this value to TRUE. One is in HLT
   // loop mode, the other is resume from S3 which loop mode
-  // will be hardcode change to HLT mode by PiSmmCpuDxeSmm 
+  // will be hardcode change to HLT mode by PiSmmCpuDxeSmm
   // driver.
   //
   BOOLEAN                        WakeUpByInitSipiSipi;

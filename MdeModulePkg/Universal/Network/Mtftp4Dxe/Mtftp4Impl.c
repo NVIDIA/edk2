@@ -80,6 +80,9 @@ Mtftp4CleanOperation (
   Instance->Operation     = 0;
 
   Instance->BlkSize       = MTFTP4_DEFAULT_BLKSIZE;
+  Instance->WindowSize    = 1;
+  Instance->TotalBlock    = 0;
+  Instance->AckedBlock    = 0;
   Instance->LastBlock     = 0;
   Instance->ServerIp      = 0;
   Instance->ListeningPort = 0;
@@ -308,7 +311,7 @@ Mtftp4ConfigUnicastPort (
   UdpConfig.UseDefaultAddress  = Config->UseDefaultSetting;
   IP4_COPY_ADDRESS (&UdpConfig.StationAddress, &Config->StationIp);
   IP4_COPY_ADDRESS (&UdpConfig.SubnetMask, &Config->SubnetMask);
-  UdpConfig.StationPort        = 0;
+  UdpConfig.StationPort        = Config->LocalPort;
   UdpConfig.RemotePort         = 0;
 
   Ip = HTONL (Instance->ServerIp);
@@ -428,6 +431,7 @@ Mtftp4Start (
                Token->OptionList,
                Token->OptionCount,
                TRUE,
+               Instance->Operation,
                &Instance->RequestOption
                );
 
@@ -443,6 +447,7 @@ Mtftp4Start (
   Config                  = &Instance->Config;
   Instance->Token         = Token;
   Instance->BlkSize       = MTFTP4_DEFAULT_BLKSIZE;
+  Instance->WindowSize    = MTFTP4_DEFAULT_WINDOWSIZE;
 
   CopyMem (&Instance->ServerIp, &Config->ServerIp, sizeof (IP4_ADDR));
   Instance->ServerIp      = NTOHL (Instance->ServerIp);
@@ -509,8 +514,9 @@ Mtftp4Start (
     goto ON_ERROR;
   }
 
+  gBS->RestoreTPL(OldTpl);
+
   if (Token->Event != NULL) {
-    gBS->RestoreTPL (OldTpl);
     return EFI_SUCCESS;
   }
 
@@ -522,7 +528,6 @@ Mtftp4Start (
     This->Poll (This);
   }
 
-  gBS->RestoreTPL (OldTpl);
   return Token->Status;
 
 ON_ERROR:
@@ -682,7 +687,7 @@ EfiMtftp4Configure (
     }
 
     if ((Gateway != 0) &&
-        (!IP4_NET_EQUAL (Gateway, Ip, Netmask) || (Netmask != 0 && !NetIp4IsUnicast (Gateway, Netmask)))) {
+        ((Netmask != 0xFFFFFFFF && !IP4_NET_EQUAL (Gateway, Ip, Netmask)) || (Netmask != 0 && !NetIp4IsUnicast (Gateway, Netmask)))) {
 
       return EFI_INVALID_PARAMETER;
     }

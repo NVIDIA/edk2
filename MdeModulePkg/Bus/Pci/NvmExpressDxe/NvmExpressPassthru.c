@@ -587,15 +587,25 @@ NvmExpressPassThru (
   }
 
   Sq->Prp[0] = (UINT64)(UINTN)Packet->TransferBuffer;
-  //
-  // If the NVMe cmd has data in or out, then mapping the user buffer to the PCI controller specific addresses.
-  // Note here we don't handle data buffer for CreateIOSubmitionQueue and CreateIOCompletionQueue cmds because
-  // these two cmds are special which requires their data buffer must support simultaneous access by both the
-  // processor and a PCI Bus Master. It's caller's responsbility to ensure this.
-  //
-  if (((Sq->Opc & (BIT0 | BIT1)) != 0) &&
-      !((Packet->QueueType == NVME_ADMIN_QUEUE) && ((Sq->Opc == NVME_ADMIN_CRIOCQ_CMD) || (Sq->Opc == NVME_ADMIN_CRIOSQ_CMD)))) {
-    if ((Packet->TransferLength == 0) || (Packet->TransferBuffer == NULL)) {
+  if ((Packet->QueueType == NVME_ADMIN_QUEUE) &&
+      ((Sq->Opc == NVME_ADMIN_CRIOCQ_CMD) || (Sq->Opc == NVME_ADMIN_CRIOSQ_CMD))) {
+    //
+    // Currently, we only use the IO Completion/Submission queues created internally
+    // by this driver during controller initialization. Any other IO queues created
+    // will not be consumed here. The value is little to accept external IO queue
+    // creation requests, so here we will return EFI_UNSUPPORTED for external IO
+    // queue creation request.
+    //
+    if (!Private->CreateIoQueue) {
+      DEBUG ((DEBUG_ERROR, "NvmExpressPassThru: Does not support external IO queues creation request.\n"));
+      return EFI_UNSUPPORTED;
+    }
+  } else if ((Sq->Opc & (BIT0 | BIT1)) != 0) {
+    //
+    // If the NVMe cmd has data in or out, then mapping the user buffer to the PCI controller specific addresses.
+    //
+    if (((Packet->TransferLength != 0) && (Packet->TransferBuffer == NULL)) ||
+        ((Packet->TransferLength == 0) && (Packet->TransferBuffer != NULL))) {
       return EFI_INVALID_PARAMETER;
     }
 
@@ -605,21 +615,23 @@ NvmExpressPassThru (
       Flag = EfiPciIoOperationBusMasterWrite;
     }
 
-    MapLength = Packet->TransferLength;
-    Status = PciIo->Map (
-                      PciIo,
-                      Flag,
-                      Packet->TransferBuffer,
-                      &MapLength,
-                      &PhyAddr,
-                      &MapData
-                      );
-    if (EFI_ERROR (Status) || (Packet->TransferLength != MapLength)) {
-      return EFI_OUT_OF_RESOURCES;
-    }
+    if ((Packet->TransferLength != 0) && (Packet->TransferBuffer != NULL)) {
+      MapLength = Packet->TransferLength;
+      Status = PciIo->Map (
+                        PciIo,
+                        Flag,
+                        Packet->TransferBuffer,
+                        &MapLength,
+                        &PhyAddr,
+                        &MapData
+                        );
+      if (EFI_ERROR (Status) || (Packet->TransferLength != MapLength)) {
+        return EFI_OUT_OF_RESOURCES;
+      }
 
-    Sq->Prp[0] = PhyAddr;
-    Sq->Prp[1] = 0;
+      Sq->Prp[0] = PhyAddr;
+      Sq->Prp[1] = 0;
+    }
 
     if((Packet->MetadataLength != 0) && (Packet->MetadataBuffer != NULL)) {
       MapLength = Packet->MetadataLength;
@@ -778,17 +790,16 @@ NvmExpressPassThru (
     } else {
       Status = EFI_DEVICE_ERROR;
       //
-      // Copy the Respose Queue entry for this command to the callers response buffer
-      //
-      CopyMem(Packet->NvmeCompletion, Cq, sizeof(EFI_NVM_EXPRESS_COMPLETION));
-
-      //
       // Dump every completion entry status for debugging.
       //
       DEBUG_CODE_BEGIN();
         NvmeDumpStatus(Cq);
       DEBUG_CODE_END();
     }
+    //
+    // Copy the Respose Queue entry for this command to the callers response buffer
+    //
+    CopyMem(Packet->NvmeCompletion, Cq, sizeof(EFI_NVM_EXPRESS_COMPLETION));
   } else {
     //
     // Timeout occurs for an NVMe command. Reset the controller to abort the

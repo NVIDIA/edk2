@@ -1,6 +1,6 @@
 /**@file
 
-Copyright (c) 2004 - 2009, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -61,7 +61,7 @@ EmuBlockIo2Reset (
   @param[in]       MediaId    Id of the media, changes every time the media is
                               replaced.
   @param[in]       Lba        The starting Logical Block Address to read from.
-  @param[in, out]  Token	    A pointer to the token associated with the transaction.
+  @param[in, out]  Token      A pointer to the token associated with the transaction.
   @param[in]       BufferSize Size of Buffer, must be a multiple of device block size.
   @param[out]      Buffer     A pointer to the destination buffer for the data. The
                               caller is responsible for either having implicit or
@@ -662,7 +662,6 @@ EmuBlockIoDriverBindingStop (
   }
 
   Private = EMU_BLOCK_IO_PRIVATE_DATA_FROM_THIS (BlockIo);
-  Status = Private->IoThunk->Close (Private->IoThunk);
 
   Status = gBS->UninstallMultipleProtocolInterfaces (
                   Private->EfiHandle,
@@ -677,14 +676,17 @@ EmuBlockIoDriverBindingStop (
                     This->DriverBindingHandle,
                     Handle
                     );
-  }
-
-  if (!EFI_ERROR (Status)) {
+    ASSERT_EFI_ERROR (Status);
+    //
+    // Destroy the IO interface.
+    //
+    Status = Private->IoThunk->Close (Private->IoThunk);
+    ASSERT_EFI_ERROR (Status);
     //
     // Free our instance data
     //
     FreeUnicodeStringTable (Private->ControllerNameTable);
-    gBS->FreePool (Private);
+    FreePool (Private);
   }
 
   return Status;

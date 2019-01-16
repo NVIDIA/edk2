@@ -290,21 +290,6 @@ Ikev2SaSessionRemove (
   return NULL;
 }
 
-/**
-  Marking a SA session as on deleting.
-
-  @param[in]  IkeSaSession  Pointer to IKEV2_SA_SESSION.
-
-  @retval     EFI_SUCCESS   Find the related SA session and marked it.
-
-**/
-EFI_STATUS
-Ikev2SaSessionOnDeleting (
-  IN IKEV2_SA_SESSION          *IkeSaSession
-  )
-{
-  return EFI_SUCCESS;
-}
 
 /**
   Free specified Seession Common. The session common would belong to a IKE SA or
@@ -659,33 +644,6 @@ Ikev2ChildSaSessionReg (
   return ;
 }
 
-/**
-  Find the ChildSaSession by it's MessagId.
-
-  @param[in] SaSessionList  Pointer to a ChildSaSession List.
-  @param[in] Mid            The messageId used to search ChildSaSession.
-
-  @return Pointer to IKEV2_CHILD_SA_SESSION or NULL.
-
-**/
-IKEV2_CHILD_SA_SESSION *
-Ikev2ChildSaSessionLookupByMid (
-  IN LIST_ENTRY           *SaSessionList,
-  IN UINT32               Mid
-  )
-{
-  LIST_ENTRY              *Entry;
-  IKEV2_CHILD_SA_SESSION  *ChildSaSession;
-
-  NET_LIST_FOR_EACH (Entry, SaSessionList) {
-    ChildSaSession  = IKEV2_CHILD_SA_SESSION_BY_IKE_SA (Entry);
-
-    if (ChildSaSession->MessageId == Mid) {
-      return ChildSaSession;
-    }
-  }
-  return NULL;
-}
 
 /**
   This function find the Child SA by the specified SPI.
@@ -774,22 +732,6 @@ Ikev2ChildSaSessionRemove (
   }
 
   return NULL;
-}
-
-/**
-  Mark a specified Child SA Session as on deleting.
-
-  @param[in]  ChildSaSession   Pointer to IKEV2_CHILD_SA_SESSION.
-
-  @retval     EFI_SUCCESS      Operation is successful.
-
-**/
-EFI_STATUS
-Ikev2ChildSaSessionOnDeleting (
-  IN IKEV2_CHILD_SA_SESSION   *ChildSaSession
-  )
-{
-  return EFI_SUCCESS;
 }
 
 /**
@@ -1137,24 +1079,6 @@ Ikev2ChildSaAssociateSpdEntry (
 }
 
 
-/**
-  This function finds the SPI from Create Child SA Exchange Packet.
-
-  @param[in] IkePacket       Pointer to IKE_PACKET to be searched.
-
-  @retval SPI number or 0 if it is not supported.
-
-**/
-UINT32
-Ikev2ChildExchangeRekeySpi (
-  IN IKE_PACKET               *IkePacket
-  )
-{
-  //
-  // Not support yet.
-  //
-  return 0;
-}
 
 /**
   Validate the IKE header of received IKE packet.
@@ -2071,28 +1995,45 @@ Ikev2IsSupportAlg (
 /**
   Get the preferred algorithm types from ProposalData.
 
-  @param[in]  ProposalData              Pointer to related IKEV2_PROPOSAL_DATA.
-  @param[out] PreferEncryptAlgorithm    Output of preferred encrypt algorithm.
-  @param[out] PreferIntegrityAlgorithm  Output of preferred integrity algorithm.
-  @param[out] PreferPrfAlgorithm        Output of preferred PRF algorithm. Only
-                                        for IKE SA.
-  @param[out] PreferDhGroup             Output of preferred DH group. Only for
-                                        IKE SA.
-  @param[out] PreferEncryptKeylength    Output of preferred encrypt key length
-                                        in bytes.
-  @param[out] IsSupportEsn              Output of value about the Extented Sequence
-                                        Number is support or not. Only for Child SA.
-  @param[in]  IsChildSa                 If it is ture, the ProposalData is for IKE
-                                        SA. Otherwise the proposalData is for Child SA.
+  @param[in]      ProposalData              Pointer to related IKEV2_PROPOSAL_DATA.
+  @param[in, out] PreferEncryptAlgorithm    Pointer to buffer which is used to store the
+                                            preferred encrypt algorithm.
+                                            Input value shall be initialized to zero that
+                                            indicates to be parsed from ProposalData.
+                                            Output of preferred encrypt algorithm.
+  @param[in, out] PreferIntegrityAlgorithm  Pointer to buffer which is used to store the
+                                            preferred integrity algorithm.
+                                            Input value shall be initialized to zero that
+                                            indicates to be parsed from ProposalData.
+                                            Output of preferred integrity algorithm.
+  @param[in, out] PreferPrfAlgorithm        Pointer to buffer which is used to store the
+                                            preferred PRF algorithm.
+                                            Input value shall be initialized to zero that
+                                            indicates to be parsed from ProposalData.
+                                            Output of preferred PRF algorithm. Only
+                                            for IKE SA.
+  @param[in, out] PreferDhGroup             Pointer to buffer which is used to store the
+                                            preferred DH group.
+                                            Input value shall be initialized to zero that
+                                            indicates to be parsed from ProposalData.
+                                            Output of preferred DH group. Only for
+                                            IKE SA.
+  @param[out]     PreferEncryptKeylength    Pointer to buffer which is used to store the
+                                            preferred encrypt key length in bytes.
+  @param[out]     IsSupportEsn              Pointer to buffer which is used to store the
+                                            value about the Extented Sequence Number is
+                                            support or not. Only for Child SA.
+  @param[in]      IsChildSa                 If it is ture, the ProposalData is for IKE
+                                            SA. Otherwise the proposalData is for Child SA.
 
 **/
 VOID
 Ikev2ParseProposalData (
   IN     IKEV2_PROPOSAL_DATA  *ProposalData,
-     OUT UINT16               *PreferEncryptAlgorithm,
-     OUT UINT16               *PreferIntegrityAlgorithm,
-     OUT UINT16               *PreferPrfAlgorithm,
-     OUT UINT16               *PreferDhGroup,
+  IN OUT UINT16               *PreferEncryptAlgorithm,
+  IN OUT UINT16               *PreferIntegrityAlgorithm,
+  IN OUT UINT16               *PreferPrfAlgorithm,
+  IN OUT UINT16               *PreferDhGroup,
      OUT UINTN                *PreferEncryptKeylength,
      OUT BOOLEAN              *IsSupportEsn,
   IN     BOOLEAN              IsChildSa
@@ -2580,11 +2521,12 @@ Ikev2ChildSaParseSaPayload (
           ) {
         IsMatch = TRUE;
       } else {
-        PreferEncryptAlgorithm   = 0;
-        PreferIntegrityAlgorithm = 0;
-        IsSupportEsn             = TRUE;
+        IntegrityAlgorithm = 0;
+        EncryptAlgorithm   = 0;
+        EncryptKeylength   = 0;
+        IsSupportEsn       = FALSE;
       }
-       ProposalData = (IKEV2_PROPOSAL_DATA*)((UINT8*)(ProposalData + 1) +
+      ProposalData = (IKEV2_PROPOSAL_DATA*)((UINT8*)(ProposalData + 1) +
                      ProposalData->NumTransforms * sizeof (IKEV2_TRANSFORM_DATA));
     }
 

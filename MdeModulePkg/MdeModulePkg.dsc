@@ -20,7 +20,7 @@
   PLATFORM_VERSION               = 0.98
   DSC_SPECIFICATION              = 0x00010005
   OUTPUT_DIRECTORY               = Build/MdeModule
-  SUPPORTED_ARCHITECTURES        = IA32|IPF|X64|EBC|ARM|AARCH64
+  SUPPORTED_ARCHITECTURES        = IA32|X64|EBC|ARM|AARCH64
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
 
@@ -79,7 +79,6 @@
   SerialPortLib|MdePkg/Library/BaseSerialPortLibNull/BaseSerialPortLibNull.inf
   CapsuleLib|MdeModulePkg/Library/DxeCapsuleLibNull/DxeCapsuleLibNull.inf
   PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
-  PalLib|MdePkg/Library/BasePalLibNull/BasePalLibNull.inf
   CustomizedDisplayLib|MdeModulePkg/Library/CustomizedDisplayLib/CustomizedDisplayLib.inf
   FrameBufferBltLib|MdeModulePkg/Library/FrameBufferBltLib/FrameBufferBltLib.inf
   #
@@ -202,28 +201,6 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxSizePopulateCapsule|0x0
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxPeiPerformanceLogEntries|28
 
-[PcdsFixedAtBuild.IPF]
-  gEfiMdePkgTokenSpaceGuid.PcdIoBlockBaseAddressForIpf|0x0ffffc000000
-
-###################################################################################################
-#
-# Components Section - list of the modules and components that will be processed by compilation
-#                      tools and the EDK II tools to generate PE32/PE32+/Coff image files.
-#
-# Note: The EDK II DSC file is not used to specify how compiled binary images get placed
-#       into firmware volume images. This section is just a list of modules to compile from
-#       source into UEFI-compliant binaries.
-#       It is the FDF file that contains information on combining binary files into firmware
-#       volume images, whose concept is beyond UEFI and is described in PI specification.
-#       Binary modules do not need to be listed in this section, as they should be
-#       specified in the FDF file. For example: Shell binary (Shell_Full.efi), FAT binary (Fat.efi),
-#       Logo (Logo.bmp), and etc.
-#       There may also be modules listed in this section that are not required in the FDF file,
-#       When a module listed here is excluded from FDF file, then UEFI-compliant binary will be
-#       generated for it, but the binary will not be put into any firmware volume.
-#
-###################################################################################################
-
 [Components]
   MdeModulePkg/Application/HelloWorld/HelloWorld.inf
   MdeModulePkg/Application/MemoryProfileInfo/MemoryProfileInfo.inf
@@ -309,7 +286,6 @@
   MdeModulePkg/Library/CpuExceptionHandlerLibNull/CpuExceptionHandlerLibNull.inf
   MdeModulePkg/Library/PlatformHookLibSerialPortPpi/PlatformHookLibSerialPortPpi.inf
   MdeModulePkg/Library/LzmaCustomDecompressLib/LzmaCustomDecompressLib.inf
-  MdeModulePkg/Library/BrotliCustomDecompressLib/BrotliCustomDecompressLib.inf
   MdeModulePkg/Library/PeiDxeDebugLibReportStatusCode/PeiDxeDebugLibReportStatusCode.inf
   MdeModulePkg/Library/UefiBootManagerLib/UefiBootManagerLib.inf
   MdeModulePkg/Library/PlatformBootManagerLibNull/PlatformBootManagerLibNull.inf
@@ -378,12 +354,10 @@
   MdeModulePkg/Universal/Network/Dhcp4Dxe/Dhcp4Dxe.inf
   MdeModulePkg/Universal/Network/DpcDxe/DpcDxe.inf
   MdeModulePkg/Universal/Network/Ip4Dxe/Ip4Dxe.inf
-  MdeModulePkg/Universal/Network/IScsiDxe/IScsiDxe.inf
   MdeModulePkg/Universal/Network/MnpDxe/MnpDxe.inf
   MdeModulePkg/Universal/Network/VlanConfigDxe/VlanConfigDxe.inf
   MdeModulePkg/Universal/Network/Mtftp4Dxe/Mtftp4Dxe.inf
   MdeModulePkg/Universal/Network/SnpDxe/SnpDxe.inf
-  MdeModulePkg/Universal/Network/Tcp4Dxe/Tcp4Dxe.inf
   MdeModulePkg/Universal/Network/Udp4Dxe/Udp4Dxe.inf
 
   MdeModulePkg/Universal/PcatSingleSegmentPciCfg2Pei/PcatSingleSegmentPciCfg2Pei.inf
@@ -445,14 +419,14 @@
   MdeModulePkg/Library/DxeCapsuleLibFmp/DxeCapsuleLib.inf
   MdeModulePkg/Library/DxeCapsuleLibFmp/DxeRuntimeCapsuleLib.inf
 
-[Components.IA32, Components.X64, Components.IPF, Components.AARCH64]
-  MdeModulePkg/Universal/Network/UefiPxeBcDxe/UefiPxeBcDxe.inf
+[Components.IA32, Components.X64, Components.AARCH64]
   MdeModulePkg/Universal/DebugSupportDxe/DebugSupportDxe.inf
   MdeModulePkg/Universal/EbcDxe/EbcDxe.inf
   MdeModulePkg/Universal/EbcDxe/EbcDebugger.inf
   MdeModulePkg/Universal/EbcDxe/EbcDebuggerConfig.inf
 
-[Components.IA32, Components.X64, Components.IPF, Components.ARM, Components.AARCH64]
+[Components.IA32, Components.X64, Components.ARM, Components.AARCH64]
+  MdeModulePkg/Library/BrotliCustomDecompressLib/BrotliCustomDecompressLib.inf
   MdeModulePkg/Library/VarCheckUefiLib/VarCheckUefiLib.inf
   MdeModulePkg/Core/Dxe/DxeMain.inf {
     <LibraryClasses>

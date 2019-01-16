@@ -195,7 +195,7 @@ DevPathToTextVendor (
         UefiDevicePathLibCatPrint (Str, L"VenVt100Plus()");
         return ;
       } else if (CompareGuid (&Vendor->Guid, &gEfiVTUTF8Guid)) {
-        UefiDevicePathLibCatPrint (Str, L"VenUft8()");
+        UefiDevicePathLibCatPrint (Str, L"VenUtf8()");
         return ;
       } else if (CompareGuid (&Vendor->Guid, &gEfiUartDevicePathGuid)) {
         FlowControlMap = (((UART_FLOW_CONTROL_DEVICE_PATH *) Vendor)->FlowControlMap);
@@ -433,6 +433,27 @@ DevPathToTextAcpiEx (
   UIDStr = HIDStr + AsciiStrLen (HIDStr) + 1;
   CIDStr = UIDStr + AsciiStrLen (UIDStr) + 1;
 
+  if (DisplayOnly) {
+    if ((EISA_ID_TO_NUM (AcpiEx->HID) == 0x0A03) ||
+        (EISA_ID_TO_NUM (AcpiEx->CID) == 0x0A03 && EISA_ID_TO_NUM (AcpiEx->HID) != 0x0A08)) {
+      if (AcpiEx->UID == 0) {
+        UefiDevicePathLibCatPrint (Str, L"PciRoot(%a)", UIDStr);
+      } else {
+        UefiDevicePathLibCatPrint (Str, L"PciRoot(0x%x)", AcpiEx->UID);
+      }
+      return;
+    }
+
+    if (EISA_ID_TO_NUM (AcpiEx->HID) == 0x0A08 || EISA_ID_TO_NUM (AcpiEx->CID) == 0x0A08) {
+      if (AcpiEx->UID == 0) {
+        UefiDevicePathLibCatPrint (Str, L"PcieRoot(%a)", UIDStr);
+      } else {
+        UefiDevicePathLibCatPrint (Str, L"PcieRoot(0x%x)", AcpiEx->UID);
+      }
+      return;
+    }
+  }
+
   //
   // Converts EISA identification to string.
   //
@@ -455,19 +476,28 @@ DevPathToTextAcpiEx (
     (AcpiEx->CID >> 16) & 0xFFFF
     );
 
-  if ((*HIDStr == '\0') && (*CIDStr == '\0') && (AcpiEx->UID == 0)) {
+  if ((*HIDStr == '\0') && (*CIDStr == '\0') && (*UIDStr != '\0')) {
     //
     // use AcpiExp()
     //
-    UefiDevicePathLibCatPrint (
-      Str,
-      L"AcpiExp(%s,%s,%a)",
-      HIDText,
-      CIDText,
-      UIDStr
-      );
+    if (AcpiEx->CID == 0) {
+      UefiDevicePathLibCatPrint (
+        Str,
+        L"AcpiExp(%s,0,%a)",
+        HIDText,
+        UIDStr
+       );
+    } else {
+      UefiDevicePathLibCatPrint (
+        Str,
+        L"AcpiExp(%s,%s,%a)",
+        HIDText,
+        CIDText,
+        UIDStr
+       );
+    }
   } else {
-    if (AllowShortcuts) {
+    if (DisplayOnly) {
       //
       // display only
       //
@@ -477,16 +507,16 @@ DevPathToTextAcpiEx (
         UefiDevicePathLibCatPrint (Str, L"AcpiEx(%s,", HIDText);
       }
 
-      if (AcpiEx->UID == 0) {
-        UefiDevicePathLibCatPrint (Str, L"%a,", UIDStr);
+      if (AcpiEx->CID == 0) {
+        UefiDevicePathLibCatPrint (Str, L"%a,", CIDStr);
       } else {
-        UefiDevicePathLibCatPrint (Str, L"0x%x,", AcpiEx->UID);
+        UefiDevicePathLibCatPrint (Str, L"%s,", CIDText);
       }
 
-      if (AcpiEx->CID == 0) {
-        UefiDevicePathLibCatPrint (Str, L"%a)", CIDStr);
+      if (AcpiEx->UID == 0) {
+        UefiDevicePathLibCatPrint (Str, L"%a)", UIDStr);
       } else {
-        UefiDevicePathLibCatPrint (Str, L"%s)", CIDText);
+        UefiDevicePathLibCatPrint (Str, L"0x%x)", AcpiEx->UID);
       }
     } else {
       UefiDevicePathLibCatPrint (
@@ -942,7 +972,7 @@ DevPathToTextUsbWWID (
 
   SerialNumberStr = (CHAR16 *) ((UINT8 *) UsbWWId + sizeof (USB_WWID_DEVICE_PATH));
   Length = (UINT16) ((DevicePathNodeLength ((EFI_DEVICE_PATH_PROTOCOL *) UsbWWId) - sizeof (USB_WWID_DEVICE_PATH)) / sizeof (CHAR16));
-  if (SerialNumberStr [Length - 1] != 0) {
+  if (Length >= 1 && SerialNumberStr [Length - 1] != 0) {
     //
     // In case no NULL terminator in SerialNumber, create a new one with NULL terminator
     //

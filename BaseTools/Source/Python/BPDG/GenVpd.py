@@ -21,6 +21,7 @@ import array
 import re
 from Common.LongFilePathSupport import OpenLongFilePath as open
 from struct import *
+from Common.DataType import MAX_SIZE_TYPE, MAX_VAL_TYPE, TAB_STAR
 import Common.EdkLogger as EdkLogger
 import Common.BuildToolError as BuildToolError
 
@@ -86,7 +87,7 @@ class PcdEntry:
     #  for both hexadecimal and decimal.
     #
     def _GenOffsetValue(self):
-        if self.PcdOffset != "*" :
+        if self.PcdOffset != TAB_STAR:
             try:
                 self.PcdBinOffset = int (self.PcdOffset)
             except:
@@ -125,37 +126,18 @@ class PcdEntry:
             EdkLogger.error("BPDG", BuildToolError.FORMAT_INVALID,
                             "Invalid size %d for PCD %s in integer datum size(File: %s Line: %s)." % (Size, self.PcdCName, self.FileName, self.Lineno))
 
-        if Size == 1:
-            if IntValue < 0:
-                EdkLogger.error("BPDG", BuildToolError.FORMAT_INVALID,
-                                "PCD can't be set to negative value %d for PCD %s in UINT8 datum type(File: %s Line: %s)." % (IntValue, self.PcdCName, self.FileName, self.Lineno))
-            elif IntValue >= 0x100:
-                EdkLogger.error("BPDG", BuildToolError.FORMAT_INVALID,
-                                "Too large PCD value %d for datum type UINT8 for PCD %s(File: %s Line: %s)." % (IntValue, self.PcdCName, self.FileName, self.Lineno))
-        elif Size == 2:
-            if IntValue < 0:
-                EdkLogger.error("BPDG", BuildToolError.FORMAT_INVALID,
-                                "PCD can't be set to negative value %d for PCD %s in UINT16 datum type(File: %s Line: %s)." % (IntValue, self.PcdCName, self.FileName, self.Lineno))
-            elif IntValue >= 0x10000:
-                EdkLogger.error("BPDG", BuildToolError.FORMAT_INVALID,
-                                "Too large PCD value %d for datum type UINT16 for PCD %s(File: %s Line: %s)." % (IntValue, self.PcdCName, self.FileName, self.Lineno))
-        elif Size == 4:
-            if IntValue < 0:
-                EdkLogger.error("BPDG", BuildToolError.FORMAT_INVALID,
-                                "PCD can't be set to negative value %d for PCD %s in UINT32 datum type(File: %s Line: %s)." % (IntValue, self.PcdCName, self.FileName, self.Lineno))
-            elif IntValue >= 0x100000000:
-                EdkLogger.error("BPDG", BuildToolError.FORMAT_INVALID,
-                                "Too large PCD value %d for datum type UINT32 for PCD %s(File: %s Line: %s)." % (IntValue, self.PcdCName, self.FileName, self.Lineno))
-        elif Size == 8:
-            if IntValue < 0:
-                EdkLogger.error("BPDG", BuildToolError.FORMAT_INVALID,
-                                "PCD can't be set to negative value %d for PCD %s in UINT32 datum type(File: %s Line: %s)." % (IntValue, self.PcdCName, self.FileName, self.Lineno))
-            elif IntValue >= 0x10000000000000000:
-                EdkLogger.error("BPDG", BuildToolError.FORMAT_INVALID,
-                                "Too large PCD value %d for datum type UINT32 for PCD %s(File: %s Line: %s)." % (IntValue, self.PcdCName, self.FileName, self.Lineno))
-        else:
-            EdkLogger.error("BPDG", BuildToolError.FORMAT_INVALID,
-                            "Invalid size %d for PCD %s in integer datum size(File: %s Line: %s)." % (Size, self.PcdCName, self.FileName, self.Lineno))
+        for Type, MaxSize in MAX_SIZE_TYPE.items():
+            if Type == 'BOOLEAN':
+                continue
+            if Size == MaxSize:
+                if IntValue < 0:
+                    EdkLogger.error("BPDG", BuildToolError.FORMAT_INVALID,
+                                    "PCD can't be set to negative value %d for PCD %s in %s datum type(File: %s Line: %s)." % (
+                                    IntValue, self.PcdCName, Type, self.FileName, self.Lineno))
+                elif IntValue > MAX_VAL_TYPE[Type]:
+                    EdkLogger.error("BPDG", BuildToolError.FORMAT_INVALID,
+                                    "Too large PCD value %d for datum type %s for PCD %s(File: %s Line: %s)." % (
+                                    IntValue, Type, self.PcdCName, self.FileName, self.Lineno))
 
         try:
             self.PcdValue = pack(_FORMAT_CHAR[Size], IntValue)
@@ -441,7 +423,7 @@ class GenVPD :
                     Alignment = 1
 
                 PCD.Alignment = Alignment
-                if PCD.PcdOffset != '*':
+                if PCD.PcdOffset != TAB_STAR:
                     if PCD.PcdOccupySize % Alignment != 0:
                         if PCD.PcdUnpackValue.startswith("{"):
                             EdkLogger.warn("BPDG", "The offset value of PCD %s is not 8-byte aligned!" %(PCD.PcdCName), File=self.InputFileName)
@@ -487,7 +469,7 @@ class GenVPD :
     def FormatFileLine (self) :
 
         for eachPcd in self.FileLinesList :
-            if eachPcd.PcdOffset != '*' :
+            if eachPcd.PcdOffset != TAB_STAR :
                 # Use pcd's Offset value as key, and pcd's Value as value
                 self.PcdFixedOffsetSizeList.append(eachPcd)
             else :
@@ -502,14 +484,14 @@ class GenVPD :
     def FixVpdOffset (self):
         # At first, the offset should start at 0
         # Sort fixed offset list in order to find out where has free spaces for the pcd's offset
-        # value is "*" to insert into.
+        # value is TAB_STAR to insert into.
 
-        self.PcdFixedOffsetSizeList.sort(lambda x, y: cmp(x.PcdBinOffset, y.PcdBinOffset))
+        self.PcdFixedOffsetSizeList.sort(key=lambda x: x.PcdBinOffset)
 
         #
         # Sort the un-fixed pcd's offset by it's size.
         #
-        self.PcdUnknownOffsetList.sort(lambda x, y: cmp(x.PcdBinSize, y.PcdBinSize))
+        self.PcdUnknownOffsetList.sort(key=lambda x: x.PcdBinSize)
 
         index =0
         for pcd in self.PcdUnknownOffsetList:
@@ -520,7 +502,7 @@ class GenVPD :
                         self.PcdUnknownOffsetList[index+i -1 ], self.PcdUnknownOffsetList[index+i] = self.PcdUnknownOffsetList[index+i], self.PcdUnknownOffsetList[index+i -1]
 
         #
-        # Process all Offset value are "*"
+        # Process all Offset value are TAB_STAR
         #
         if (len(self.PcdFixedOffsetSizeList) == 0) and (len(self.PcdUnknownOffsetList) != 0) :
             # The offset start from 0
@@ -589,7 +571,7 @@ class GenVPD :
                         eachUnfixedPcd      = self.PcdUnknownOffsetList[countOfUnfixedList]
                         needFixPcdSize      = eachUnfixedPcd.PcdOccupySize
                         # Not been fixed
-                        if eachUnfixedPcd.PcdOffset == '*' :
+                        if eachUnfixedPcd.PcdOffset == TAB_STAR :
                             if LastOffset % eachUnfixedPcd.Alignment != 0:
                                 LastOffset = (LastOffset / eachUnfixedPcd.Alignment + 1) * eachUnfixedPcd.Alignment
                             # The offset un-fixed pcd can write into this free space

@@ -38,7 +38,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/DebugLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/PcdLib.h>
-#include <Library/CacheMaintenanceLib.h>
 #include <Library/MtrrLib.h>
 #include <Library/SmmCpuPlatformHookLib.h>
 #include <Library/SmmServicesTableLib.h>
@@ -54,6 +53,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/ReportStatusCodeLib.h>
 #include <Library/SmmCpuFeaturesLib.h>
 #include <Library/PeCoffGetEntryPointLib.h>
+#include <Library/RegisterCpuFeaturesLib.h>
 
 #include <AcpiCpuData.h>
 #include <CpuHotPlugData.h>
@@ -347,13 +347,6 @@ typedef struct {
   volatile BOOLEAN              *CandidateBsp;
 } SMM_DISPATCHER_MP_SYNC_DATA;
 
-#define MSR_SPIN_LOCK_INIT_NUM 15
-
-typedef struct {
-  SPIN_LOCK    *SpinLock;
-  UINT32       MsrIndex;
-} MP_MSR_LOCK;
-
 #define SMM_PSD_OFFSET              0xfb00
 
 ///
@@ -365,7 +358,6 @@ typedef struct {
   volatile BOOLEAN     *AllCpusInSync;
   SPIN_LOCK            *PFLock;
   SPIN_LOCK            *CodeAccessCheckLock;
-  SPIN_LOCK            *MemoryMappedLock;
 } SMM_CPU_SEMAPHORE_GLOBAL;
 
 ///
@@ -378,20 +370,11 @@ typedef struct {
 } SMM_CPU_SEMAPHORE_CPU;
 
 ///
-/// All MSRs semaphores' pointer and counter
-///
-typedef struct {
-  SPIN_LOCK            *Msr;
-  UINTN                AvailableCounter;
-} SMM_CPU_SEMAPHORE_MSR;
-
-///
 /// All semaphores' information
 ///
 typedef struct {
   SMM_CPU_SEMAPHORE_GLOBAL          SemaphoreGlobal;
   SMM_CPU_SEMAPHORE_CPU             SemaphoreCpu;
-  SMM_CPU_SEMAPHORE_MSR             SemaphoreMsr;
 } SMM_CPU_SEMAPHORES;
 
 extern IA32_DESCRIPTOR                     gcSmiGdtr;
@@ -410,7 +393,6 @@ extern SMM_CPU_SEMAPHORES                  mSmmCpuSemaphores;
 extern UINTN                               mSemaphoreSize;
 extern SPIN_LOCK                           *mPFLock;
 extern SPIN_LOCK                           *mConfigSmmCodeAccessCheckLock;
-extern SPIN_LOCK                           *mMemoryMappedLock;
 extern EFI_SMRAM_DESCRIPTOR                *mSmmCpuSmramRanges;
 extern UINTN                               mSmmCpuSmramRangeCount;
 extern UINT8                               mPhysicalAddressBits;

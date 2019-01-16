@@ -69,21 +69,9 @@
 
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdVpdBaseAddress_HELP  #language en-US "VPD type PCD allows a developer to point to an absolute physical address PCDVPDBASEADDRESS to store PCD value."
 
-#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdPeiCoreMaxFvSupported_PROMPT  #language en-US "Maximum number of FV supported by PeiCore"
-
-#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdPeiCoreMaxFvSupported_HELP  #language en-US "Maximum number of FV is supported by PeiCore's dispatching."
-
-#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdPeiCoreMaxPeimPerFv_PROMPT  #language en-US "Maximum File count per FV supported by PeiCore"
-
-#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdPeiCoreMaxPeimPerFv_HELP  #language en-US "Maximum File count in every FV is supported by PeiCore's dispatching. PeiCore supported File type includes PEIM, Combined PEIM and FV."
-
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdPeiCoreMaxPeiStackSize_PROMPT  #language en-US "Maximum stack size for PeiCore"
 
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdPeiCoreMaxPeiStackSize_HELP  #language en-US "Maximum stack size for PeiCore."
-
-#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdPeiCoreMaxPpiSupported_PROMPT  #language en-US "Maximum PPI count supported by PeiCore"
-
-#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdPeiCoreMaxPpiSupported_HELP  #language en-US "Maximum PPI count is supported by PeiCore's PPI database."
 
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdMaxVariableSize_PROMPT  #language en-US "Maximum variable size"
 
@@ -345,8 +333,9 @@
                                                                                   "For the DxeIpl and the DxeCore are both X64, set NX for stack feature also require PcdDxeIplBuildPageTables be TRUE.<BR>"
                                                                                   "For the DxeIpl and the DxeCore are both IA32 (PcdDxeIplSwitchToLongMode is FALSE), set NX for stack feature also require"
                                                                                   "IA32 PAE is supported and Execute Disable Bit is available.<BR>"
-                                                                                  "TRUE  - to set NX for stack.<BR>"
-                                                                                  "FALSE - Not to set NX for stack.<BR>"
+                                                                                  "TRUE  - Set NX for stack.<BR>"
+                                                                                  "FALSE - Do nothing for stack.<BR>"
+                                                                                  "Note: If this PCD is set to FALSE, NX could be still applied to stack due to PcdDxeNxMemoryProtectionPolicy enabled for EfiBootServicesData.<BR>"
 
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdAcpiS3Enable_PROMPT  #language en-US "ACPI S3 Enable"
 
@@ -913,10 +902,6 @@
                                                                                           "this PCD to be TURE if and only if all runtime driver has seperated Code/Data\n"
                                                                                           "section. If PE code/data sections are merged, the result is unpredictable.\n"
 
-#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdIdentifyMappingPageTablePtr_PROMPT  #language en-US "Identify Mapping Page Table pointer."
-
-#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdIdentifyMappingPageTablePtr_HELP  #language en-US "This dynamic PCD hold an address to point to the memory of page table. The page table establishes a 1:1\n"
-                                                                                                "Virtual to Physical mapping according to the processor physical address bits."
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdShadowPeimOnBoot_HELP  #language en-US "Indicates if to shadow PEIM and PeiCore after memory is ready.<BR><BR>\n"
                                                                                      "This PCD is used on other boot path except for S3 boot.\n"
                                                                                      "TRUE  - Shadow PEIM and PeiCore after memory is ready.<BR>\n"
@@ -1098,15 +1083,19 @@
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdImageProtectionPolicy_HELP  #language en-US "Set image protection policy. The policy is bitwise.\n"
                                                                                           "If a bit is set, the image will be protected by DxeCore if it is aligned.\n"
                                                                                           "The code section becomes read-only, and the data section becomes non-executable.\n"
-                                                                                          "If a bit is clear, the image will not be protected.<BR><BR>\n"
+                                                                                          "If a bit is clear, nothing will be done to image code/data sections.<BR><BR>\n"
                                                                                           "BIT0       - Image from unknown device. <BR>\n"
                                                                                           "BIT1       - Image from firmware volume.<BR>"
+                                                                                          "Note: If a bit is cleared, the data section could be still non-executable if\n"
+                                                                                          "PcdDxeNxMemoryProtectionPolicy is enabled for EfiLoaderData, EfiBootServicesData\n"
+                                                                                          "and/or EfiRuntimeServicesData.<BR>"
 
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdDxeNxMemoryProtectionPolicy_PROMPT  #language en-US "Set DXE memory protection policy."
 
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdDxeNxMemoryProtectionPolicy_HELP  #language en-US "Set DXE memory protection policy. The policy is bitwise.\n"
                                                                                                 "If a bit is set, memory regions of the associated type will be mapped\n"
-                                                                                                "non-executable.<BR><BR>\n"
+                                                                                                "non-executable.<BR>\n"
+                                                                                                "If a bit is cleared, nothing will be done to associated type of memory.<BR><BR>\n"
                                                                                                 "\n"
                                                                                                 "Below is bit mask for this PCD: (Order is same as UEFI spec)<BR>\n"
                                                                                                 "EfiReservedMemoryType          0x0001<BR>\n"
@@ -1166,6 +1155,7 @@
                                                                                         " before and after corresponding type of pages allocated if there's enough\n"
                                                                                         " free pages for all of them. The page allocation for the type related to\n"
                                                                                         " cleared bits keeps the same as ususal.\n\n"
+                                                                                        " This PCD is only valid if BIT0 and/or BIT2 are set in PcdHeapGuardPropertyMask.\n\n"
                                                                                         " Below is bit mask for this PCD: (Order is same as UEFI spec)<BR>\n"
                                                                                         "  EfiReservedMemoryType             0x0000000000000001\n"
                                                                                         "  EfiLoaderCode                     0x0000000000000002\n"
@@ -1193,6 +1183,7 @@
                                                                                         " before and after corresponding type of pages which the allocated pool occupies,\n"
                                                                                         " if there's enough free memory for all of them. The pool allocation for the\n"
                                                                                         " type related to cleared bits keeps the same as ususal.\n\n"
+                                                                                        " This PCD is only valid if BIT1 and/or BIT3 are set in PcdHeapGuardPropertyMask.\n\n"
                                                                                         " Below is bit mask for this PCD: (Order is same as UEFI spec)<BR>\n"
                                                                                         "  EfiReservedMemoryType             0x0000000000000001\n"
                                                                                         "  EfiLoaderCode                     0x0000000000000002\n"
@@ -1217,14 +1208,20 @@
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdHeapGuardPropertyMask_PROMPT  #language en-US "The Heap Guard feature mask"
 
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdHeapGuardPropertyMask_HELP    #language en-US "This mask is to control Heap Guard behavior.\n"
-                                                                                            "Note that due to the limit of pool memory implementation and the alignment\n"
-                                                                                            "requirement of UEFI spec, BIT7 is a try-best setting which cannot guarantee\n"
-                                                                                            "that the returned pool is exactly adjacent to head guard page or tail guard\n"
-                                                                                            "page.\n"
+                                                                                            " Note:\n"
+                                                                                            "   a) Heap Guard is for debug purpose and should not be enabled in product"
+                                                                                            "      BIOS.\n"
+                                                                                            "   b) Due to the limit of pool memory implementation and the alignment"
+                                                                                            "      requirement of UEFI spec, BIT7 is a try-best setting which cannot"
+                                                                                            "      guarantee that the returned pool is exactly adjacent to head guard"
+                                                                                            "      page or tail guard page.\n"
+                                                                                            "   c) UEFI freed-memory guard and UEFI pool/page guard cannot be enabled"
+                                                                                            "      at the same time.\n"
                                                                                             "   BIT0 - Enable UEFI page guard.<BR>\n"
                                                                                             "   BIT1 - Enable UEFI pool guard.<BR>\n"
                                                                                             "   BIT2 - Enable SMM page guard.<BR>\n"
                                                                                             "   BIT3 - Enable SMM pool guard.<BR>\n"
+                                                                                            "   BIT4 - Enable UEFI freed-memory guard (Use-After-Free memory detection).<BR>\n"
                                                                                             "   BIT7 - The direction of Guard Page for Pool Guard.\n"
                                                                                             "          0 - The returned pool is near the tail guard page.<BR>\n"
                                                                                             "          1 - The returned pool is near the head guard page.<BR>"
@@ -1251,3 +1248,11 @@
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdEdkiiFpdtStringRecordEnableOnly_HELP    #language en-US "Control which FPDT record format will be used to store the performance entry.\n"
                                                                                                       "On TRUE, the string FPDT record will be used to store every performance entry.\n"
                                                                                                       "On FALSE, the different FPDT record will be used to store the different performance entries."
+
+#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdVpdBaseAddress64_PROMPT  #language en-US "64bit VPD base address"
+
+#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdVpdBaseAddress64_HELP  #language en-US "VPD type PCD allows a developer to point to an absolute physical address PcdVpdBaseAddress64"
+                                                                                   "to store PCD value. It will be DynamicExDefault only."
+                                                                                   "It is used to set VPD region base address. So, it can't be DynamicExVpd PCD. Its value is"
+                                                                                   "required to be accessed in PcdDxe driver entry point. So, its value must be set in PEI phase."
+                                                                                   "It can't depend on EFI variable service, and can't be DynamicExHii PCD."

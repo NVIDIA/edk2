@@ -8,6 +8,11 @@ In general, you should not privately email the maintainer. You should
 email the edk2-devel list, and Cc the package maintainers and
 reviewers.
 
+If the package maintainer wants to hand over the role to other people,
+the package maintainer should send the patch to update Maintainers.txt
+with new maintainer, and the new maintainer should follow up with
+an Acked-by or a Reviewed-by.
+
 Descriptions of section entries:
 
   L: Mailing list that is relevant to this area (default is edk2-devel)
@@ -51,9 +56,8 @@ W: https://github.com/tianocore/tianocore.github.io/wiki/Security
 
 EDK II Releases:
 ----------------
-UDK2014
-W: http://www.tianocore.org/udk2014/
-S: Supported
+W: https://github.com/tianocore/tianocore.github.io/wiki/EDK-II-Release-Planning
+M: Liming Gao <liming.gao@intel.com>
 
 EDK II Packages:
 ----------------
@@ -80,8 +84,9 @@ R: Julien Grall <julien.grall@linaro.org>
 
 BaseTools
 W: https://github.com/tianocore/tianocore.github.io/wiki/BaseTools
-M: Yonghong Zhu <yonghong.zhu@intel.com>
+M: Bob Feng <bob.c.feng@intel.com>
 M: Liming Gao <liming.gao@intel.com>
+R: Yonghong Zhu <yonghong.zhu@intel.com>
 
 BeagleBoardPkg
 W: https://github.com/tianocore/tianocore.github.io/wiki/BeagleBoardPkg
@@ -97,23 +102,18 @@ S: Maintained
 
 CryptoPkg
 W: https://github.com/tianocore/tianocore.github.io/wiki/CryptoPkg
-M: Qin Long <qin.long@intel.com>
 M: Ting Ye <ting.ye@intel.com>
+R: Gang Wei <gang.wei@intel.com>
+R: Jian Wang <jian.j.wang@intel.com>
 
-DuetPkg
-W: https://github.com/tianocore/tianocore.github.io/wiki/DuetPkg
-M: Ruiyu Ni <ruiyu.ni@intel.com>
-M: Hao Wu <hao.a.wu@intel.com>
+DynamicTablesPkg
+W: https://github.com/tianocore/tianocore.github.io/wiki/DynamicTablesPkg
+M: Sami Mujawar <Sami.Mujawar@arm.com>
+M: Alexei Fedorov <Alexei.Fedorov@arm.com>
 
 EdkCompatibilityPkg
 W: https://github.com/tianocore/tianocore.github.io/wiki/EdkCompatibilityPkg
 M: Liming Gao <liming.gao@intel.com>
-
-EdkShellPkg, EdkShellBinPkg
-W: https://github.com/tianocore/tianocore.github.io/wiki/EdkShellPkg
-M: Ruiyu Ni <ruiyu.ni@intel.com>
-T: svn - https://svn.code.sf.net/p/efi-shell/code/trunk/Shell/
-S: Obsolete (Use ShellPkg & ShellBinPkg instead)
 
 EmbeddedPkg
 W: https://github.com/tianocore/tianocore.github.io/wiki/EmbeddedPkg
@@ -124,9 +124,10 @@ EmulatorPkg
 W: https://github.com/tianocore/tianocore.github.io/wiki/EmulatorPkg
 M: Jordan Justen <jordan.l.justen@intel.com>
 M: Andrew Fish <afish@apple.com>
+M: Ruiyu Ni <ruiyu.ni@intel.com>
 S: Maintained
 
-FatPkg, FatBinPkg
+FatPkg
 W: https://github.com/tianocore/tianocore.github.io/wiki/Edk2-fat-driver
 M: Ruiyu Ni <ruiyu.ni@intel.com>
 T: svn - https://svn.code.sf.net/p/edk2-fatdriver2/code/trunk/EnhancedFat
@@ -134,7 +135,7 @@ T: git - https://github.com/tianocore/edk2-FatPkg.git
 
 FmpDevicePkg
 W: https://github.com/tianocore/tianocore.github.io/wiki/FmpDevicePkg
-M: Star Zeng <star.zeng@intel.com>
+M: Liming Gao <liming.gao@intel.com>
 M: Michael D Kinney <michael.d.kinney@intel.com>
 
 IntelFrameworkModulePkg
@@ -148,36 +149,43 @@ M: Liming Gao <liming.gao@intel.com>
 
 IntelFsp2Pkg
 W: https://github.com/tianocore/tianocore.github.io/wiki/IntelFsp2Pkg
-M: Jiewen Yao <jiewen.yao@intel.com>
 M: Chasel Chiu <chasel.chiu@intel.com>
+R: Nate DeSimone <nathaniel.l.desimone@intel.com>
+R: Star Zeng <star.zeng@intel.com>
 
 IntelFsp2WrapperPkg
 W: https://github.com/tianocore/tianocore.github.io/wiki/IntelFsp2WrapperPkg
-M: Jiewen Yao <jiewen.yao@intel.com>
 M: Chasel Chiu <chasel.chiu@intel.com>
+R: Nate DeSimone <nathaniel.l.desimone@intel.com>
+R: Star Zeng <star.zeng@intel.com>
 
 IntelFspPkg
 W: https://github.com/tianocore/tianocore.github.io/wiki/IntelFspPkg
-M: Jiewen Yao <jiewen.yao@intel.com>
+M: Chasel Chiu <chasel.chiu@intel.com>
+R: Nate DeSimone <nathaniel.l.desimone@intel.com>
+R: Star Zeng <star.zeng@intel.com>
 
 IntelFspWrapperPkg
 W: https://github.com/tianocore/tianocore.github.io/wiki/IntelFspWrapperPkg
-M: Jiewen Yao <jiewen.yao@intel.com>
+M: Chasel Chiu <chasel.chiu@intel.com>
+R: Nate DeSimone <nathaniel.l.desimone@intel.com>
+R: Star Zeng <star.zeng@intel.com>
 
 IntelSiliconPkg
 W: https://github.com/tianocore/tianocore.github.io/wiki/IntelSiliconPkg
-M: Jiewen Yao <jiewen.yao@intel.com>
+M: Ruiyu Ni <ruiyu.ni@intel.com>
 M: Rangasai V Chaganty <rangasai.v.chaganty@intel.com>
 
 MdeModulePkg
 W: https://github.com/tianocore/tianocore.github.io/wiki/MdeModulePkg
-M: Star Zeng <star.zeng@intel.com>
-M: Eric Dong <eric.dong@intel.com>
+M: Jian J Wang <jian.j.wang@intel.com>
+M: Hao Wu <hao.a.wu@intel.com>
 M: NetworkPkg maintainers
   (Universal/Network and related libraries, header files)
 R: Ruiyu Ni <ruiyu.ni@intel.com>
   (especially for Bus, Universal/Console, Universal/Disk,
    Universal/BdsDxe and related libraries, header files)
+R: Star Zeng <star.zeng@intel.com>
 
 MdePkg
 W: https://github.com/tianocore/tianocore.github.io/wiki/MdePkg
@@ -240,6 +248,7 @@ M: Ruiyu Ni <ruiyu.ni@intel.com>
 SignedCapsulePkg
 W: https://github.com/tianocore/tianocore.github.io/wiki/SignedCapsulePkg
 M: Jiewen Yao <jiewen.yao@intel.com>
+M: Chao Zhang <chao.b.zhang@intel.com>
 
 SourceLevelDebugPkg
 W: https://github.com/tianocore/tianocore.github.io/wiki/SourceLevelDebugPkg
@@ -253,19 +262,16 @@ M: Jaben Carsey <jaben.carsey@intel.com>
 UefiCpuPkg
 W: https://github.com/tianocore/tianocore.github.io/wiki/UefiCpuPkg
 M: Eric Dong <eric.dong@intel.com>
+M: Ruiyu Ni <ruiyu.ni@intel.com>
 R: Laszlo Ersek <lersek@redhat.com>
 
-UnixPkg
-W: https://github.com/tianocore/tianocore.github.io/wiki/UnixPkg
-S: Obsolete (Use EmulatorPkg instead)
-
 Vlv2DeviceRefCodePkg
-M: David Wei <david.wei@intel.com>
-M: Mang Guo <mang.guo@intel.com>
+M: Zailiang Sun <zailiang.sun@intel.com>
+M: Yi Qian <yi.qian@intel.com>
 
 Vlv2TbltDevicePkg
-M: David Wei <david.wei@intel.com>
-M: Mang Guo <mang.guo@intel.com>
+M: Zailiang Sun <zailiang.sun@intel.com>
+M: Yi Qian <yi.qian@intel.com>
 
 StandaloneMmPkg
 M: Achin Gupta <achin.gupta@arm.com>

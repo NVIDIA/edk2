@@ -39,7 +39,6 @@
 #include <Library/CapsuleLib.h>
 #include <Library/DevicePathLib.h>
 #include <Library/UefiLib.h>
-#include <Library/PcdLib.h>
 #include <Library/BmpSupportLib.h>
 
 #include <Protocol/GraphicsOutput.h>
@@ -765,7 +764,7 @@ GetFmpHandleBufferByType (
             MatchedHandleBuffer[MatchedNumberOfHandles] = HandleBuffer[Index];
           }
           if (MatchedResetRequiredBuffer != NULL) {
-            MatchedResetRequiredBuffer[MatchedNumberOfHandles] = (((TempFmpImageInfo->AttributesSupported & 
+            MatchedResetRequiredBuffer[MatchedNumberOfHandles] = (((TempFmpImageInfo->AttributesSupported &
                                                                  IMAGE_ATTRIBUTE_RESET_REQUIRED) != 0) &&
                                                                  ((TempFmpImageInfo->AttributesSetting &
                                                                  IMAGE_ATTRIBUTE_RESET_REQUIRED) != 0));

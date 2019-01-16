@@ -58,6 +58,12 @@ DmaMap (
   OUT    VOID                           **Mapping
   )
 {
+  if (HostAddress == NULL ||
+      NumberOfBytes == NULL ||
+      DeviceAddress == NULL ||
+      Mapping == NULL ) {
+    return EFI_INVALID_PARAMETER;
+  }
   *DeviceAddress = HostToDeviceAddress (HostAddress);
   *Mapping = NULL;
   return EFI_SUCCESS;
@@ -154,7 +160,7 @@ DmaAllocateAlignedBuffer (
   //
   if (MemoryType == EfiBootServicesData) {
     *HostAddress = AllocateAlignedPages (Pages, Alignment);
-  } else if (MemoryType != EfiRuntimeServicesData) {
+  } else if (MemoryType == EfiRuntimeServicesData) {
     *HostAddress = AllocateAlignedRuntimePages (Pages, Alignment);
   } else {
     return EFI_INVALID_PARAMETER;

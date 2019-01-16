@@ -672,17 +672,21 @@ Ip4ConfigProtocol (
     }
 
     //
-    // Add a route to this connected network in the route table
+    // Add a route to this connected network in the instance route table.
     //
-    Ip4AddRoute (IpInstance->RouteTable, Ip, Netmask, IP4_ALLZERO_ADDRESS);
-
+    Ip4AddRoute (
+      IpInstance->RouteTable,
+      Ip & Netmask,
+      Netmask,
+      IP4_ALLZERO_ADDRESS
+      );
   } else {
     //
     // Use the default address. Check the state.
     //
     if (IpSb->State == IP4_SERVICE_UNSTARTED) {
       //
-      // Trigger the EFI_IP4_CONFIG2_PROTOCOL to retrieve the 
+      // Trigger the EFI_IP4_CONFIG2_PROTOCOL to retrieve the
       // default IPv4 address if it is not available yet.
       //
       Policy = IpSb->Ip4Config2Instance.Policy;
@@ -1259,7 +1263,7 @@ EfiIp4Routes (
   // the gateway address must be a unicast on the connected network if not zero.
   //
   if ((Nexthop != IP4_ALLZERO_ADDRESS) &&
-      (!IP4_NET_EQUAL (Nexthop, IpIf->Ip, IpIf->SubnetMask) ||
+      ((IpIf->SubnetMask != IP4_ALLONE_ADDRESS && !IP4_NET_EQUAL (Nexthop, IpIf->Ip, IpIf->SubnetMask)) ||
         IP4_IS_BROADCAST (Ip4GetNetCast (Nexthop, IpIf)))) {
 
     Status = EFI_INVALID_PARAMETER;
@@ -1660,7 +1664,7 @@ EfiIp4Transmit (
     }
 
     RawHdrLen = (UINT8) (RawHdrLen << 2);
-    
+
     CopyMem (&Head, FirstFragment, IP4_MIN_HEADLEN);
 
     Ip4NtohHead (&Head);
@@ -2250,8 +2254,8 @@ Ip4SentPacketTicking (
 }
 
 /**
-  This heart beat timer of IP4 service instance times out all of its IP4 children's 
-  received-but-not-delivered and transmitted-but-not-recycle packets, and provides 
+  This heart beat timer of IP4 service instance times out all of its IP4 children's
+  received-but-not-delivered and transmitted-but-not-recycle packets, and provides
   time input for its IGMP protocol.
 
   @param[in]  Event                  The IP4 service instance's heart beat timer.
@@ -2269,17 +2273,17 @@ Ip4TimerTicking (
 
   IpSb = (IP4_SERVICE *) Context;
   NET_CHECK_SIGNATURE (IpSb, IP4_SERVICE_SIGNATURE);
-  
+
   Ip4PacketTimerTicking (IpSb);
   Ip4IgmpTicking (IpSb);
 }
 
 /**
-  This dedicated timer is used to poll underlying network media status. In case 
-  of cable swap or wireless network switch, a new round auto configuration will 
-  be initiated. The timer will signal the IP4 to run DHCP configuration again. 
-  IP4 driver will free old IP address related resource, such as route table and 
-  Interface, then initiate a DHCP process to acquire new IP, eventually create 
+  This dedicated timer is used to poll underlying network media status. In case
+  of cable swap or wireless network switch, a new round auto configuration will
+  be initiated. The timer will signal the IP4 to run DHCP configuration again.
+  IP4 driver will free old IP address related resource, such as route table and
+  Interface, then initiate a DHCP process to acquire new IP, eventually create
   route table for new IP address.
 
   @param[in]  Event                  The IP4 service instance's heart beat timer.
@@ -2300,12 +2304,12 @@ Ip4TimerReconfigChecking (
 
   IpSb = (IP4_SERVICE *) Context;
   NET_CHECK_SIGNATURE (IpSb, IP4_SERVICE_SIGNATURE);
-  
+
   OldMediaPresent = IpSb->MediaPresent;
 
   //
-  // Get fresh mode data from MNP, since underlying media status may change. 
-  // Here, it needs to mention that the MediaPresent can also be checked even if 
+  // Get fresh mode data from MNP, since underlying media status may change.
+  // Here, it needs to mention that the MediaPresent can also be checked even if
   // EFI_NOT_STARTED returned while this MNP child driver instance isn't configured.
   //
   Status = IpSb->Mnp->GetModeData (IpSb->Mnp, NULL, &SnpModeData);
@@ -2320,8 +2324,8 @@ Ip4TimerReconfigChecking (
   if (!OldMediaPresent && IpSb->MediaPresent && (IpSb->Ip4Config2Instance.Policy == Ip4Config2PolicyDhcp)) {
     //
     // Signal the IP4 to run the dhcp configuration again. IP4 driver will free
-    // old IP address related resource, such as route table and Interface, then 
-    // initiate a DHCP round to acquire new IP, eventually 
+    // old IP address related resource, such as route table and Interface, then
+    // initiate a DHCP round to acquire new IP, eventually
     // create route table for new IP address.
     //
     if (IpSb->ReconfigEvent != NULL) {

@@ -23,6 +23,7 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/SynchronizationLib.h>
 #include <Library/IoLib.h>
+#include <Library/LocalApicLib.h>
 
 #include <AcpiCpuData.h>
 
@@ -46,16 +47,28 @@ typedef struct {
   CPU_FEATURE_INITIALIZE       InitializeFunc;
   UINT8                        *BeforeFeatureBitMask;
   UINT8                        *AfterFeatureBitMask;
+  UINT8                        *CoreBeforeFeatureBitMask;
+  UINT8                        *CoreAfterFeatureBitMask;
+  UINT8                        *PackageBeforeFeatureBitMask;
+  UINT8                        *PackageAfterFeatureBitMask;
   VOID                         *ConfigData;
   BOOLEAN                      BeforeAll;
   BOOLEAN                      AfterAll;
 } CPU_FEATURES_ENTRY;
 
+//
+// Flags used when program the register.
+//
+typedef struct {
+  volatile UINTN           ConsoleLogLock;          // Spinlock used to control console.
+  volatile UINTN           MemoryMappedLock;        // Spinlock used to program mmio
+  volatile UINT32          *CoreSemaphoreCount;     // Semaphore containers used to program Core semaphore.
+  volatile UINT32          *PackageSemaphoreCount;  // Semaphore containers used to program Package semaphore.
+} PROGRAM_CPU_REGISTER_FLAGS;
+
 typedef struct {
   UINTN                    FeaturesCount;
   UINT32                   BitMaskSize;
-  SPIN_LOCK                MsrLock;
-  SPIN_LOCK                MemoryMappedLock;
   LIST_ENTRY               FeatureList;
 
   CPU_FEATURES_INIT_ORDER  *InitOrder;
@@ -64,9 +77,14 @@ typedef struct {
   UINT8                    *ConfigurationPcd;
   UINT8                    *SettingPcd;
 
+  UINT32                   NumberOfCpus;
+  ACPI_CPU_DATA            *AcpiCpuData;
+
   CPU_REGISTER_TABLE       *RegisterTable;
   CPU_REGISTER_TABLE       *PreSmmRegisterTable;
   UINTN                    BspNumber;
+
+  PROGRAM_CPU_REGISTER_FLAGS  CpuFlags;
 } CPU_FEATURES_DATA;
 
 #define CPU_FEATURE_ENTRY_FROM_LINK(a) \
@@ -84,26 +102,6 @@ typedef struct {
 **/
 CPU_FEATURES_DATA *
 GetCpuFeaturesData (
-  VOID
-  );
-
-/**
-  Enlarges CPU register table for each processor.
-
-  @param[in, out]  RegisterTable   Pointer processor's CPU register table
-**/
-VOID
-EnlargeRegisterTable (
-  IN OUT CPU_REGISTER_TABLE            *RegisterTable
-  );
-
-/**
-  Allocates ACPI NVS memory to save ACPI_CPU_DATA.
-
-  @return  Pointer to allocated ACPI_CPU_DATA.
-**/
-ACPI_CPU_DATA *
-AllocateAcpiCpuData (
   VOID
   );
 
@@ -138,10 +136,13 @@ GetProcessorInformation (
 
   @param[in]  Procedure               A pointer to the function to be run on
                                       enabled APs of the system.
+  @param[in]  MpEvent                 A pointer to the event to be used later
+                                      to check whether procedure has done.
 **/
 VOID
 StartupAPsWorker (
-  IN  EFI_AP_PROCEDURE                 Procedure
+  IN  EFI_AP_PROCEDURE                 Procedure,
+  IN  EFI_EVENT                        MpEvent
   );
 
 /**
@@ -188,6 +189,60 @@ DumpCpuFeatureMask (
 VOID
 DumpCpuFeature (
   IN CPU_FEATURES_ENTRY  *CpuFeature
+  );
+
+/**
+  Return feature dependence result.
+
+  @param[in]  CpuFeature            Pointer to CPU feature.
+  @param[in]  Before                Check before dependence or after.
+  @param[in]  NextCpuFeatureMask    Pointer to next CPU feature Mask.
+
+  @retval     return the dependence result.
+**/
+CPU_FEATURE_DEPENDENCE_TYPE
+DetectFeatureScope (
+  IN CPU_FEATURES_ENTRY         *CpuFeature,
+  IN BOOLEAN                    Before,
+  IN UINT8                      *NextCpuFeatureMask
+  );
+
+/**
+  Return feature dependence result.
+
+  @param[in]  CpuFeature            Pointer to CPU feature.
+  @param[in]  Before                Check before dependence or after.
+  @param[in]  FeatureList           Pointer to CPU feature list.
+
+  @retval     return the dependence result.
+**/
+CPU_FEATURE_DEPENDENCE_TYPE
+DetectNoneNeighborhoodFeatureScope (
+  IN CPU_FEATURES_ENTRY         *CpuFeature,
+  IN BOOLEAN                    Before,
+  IN LIST_ENTRY                 *FeatureList
+  );
+
+/**
+  Programs registers for the calling processor.
+
+  @param[in,out] Buffer  The pointer to private data buffer.
+
+**/
+VOID
+EFIAPI
+SetProcessorRegister (
+  IN OUT VOID            *Buffer
+  );
+
+/**
+  Return ACPI_CPU_DATA data.
+
+  @return  Pointer to ACPI_CPU_DATA data.
+**/
+ACPI_CPU_DATA *
+GetAcpiCpuData (
+  VOID
   );
 
 #endif

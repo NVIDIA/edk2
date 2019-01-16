@@ -2,7 +2,7 @@
 PEIM to produce gPeiUsb2HostControllerPpiGuid based on gPeiUsbControllerPpiGuid
 which is used to enable recovery function from USB Drivers.
 
-Copyright (c) 2014 - 2017, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2014 - 2018, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -211,29 +211,7 @@ XhcPeiReadCapRegister (
   return Data;
 }
 
-/**
-  Read XHCI door bell register.
 
-  @param  Xhc       The XHCI device.
-  @param  Offset    The offset of the door bell register.
-
-  @return The register content read
-
-**/
-UINT32
-XhcPeiReadDoorBellReg (
-  IN  PEI_XHC_DEV       *Xhc,
-  IN  UINT32            Offset
-  )
-{
-  UINT32                  Data;
-
-  ASSERT (Xhc->DBOff != 0);
-
-  Data = MmioRead32 (Xhc->UsbHostControllerBaseAddress + Xhc->DBOff + Offset);
-
-  return Data;
-}
 
 /**
   Write the data to the XHCI door bell register.
@@ -1339,7 +1317,8 @@ XhcPeiGetRootHubPortStatus (
   DEBUG ((EFI_D_INFO, "XhcPeiGetRootHubPortStatus: Port: %x State: %x\n", PortNumber, State));
 
   //
-  // According to XHCI 1.0 spec, bit 10~13 of the root port status register identifies the speed of the attached device.
+  // According to XHCI 1.1 spec November 2017,
+  // bit 10~13 of the root port status register identifies the speed of the attached device.
   //
   switch ((State & XHC_PORTSC_PS) >> 10) {
     case 2:
@@ -1351,6 +1330,7 @@ XhcPeiGetRootHubPortStatus (
       break;
 
     case 4:
+    case 5:
       PortStatus->PortStatus |= USB_PORT_STAT_SUPER_SPEED;
       break;
 

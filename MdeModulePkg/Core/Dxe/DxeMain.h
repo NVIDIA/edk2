@@ -89,7 +89,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/DevicePathLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/ReportStatusCodeLib.h>
-#include <Library/TimerLib.h>
 #include <Library/DxeServicesLib.h>
 #include <Library/DebugAgentLib.h>
 #include <Library/CpuExceptionHandlerLib.h>
@@ -2177,19 +2176,6 @@ CoreDisplayDiscoveredNotDispatched (
   VOID
   );
 
-
-/**
-  Place holder function until all the Boot Services and Runtime Services are
-  available.
-
-  @return EFI_NOT_AVAILABLE_YET
-
-**/
-EFI_STATUS
-EFIAPI
-CoreEfiNotAvailableYetArg0 (
-  VOID
-  );
 
 
 /**

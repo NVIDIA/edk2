@@ -19,6 +19,7 @@ from CommonDataClass.Exceptions import WrnExpression
 import uuid
 from Common.Expression import PcdPattern, BaseExpression
 from Common.DataType import *
+from re import compile
 
 ERR_STRING_EXPR = 'This operator cannot be used in string expression: [%s].'
 ERR_SNYTAX = 'Syntax error, the rest of expression cannot be evaluated: [%s].'
@@ -26,7 +27,7 @@ ERR_MATCH = 'No matching right parenthesis.'
 ERR_STRING_TOKEN = 'Bad string token: [%s].'
 ERR_MACRO_TOKEN = 'Bad macro token: [%s].'
 ERR_EMPTY_TOKEN = 'Empty token is not allowed.'
-ERR_PCD_RESOLVE = 'PCD token cannot be resolved: [%s].'
+ERR_PCD_RESOLVE = 'The PCD should be FeatureFlag type or FixedAtBuild type: [%s].'
 ERR_VALID_TOKEN = 'No more valid token found from rest of string: [%s].'
 ERR_EXPR_TYPE = 'Different types found in expression.'
 ERR_OPERATOR_UNSUPPORT = 'Unsupported operator: [%s]'
@@ -202,7 +203,7 @@ class RangeExpression(BaseExpression):
 
     NonLetterOpLst = ['+', '-', '&', '|', '^', '!', '=', '>', '<']
 
-    RangePattern = re.compile(r'[0-9]+ - [0-9]+')
+    RangePattern = compile(r'[0-9]+ - [0-9]+')
 
     def preProcessRangeExpr(self, expr):
         # convert hex to int

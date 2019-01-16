@@ -2,6 +2,7 @@
   Handle on-disk format and volume structures in UDF/ECMA-167 file systems.
 
   Copyright (C) 2014-2017 Paulo Alcantara <pcacjr@zytor.com>
+  Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials are licensed and made available
   under the terms and conditions of the BSD License which accompanies this
@@ -241,11 +242,16 @@ GetPdFromLongAd (
     //
     // NOTE: Only one Type 1 (Physical) Partition is supported. It has been
     // checked already in Partition driver for existence of a single Type 1
-    // Partition map, so we don't have to double check here.
+    // Partition map. Hence, the 'PartitionReferenceNumber' field (the index
+    // used to access Partition Maps data within the Logical Volume Descriptor)
+    // in the Long Allocation Descriptor should be 0 to indicate there is only
+    // one partition.
     //
-    // Partition reference number can also be retrieved from
-    // LongAd->ExtentLocation.PartitionReferenceNumber, however the spec says
-    // it may be 0, so let's not rely on it.
+    if (LongAd->ExtentLocation.PartitionReferenceNumber != 0) {
+      return NULL;
+    }
+    //
+    // Since only one partition, get the first one directly.
     //
     PartitionNum = *(UINT16 *)((UINTN)&LogicalVolDesc->PartitionMaps[4]);
     break;
@@ -271,26 +277,39 @@ GetPdFromLongAd (
 /**
   Return logical sector number of a given Long Allocation Descriptor.
 
-  @param[in]  Volume              Volume information pointer.
-  @param[in]  LongAd              Long Allocation Descriptor pointer.
+  @param[in]   Volume             Volume information pointer.
+  @param[in]   LongAd             Long Allocation Descriptor pointer.
+  @param[out]  Lsn                Logical sector number pointer.
 
-  @return The logical sector number of a given Long Allocation Descriptor.
+  @retval EFI_SUCCESS             Logical sector number successfully returned.
+  @retval EFI_UNSUPPORTED         Logical sector number is not returned due to
+                                  unrecognized format.
 
 **/
-UINT64
+EFI_STATUS
 GetLongAdLsn (
-  IN UDF_VOLUME_INFO                 *Volume,
-  IN UDF_LONG_ALLOCATION_DESCRIPTOR  *LongAd
+  IN  UDF_VOLUME_INFO                 *Volume,
+  IN  UDF_LONG_ALLOCATION_DESCRIPTOR  *LongAd,
+  OUT UINT64                          *Lsn
   )
 {
   UDF_PARTITION_DESCRIPTOR *PartitionDesc;
 
   PartitionDesc = GetPdFromLongAd (Volume, LongAd);
-  ASSERT (PartitionDesc != NULL);
+  if (PartitionDesc == NULL) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: Fail to get the Partition Descriptor from the given Long Allocation Descriptor.\n",
+      __FUNCTION__
+      ));
+    return EFI_UNSUPPORTED;
+  }
 
-  return (UINT64)PartitionDesc->PartitionStartingLocation -
-    Volume->MainVdsStartLocation +
-    LongAd->ExtentLocation.LogicalBlockNumber;
+  *Lsn = (UINT64)PartitionDesc->PartitionStartingLocation -
+         Volume->MainVdsStartLocation +
+         LongAd->ExtentLocation.LogicalBlockNumber;
+
+  return EFI_SUCCESS;
 }
 
 /**
@@ -342,7 +361,10 @@ FindFileSetDescriptor (
   UDF_DESCRIPTOR_TAG             *DescriptorTag;
 
   LogicalVolDesc = &Volume->LogicalVolDesc;
-  Lsn = GetLongAdLsn (Volume, &LogicalVolDesc->LogicalVolumeContentsUse);
+  Status = GetLongAdLsn (Volume, &LogicalVolDesc->LogicalVolumeContentsUse, &Lsn);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
 
   //
   // As per UDF 2.60 specification:
@@ -468,8 +490,6 @@ DuplicateFid (
   *NewFileIdentifierDesc =
     (UDF_FILE_IDENTIFIER_DESCRIPTOR *)AllocateCopyPool (
       (UINTN) GetFidDescriptorLength (FileIdentifierDesc), FileIdentifierDesc);
-
-  ASSERT (*NewFileIdentifierDesc != NULL);
 }
 
 /**
@@ -490,8 +510,6 @@ DuplicateFe (
   )
 {
   *NewFileEntry = AllocateCopyPool (Volume->FileEntrySize, FileEntry);
-
-  ASSERT (*NewFileEntry != NULL);
 }
 
 /**
@@ -503,15 +521,27 @@ DuplicateFe (
 
   NOTE: The FE/EFE can be thought it was an inode.
 
+  @attention This is boundary function that may receive untrusted input.
+  @attention The input is from FileSystem.
+
+  The (Extended) File Entry is external input, so this routine will do basic
+  validation for (Extended) File Entry and report status.
+
   @param[in]  FileEntryData       (Extended) File Entry pointer.
+  @param[in]  FileEntrySize       Size of the (Extended) File Entry specified
+                                  by FileEntryData.
   @param[out] Data                Buffer contains the raw data of a given
                                   (Extended) File Entry.
   @param[out] Length              Length of the data in Buffer.
 
+  @retval EFI_SUCCESS             Raw data and size of the FE/EFE was read.
+  @retval EFI_VOLUME_CORRUPTED    The file system structures are corrupted.
+
 **/
-VOID
+EFI_STATUS
 GetFileEntryData (
   IN   VOID    *FileEntryData,
+  IN   UINTN   FileEntrySize,
   OUT  VOID    **Data,
   OUT  UINT64  *Length
   )
@@ -535,20 +565,40 @@ GetFileEntryData (
     *Data    = (VOID *)((UINT8 *)FileEntry->Data +
                         FileEntry->LengthOfExtendedAttributes);
   }
+
+  if ((*Length > FileEntrySize) ||
+      ((UINTN)FileEntryData > (UINTN)(*Data)) ||
+      ((UINTN)(*Data) - (UINTN)FileEntryData > FileEntrySize - *Length)) {
+    return EFI_VOLUME_CORRUPTED;
+  }
+  return EFI_SUCCESS;
 }
 
 /**
   Get Allocation Descriptors' data information from a given FE/EFE.
 
+  @attention This is boundary function that may receive untrusted input.
+  @attention The input is from FileSystem.
+
+  The (Extended) File Entry is external input, so this routine will do basic
+  validation for (Extended) File Entry and report status.
+
   @param[in]  FileEntryData       (Extended) File Entry pointer.
+  @param[in]  FileEntrySize       Size of the (Extended) File Entry specified
+                                  by FileEntryData.
   @param[out] AdsData             Buffer contains the Allocation Descriptors'
                                   data from a given FE/EFE.
   @param[out] Length              Length of the data in AdsData.
 
+  @retval EFI_SUCCESS             The data and size of Allocation Descriptors
+                                  were read from the FE/EFE.
+  @retval EFI_VOLUME_CORRUPTED    The file system structures are corrupted.
+
 **/
-VOID
+EFI_STATUS
 GetAdsInformation (
   IN   VOID    *FileEntryData,
+  IN   UINTN   FileEntrySize,
   OUT  VOID    **AdsData,
   OUT  UINT64  *Length
   )
@@ -572,6 +622,13 @@ GetAdsInformation (
     *AdsData = (VOID *)((UINT8 *)FileEntry->Data +
                         FileEntry->LengthOfExtendedAttributes);
   }
+
+  if ((*Length > FileEntrySize) ||
+      ((UINTN)FileEntryData > (UINTN)(*AdsData)) ||
+      ((UINTN)(*AdsData) - (UINTN)FileEntryData > FileEntrySize - *Length)) {
+    return EFI_VOLUME_CORRUPTED;
+  }
+  return EFI_SUCCESS;
 }
 
 /**
@@ -726,6 +783,10 @@ GetAllocationDescriptor (
       );
   }
 
+  //
+  // Code should never reach here.
+  //
+  ASSERT (FALSE);
   return EFI_DEVICE_ERROR;
 }
 
@@ -736,34 +797,47 @@ GetAllocationDescriptor (
   @param[in]  Volume              Volume information pointer.
   @param[in]  ParentIcb           Long Allocation Descriptor pointer.
   @param[in]  Ad                  Allocation Descriptor pointer.
+  @param[out] Lsn                 Logical sector number pointer.
 
-  @return The logical sector number of the given Allocation Descriptor.
+  @retval EFI_SUCCESS             Logical sector number of the given Allocation
+                                  Descriptor successfully returned.
+  @retval EFI_UNSUPPORTED         Logical sector number of the given Allocation
+                                  Descriptor is not returned due to unrecognized
+                                  format.
 
 **/
-UINT64
+EFI_STATUS
 GetAllocationDescriptorLsn (
-  IN UDF_FE_RECORDING_FLAGS          RecordingFlags,
-  IN UDF_VOLUME_INFO                 *Volume,
-  IN UDF_LONG_ALLOCATION_DESCRIPTOR  *ParentIcb,
-  IN VOID                            *Ad
+  IN  UDF_FE_RECORDING_FLAGS          RecordingFlags,
+  IN  UDF_VOLUME_INFO                 *Volume,
+  IN  UDF_LONG_ALLOCATION_DESCRIPTOR  *ParentIcb,
+  IN  VOID                            *Ad,
+  OUT UINT64                          *Lsn
   )
 {
   UDF_PARTITION_DESCRIPTOR *PartitionDesc;
 
   if (RecordingFlags == LongAdsSequence) {
-    return GetLongAdLsn (Volume, (UDF_LONG_ALLOCATION_DESCRIPTOR *)Ad);
+    return GetLongAdLsn (Volume, (UDF_LONG_ALLOCATION_DESCRIPTOR *)Ad, Lsn);
   } else if (RecordingFlags == ShortAdsSequence) {
     PartitionDesc = GetPdFromLongAd (Volume, ParentIcb);
-    ASSERT (PartitionDesc != NULL);
+    if (PartitionDesc == NULL) {
+      return EFI_UNSUPPORTED;
+    }
 
-    return GetShortAdLsn (
-      Volume,
-      PartitionDesc,
-      (UDF_SHORT_ALLOCATION_DESCRIPTOR *)Ad
-      );
+    *Lsn = GetShortAdLsn (
+             Volume,
+             PartitionDesc,
+             (UDF_SHORT_ALLOCATION_DESCRIPTOR *)Ad
+             );
+    return EFI_SUCCESS;
   }
 
-  return 0;
+  //
+  // Code should never reach here.
+  //
+  ASSERT (FALSE);
+  return EFI_UNSUPPORTED;
 }
 
 /**
@@ -808,10 +882,14 @@ GetAedAdsOffset (
   UDF_DESCRIPTOR_TAG                *DescriptorTag;
 
   ExtentLength  = GET_EXTENT_LENGTH (RecordingFlags, Ad);
-  Lsn           = GetAllocationDescriptorLsn (RecordingFlags,
+  Status        = GetAllocationDescriptorLsn (RecordingFlags,
                                               Volume,
                                               ParentIcb,
-                                              Ad);
+                                              Ad,
+                                              &Lsn);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
 
   Data = AllocatePool (ExtentLength);
   if (Data == NULL) {
@@ -1000,6 +1078,7 @@ ReadFile (
   EFI_STATUS              Status;
   UINT32                  LogicalBlockSize;
   VOID                    *Data;
+  VOID                    *DataBak;
   UINT64                  Length;
   VOID                    *Ad;
   UINT64                  AdOffset;
@@ -1065,7 +1144,10 @@ ReadFile (
     //
     // There are no extents for this FE/EFE. All data is inline.
     //
-    GetFileEntryData (FileEntryData, &Data, &Length);
+    Status = GetFileEntryData (FileEntryData, Volume->FileEntrySize, &Data, &Length);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
 
     if (ReadFileInfo->Flags == ReadFileGetFileSize) {
       ReadFileInfo->ReadLength = Length;
@@ -1109,7 +1191,11 @@ ReadFile (
     // This FE/EFE contains a run of Allocation Descriptors. Get data + size
     // for start reading them out.
     //
-    GetAdsInformation (FileEntryData, &Data, &Length);
+    Status = GetAdsInformation (FileEntryData, Volume->FileEntrySize, &Data, &Length);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
     AdOffset = 0;
 
     for (;;) {
@@ -1133,12 +1219,7 @@ ReadFile (
       // Descriptor and its extents (ADs).
       //
       if (GET_EXTENT_FLAGS (RecordingFlags, Ad) == ExtentIsNextExtent) {
-        if (!DoFreeAed) {
-          DoFreeAed = TRUE;
-        } else {
-          FreePool (Data);
-        }
-
+        DataBak = Data;
         Status = GetAedAdsData (
           BlockIo,
           DiskIo,
@@ -1149,6 +1230,13 @@ ReadFile (
           &Data,
           &Length
           );
+
+        if (!DoFreeAed) {
+          DoFreeAed = TRUE;
+        } else {
+          FreePool (DataBak);
+        }
+
         if (EFI_ERROR (Status)) {
           goto Error_Get_Aed;
         }
@@ -1160,10 +1248,14 @@ ReadFile (
 
       ExtentLength = GET_EXTENT_LENGTH (RecordingFlags, Ad);
 
-      Lsn = GetAllocationDescriptorLsn (RecordingFlags,
-                                        Volume,
-                                        ParentIcb,
-                                        Ad);
+      Status = GetAllocationDescriptorLsn (RecordingFlags,
+                                           Volume,
+                                           ParentIcb,
+                                           Ad,
+                                           &Lsn);
+      if (EFI_ERROR (Status)) {
+        goto Done;
+      }
 
       switch (ReadFileInfo->Flags) {
       case ReadFileGetFileSize:
@@ -1370,7 +1462,15 @@ InternalFindFile (
     }
 
     DuplicateFe (BlockIo, Volume, Parent->FileEntry, &File->FileEntry);
+    if (File->FileEntry == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+
     DuplicateFid (Parent->FileIdentifierDesc, &File->FileIdentifierDesc);
+    if (File->FileIdentifierDesc == NULL) {
+      FreePool (File->FileEntry);
+      return EFI_OUT_OF_RESOURCES;
+    }
 
     return EFI_SUCCESS;
   }
@@ -1400,6 +1500,15 @@ InternalFindFile (
 
       break;
     }
+    //
+    // After calling function ReadDirectoryEntry(), if 'FileIdentifierDesc' is
+    // NULL, then the 'Status' must be EFI_OUT_OF_RESOURCES. Hence, if the code
+    // reaches here, 'FileIdentifierDesc' must be not NULL.
+    //
+    // The ASSERT here is for addressing a false positive NULL pointer
+    // dereference issue raised from static analysis.
+    //
+    ASSERT (FileIdentifierDesc != NULL);
 
     if (FileIdentifierDesc->FileCharacteristics & PARENT_FILE) {
       //
@@ -1412,7 +1521,7 @@ InternalFindFile (
         break;
       }
     } else {
-      Status = GetFileNameFromFid (FileIdentifierDesc, FoundFileName);
+      Status = GetFileNameFromFid (FileIdentifierDesc, ARRAY_SIZE (FoundFileName), FoundFileName);
       if (EFI_ERROR (Status)) {
         break;
       }
@@ -1617,7 +1726,11 @@ FindFileEntry (
   UDF_DESCRIPTOR_TAG  *DescriptorTag;
   VOID                *ReadBuffer;
 
-  Lsn               = GetLongAdLsn (Volume, Icb);
+  Status = GetLongAdLsn (Volume, Icb, &Lsn);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
   LogicalBlockSize  = Volume->LogicalVolDesc.LogicalBlockSize;
 
   ReadBuffer = AllocateZeroPool (Volume->FileEntrySize);
@@ -1705,6 +1818,11 @@ FindFile (
   while (*FilePath != L'\0') {
     FileNamePointer = FileName;
     while (*FilePath != L'\0' && *FilePath != L'\\') {
+      if ((((UINTN)FileNamePointer - (UINTN)FileName) / sizeof (CHAR16)) >=
+          (ARRAY_SIZE (FileName) - 1)) {
+        return EFI_NOT_FOUND;
+      }
+
       *FileNamePointer++ = *FilePath++;
     }
 
@@ -1732,9 +1850,20 @@ FindFile (
         // We've already a file pointer (Root) for the root directory. Duplicate
         // its FE/EFE and FID descriptors.
         //
-        DuplicateFe (BlockIo, Volume, Root->FileEntry, &File->FileEntry);
-        DuplicateFid (Root->FileIdentifierDesc, &File->FileIdentifierDesc);
         Status = EFI_SUCCESS;
+        DuplicateFe (BlockIo, Volume, Root->FileEntry, &File->FileEntry);
+        if (File->FileEntry == NULL) {
+          Status = EFI_OUT_OF_RESOURCES;
+        } else {
+          //
+          // File->FileEntry is not NULL.
+          //
+          DuplicateFid (Root->FileIdentifierDesc, &File->FileIdentifierDesc);
+          if (File->FileIdentifierDesc == NULL) {
+            FreePool (File->FileEntry);
+            Status = EFI_OUT_OF_RESOURCES;
+          }
+        }
       }
     } else {
       //
@@ -1874,6 +2003,9 @@ ReadDirectoryEntry (
   } while (FileIdentifierDesc->FileCharacteristics & DELETED_FILE);
 
   DuplicateFid (FileIdentifierDesc, FoundFid);
+  if (*FoundFid == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
 
   return EFI_SUCCESS;
 }
@@ -1882,22 +2014,38 @@ ReadDirectoryEntry (
   Get a filename (encoded in OSTA-compressed format) from a File Identifier
   Descriptor on an UDF volume.
 
+  @attention This is boundary function that may receive untrusted input.
+  @attention The input is from FileSystem.
+
+  The File Identifier Descriptor is external input, so this routine will do
+  basic validation for File Identifier Descriptor and report status.
+
   @param[in]   FileIdentifierDesc  File Identifier Descriptor pointer.
+  @param[in]   CharMax             The maximum number of FileName Unicode char,
+                                   including terminating null char.
   @param[out]  FileName            Decoded filename.
 
   @retval EFI_SUCCESS           Filename decoded and read.
   @retval EFI_VOLUME_CORRUPTED  The file system structures are corrupted.
+  @retval EFI_BUFFER_TOO_SMALL  The string buffer FileName cannot hold the
+                                decoded filename.
 **/
 EFI_STATUS
 GetFileNameFromFid (
   IN   UDF_FILE_IDENTIFIER_DESCRIPTOR  *FileIdentifierDesc,
+  IN   UINTN                           CharMax,
   OUT  CHAR16                          *FileName
   )
 {
-  UINT8 *OstaCompressed;
-  UINT8 CompressionId;
-  UINT8 Length;
-  UINTN Index;
+  UINT8  *OstaCompressed;
+  UINT8  CompressionId;
+  UINT8  Length;
+  UINTN  Index;
+  CHAR16 *FileNameBak;
+
+  if (CharMax == 0) {
+    return EFI_BUFFER_TOO_SMALL;
+  }
 
   OstaCompressed =
     (UINT8 *)(
@@ -1910,10 +2058,22 @@ GetFileNameFromFid (
     return EFI_VOLUME_CORRUPTED;
   }
 
+  FileNameBak = FileName;
+
   //
   // Decode filename.
   //
   Length = FileIdentifierDesc->LengthOfFileIdentifier;
+  if (CompressionId == 16) {
+    if (((UINTN)Length >> 1) > CharMax) {
+      return EFI_BUFFER_TOO_SMALL;
+    }
+  } else {
+    if ((Length != 0) && ((UINTN)Length - 1 > CharMax)) {
+      return EFI_BUFFER_TOO_SMALL;
+    }
+  }
+
   for (Index = 1; Index < Length; Index++) {
     if (CompressionId == 16) {
       *FileName = OstaCompressed[Index++] << 8;
@@ -1928,13 +2088,23 @@ GetFileNameFromFid (
     FileName++;
   }
 
-  *FileName = L'\0';
+  Index = ((UINTN)FileName - (UINTN)FileNameBak) / sizeof (CHAR16);
+  if (Index > CharMax - 1) {
+    Index = CharMax - 1;
+  }
+  FileNameBak[Index] = L'\0';
 
   return EFI_SUCCESS;
 }
 
 /**
   Resolve a symlink file on an UDF volume.
+
+  @attention This is boundary function that may receive untrusted input.
+  @attention The input is from FileSystem.
+
+  The Path Component is external input, so this routine will do basic
+  validation for Path Component and report status.
 
   @param[in]   BlockIo        BlockIo interface.
   @param[in]   DiskIo         DiskIo interface.
@@ -1974,6 +2144,10 @@ ResolveSymlink (
   UINTN               Index;
   UINT8               CompressionId;
   UDF_FILE_INFO       PreviousFile;
+  BOOLEAN             NotParent;
+  BOOLEAN             NotFile;
+
+  ZeroMem ((VOID *)File, sizeof (UDF_FILE_INFO));
 
   //
   // Symlink files on UDF volumes do not contain so much data other than
@@ -2031,8 +2205,18 @@ ResolveSymlink (
       // "." (current file). Duplicate both FE/EFE and FID of this file.
       //
       DuplicateFe (BlockIo, Volume, PreviousFile.FileEntry, &File->FileEntry);
+      if (File->FileEntry == NULL) {
+        Status = EFI_OUT_OF_RESOURCES;
+        goto Error_Find_File;
+      }
+
       DuplicateFid (PreviousFile.FileIdentifierDesc,
                     &File->FileIdentifierDesc);
+      if (File->FileIdentifierDesc == NULL) {
+        FreePool (File->FileEntry);
+        Status = EFI_OUT_OF_RESOURCES;
+        goto Error_Find_File;
+      }
       goto Next_Path_Component;
     case 5:
       //
@@ -2047,6 +2231,10 @@ ResolveSymlink (
         return EFI_VOLUME_CORRUPTED;
       }
 
+      if ((UINTN)PathComp->ComponentIdentifier + PathCompLength > (UINTN)EndData) {
+        return EFI_VOLUME_CORRUPTED;
+      }
+
       Char = FileName;
       for (Index = 1; Index < PathCompLength; Index++) {
         if (CompressionId == 16) {
@@ -2054,6 +2242,9 @@ ResolveSymlink (
                           Index) << 8;
           Index++;
         } else {
+          if (Index > ARRAY_SIZE (FileName)) {
+            return EFI_UNSUPPORTED;
+          }
           *Char = 0;
         }
 
@@ -2064,8 +2255,19 @@ ResolveSymlink (
         Char++;
       }
 
-      *Char = L'\0';
+      Index = ((UINTN)Char - (UINTN)FileName) / sizeof (CHAR16);
+      if (Index > ARRAY_SIZE (FileName) - 1) {
+        Index = ARRAY_SIZE (FileName) - 1;
+      }
+      FileName[Index] = L'\0';
       break;
+    default:
+      //
+      // According to the ECMA-167 standard (3rd Edition - June 1997), Section
+      // 14.16.1.1, all other values are reserved.
+      //
+      Status = EFI_VOLUME_CORRUPTED;
+      goto Error_Find_File;
     }
 
     //
@@ -2090,18 +2292,39 @@ ResolveSymlink (
       break;
     }
 
-    if (CompareMem ((VOID *)&PreviousFile, (VOID *)Parent,
-                    sizeof (UDF_FILE_INFO)) != 0) {
+    //
+    // Check the content in the file info pointed by File.
+    //
+    if ((File->FileEntry == NULL) || (File->FileIdentifierDesc == NULL)) {
+      Status = EFI_VOLUME_CORRUPTED;
+      goto Error_Find_File;
+    }
+
+    NotParent = (CompareMem ((VOID *)&PreviousFile, (VOID *)Parent,
+                 sizeof (UDF_FILE_INFO)) != 0);
+    NotFile   = (CompareMem ((VOID *)&PreviousFile, (VOID *)File,
+                 sizeof (UDF_FILE_INFO)) != 0);
+
+    if (NotParent && NotFile) {
       CleanupFileInformation (&PreviousFile);
     }
 
-    CopyMem ((VOID *)&PreviousFile, (VOID *)File, sizeof (UDF_FILE_INFO));
+    if (NotFile) {
+      CopyMem ((VOID *)&PreviousFile, (VOID *)File, sizeof (UDF_FILE_INFO));
+    }
   }
 
   //
   // Unmap the symlink file.
   //
   FreePool (ReadFileInfo.FileData);
+
+  //
+  // Check the content in the resolved file info.
+  //
+  if ((File->FileEntry == NULL) || (File->FileIdentifierDesc == NULL)) {
+    return EFI_VOLUME_CORRUPTED;
+  }
 
   return EFI_SUCCESS;
 
@@ -2270,7 +2493,7 @@ SetFileInfo (
     FileInfo->CreateTime.Month       = FileEntry->AccessTime.Month;
     FileInfo->CreateTime.Day         = FileEntry->AccessTime.Day;
     FileInfo->CreateTime.Hour        = FileEntry->AccessTime.Hour;
-    FileInfo->CreateTime.Minute      = FileEntry->AccessTime.Second;
+    FileInfo->CreateTime.Minute      = FileEntry->AccessTime.Minute;
     FileInfo->CreateTime.Second      = FileEntry->AccessTime.Second;
     FileInfo->CreateTime.Nanosecond  =
                                    FileEntry->AccessTime.HundredsOfMicroseconds;
@@ -2348,7 +2571,98 @@ SetFileInfo (
 }
 
 /**
+  Get volume label of an UDF volume.
+
+  @attention This is boundary function that may receive untrusted input.
+  @attention The input is from FileSystem.
+
+  The File Set Descriptor is external input, so this routine will do basic
+  validation for File Set Descriptor and report status.
+
+  @param[in]   Volume   Volume information pointer.
+  @param[in]   CharMax  The maximum number of Unicode char in String,
+                        including terminating null char.
+  @param[out]  String   String buffer pointer to store the volume label.
+
+  @retval EFI_SUCCESS           Volume label is returned.
+  @retval EFI_VOLUME_CORRUPTED  The file system structures are corrupted.
+  @retval EFI_BUFFER_TOO_SMALL  The string buffer String cannot hold the
+                                volume label.
+
+**/
+EFI_STATUS
+GetVolumeLabel (
+  IN   UDF_VOLUME_INFO  *Volume,
+  IN   UINTN            CharMax,
+  OUT  CHAR16           *String
+  )
+{
+  UDF_FILE_SET_DESCRIPTOR  *FileSetDesc;
+  UINTN                    Index;
+  UINT8                    *OstaCompressed;
+  UINT8                    CompressionId;
+  CHAR16                   *StringBak;
+
+  FileSetDesc = &Volume->FileSetDesc;
+
+  OstaCompressed = &FileSetDesc->LogicalVolumeIdentifier[0];
+
+  CompressionId = OstaCompressed[0];
+  if (!IS_VALID_COMPRESSION_ID (CompressionId)) {
+    return EFI_VOLUME_CORRUPTED;
+  }
+
+  StringBak = String;
+  for (Index = 1; Index < 128; Index++) {
+    if (CompressionId == 16) {
+      if ((Index >> 1) > CharMax) {
+        return EFI_BUFFER_TOO_SMALL;
+      }
+
+      *String = *(UINT8 *)(OstaCompressed + Index) << 8;
+      Index++;
+    } else {
+      if (Index > CharMax) {
+        return EFI_BUFFER_TOO_SMALL;
+      }
+
+      *String = 0;
+    }
+
+    if (Index < 128) {
+      *String |= (CHAR16)(*(UINT8 *)(OstaCompressed + Index));
+    }
+
+    //
+    // Unlike FID Identifiers, Logical Volume Identifier is stored in a
+    // NULL-terminated OSTA compressed format, so we must check for the NULL
+    // character.
+    //
+    if (*String == L'\0') {
+      break;
+    }
+
+    String++;
+  }
+
+  Index = ((UINTN)String - (UINTN)StringBak) / sizeof (CHAR16);
+  if (Index > CharMax - 1) {
+    Index = CharMax - 1;
+  }
+  StringBak[Index] = L'\0';
+
+  return EFI_SUCCESS;
+}
+
+/**
   Get volume and free space size information of an UDF volume.
+
+  @attention This is boundary function that may receive untrusted input.
+  @attention The input is from FileSystem.
+
+  The Logical Volume Descriptor and the Logical Volume Integrity Descriptor are
+  external inputs, so this routine will do basic validation for both descriptors
+  and report status.
 
   @param[in]   BlockIo        BlockIo interface.
   @param[in]   DiskIo         DiskIo interface.
@@ -2388,7 +2702,8 @@ GetVolumeSize (
 
   ExtentAd = &LogicalVolDesc->IntegritySequenceExtent;
 
-  if (ExtentAd->ExtentLength == 0) {
+  if ((ExtentAd->ExtentLength == 0) ||
+      (ExtentAd->ExtentLength < sizeof (UDF_LOGICAL_VOLUME_INTEGRITY))) {
     return EFI_VOLUME_CORRUPTED;
   }
 
@@ -2424,6 +2739,13 @@ GetVolumeSize (
   // Check if read block is a Logical Volume Integrity Descriptor
   //
   if (DescriptorTag->TagIdentifier != UdfLogicalVolumeIntegrityDescriptor) {
+    Status = EFI_VOLUME_CORRUPTED;
+    goto Out_Free;
+  }
+
+  if ((LogicalVolInt->NumberOfPartitions > MAX_UINT32 / sizeof (UINT32) / 2) ||
+      (LogicalVolInt->NumberOfPartitions * sizeof (UINT32) * 2 >
+       ExtentAd->ExtentLength - sizeof (UDF_LOGICAL_VOLUME_INTEGRITY))) {
     Status = EFI_VOLUME_CORRUPTED;
     goto Out_Free;
   }

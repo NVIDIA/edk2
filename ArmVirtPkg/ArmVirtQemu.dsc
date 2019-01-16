@@ -143,10 +143,6 @@
   gEmbeddedTokenSpaceGuid.PcdPrePiCpuIoSize|16
 
 [PcdsFixedAtBuild.AARCH64]
-  # KVM limits it IPA space to 40 bits (1 TB), so there is no need to
-  # support anything bigger, even if the host hardware does
-  gEmbeddedTokenSpaceGuid.PcdPrePiCpuMemorySize|40
-
   # Clearing BIT0 in this PCD prevents installing a 32-bit SMBIOS entry point,
   # if the entry point version is >= 3.0. AARCH64 OSes cannot assume the
   # presence of the 32-bit entry point anyway (because many AARCH64 systems
@@ -346,18 +342,14 @@
   MdeModulePkg/Universal/Network/VlanConfigDxe/VlanConfigDxe.inf
   MdeModulePkg/Universal/Network/Mtftp4Dxe/Mtftp4Dxe.inf
   MdeModulePkg/Universal/Network/Udp4Dxe/Udp4Dxe.inf
+  NetworkPkg/TcpDxe/TcpDxe.inf
+  NetworkPkg/UefiPxeBcDxe/UefiPxeBcDxe.inf
+  NetworkPkg/IScsiDxe/IScsiDxe.inf
 !if $(NETWORK_IP6_ENABLE) == TRUE
   NetworkPkg/Ip6Dxe/Ip6Dxe.inf
-  NetworkPkg/TcpDxe/TcpDxe.inf
   NetworkPkg/Udp6Dxe/Udp6Dxe.inf
   NetworkPkg/Dhcp6Dxe/Dhcp6Dxe.inf
   NetworkPkg/Mtftp6Dxe/Mtftp6Dxe.inf
-  NetworkPkg/UefiPxeBcDxe/UefiPxeBcDxe.inf
-  NetworkPkg/IScsiDxe/IScsiDxe.inf
-!else
-  MdeModulePkg/Universal/Network/Tcp4Dxe/Tcp4Dxe.inf
-  MdeModulePkg/Universal/Network/UefiPxeBcDxe/UefiPxeBcDxe.inf
-  MdeModulePkg/Universal/Network/IScsiDxe/IScsiDxe.inf
 !endif
 !if $(HTTP_BOOT_ENABLE) == TRUE
   NetworkPkg/DnsDxe/DnsDxe.inf

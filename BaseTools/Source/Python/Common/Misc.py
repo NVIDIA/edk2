@@ -24,6 +24,7 @@ import re
 import pickle
 import array
 import shutil
+from random import sample
 from struct import pack
 from UserDict import IterableUserDict
 from UserList import UserList
@@ -38,7 +39,9 @@ from Common.LongFilePathSupport import OpenLongFilePath as open
 from Common.MultipleWorkspace import MultipleWorkspace as mws
 import uuid
 from CommonDataClass.Exceptions import BadExpression
+from Common.caching import cached_property
 import subprocess
+from collections import OrderedDict
 ## Regular expression used to find out place holders in string template
 gPlaceholderPattern = re.compile("\$\{([^$()\s]+)\}", re.MULTILINE | re.UNICODE)
 
@@ -48,6 +51,8 @@ addressPatternGeneral = re.compile("^Address[' ']+Publics by Value[' ']+Rva\+Bas
 valuePatternGcc = re.compile('^([\w_\.]+) +([\da-fA-Fx]+) +([\da-fA-Fx]+)$')
 pcdPatternGcc = re.compile('^([\da-fA-Fx]+) +([\da-fA-Fx]+)')
 secReGeneral = re.compile('^([\da-fA-F]+):([\da-fA-F]+) +([\da-fA-F]+)[Hh]? +([.\w\$]+) +(\w+)', re.UNICODE)
+
+StructPattern = re.compile(r'[_a-zA-Z][0-9A-Za-z_]*$')
 
 ## Dictionary used to store file time stamp for quick re-access
 gFileTimeStampCache = {}    # {file path : file time stamp}
@@ -360,6 +365,8 @@ def GuidStructureByteArrayToGuidString(GuidValue):
 #   @retval     string      The GUID value in xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx format
 #
 def GuidStructureStringToGuidString(GuidValue):
+    if not GlobalData.gGuidCFormatPattern.match(GuidValue):
+        return ''
     guidValueString = GuidValue.lower().replace("{", "").replace("}", "").replace(" ", "").replace(";", "")
     guidValueList = guidValueString.split(",")
     if len(guidValueList) != 11:
@@ -472,19 +479,9 @@ def SaveFileOnChange(File, Content, IsBinaryFile=True):
             EdkLogger.error(None, PERMISSION_FAILURE, "Do not have write permission on directory %s" % DirName)
 
     try:
-        if GlobalData.gIsWindows:
-            try:
-                from .PyUtility import SaveFileToDisk
-                if not SaveFileToDisk(File, Content):
-                    EdkLogger.error(None, FILE_CREATE_FAILURE, ExtraData=File)
-            except:
-                Fd = open(File, "wb")
-                Fd.write(Content)
-                Fd.close()
-        else:
-            Fd = open(File, "wb")
-            Fd.write(Content)
-            Fd.close()
+        Fd = open(File, "wb")
+        Fd.write(Content)
+        Fd.close()
     except IOError as X:
         EdkLogger.error(None, FILE_CREATE_FAILURE, ExtraData='IOError %s' % X)
 
@@ -782,7 +779,7 @@ class TemplateString(object):
 
     ## Constructor
     def __init__(self, Template=None):
-        self.String = ''
+        self.String = []
         self.IsBinary = False
         self._Template = Template
         self._TemplateSectionList = self._Parse(Template)
@@ -792,7 +789,7 @@ class TemplateString(object):
     #   @retval     string  The string replaced
     #
     def __str__(self):
-        return self.String
+        return "".join(self.String)
 
     ## Split the template string into fragments per the ${BEGIN} and ${END} flags
     #
@@ -840,9 +837,12 @@ class TemplateString(object):
     def Append(self, AppendString, Dictionary=None):
         if Dictionary:
             SectionList = self._Parse(AppendString)
-            self.String += "".join(S.Instantiate(Dictionary) for S in SectionList)
+            self.String.append( "".join(S.Instantiate(Dictionary) for S in SectionList))
         else:
-            self.String += AppendString
+            if isinstance(AppendString,list):
+                self.String.extend(AppendString)
+            else:
+                self.String.append(AppendString)
 
     ## Replace the string template with dictionary of placeholders
     #
@@ -1092,7 +1092,7 @@ class tdict:
     _ListType = type([])
     _TupleType = type(())
     _Wildcard = 'COMMON'
-    _ValidWildcardList = ['COMMON', 'DEFAULT', 'ALL', '*', 'PLATFORM']
+    _ValidWildcardList = ['COMMON', 'DEFAULT', 'ALL', TAB_STAR, 'PLATFORM']
 
     def __init__(self, _Single_=False, _Level_=2):
         self._Level_ = _Level_
@@ -1241,7 +1241,8 @@ def IsFieldValueAnArray (Value):
     return False
 
 def AnalyzePcdExpression(Setting):
-    Setting = Setting.strip()
+    RanStr = ''.join(sample(string.ascii_letters + string.digits, 8))
+    Setting = Setting.replace('\\\\', RanStr).strip()
     # There might be escaped quote in a string: \", \\\" , \', \\\'
     Data = Setting
     # There might be '|' in string and in ( ... | ... ), replace it with '-'
@@ -1274,7 +1275,9 @@ def AnalyzePcdExpression(Setting):
             break
         FieldList.append(Setting[StartPos:Pos].strip())
         StartPos = Pos + 1
-
+    for i, ch in enumerate(FieldList):
+        if RanStr in ch:
+            FieldList[i] = ch.replace(RanStr,'\\\\')
     return FieldList
 
 def ParseDevPathValue (Value):
@@ -1298,6 +1301,8 @@ def ParseDevPathValue (Value):
     return '{' + out + '}', Size
 
 def ParseFieldValue (Value):
+    if "{CODE(" in Value:
+        return Value, len(Value.split(","))
     if isinstance(Value, type(0)):
         return Value, (Value.bit_length() + 7) / 8
     if not isinstance(Value, type('')):
@@ -1327,7 +1332,7 @@ def ParseFieldValue (Value):
         Value = Value.split('(', 1)[1][:-1].strip()
         if Value[0] == '{' and Value[-1] == '}':
             TmpValue = GuidStructureStringToGuidString(Value)
-            if len(TmpValue) == 0:
+            if not TmpValue:
                 raise BadExpression("Invalid GUID value string %s" % Value)
             Value = TmpValue
         if Value[0] == '"' and Value[-1] == '"':
@@ -1414,7 +1419,10 @@ def ParseFieldValue (Value):
         Value = Value.strip().strip('"')
         return ParseDevPathValue(Value)
     if Value.lower().startswith('0x'):
-        Value = int(Value, 16)
+        try:
+            Value = int(Value, 16)
+        except:
+            raise BadExpression("invalid hex value: %s" % Value)
         if Value == 0:
             return 0, 1
         return Value, (Value.bit_length() + 7) / 8
@@ -1432,9 +1440,9 @@ def ParseFieldValue (Value):
 ## AnalyzeDscPcd
 #
 #  Analyze DSC PCD value, since there is no data type info in DSC
-#  This fuction is used to match functions (AnalyzePcdData) used for retrieving PCD value from database
+#  This function is used to match functions (AnalyzePcdData) used for retrieving PCD value from database
 #  1. Feature flag: TokenSpace.PcdCName|PcdValue
-#  2. Fix and Patch:TokenSpace.PcdCName|PcdValue[|MaxSize]
+#  2. Fix and Patch:TokenSpace.PcdCName|PcdValue[|VOID*[|MaxSize]]
 #  3. Dynamic default:
 #     TokenSpace.PcdCName|PcdValue[|VOID*[|MaxSize]]
 #     TokenSpace.PcdCName|PcdValue
@@ -1442,7 +1450,7 @@ def ParseFieldValue (Value):
 #     TokenSpace.PcdCName|VpdOffset[|VpdValue]
 #     TokenSpace.PcdCName|VpdOffset[|MaxSize[|VpdValue]]
 #  5. Dynamic HII:
-#     TokenSpace.PcdCName|HiiString|VaiableGuid|VariableOffset[|HiiValue]
+#     TokenSpace.PcdCName|HiiString|VariableGuid|VariableOffset[|HiiValue]
 #  PCD value needs to be located in such kind of string, and the PCD value might be an expression in which
 #    there might have "|" operator, also in string value.
 #
@@ -1458,50 +1466,33 @@ def AnalyzeDscPcd(Setting, PcdType, DataType=''):
     FieldList = AnalyzePcdExpression(Setting)
 
     IsValid = True
-    if PcdType in (MODEL_PCD_FIXED_AT_BUILD, MODEL_PCD_PATCHABLE_IN_MODULE, MODEL_PCD_FEATURE_FLAG):
+    if PcdType in (MODEL_PCD_FIXED_AT_BUILD, MODEL_PCD_PATCHABLE_IN_MODULE, MODEL_PCD_DYNAMIC_DEFAULT, MODEL_PCD_DYNAMIC_EX_DEFAULT):
         Value = FieldList[0]
         Size = ''
-        if len(FieldList) > 1:
-            if FieldList[1].upper().startswith("0X") or FieldList[1].isdigit():
-                Size = FieldList[1]
+        if len(FieldList) > 1 and FieldList[1]:
+            DataType = FieldList[1]
+            if FieldList[1] != TAB_VOID and StructPattern.match(FieldList[1]) is None:
+                IsValid = False
+        if len(FieldList) > 2:
+            Size = FieldList[2]
+        if IsValid:
+            if DataType == "":
+                IsValid = (len(FieldList) <= 1)
             else:
-                DataType = FieldList[1]
+                IsValid = (len(FieldList) <= 3)
 
-        if len(FieldList) > 2:
-            Size = FieldList[2]
-        if DataType == "":
-            IsValid = (len(FieldList) <= 1)
-        else:
-            IsValid = (len(FieldList) <= 3)
-#         Value, Size = ParseFieldValue(Value)
         if Size:
             try:
                 int(Size, 16) if Size.upper().startswith("0X") else int(Size)
             except:
                 IsValid = False
                 Size = -1
-        return [str(Value), '', str(Size)], IsValid, 0
-    elif PcdType in (MODEL_PCD_DYNAMIC_DEFAULT, MODEL_PCD_DYNAMIC_EX_DEFAULT):
+        return [str(Value), DataType, str(Size)], IsValid, 0
+    elif PcdType == MODEL_PCD_FEATURE_FLAG:
         Value = FieldList[0]
-        Size = Type = ''
-        if len(FieldList) > 1:
-            Type = FieldList[1]
-        else:
-            Type = DataType
-        if len(FieldList) > 2:
-            Size = FieldList[2]
-        if DataType == "":
-            IsValid = (len(FieldList) <= 1)
-        else:
-            IsValid = (len(FieldList) <= 3)
-
-        if Size:
-            try:
-                int(Size, 16) if Size.upper().startswith("0X") else int(Size)
-            except:
-                IsValid = False
-                Size = -1
-        return [Value, Type, str(Size)], IsValid, 0
+        Size = ''
+        IsValid = (len(FieldList) <= 1)
+        return [Value, DataType, str(Size)], IsValid, 0
     elif PcdType in (MODEL_PCD_DYNAMIC_VPD, MODEL_PCD_DYNAMIC_EX_VPD):
         VpdOffset = FieldList[0]
         Value = Size = ''
@@ -1525,6 +1516,7 @@ def AnalyzeDscPcd(Setting, PcdType, DataType=''):
                 Size = -1
         return [VpdOffset, str(Size), Value], IsValid, 2
     elif PcdType in (MODEL_PCD_DYNAMIC_HII, MODEL_PCD_DYNAMIC_EX_HII):
+        IsValid = (3 <= len(FieldList) <= 5)
         HiiString = FieldList[0]
         Guid = Offset = Value = Attribute = ''
         if len(FieldList) > 1:
@@ -1533,9 +1525,10 @@ def AnalyzeDscPcd(Setting, PcdType, DataType=''):
             Offset = FieldList[2]
         if len(FieldList) > 3:
             Value = FieldList[3]
+            if not Value:
+                IsValid = False
         if len(FieldList) > 4:
             Attribute = FieldList[4]
-        IsValid = (3 <= len(FieldList) <= 5)
         return [HiiString, Guid, Offset, Value, Attribute], IsValid, 3
     return [], False, 0
 
@@ -1598,8 +1591,12 @@ def CheckPcdDatum(Type, Value):
             return False, "Invalid value [%s] of type [%s]; must be one of TRUE, True, true, 0x1, 0x01, 1"\
                           ", FALSE, False, false, 0x0, 0x00, 0" % (Value, Type)
     elif Type in [TAB_UINT8, TAB_UINT16, TAB_UINT32, TAB_UINT64]:
+        if Value and int(Value, 0) < 0:
+            return False, "PCD can't be set to negative value[%s] for datum type [%s]" % (Value, Type)
         try:
             Value = long(Value, 0)
+            if Value > MAX_VAL_TYPE[Type]:
+                return False, "Too large PCD value[%s] for datum type [%s]" % (Value, Type)
         except:
             return False, "Invalid value [%s] of type [%s];"\
                           " must be a hexadecimal, decimal or octal in C language format." % (Value, Type)
@@ -1734,8 +1731,6 @@ class PathClass(object):
         self.ToolCode = ToolCode
         self.ToolChainFamily = ToolChainFamily
 
-        self._Key = None
-
     ## Convert the object of this class to a string
     #
     #  Convert member Path of the class to a string
@@ -1753,10 +1748,7 @@ class PathClass(object):
     # @retval True  The two PathClass are the same
     #
     def __eq__(self, Other):
-        if isinstance(Other, type(self)):
-            return self.Path == Other.Path
-        else:
-            return self.Path == str(Other)
+        return self.Path == str(Other)
 
     ## Override __cmp__ function
     #
@@ -1766,10 +1758,7 @@ class PathClass(object):
     # @retval -1    The first PathClass is less than the second PathClass
     # @retval 1     The first PathClass is Bigger than the second PathClass
     def __cmp__(self, Other):
-        if isinstance(Other, type(self)):
-            OtherKey = Other.Path
-        else:
-            OtherKey = str(Other)
+        OtherKey = str(Other)
 
         SelfKey = self.Path
         if SelfKey == OtherKey:
@@ -1788,12 +1777,12 @@ class PathClass(object):
     def __hash__(self):
         return hash(self.Path)
 
-    def _GetFileKey(self):
-        if self._Key is None:
-            self._Key = self.Path.upper()   # + self.ToolChainFamily + self.TagName + self.ToolCode + self.Target
-        return self._Key
+    @cached_property
+    def Key(self):
+        return self.Path.upper()
 
-    def _GetTimeStamp(self):
+    @property
+    def TimeStamp(self):
         return os.stat(self.Path)[8]
 
     def Validate(self, Type='', CaseSensitive=True):
@@ -1831,9 +1820,6 @@ class PathClass(object):
             self.Root = RealRoot
             self.Path = os.path.join(RealRoot, RealFile)
         return ErrorCode, ErrorInfo
-
-    Key = property(_GetFileKey)
-    TimeStamp = property(_GetTimeStamp)
 
 ## Parse PE image to get the required PE informaion.
 #
@@ -1944,8 +1930,8 @@ class DefaultStore():
         for sid, name in self.DefaultStores.values():
             if sid == minid:
                 return name
-class SkuClass():
 
+class SkuClass():
     DEFAULT = 0
     SINGLE = 1
     MULTIPLE =2
@@ -1966,8 +1952,8 @@ class SkuClass():
         self.SkuIdSet = []
         self.SkuIdNumberSet = []
         self.SkuData = SkuIds
-        self.__SkuInherit = {}
-        self.__SkuIdentifier = SkuIdentifier
+        self._SkuInherit = {}
+        self._SkuIdentifier = SkuIdentifier
         if SkuIdentifier == '' or SkuIdentifier is None:
             self.SkuIdSet = ['DEFAULT']
             self.SkuIdNumberSet = ['0U']
@@ -1991,7 +1977,7 @@ class SkuClass():
                 EdkLogger.error("build", PARAMETER_INVALID,
                             ExtraData="SKU-ID [%s] is not supported by the platform. [Valid SKU-ID: %s]"
                                       % (each, " | ".join(SkuIds.keys())))
-        if self.SkuUsageType != self.SINGLE:
+        if self.SkuUsageType != SkuClass.SINGLE:
             self.AvailableSkuIds.update({'DEFAULT':0, 'COMMON':0})
         if self.SkuIdSet:
             GlobalData.gSkuids = (self.SkuIdSet)
@@ -2005,11 +1991,11 @@ class SkuClass():
                 GlobalData.gSkuids.sort()
 
     def GetNextSkuId(self, skuname):
-        if not self.__SkuInherit:
-            self.__SkuInherit = {}
+        if not self._SkuInherit:
+            self._SkuInherit = {}
             for item in self.SkuData.values():
-                self.__SkuInherit[item[1]]=item[2] if item[2] else "DEFAULT"
-        return self.__SkuInherit.get(skuname, "DEFAULT")
+                self._SkuInherit[item[1]]=item[2] if item[2] else "DEFAULT"
+        return self._SkuInherit.get(skuname, "DEFAULT")
 
     def GetSkuChain(self, sku):
         if sku == "DEFAULT":
@@ -2039,55 +2025,45 @@ class SkuClass():
 
         return skuorder
 
-    def __SkuUsageType(self):
-
-        if self.__SkuIdentifier.upper() == "ALL":
+    @property
+    def SkuUsageType(self):
+        if self._SkuIdentifier.upper() == "ALL":
             return SkuClass.MULTIPLE
 
         if len(self.SkuIdSet) == 1:
             if self.SkuIdSet[0] == 'DEFAULT':
                 return SkuClass.DEFAULT
-            else:
-                return SkuClass.SINGLE
-        elif len(self.SkuIdSet) == 2:
-            if 'DEFAULT' in self.SkuIdSet:
-                return SkuClass.SINGLE
-            else:
-                return SkuClass.MULTIPLE
-        else:
-            return SkuClass.MULTIPLE
-    def DumpSkuIdArrary(self):
+            return SkuClass.SINGLE
+        if len(self.SkuIdSet) == 2 and 'DEFAULT' in self.SkuIdSet:
+            return SkuClass.SINGLE
+        return SkuClass.MULTIPLE
 
-        ArrayStrList = []
+    def DumpSkuIdArrary(self):
         if self.SkuUsageType == SkuClass.SINGLE:
-            ArrayStr = "{0x0}"
-        else:
-            for skuname in self.AvailableSkuIds:
-                if skuname == "COMMON":
-                    continue
-                while skuname != "DEFAULT":
-                    ArrayStrList.append(hex(int(self.AvailableSkuIds[skuname])))
-                    skuname = self.GetNextSkuId(skuname)
-                ArrayStrList.append("0x0")
-            ArrayStr = "{" + ",".join(ArrayStrList) +  "}"
-        return ArrayStr
-    def __GetAvailableSkuIds(self):
+            return "{0x0}"
+        ArrayStrList = []
+        for skuname in self.AvailableSkuIds:
+            if skuname == "COMMON":
+                continue
+            while skuname != "DEFAULT":
+                ArrayStrList.append(hex(int(self.AvailableSkuIds[skuname])))
+                skuname = self.GetNextSkuId(skuname)
+            ArrayStrList.append("0x0")
+        return "{{{myList}}}".format(myList=",".join(ArrayStrList))
+
+    @property
+    def AvailableSkuIdSet(self):
         return self.AvailableSkuIds
 
-    def __GetSystemSkuID(self):
-        if self.__SkuUsageType() == SkuClass.SINGLE:
+    @property
+    def SystemSkuId(self):
+        if self.SkuUsageType == SkuClass.SINGLE:
             if len(self.SkuIdSet) == 1:
                 return self.SkuIdSet[0]
             else:
                 return self.SkuIdSet[0] if self.SkuIdSet[0] != 'DEFAULT' else self.SkuIdSet[1]
         else:
             return 'DEFAULT'
-    def __GetAvailableSkuIdNumber(self):
-        return self.SkuIdNumberSet
-    SystemSkuId = property(__GetSystemSkuID)
-    AvailableSkuIdSet = property(__GetAvailableSkuIds)
-    SkuUsageType = property(__SkuUsageType)
-    AvailableSkuIdNumSet = property(__GetAvailableSkuIdNumber)
 
 #
 # Pack a registry format GUID
@@ -2155,6 +2131,29 @@ def PackByteFormatGUID(Guid):
                 Guid[10],
                 )
 
+## DeepCopy dict/OrderedDict recusively
+#
+#   @param      ori_dict    a nested dict or ordereddict
+#
+#   @retval     new dict or orderdict
+#
+def CopyDict(ori_dict):
+    dict_type = ori_dict.__class__
+    if dict_type not in (dict,OrderedDict):
+        return ori_dict
+    new_dict = dict_type()
+    for key in ori_dict:
+        if isinstance(ori_dict[key],(dict,OrderedDict)):
+            new_dict[key] = CopyDict(ori_dict[key])
+        else:
+            new_dict[key] = ori_dict[key]
+    return new_dict
+
+#
+# Remove the c/c++ comments: // and /* */
+#
+def RemoveCComments(ctext):
+    return re.sub('//.*?\n|/\*.*?\*/', '\n', ctext, flags=re.S)
 ##
 #
 # This acts like the main() function for the script, unless it is 'import'ed into another

@@ -31,6 +31,7 @@ TAB_OPTION_START = '<'
 TAB_OPTION_END = '>'
 TAB_SLASH = '\\'
 TAB_BACK_SLASH = '/'
+TAB_STAR = '*'
 TAB_LINE_BREAK = '\n'
 TAB_PRINTCHAR_VT = '\x0b'
 TAB_PRINTCHAR_BS = '\b'
@@ -554,3 +555,5 @@ PACK_CODE_BY_SIZE = {8:'=Q',
                      1:'=B',
                      0:'=B',
                     16:""}
+
+TAB_COMPILER_MSFT = 'MSFT'

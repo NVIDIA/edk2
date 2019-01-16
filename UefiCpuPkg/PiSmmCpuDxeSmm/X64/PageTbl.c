@@ -1,7 +1,7 @@
 /** @file
 Page Fault (#PF) handler for X64 processors
 
-Copyright (c) 2009 - 2017, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
 Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
 
 This program and the accompanying materials
@@ -300,7 +300,9 @@ SmmInitPageTable (
     }
   }
 
-  if (FeaturePcdGet (PcdCpuSmmProfileEnable)) {
+  if (FeaturePcdGet (PcdCpuSmmProfileEnable) ||
+      HEAP_GUARD_NONSTOP_MODE ||
+      NULL_DETECTION_NONSTOP_MODE) {
     //
     // Set own Page Fault entry instead of the default one, because SMM Profile
     // feature depends on IRET instruction to do Single Step
@@ -846,6 +848,11 @@ SmiPFHandler (
           DumpModuleInfoByIp ((UINTN)SystemContext.SystemContextX64->Rip);
         );
       }
+
+      if (HEAP_GUARD_NONSTOP_MODE) {
+        GuardPagePFHandler (SystemContext.SystemContextX64->ExceptionData);
+        goto Exit;
+      }
     }
     CpuDeadLoop ();
   }
@@ -863,7 +870,27 @@ SmiPFHandler (
       );
       CpuDeadLoop ();
     }
-    if (IsSmmCommBufferForbiddenAddress (PFAddress)) {
+
+    //
+    // If NULL pointer was just accessed
+    //
+    if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT1) != 0 &&
+        (PFAddress < EFI_PAGE_SIZE)) {
+      DumpCpuContext (InterruptType, SystemContext);
+      DEBUG ((DEBUG_ERROR, "!!! NULL pointer access !!!\n"));
+      DEBUG_CODE (
+        DumpModuleInfoByIp ((UINTN)SystemContext.SystemContextX64->Rip);
+      );
+
+      if (NULL_DETECTION_NONSTOP_MODE) {
+        GuardPagePFHandler (SystemContext.SystemContextX64->ExceptionData);
+        goto Exit;
+      }
+
+      CpuDeadLoop ();
+    }
+
+    if (mCpuSmmStaticPageTable && IsSmmCommBufferForbiddenAddress (PFAddress)) {
       DumpCpuContext (InterruptType, SystemContext);
       DEBUG ((DEBUG_ERROR, "Access SMM communication forbidden address (0x%lx)!\n", PFAddress));
       DEBUG_CODE (
@@ -871,19 +898,6 @@ SmiPFHandler (
       );
       CpuDeadLoop ();
     }
-  }
-
-  //
-  // If NULL pointer was just accessed
-  //
-  if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT1) != 0 &&
-      (PFAddress < EFI_PAGE_SIZE)) {
-    DumpCpuContext (InterruptType, SystemContext);
-    DEBUG ((DEBUG_ERROR, "!!! NULL pointer access !!!\n"));
-    DEBUG_CODE (
-      DumpModuleInfoByIp ((UINTN)SystemContext.SystemContextX64->Rip);
-    );
-    CpuDeadLoop ();
   }
 
   if (FeaturePcdGet (PcdCpuSmmProfileEnable)) {
@@ -895,6 +909,7 @@ SmiPFHandler (
     SmiDefaultPFHandler ();
   }
 
+Exit:
   ReleaseSpinLock (mPFLock);
 }
 

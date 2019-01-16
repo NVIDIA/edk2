@@ -60,8 +60,6 @@
 
 [Guids]
   gPerformanceProtocolGuid                                ## CONSUMES ## SystemTable
-  gEfiAcpi20TableGuid                                     ## CONSUMES
-  gEfiAcpi10TableGuid                                     ## CONSUMES
 
 [Protocols]
   gEfiLoadedImageProtocolGuid                             ## CONSUMES
@@ -70,9 +68,6 @@
   gEfiLoadedImageDevicePathProtocolGuid                   ## SOMETIMES_CONSUMES
   gEfiHiiPackageListProtocolGuid                          ## CONSUMES
   gEfiShellDynamicCommandProtocolGuid                     ## PRODUCES
-
-[Pcd]
-  gEfiMdePkgTokenSpaceGuid.PcdUefiLibMaxPrintBufferSize   ## CONSUMES
 
 [DEPEX]
   TRUE

@@ -1,6 +1,6 @@
 ## @ GenCfgOpt.py
 #
-# Copyright (c) 2014 - 2017, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2014 - 2018, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials are licensed and made available under
 # the terms and conditions of the BSD License that accompanies this distribution.
 # The full text of the license may be found at
@@ -87,6 +87,8 @@ are permitted provided that the following conditions are met:
 
 **/
 """
+
+BuildOptionPcd = []
 
 class CLogicalExpression:
     def __init__(self):
@@ -418,6 +420,8 @@ EndList
         return ""
 
     def ParseDscFile (self, DscFile, FvDir):
+        Hardcode = False
+        AutoAlign = False
         self._CfgItemList = []
         self._CfgPageDict = {}
         self._CfgBlkDict  = {}
@@ -438,6 +442,8 @@ EndList
         DscLines     = DscFd.readlines()
         DscFd.close()
 
+        MaxAlign = 32   #Default align to 32, but if there are 64 bit unit, align to 64
+        SizeAlign = 0   #record the struct max align
         while len(DscLines):
             DscLine  = DscLines.pop(0).strip()
             Handle   = False
@@ -449,7 +455,7 @@ EndList
                 IsUpdSect = False
                 if  Match.group(1).lower() == "Defines".lower():
                     IsDefSect = True
-                if  Match.group(1).lower() == "PcdsFeatureFlag".lower():
+                if  (Match.group(1).lower() == "PcdsFeatureFlag".lower() or Match.group(1).lower() == "PcdsFixedAtBuild".lower()):
                     IsPcdSect = True
                 elif Match.group(1).lower() == "PcdsDynamicVpd.Upd".lower():
                     ConfigDict = {}
@@ -464,6 +470,7 @@ EndList
                     ConfigDict['comment'] = ''
                     ConfigDict['subreg']  = []
                     IsUpdSect = True
+                    Offset    = 0
             else:
                 if IsDefSect or IsPcdSect or IsUpdSect or IsVpdSect:
                     if re.match("^!else($|\s+#.+)", DscLine):
@@ -491,7 +498,7 @@ EndList
                             IfStack.append(Result)
                             ElifStack.append(0)
                         else:
-                            Match  = re.match("!(if|elseif)\s+(.+)", DscLine)
+                            Match  = re.match("!(if|elseif)\s+(.+)", DscLine.split("#")[0])
                             if Match:
                                 Result = self.EvaluateExpress(Match.group(2))
                                 if Match.group(1) == "if":
@@ -530,6 +537,7 @@ EndList
                                         NewDscLines = IncludeDsc.readlines()
                                         IncludeDsc.close()
                                         DscLines = NewDscLines + DscLines
+                                        Offset = 0
                                     else:
                                         if DscLine.startswith('!'):
                                             print("ERROR: Unrecoginized directive for line '%s'" % DscLine)
@@ -555,6 +563,12 @@ EndList
                     self._PcdsDict[Match.group(1)] = Match.group(2)
                     if self.Debug:
                         print "INFO : PCD %s = [ %s ]" % (Match.group(1), Match.group(2))
+                    i = 0
+                    while i < len(BuildOptionPcd):
+                        Match = re.match("\s*([\w\.]+)\s*\=\s*(\w+)", BuildOptionPcd[i])
+                        if Match:
+                            self._PcdsDict[Match.group(1)] = Match.group(2)
+                        i += 1
             else:
                 Match = re.match("^\s*#\s+(!BSF|@Bsf|!HDR)\s+(.+)", DscLine)
                 if Match:
@@ -620,13 +634,22 @@ EndList
 
                 # Check VPD/UPD
                 if IsUpdSect:
-                    Match = re.match("^([_a-zA-Z0-9]+).([_a-zA-Z0-9]+)\s*\|\s*(0x[0-9A-F]+)\s*\|\s*(\d+|0x[0-9a-fA-F]+)\s*\|\s*(.+)",DscLine)
+                    Match = re.match("^([_a-zA-Z0-9]+).([_a-zA-Z0-9]+)\s*\|\s*(0x[0-9A-F]+|\*)\s*\|\s*(\d+|0x[0-9a-fA-F]+)\s*\|\s*(.+)",DscLine)
                 else:
                     Match = re.match("^([_a-zA-Z0-9]+).([_a-zA-Z0-9]+)\s*\|\s*(0x[0-9A-F]+)(?:\s*\|\s*(.+))?",  DscLine)
                 if Match:
                     ConfigDict['space']  = Match.group(1)
                     ConfigDict['cname']  = Match.group(2)
-                    ConfigDict['offset'] = int (Match.group(3), 16)
+                    if Match.group(3) != '*':
+                        Hardcode = True
+                        Offset =  int (Match.group(3), 16)
+                    else:
+                        AutoAlign = True
+
+                    if Hardcode and AutoAlign:
+                        print("Hardcode and auto-align mixed mode is not supported by GenCfgOpt")
+                        raise SystemExit
+                    ConfigDict['offset'] = Offset
                     if ConfigDict['order'] == -1:
                         ConfigDict['order'] = ConfigDict['offset'] << 8
                     else:
@@ -638,6 +661,7 @@ EndList
                             Length  = int (Match.group(4), 16)
                         else :
                             Length  = int (Match.group(4))
+                        Offset += Length
                     else:
                         Value = Match.group(4)
                         if Value is None:
@@ -665,6 +689,52 @@ EndList
                         ConfigDict['help']   = ''
                         ConfigDict['type']   = ''
                         ConfigDict['option'] = ''
+                    if IsUpdSect and AutoAlign:
+                        ItemLength = int(ConfigDict['length'])
+                        ItemOffset = int(ConfigDict['offset'])
+                        ItemStruct = ConfigDict['struct']
+                        Unit = 1
+                        if ItemLength in [1, 2, 4, 8] and not ConfigDict['value'].startswith('{'):
+                            Unit = ItemLength
+                            # If there are 64 bit unit, align to 64
+                            if Unit == 8:
+                                MaxAlign = 64
+                                SizeAlign = 8
+                        if ItemStruct != '':
+                            UnitDict = {'UINT8':1, 'UINT16':2, 'UINT32':4, 'UINT64':8}
+                            if ItemStruct in ['UINT8', 'UINT16', 'UINT32', 'UINT64']:
+                                Unit = UnitDict[ItemStruct]
+                                # If there are 64 bit unit, align to 64
+                                if Unit == 8:
+                                    MaxAlign = 64
+                                SizeAlign = max(SizeAlign, Unit)
+                        if (ConfigDict['embed'].find(':START') != -1):
+                            Base = ItemOffset
+                        SubOffset = ItemOffset - Base
+                        SubRemainder = SubOffset % Unit
+                        if SubRemainder:
+                            Diff = Unit - SubRemainder
+                            Offset = Offset + Diff
+                            ItemOffset = ItemOffset + Diff
+
+                        if (ConfigDict['embed'].find(':END') != -1):
+                            Remainder = Offset % (MaxAlign/8)   # MaxAlign is either 32 or 64
+                            if Remainder:
+                                Diff = (MaxAlign/8) - Remainder
+                                Offset = Offset + Diff
+                                ItemOffset = ItemOffset + Diff
+                            MaxAlign = 32                       # Reset to default 32 align when struct end
+                        if (ConfigDict['cname'] == 'UpdTerminator'):
+                            # ItemLength is the size of UpdTerminator
+                            # Itemlength might be 16, 32, or 64
+                            # Struct align to 64 if UpdTerminator
+                            # or struct size is 64 bit, else align to 32
+                            Remainder = Offset % max(ItemLength/8, 4, SizeAlign)
+                            Offset = Offset + ItemLength
+                            if Remainder:
+                                Diff = max(ItemLength/8, 4, SizeAlign) - Remainder
+                                ItemOffset = ItemOffset + Diff
+                        ConfigDict['offset'] = ItemOffset
 
                     self._CfgItemList.append(ConfigDict.copy())
                     ConfigDict['name']   = ''
@@ -976,6 +1046,13 @@ EndList
         NewTextBody.extend(OldTextBody)
         return NewTextBody
 
+    def WriteLinesWithoutTailingSpace (self, HeaderFd, Line):
+        TxtBody2 = Line.splitlines(True)
+        for Line2 in TxtBody2:
+            Line2 = Line2.rstrip()
+            Line2 += '\n'
+            HeaderFd.write (Line2)
+        return 0
     def CreateHeaderFile (self, InputHeaderFile):
         FvDir = self._FvDir
 
@@ -1175,7 +1252,7 @@ EndList
                 Index += 1
                 for Item in range(len(StructStart)):
                     if Index >= StructStartWithComment[Item] and Index <= StructEnd[Item]:
-                        HeaderFd.write (Line)
+                        self.WriteLinesWithoutTailingSpace(HeaderFd, Line)
             HeaderFd.write("#pragma pack()\n\n")
             HeaderFd.write("#endif\n")
             HeaderFd.close()
@@ -1220,7 +1297,7 @@ EndList
                 Index += 1
                 for Item in range(len(StructStart)):
                     if Index >= StructStartWithComment[Item] and Index <= StructEnd[Item]:
-                        HeaderFd.write (Line)
+                        self.WriteLinesWithoutTailingSpace(HeaderFd, Line)
         HeaderFd.write("#pragma pack()\n\n")
         HeaderFd.write("#endif\n")
         HeaderFd.close()
@@ -1393,7 +1470,7 @@ EndList
 
 
 def Usage():
-    print "GenCfgOpt Version 0.52"
+    print "GenCfgOpt Version 0.53"
     print "Usage:"
     print "    GenCfgOpt  UPDTXT  PlatformDscFile BuildFvDir                 [-D Macros]"
     print "    GenCfgOpt  HEADER  PlatformDscFile BuildFvDir  InputHFile     [-D Macros]"
@@ -1403,7 +1480,14 @@ def Main():
     #
     # Parse the options and args
     #
+    i = 1
+
     GenCfgOpt = CGenCfgOpt()
+    while i < len(sys.argv):
+        if sys.argv[i].strip().lower() == "--pcd":
+            BuildOptionPcd.append(sys.argv[i+1])
+            i += 1
+        i += 1
     argc = len(sys.argv)
     if argc < 4:
         Usage()

@@ -76,6 +76,11 @@ SmmLockBoxSave (
     LockBoxParameterSave->Header.ReturnStatus = (UINT64)EFI_ACCESS_DENIED;
     return ;
   }
+  //
+  // The SpeculationBarrier() call here is to ensure the above range check for
+  // the CommBuffer have been completed before calling into SaveLockBox().
+  //
+  SpeculationBarrier ();
 
   //
   // Save data
@@ -160,6 +165,11 @@ SmmLockBoxUpdate (
     LockBoxParameterUpdate->Header.ReturnStatus = (UINT64)EFI_ACCESS_DENIED;
     return ;
   }
+  //
+  // The SpeculationBarrier() call here is to ensure the above range check for
+  // the CommBuffer have been completed before calling into UpdateLockBox().
+  //
+  SpeculationBarrier ();
 
   //
   // Update data
@@ -217,7 +227,10 @@ SmmLockBoxRestore (
                (VOID *)(UINTN)TempLockBoxParameterRestore.Buffer,
                (UINTN *)&TempLockBoxParameterRestore.Length
                );
-    if (Status == EFI_BUFFER_TOO_SMALL) {
+    if ((Status == EFI_BUFFER_TOO_SMALL) || (Status == EFI_SUCCESS)) {
+      //
+      // Return the actual Length value.
+      //
       LockBoxParameterRestore->Length = TempLockBoxParameterRestore.Length;
     }
   }

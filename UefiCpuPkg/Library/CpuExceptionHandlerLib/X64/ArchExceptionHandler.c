@@ -1,7 +1,7 @@
 /** @file
   x64 CPU Exception Handler.
 
-  Copyright (c) 2012 - 2017, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2012 - 2018, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -67,7 +67,9 @@ ArchSaveExceptionContext (
 
   ReservedVectors = ExceptionHandlerData->ReservedVectors;
   //
-  // Save Exception context in global variable
+  // Save Exception context in global variable in first entry of the exception handler.
+  // So when original exception handler returns to the new exception handler (second entry),
+  // the Eflags/Cs/Eip/ExceptionData can be used.
   //
   ReservedVectors[ExceptionType].OldSs         = SystemContext.SystemContextX64->Ss;
   ReservedVectors[ExceptionType].OldSp         = SystemContext.SystemContextX64->Rsp;
@@ -82,7 +84,7 @@ ArchSaveExceptionContext (
   Eflags.Bits.IF = 0;
   SystemContext.SystemContextX64->Rflags = Eflags.UintN;
   //
-  // Modify the EIP in stack, then old IDT handler will return to the stub code
+  // Modify the EIP in stack, then old IDT handler will return to HookAfterStubBegin.
   //
   SystemContext.SystemContextX64->Rip = (UINTN) ReservedVectors[ExceptionType].HookAfterStubHeaderCode;
 }
@@ -124,7 +126,7 @@ ArchRestoreExceptionContext (
 
 **/
 EFI_STATUS
-ArchSetupExcpetionStack (
+ArchSetupExceptionStack (
   IN CPU_EXCEPTION_INIT_DATA          *StackSwitchData
   )
 {
@@ -217,6 +219,8 @@ ArchSetupExcpetionStack (
   //
   TssBase = (UINTN)Tss;
 
+  TssDesc->Uint128.Uint64  = 0;
+  TssDesc->Uint128.Uint64_1= 0;
   TssDesc->Bits.LimitLow   = sizeof(IA32_TASK_STATE_SEGMENT) - 1;
   TssDesc->Bits.BaseLow    = (UINT16)TssBase;
   TssDesc->Bits.BaseMidl   = (UINT8)(TssBase >> 16);
@@ -229,6 +233,7 @@ ArchSetupExcpetionStack (
   //
   // Fixup exception task descriptor and task-state segment
   //
+  ZeroMem (Tss, sizeof (*Tss));
   StackTop = StackSwitchData->X64.KnownGoodStackTop - CPU_STACK_ALIGNMENT;
   StackTop = (UINTN)ALIGN_POINTER (StackTop, CPU_STACK_ALIGNMENT);
   IdtTable = StackSwitchData->X64.IdtTable;

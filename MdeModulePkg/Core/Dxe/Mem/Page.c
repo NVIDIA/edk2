@@ -52,26 +52,26 @@ LIST_ENTRY   mFreeMemoryMapEntryList = INITIALIZE_LIST_HEAD_VARIABLE (mFreeMemor
 BOOLEAN      mMemoryTypeInformationInitialized = FALSE;
 
 EFI_MEMORY_TYPE_STATISTICS mMemoryTypeStatistics[EfiMaxMemoryType + 1] = {
-  { 0, MAX_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  FALSE },  // EfiReservedMemoryType
-  { 0, MAX_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiLoaderCode
-  { 0, MAX_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiLoaderData
-  { 0, MAX_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiBootServicesCode
-  { 0, MAX_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiBootServicesData
-  { 0, MAX_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  TRUE  },  // EfiRuntimeServicesCode
-  { 0, MAX_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  TRUE  },  // EfiRuntimeServicesData
-  { 0, MAX_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiConventionalMemory
-  { 0, MAX_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiUnusableMemory
-  { 0, MAX_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  FALSE },  // EfiACPIReclaimMemory
-  { 0, MAX_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  FALSE },  // EfiACPIMemoryNVS
-  { 0, MAX_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiMemoryMappedIO
-  { 0, MAX_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiMemoryMappedIOPortSpace
-  { 0, MAX_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  TRUE  },  // EfiPalCode
-  { 0, MAX_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiPersistentMemory
-  { 0, MAX_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE }   // EfiMaxMemoryType
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  FALSE },  // EfiReservedMemoryType
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiLoaderCode
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiLoaderData
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiBootServicesCode
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiBootServicesData
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  TRUE  },  // EfiRuntimeServicesCode
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  TRUE  },  // EfiRuntimeServicesData
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiConventionalMemory
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiUnusableMemory
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  FALSE },  // EfiACPIReclaimMemory
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  FALSE },  // EfiACPIMemoryNVS
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiMemoryMappedIO
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiMemoryMappedIOPortSpace
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, TRUE,  TRUE  },  // EfiPalCode
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE },  // EfiPersistentMemory
+  { 0, MAX_ALLOC_ADDRESS, 0, 0, EfiMaxMemoryType, FALSE, FALSE }   // EfiMaxMemoryType
 };
 
-EFI_PHYSICAL_ADDRESS mDefaultMaximumAddress = MAX_ADDRESS;
-EFI_PHYSICAL_ADDRESS mDefaultBaseAddress = MAX_ADDRESS;
+EFI_PHYSICAL_ADDRESS mDefaultMaximumAddress = MAX_ALLOC_ADDRESS;
+EFI_PHYSICAL_ADDRESS mDefaultBaseAddress = MAX_ALLOC_ADDRESS;
 
 EFI_MEMORY_TYPE_INFORMATION gMemoryTypeInformation[EfiMaxMemoryType + 1] = {
   { EfiReservedMemoryType,      0 },
@@ -401,9 +401,12 @@ PromoteMemoryResource (
   VOID
   )
 {
-  LIST_ENTRY         *Link;
-  EFI_GCD_MAP_ENTRY  *Entry;
-  BOOLEAN            Promoted;
+  LIST_ENTRY                        *Link;
+  EFI_GCD_MAP_ENTRY                 *Entry;
+  BOOLEAN                           Promoted;
+  EFI_PHYSICAL_ADDRESS              StartAddress;
+  EFI_PHYSICAL_ADDRESS              EndAddress;
+  EFI_GCD_MEMORY_SPACE_DESCRIPTOR   Descriptor;
 
   DEBUG ((DEBUG_PAGE, "Promote the memory resource\n"));
 
@@ -416,7 +419,7 @@ PromoteMemoryResource (
     Entry = CR (Link, EFI_GCD_MAP_ENTRY, Link, EFI_GCD_MAP_SIGNATURE);
 
     if (Entry->GcdMemoryType == EfiGcdMemoryTypeReserved &&
-        Entry->EndAddress < MAX_ADDRESS &&
+        Entry->EndAddress < MAX_ALLOC_ADDRESS &&
         (Entry->Capabilities & (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED | EFI_MEMORY_TESTED)) ==
           (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED)) {
       //
@@ -450,6 +453,24 @@ PromoteMemoryResource (
   }
 
   CoreReleaseGcdMemoryLock ();
+
+  if (!Promoted) {
+    //
+    // If freed-memory guard is enabled, we could promote pages from
+    // guarded free pages.
+    //
+    Promoted = PromoteGuardedFreePages (&StartAddress, &EndAddress);
+    if (Promoted) {
+      CoreGetMemorySpaceDescriptor (StartAddress, &Descriptor);
+      CoreAddRange (
+        EfiConventionalMemory,
+        StartAddress,
+        EndAddress,
+        Descriptor.Capabilities & ~(EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED |
+                                    EFI_MEMORY_TESTED | EFI_MEMORY_RUNTIME)
+        );
+    }
+  }
 
   return Promoted;
 }
@@ -619,7 +640,7 @@ CoreAddMemoryDescriptor (
               gMemoryTypeInformation[FreeIndex].NumberOfPages
               );
             mMemoryTypeStatistics[Type].BaseAddress    = 0;
-            mMemoryTypeStatistics[Type].MaximumAddress = MAX_ADDRESS;
+            mMemoryTypeStatistics[Type].MaximumAddress = MAX_ALLOC_ADDRESS;
           }
         }
         return;
@@ -676,7 +697,7 @@ CoreAddMemoryDescriptor (
       }
     }
     mMemoryTypeStatistics[Type].CurrentNumberOfPages = 0;
-    if (mMemoryTypeStatistics[Type].MaximumAddress == MAX_ADDRESS) {
+    if (mMemoryTypeStatistics[Type].MaximumAddress == MAX_ALLOC_ADDRESS) {
       mMemoryTypeStatistics[Type].MaximumAddress = mDefaultMaximumAddress;
     }
   }
@@ -896,9 +917,15 @@ CoreConvertPagesEx (
     }
 
     //
-    // Add our new range in
+    // Add our new range in. Don't do this for freed pages if freed-memory
+    // guard is enabled.
     //
-    CoreAddRange (MemType, Start, RangeEnd, Attribute);
+    if (!IsHeapGuardEnabled (GUARD_HEAP_TYPE_FREED) ||
+        !ChangingType ||
+        MemType != EfiConventionalMemory) {
+      CoreAddRange (MemType, Start, RangeEnd, Attribute);
+    }
+
     if (ChangingType && (MemType == EfiConventionalMemory)) {
       //
       // Avoid calling DEBUG_CLEAR_MEMORY() for an address of 0 because this
@@ -1291,15 +1318,15 @@ CoreInternalAllocatePages (
   //
   // The max address is the max natively addressable address for the processor
   //
-  MaxAddress = MAX_ADDRESS;
+  MaxAddress = MAX_ALLOC_ADDRESS;
 
   //
   // Check for Type AllocateAddress,
   // if NumberOfPages is 0 or
-  // if (NumberOfPages << EFI_PAGE_SHIFT) is above MAX_ADDRESS or
+  // if (NumberOfPages << EFI_PAGE_SHIFT) is above MAX_ALLOC_ADDRESS or
   // if (Start + NumberOfBytes) rolls over 0 or
-  // if Start is above MAX_ADDRESS or
-  // if End is above MAX_ADDRESS,
+  // if Start is above MAX_ALLOC_ADDRESS or
+  // if End is above MAX_ALLOC_ADDRESS,
   // return EFI_NOT_FOUND.
   //
   if (Type == AllocateAddress) {
@@ -1514,6 +1541,7 @@ CoreFreePages (
 
   Status = CoreInternalFreePages (Memory, NumberOfPages, &MemoryType);
   if (!EFI_ERROR (Status)) {
+    GuardFreedPagesChecked (Memory, NumberOfPages);
     CoreUpdateProfile (
       (EFI_PHYSICAL_ADDRESS) (UINTN) RETURN_ADDRESS (0),
       MemoryProfileActionFreePages,
@@ -1908,9 +1936,7 @@ Done:
   *MemoryMapSize = BufferSize;
 
   DEBUG_CODE (
-    if (PcdGet8 (PcdHeapGuardPropertyMask) & (BIT1|BIT0)) {
-      DumpGuardedMemoryBitmap ();
-    }
+    DumpGuardedMemoryBitmap ();
   );
 
   return Status;
@@ -1942,7 +1968,7 @@ CoreAllocatePoolPages (
   //
   // Find the pages to convert
   //
-  Start = FindFreePages (MAX_ADDRESS, NumberOfPages, PoolType, Alignment,
+  Start = FindFreePages (MAX_ALLOC_ADDRESS, NumberOfPages, PoolType, Alignment,
                          NeedGuard);
 
   //

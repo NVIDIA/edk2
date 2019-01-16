@@ -2,7 +2,7 @@
 #  Client-side iSCSI service.
 #
 #  The iSCSI driver provides iSCSI service in the preboot environment and supports
-#  booting over iSCSI.
+#  booting over iSCSI. This driver supports both IPv4 and IPv6 network stack.
 #
 # Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
@@ -124,7 +124,6 @@
   gEfiIfrTianoGuid                              ## SOMETIMES_PRODUCES ## UNDEFINED
   gEfiAcpiTableGuid                             ## SOMETIMES_CONSUMES ## SystemTable
   gEfiAcpi10TableGuid                           ## SOMETIMES_CONSUMES ## SystemTable
-  gEfiAcpi20TableGuid                           ## SOMETIMES_CONSUMES ## SystemTable
   gEfiAdapterInfoNetworkBootGuid                ## SOMETIMES_CONSUMES ## UNDEFINED
   gEfiAdapterInfoUndiIpv6SupportGuid            ## SOMETIMES_CONSUMES ## GUID
 

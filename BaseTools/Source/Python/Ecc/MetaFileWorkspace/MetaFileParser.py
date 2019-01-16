@@ -22,8 +22,8 @@ import copy
 
 import Common.EdkLogger as EdkLogger
 import Common.GlobalData as GlobalData
-import EccGlobalData
-import EccToolError
+import Ecc.EccGlobalData as EccGlobalData
+import Ecc.EccToolError as EccToolError
 
 from CommonDataClass.DataClass import *
 from Common.DataType import *
@@ -32,7 +32,7 @@ from Common.Misc import GuidStructureStringToGuidString, CheckPcdDatum, PathClas
 from Common.Expression import *
 from CommonDataClass.Exceptions import *
 
-from .MetaFileTable import MetaFileStorage
+from Ecc.MetaFileWorkspace.MetaFileTable import MetaFileStorage
 from GenFds.FdfParser import FdfParser
 from Common.LongFilePathSupport import OpenLongFilePath as open
 from Common.LongFilePathSupport import CodecOpenLongFilePath
@@ -40,7 +40,7 @@ from Common.LongFilePathSupport import CodecOpenLongFilePath
 ## A decorator used to parse macro definition
 def ParseMacro(Parser):
     def MacroParser(self):
-        Match = gMacroDefPattern.match(self._CurrentLine)
+        Match = GlobalData.gMacroDefPattern.match(self._CurrentLine)
         if not Match:
             # Not 'DEFINE/EDK_GLOBAL' statement, call decorated method
             Parser(self)
@@ -61,7 +61,7 @@ def ParseMacro(Parser):
             EdkLogger.error('Parser', FORMAT_INVALID, "%s can only be defined via environment variable" % Name,
                             ExtraData=self._CurrentLine, File=self.MetaFile, Line=self._LineIndex+1)
         # Only upper case letters, digit and '_' are allowed
-        if not gMacroNamePattern.match(Name):
+        if not GlobalData.gMacroNamePattern.match(Name):
             EdkLogger.error('Parser', FORMAT_INVALID, "The macro name must be in the pattern [A-Z][A-Z0-9_]*",
                             ExtraData=self._CurrentLine, File=self.MetaFile, Line=self._LineIndex+1)
 
@@ -1111,7 +1111,7 @@ class DscParser(MetaFileParser):
 
     ## Override parent's method since we'll do all macro replacements in parser
     def _GetMacros(self):
-        Macros = dict( [('ARCH', 'IA32'), ('FAMILY', 'MSFT'), ('TOOL_CHAIN_TAG', 'VS2008x86'), ('TARGET', 'DEBUG')])
+        Macros = dict( [('ARCH', 'IA32'), ('FAMILY', TAB_COMPILER_MSFT), ('TOOL_CHAIN_TAG', 'VS2008x86'), ('TARGET', 'DEBUG')])
         Macros.update(self._FileLocalMacros)
         Macros.update(self._GetApplicableSectionMacro())
         Macros.update(GlobalData.gEdkGlobal)

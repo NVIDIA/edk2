@@ -19,12 +19,11 @@
 from __future__ import absolute_import
 from . import Section
 import subprocess
-from .Ffs import Ffs
+from .Ffs import SectionSuffix
 import Common.LongFilePathOs as os
 from .GenFdsGlobalVariable import GenFdsGlobalVariable
 from .GenFdsGlobalVariable import FindExtendTool
 from CommonDataClass.FdfClass import GuidSectionClassObject
-from Common import ToolDefClassObject
 import sys
 from Common import EdkLogger
 from Common.BuildToolError import *
@@ -126,7 +125,7 @@ class GuidSection(GuidSectionClassObject) :
                      ModuleName + \
                      SUP_MODULE_SEC + \
                      SecNum + \
-                     Ffs.SectionSuffix['GUIDED']
+                     SectionSuffix['GUIDED']
         OutputFile = os.path.normpath(OutputFile)
 
         ExternalTool = None

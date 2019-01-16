@@ -30,7 +30,7 @@
 #
 # The following information is for reference only and not required by the build tools.
 #
-#  VALID_ARCHITECTURES           = IA32 X64 IPF EBC (EBC is for build only)
+#  VALID_ARCHITECTURES           = IA32 X64 EBC (EBC is for build only)
 #
 
 [Sources]
@@ -104,9 +104,6 @@
   gEfiSecHobDataPpiGuid                         ## SOMETIMES_CONSUMES
 
 [Pcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreMaxFvSupported                   ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreMaxPeimPerFv                     ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreMaxPpiSupported                  ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreMaxPeiStackSize                  ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdPeiCoreImageLoaderSearchTeSectionFirst  ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdFrameworkCompatibilitySupport           ## CONSUMES

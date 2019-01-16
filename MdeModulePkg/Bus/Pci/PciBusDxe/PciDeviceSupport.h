@@ -1,7 +1,7 @@
 /** @file
   Supporting functions declaration for PCI devices management.
 
-Copyright (c) 2006 - 2009, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -230,48 +230,31 @@ PciDeviceExisted (
   );
 
 /**
-  Get the active VGA device on the same segment.
+  Get the active VGA device on the specified Host Bridge.
 
-  @param VgaDevice    PCI IO instance for the VGA device.
+  @param HostBridgeHandle    Host Bridge handle.
 
-  @return The active VGA device on the same segment.
+  @return The active VGA device on the specified Host Bridge.
 
 **/
 PCI_IO_DEVICE *
-ActiveVGADeviceOnTheSameSegment (
-  IN PCI_IO_DEVICE        *VgaDevice
+LocateVgaDeviceOnHostBridge (
+  IN EFI_HANDLE           HostBridgeHandle
   );
 
 /**
-  Get the active VGA device on the root bridge.
+  Locate the active VGA device under the bridge.
 
-  @param RootBridge  PCI IO instance for the root bridge.
+  @param Bridge  PCI IO instance for the bridge.
 
   @return The active VGA device.
 
 **/
 PCI_IO_DEVICE *
-ActiveVGADeviceOnTheRootBridge (
-  IN PCI_IO_DEVICE        *RootBridge
+LocateVgaDevice (
+  IN PCI_IO_DEVICE        *Bridge
   );
 
-/**
-  Get HPC PCI address according to its device path.
-
-  @param RootBridge           Root bridege Io instance.
-  @param RemainingDevicePath  Given searching device path.
-  @param PciAddress           Buffer holding searched result.
-
-  @retval EFI_SUCCESS         PCI address was stored in PciAddress.
-  @retval EFI_NOT_FOUND       Can not find the specific device path.
-
-**/
-EFI_STATUS
-GetHpcPciAddressFromRootBridge (
-  IN  PCI_IO_DEVICE                    *RootBridge,
-  IN  EFI_DEVICE_PATH_PROTOCOL         *RemainingDevicePath,
-  OUT UINT64                           *PciAddress
-  );
 
 /**
   Destroy a pci device node.

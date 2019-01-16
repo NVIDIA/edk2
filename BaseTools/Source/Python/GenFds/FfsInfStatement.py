@@ -22,7 +22,7 @@ import Common.LongFilePathOs as os
 from io import BytesIO
 from struct import *
 from .GenFdsGlobalVariable import GenFdsGlobalVariable
-from . import Ffs
+from .Ffs import SectionSuffix,FdfFvFileTypeToFileType
 import subprocess
 import sys
 from . import Section
@@ -30,6 +30,7 @@ from . import RuleSimpleFile
 from . import RuleComplexFile
 from CommonDataClass.FdfClass import FfsInfStatementClassObject
 from Common.MultipleWorkspace import MultipleWorkspace as mws
+from Common.DataType import SUP_MODULE_USER_DEFINED
 from Common.StringUtils import *
 from Common.Misc import PathClass
 from Common.Misc import GuidStructureByteArrayToGuidString
@@ -94,7 +95,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
                 ModuleType = self.InfModule.ModuleType
                 PlatformDataBase = GenFdsGlobalVariable.WorkSpace.BuildObject[GenFdsGlobalVariable.ActivePlatform, self.CurrentArch, GenFdsGlobalVariable.TargetName, GenFdsGlobalVariable.ToolChainTag]
 
-                if ModuleType != DataType.SUP_MODULE_USER_DEFINED:
+                if ModuleType != SUP_MODULE_USER_DEFINED:
                     for LibraryClass in PlatformDataBase.LibraryClasses.GetKeys():
                         if LibraryClass.startswith("NULL") and PlatformDataBase.LibraryClasses[LibraryClass, ModuleType]:
                             self.InfModule.LibraryClasses[LibraryClass] = PlatformDataBase.LibraryClasses[LibraryClass, ModuleType]
@@ -341,9 +342,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
         self.InfModule = Inf
         self.PcdIsDriver = Inf.PcdIsDriver
         self.IsBinaryModule = Inf.IsBinaryModule
-        Inf._GetDepex()
-        Inf._GetDepexExpression()
-        if len(Inf._Depex.data) > 0 and len(Inf._DepexExpression.data) > 0:
+        if len(Inf.Depex.data) > 0 and len(Inf.DepexExpression.data) > 0:
             self.Depex = True
 
         GenFdsGlobalVariable.VerboseLogger("BaseName : %s" % self.BaseName)
@@ -762,7 +761,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
 
                 SecNum = '%d' %Index
                 GenSecOutputFile= self.__ExtendMacro__(Rule.NameGuid) + \
-                              Ffs.Ffs.SectionSuffix[SectionType] + SUP_MODULE_SEC + SecNum
+                              SectionSuffix[SectionType] + SUP_MODULE_SEC + SecNum
                 Index = Index + 1
                 OutputFile = os.path.join(self.OutputPath, GenSecOutputFile)
                 File = GenFdsGlobalVariable.MacroExtend(File, Dict, self.CurrentArch)
@@ -805,7 +804,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
         else:
             SecNum = '%d' %Index
             GenSecOutputFile= self.__ExtendMacro__(Rule.NameGuid) + \
-                              Ffs.Ffs.SectionSuffix[SectionType] + SUP_MODULE_SEC + SecNum
+                              SectionSuffix[SectionType] + SUP_MODULE_SEC + SecNum
             OutputFile = os.path.join(self.OutputPath, GenSecOutputFile)
             GenSecInputFile = GenFdsGlobalVariable.MacroExtend(GenSecInputFile, Dict, self.CurrentArch)
 
@@ -884,7 +883,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
             self.ModuleGuid = RegistryGuidStr
 
             GenFdsGlobalVariable.GenerateFfs(FfsOutput, InputSection,
-                                             Ffs.Ffs.FdfFvFileTypeToFileType[Rule.FvFileType],
+                                             FdfFvFileTypeToFileType[Rule.FvFileType],
                                              self.ModuleGuid, Fixed=Rule.Fixed,
                                              CheckSum=Rule.CheckSum, Align=Rule.Alignment,
                                              SectionAlign=SectionAlignments,
@@ -903,7 +902,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
     #   @retval string       File name of the generated section file
     #
     def __GenComplexFileSection__(self, Rule, FvChildAddr, FvParentAddr, IsMakefile = False):
-        if self.ModuleType in (SUP_MODULE_SEC, SUP_MODULE_PEI_CORE, SUP_MODULE_PEIM):
+        if self.ModuleType in (SUP_MODULE_SEC, SUP_MODULE_PEI_CORE, SUP_MODULE_PEIM, SUP_MODULE_MM_CORE_STANDALONE):
             if Rule.KeepReloc is not None:
                 self.KeepRelocFromRule = Rule.KeepReloc
         SectFiles = []
@@ -1057,7 +1056,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
 
         FfsOutput = os.path.join( self.OutputPath, self.ModuleGuid + '.ffs')
         GenFdsGlobalVariable.GenerateFfs(FfsOutput, InputFile,
-                                             Ffs.Ffs.FdfFvFileTypeToFileType[Rule.FvFileType],
+                                             FdfFvFileTypeToFileType[Rule.FvFileType],
                                              self.ModuleGuid, Fixed=Rule.Fixed,
                                              CheckSum=Rule.CheckSum, Align=Rule.Alignment,
                                              SectionAlign=Alignments,

@@ -62,11 +62,12 @@
 
 [LibraryClasses.AARCH64]
   ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf
-  ArmMmuLib|ArmPkg/Library/ArmMmuLib/ArmMmuStandaloneMmCoreLib.inf
+  StandaloneMmMmuLib|ArmPkg/Library/StandaloneMmMmuLib/ArmMmuStandaloneMmLib.inf
   ArmSvcLib|ArmPkg/Library/ArmSvcLib/ArmSvcLib.inf
   CacheMaintenanceLib|ArmPkg/Library/ArmCacheMaintenanceLib/ArmCacheMaintenanceLib.inf
-  PeCoffExtraActionLib|ArmPkg/Library/DebugPeCoffExtraActionLib/DebugPeCoffExtraActionLib.inf
+  PeCoffExtraActionLib|StandaloneMmPkg/Library/StandaloneMmPeCoffExtraActionLib/StandaloneMmPeCoffExtraActionLib.inf
   PL011UartLib|ArmPlatformPkg/Library/PL011UartLib/PL011UartLib.inf
+  PL011UartClockLib|ArmPlatformPkg/Library/PL011UartClockLib/PL011UartClockLib.inf
   # ARM PL011 UART Driver
   SerialPortLib|ArmPlatformPkg/Library/PL011SerialPortLib/PL011SerialPortLib.inf
 
@@ -127,4 +128,5 @@
 #
 ###################################################################################################
 [BuildOptions.AARCH64]
-GCC:*_*_*_DLINK_FLAGS = -z common-page-size=0x1000 -march=armv8-a+nofp
+GCC:*_*_*_DLINK_FLAGS = -z common-page-size=0x1000 -march=armv8-a+nofp -mstrict-align
+GCC:*_*_*_CC_FLAGS = -mstrict-align

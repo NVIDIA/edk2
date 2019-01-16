@@ -20,8 +20,7 @@
 
   Performs an atomic increment of the 32-bit unsigned integer specified by
   Value and returns the incremented value. The increment operation must be
-  performed using MP safe mechanisms. The state of the return value is not
-  guaranteed to be MP safe.
+  performed using MP safe mechanisms.
 
   @param  Value A pointer to the 32-bit value to increment.
 
@@ -37,18 +36,18 @@ InternalSyncIncrement (
   UINT32  Result;
 
   __asm__ __volatile__ (
+    "movl    $1, %%eax  \n\t"
     "lock               \n\t"
-    "incl    %2         \n\t"
-    "movl    %2, %%eax      "
-    : "=a" (Result),          // %0
-      "=m" (*Value)           // %1
-    : "m"  (*Value)           // %2
+    "xadd    %%eax, %1  \n\t"
+    "inc     %%eax      \n\t"
+    : "=&a" (Result),         // %0
+      "+m" (*Value)           // %1
+    :                         // no inputs that aren't also outputs
     : "memory",
       "cc"
     );
 
   return Result;
-
 }
 
 
@@ -57,8 +56,7 @@ InternalSyncIncrement (
 
   Performs an atomic decrement of the 32-bit unsigned integer specified by
   Value and returns the decremented value. The decrement operation must be
-  performed using MP safe mechanisms. The state of the return value is not
-  guaranteed to be MP safe.
+  performed using MP safe mechanisms.
 
   @param  Value A pointer to the 32-bit value to decrement.
 
@@ -74,18 +72,20 @@ InternalSyncDecrement (
    UINT32  Result;
 
   __asm__ __volatile__ (
-    "lock               \n\t"
-    "decl    %2         \n\t"
-    "movl    %2, %%eax      "
-    : "=a" (Result),          // %0
-      "=m" (*Value)           // %1
-    : "m"  (*Value)           // %2
+    "movl    $-1, %%eax  \n\t"
+    "lock                \n\t"
+    "xadd    %%eax, %1   \n\t"
+    "dec     %%eax       \n\t"
+    : "=&a" (Result),          // %0
+      "+m" (*Value)            // %1
+    :                          // no inputs that aren't also outputs
     : "memory",
       "cc"
     );
 
   return Result;
 }
+
 
 /**
   Performs an atomic compare exchange operation on a 16-bit unsigned integer.
@@ -113,21 +113,19 @@ InternalSyncCompareExchange16 (
   IN      UINT16                    ExchangeValue
   )
 {
-
   __asm__ __volatile__ (
-    "                     \n\t"
     "lock                 \n\t"
-    "cmpxchgw    %1, %2   \n\t"
-    : "=a" (CompareValue)
-    : "q"  (ExchangeValue),
-      "m"  (*Value),
-      "0"  (CompareValue)
+    "cmpxchgw    %2, %1   \n\t"
+    : "+a" (CompareValue),      // %0
+      "+m" (*Value)             // %1
+    : "q"  (ExchangeValue)      // %2
     : "memory",
       "cc"
     );
 
   return CompareValue;
 }
+
 
 /**
   Performs an atomic compare exchange operation on a 32-bit unsigned integer.
@@ -155,21 +153,19 @@ InternalSyncCompareExchange32 (
   IN      UINT32                    ExchangeValue
   )
 {
-
   __asm__ __volatile__ (
-    "                     \n\t"
     "lock                 \n\t"
-    "cmpxchgl    %1, %2   \n\t"
-    : "=a" (CompareValue)     // %0
-    : "q"  (ExchangeValue),   // %1
-      "m"  (*Value),          // %2
-      "0"  (CompareValue)     // %4
+    "cmpxchgl    %2, %1   \n\t"
+    : "+a" (CompareValue),      // %0
+      "+m" (*Value)             // %1
+    : "q"  (ExchangeValue)      // %2
     : "memory",
       "cc"
     );
 
   return CompareValue;
 }
+
 
 /**
   Performs an atomic compare exchange operation on a 64-bit unsigned integer.
@@ -197,15 +193,11 @@ InternalSyncCompareExchange64 (
   )
 {
   __asm__ __volatile__ (
-    "                       \n\t"
-    "push        %%ebx      \n\t"
-    "movl        %2,%%ebx   \n\t"
     "lock                   \n\t"
     "cmpxchg8b   (%1)       \n\t"
-    "pop         %%ebx      \n\t"
     : "+A"  (CompareValue)                    // %0
     : "S"   (Value),                          // %1
-      "r"   ((UINT32) ExchangeValue),         // %2
+      "b"   ((UINT32) ExchangeValue),         // %2
       "c"   ((UINT32) (ExchangeValue >> 32))  // %3
     : "memory",
       "cc"

@@ -21,10 +21,14 @@
 // Number of Virtual Memory Map Descriptors
 #define MAX_VIRTUAL_MEMORY_MAP_DESCRIPTORS          5
 
-EFI_PHYSICAL_ADDRESS
-ArmGetPhysAddrTop (
-  VOID
-  );
+//
+// mach-virt's core peripherals such as the UART, the GIC and the RTC are
+// all mapped in the 'miscellaneous device I/O' region, which we just map
+// in its entirety rather than device by device. Note that it does not
+// cover any of the NOR flash banks or PCI resource windows.
+//
+#define MACH_VIRT_PERIPH_BASE       0x08000000
+#define MACH_VIRT_PERIPH_SIZE       SIZE_128MB
 
 /**
   Return the Virtual Memory Map of your platform
@@ -45,7 +49,6 @@ ArmVirtGetMemoryMap (
   )
 {
   ARM_MEMORY_REGION_DESCRIPTOR  *VirtualMemoryTable;
-  UINT64                        TopOfMemory;
 
   ASSERT (VirtualMemoryMap != NULL);
 
@@ -72,29 +75,20 @@ ArmVirtGetMemoryMap (
       VirtualMemoryTable[0].VirtualBase,
       VirtualMemoryTable[0].Length));
 
-  // Peripheral space before DRAM
-  VirtualMemoryTable[1].PhysicalBase = 0x0;
-  VirtualMemoryTable[1].VirtualBase  = 0x0;
-  VirtualMemoryTable[1].Length       = VirtualMemoryTable[0].PhysicalBase;
+  // Memory mapped peripherals (UART, RTC, GIC, virtio-mmio, etc)
+  VirtualMemoryTable[1].PhysicalBase = MACH_VIRT_PERIPH_BASE;
+  VirtualMemoryTable[1].VirtualBase  = MACH_VIRT_PERIPH_BASE;
+  VirtualMemoryTable[1].Length       = MACH_VIRT_PERIPH_SIZE;
   VirtualMemoryTable[1].Attributes   = ARM_MEMORY_REGION_ATTRIBUTE_DEVICE;
 
-  // Peripheral space after DRAM
-  TopOfMemory = MIN (1ULL << FixedPcdGet8 (PcdPrePiCpuMemorySize),
-                     ArmGetPhysAddrTop ());
-  VirtualMemoryTable[2].PhysicalBase = VirtualMemoryTable[0].Length + VirtualMemoryTable[1].Length;
+  // Map the FV region as normal executable memory
+  VirtualMemoryTable[2].PhysicalBase = PcdGet64 (PcdFvBaseAddress);
   VirtualMemoryTable[2].VirtualBase  = VirtualMemoryTable[2].PhysicalBase;
-  VirtualMemoryTable[2].Length       = TopOfMemory -
-                                       VirtualMemoryTable[2].PhysicalBase;
-  VirtualMemoryTable[2].Attributes   = ARM_MEMORY_REGION_ATTRIBUTE_DEVICE;
-
-  // Remap the FD region as normal executable memory
-  VirtualMemoryTable[3].PhysicalBase = PcdGet64 (PcdFdBaseAddress);
-  VirtualMemoryTable[3].VirtualBase  = VirtualMemoryTable[3].PhysicalBase;
-  VirtualMemoryTable[3].Length       = FixedPcdGet32 (PcdFdSize);
-  VirtualMemoryTable[3].Attributes   = ARM_MEMORY_REGION_ATTRIBUTE_WRITE_BACK;
+  VirtualMemoryTable[2].Length       = FixedPcdGet32 (PcdFvSize);
+  VirtualMemoryTable[2].Attributes   = ARM_MEMORY_REGION_ATTRIBUTE_WRITE_BACK;
 
   // End of Table
-  ZeroMem (&VirtualMemoryTable[4], sizeof (ARM_MEMORY_REGION_DESCRIPTOR));
+  ZeroMem (&VirtualMemoryTable[3], sizeof (ARM_MEMORY_REGION_DESCRIPTOR));
 
   *VirtualMemoryMap = VirtualMemoryTable;
 }

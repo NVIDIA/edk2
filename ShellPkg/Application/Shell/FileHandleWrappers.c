@@ -1148,15 +1148,35 @@ FileInterfaceEnvDelete(
 EFI_STATUS
 EFIAPI
 FileInterfaceEnvRead(
-  IN EFI_FILE_PROTOCOL *This,
-  IN OUT UINTN *BufferSize,
-  OUT VOID *Buffer
+  IN     EFI_FILE_PROTOCOL *This,
+  IN OUT UINTN             *BufferSize,
+  OUT    VOID              *Buffer
   )
 {
-  return (SHELL_GET_ENVIRONMENT_VARIABLE(
-    ((EFI_FILE_PROTOCOL_ENVIRONMENT*)This)->Name,
-    BufferSize,
-    Buffer));
+  EFI_STATUS     Status;
+
+  *BufferSize = *BufferSize / sizeof (CHAR16) * sizeof (CHAR16);
+  if (*BufferSize != 0) {
+    //
+    // Make sure the first unicode character is \xFEFF
+    //
+    *(CHAR16 *)Buffer = gUnicodeFileTag;
+    Buffer            = (CHAR16 *)Buffer + 1;
+    *BufferSize      -= sizeof (gUnicodeFileTag);
+  }
+
+  Status = SHELL_GET_ENVIRONMENT_VARIABLE (
+             ((EFI_FILE_PROTOCOL_ENVIRONMENT*)This)->Name,
+             BufferSize,
+             Buffer
+             );
+  if (!EFI_ERROR (Status) || (Status == EFI_BUFFER_TOO_SMALL)) {
+    //
+    // BufferSize is valid and needs update when Status is Success or BufferTooSmall.
+    //
+    *BufferSize += sizeof (gUnicodeFileTag);
+  }
+  return Status;
 }
 
 /**
@@ -1924,42 +1944,58 @@ FileInterfaceFileRead(
   OUT VOID                    *Buffer
   )
 {
+  EFI_STATUS  Status;
+  UINT64      Position;
   CHAR8       *AsciiStrBuffer;
   CHAR16      *UscStrBuffer;
   UINTN       Size;
-  UINTN       CharNum;
-  EFI_STATUS  Status;
   if (((EFI_FILE_PROTOCOL_FILE*)This)->Unicode) {
     //
     // Unicode
+    // There might be different file tag for the Unicode file. We cannot unconditionally insert the \xFEFF.
+    // So we choose to leave the file content as is.
     //
     return (((EFI_FILE_PROTOCOL_FILE*)This)->Orig->Read(((EFI_FILE_PROTOCOL_FILE*)This)->Orig, BufferSize, Buffer));
   } else {
     //
     // Ascii
     //
-    Size  = (*BufferSize) / sizeof(CHAR16);
-    AsciiStrBuffer = AllocateZeroPool(Size + sizeof(CHAR8));
+    *BufferSize = *BufferSize / sizeof (CHAR16) * sizeof (CHAR16);
+    if (*BufferSize == 0) {
+      return EFI_SUCCESS;
+    }
+    Status = ((EFI_FILE_PROTOCOL_FILE*)This)->Orig->GetPosition (((EFI_FILE_PROTOCOL_FILE*)This)->Orig, &Position);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+    if (Position == 0) {
+      //
+      // First two bytes in Buffer is for the Unicode file tag.
+      //
+      *(CHAR16 *)Buffer = gUnicodeFileTag;
+      Buffer = (CHAR16 *)Buffer + 1;
+      Size   = *BufferSize / sizeof (CHAR16) - 1;
+    } else {
+      Size   = *BufferSize / sizeof (CHAR16);
+    }
+    AsciiStrBuffer = AllocateZeroPool (Size + 1);
     if (AsciiStrBuffer == NULL) {
       return EFI_OUT_OF_RESOURCES;
     }
-    UscStrBuffer = AllocateZeroPool(*BufferSize + sizeof(CHAR16));
+    UscStrBuffer = AllocateZeroPool ((Size + 1) * sizeof(CHAR16));
     if (UscStrBuffer== NULL) {
       SHELL_FREE_NON_NULL(AsciiStrBuffer);
       return EFI_OUT_OF_RESOURCES;
     }
-    Status = (((EFI_FILE_PROTOCOL_FILE*)This)->Orig->Read(((EFI_FILE_PROTOCOL_FILE*)This)->Orig, &Size, AsciiStrBuffer));
+    Status = ((EFI_FILE_PROTOCOL_FILE*)This)->Orig->Read (((EFI_FILE_PROTOCOL_FILE*)This)->Orig, &Size, AsciiStrBuffer);
     if (!EFI_ERROR(Status)) {
-      CharNum = UnicodeSPrint(UscStrBuffer, *BufferSize + sizeof(CHAR16), L"%a", AsciiStrBuffer);
-      if (CharNum == Size) {
-        CopyMem (Buffer, UscStrBuffer, *BufferSize);
-      } else {
-        Status = EFI_UNSUPPORTED;
-      }
+      AsciiStrToUnicodeStrS (AsciiStrBuffer, UscStrBuffer, Size + 1);
+      *BufferSize = Size * sizeof (CHAR16);
+      CopyMem (Buffer, UscStrBuffer, *BufferSize);
     }
-    SHELL_FREE_NON_NULL(AsciiStrBuffer);
-    SHELL_FREE_NON_NULL(UscStrBuffer);
-    return (Status);
+    SHELL_FREE_NON_NULL (AsciiStrBuffer);
+    SHELL_FREE_NON_NULL (UscStrBuffer);
+    return Status;
   }
 }
 

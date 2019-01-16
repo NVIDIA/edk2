@@ -20,7 +20,6 @@ from struct import *
 from .GenFdsGlobalVariable import GenFdsGlobalVariable
 from io import BytesIO
 import string
-from CommonDataClass.FdfClass import RegionClassObject
 import Common.LongFilePathOs as os
 from stat import *
 from Common import EdkLogger
@@ -32,15 +31,20 @@ from Common.DataType import BINARY_FILE_TYPE_FV
 ## generate Region
 #
 #
-class Region(RegionClassObject):
+class Region(object):
 
     ## The constructor
     #
     #   @param  self        The object pointer
     #
     def __init__(self):
-        RegionClassObject.__init__(self)
-
+        self.Offset = None       # The begin position of the Region
+        self.Size = None         # The Size of the Region
+        self.PcdOffset = None
+        self.PcdSize = None
+        self.SetVarDict = {}
+        self.RegionType = None
+        self.RegionDataList = []
 
     ## PadBuffer()
     #
@@ -124,7 +128,7 @@ class Region(RegionClassObject):
                         #
                         self.BlockInfoOfRegion(BlockSizeList, FvObj)
                         self.FvAddress = self.FvAddress + FvOffset
-                        FvAlignValue = self.GetFvAlignValue(FvObj.FvAlignment)
+                        FvAlignValue = GenFdsGlobalVariable.GetAlignment(FvObj.FvAlignment)
                         if self.FvAddress % FvAlignValue != 0:
                             EdkLogger.error("GenFds", GENFDS_ERROR,
                                             "FV (%s) is NOT %s Aligned!" % (FvObj.UiFvName, FvObj.FvAlignment))
@@ -276,25 +280,6 @@ class Region(RegionClassObject):
         if self.RegionType is None:
             GenFdsGlobalVariable.InfLogger('   Region Name = None')
             self.PadBuffer(Buffer, ErasePolarity, Size)
-
-    def GetFvAlignValue(self, Str):
-        AlignValue = 1
-        Granu = 1
-        Str = Str.strip().upper()
-        if Str.endswith('K'):
-            Granu = 1024
-            Str = Str[:-1]
-        elif Str.endswith('M'):
-            Granu = 1024 * 1024
-            Str = Str[:-1]
-        elif Str.endswith('G'):
-            Granu = 1024 * 1024 * 1024
-            Str = Str[:-1]
-        else:
-            pass
-
-        AlignValue = int(Str) * Granu
-        return AlignValue
 
     ## BlockSizeOfRegion()
     #

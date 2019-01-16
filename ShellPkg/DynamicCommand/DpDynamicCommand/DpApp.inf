@@ -59,8 +59,6 @@
 
 [Guids]
   gPerformanceProtocolGuid                                ## CONSUMES ## SystemTable
-  gEfiAcpi20TableGuid                                     ## CONSUMES ## SystemTable
-  gEfiAcpi10TableGuid                                     ## CONSUMES ## SystemTable
 
 [Protocols]
   gEfiLoadedImageProtocolGuid                             ## CONSUMES
@@ -69,5 +67,3 @@
   gEfiLoadedImageDevicePathProtocolGuid                   ## SOMETIMES_CONSUMES
   gEfiHiiPackageListProtocolGuid                          ## CONSUMES
 
-[Pcd]
-  gEfiMdePkgTokenSpaceGuid.PcdUefiLibMaxPrintBufferSize   ## CONSUMES

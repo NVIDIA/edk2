@@ -6,7 +6,7 @@
   returned is a single 32-bit or 64-bit value, then a data structure is not
   provided for that MSR.
 
-  Copyright (c) 2016 - 2017, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2016 - 2018, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -16,8 +16,8 @@
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
   @par Specification Reference:
-  Intel(R) 64 and IA-32 Architectures Software Developer's Manual, Volume 3,
-  September 2016, Chapter 35 Model-Specific-Registers (MSR), Section 35.14.
+  Intel(R) 64 and IA-32 Architectures Software Developer's Manual, Volume 4,
+  May 2018, Volume 4: Model-Specific-Registers (MSR)
 
 **/
 
@@ -72,11 +72,11 @@ typedef union {
   ///
   struct {
     ///
-    /// [Bit 0] LockOut (R/WO) See Table 35-24.
+    /// [Bit 0] LockOut (R/WO) See Table 2-25.
     ///
     UINT32  LockOut:1;
     ///
-    /// [Bit 1] Enable_PPIN (R/W) See Table 35-24.
+    /// [Bit 1] Enable_PPIN (R/W) See Table 2-25.
     ///
     UINT32  Enable_PPIN:1;
     UINT32  Reserved1:30;
@@ -95,7 +95,7 @@ typedef union {
 
 /**
   Package. Protected Processor Inventory Number (R/O). Protected Processor
-  Inventory Number (R/O) See Table 35-24.
+  Inventory Number (R/O) See Table 2-25.
 
   @param  ECX  MSR_XEON_D_PPIN (0x0000004F)
   @param  EAX  Lower 32-bits of MSR value.
@@ -142,33 +142,33 @@ typedef union {
   struct {
     UINT32  Reserved1:8;
     ///
-    /// [Bits 15:8] Package. Maximum Non-Turbo Ratio (R/O) See Table 35-24.
+    /// [Bits 15:8] Package. Maximum Non-Turbo Ratio (R/O) See Table 2-25.
     ///
     UINT32  MaximumNonTurboRatio:8;
     UINT32  Reserved2:7;
     ///
-    /// [Bit 23] Package. PPIN_CAP (R/O) See Table 35-24.
+    /// [Bit 23] Package. PPIN_CAP (R/O) See Table 2-25.
     ///
     UINT32  PPIN_CAP:1;
     UINT32  Reserved3:4;
     ///
     /// [Bit 28] Package. Programmable Ratio Limit for Turbo Mode (R/O) See
-    /// Table 35-24.
+    /// Table 2-25.
     ///
     UINT32  RatioLimit:1;
     ///
     /// [Bit 29] Package. Programmable TDP Limit for Turbo Mode (R/O) See
-    /// Table 35-24.
+    /// Table 2-25.
     ///
     UINT32  TDPLimit:1;
     ///
-    /// [Bit 30] Package. Programmable TJ OFFSET (R/O) See Table 35-24.
+    /// [Bit 30] Package. Programmable TJ OFFSET (R/O) See Table 2-25.
     ///
     UINT32  TJOFFSET:1;
     UINT32  Reserved4:1;
     UINT32  Reserved5:8;
     ///
-    /// [Bits 47:40] Package. Maximum Efficiency Ratio (R/O) See Table 35-24.
+    /// [Bits 47:40] Package. Maximum Efficiency Ratio (R/O) See Table 2-25.
     ///
     UINT32  MaximumEfficiencyRatio:8;
     UINT32  Reserved6:16;
@@ -434,11 +434,11 @@ typedef union {
   struct {
     UINT32  Reserved1:16;
     ///
-    /// [Bits 23:16] Temperature Target (RO) See Table 35-24.
+    /// [Bits 23:16] Temperature Target (RO) See Table 2-25.
     ///
     UINT32  TemperatureTarget:8;
     ///
-    /// [Bits 27:24] TCC Activation Offset (R/W) See Table 35-24.
+    /// [Bits 27:24] TCC Activation Offset (R/W) See Table 2-25.
     ///
     UINT32  TCCActivationOffset:4;
     UINT32  Reserved2:4;
@@ -754,7 +754,61 @@ typedef union {
 
 
 /**
-  Package. Reserved (R/O)  Reads return 0.
+  Package. Uncore Ratio Limit (R/W) Out of reset, the min_ratio and max_ratio
+  fields represent the widest possible range of uncore frequencies. Writing to
+  these fields allows software to control the minimum and the maximum
+  frequency that hardware will select.
+
+  @param  ECX  MSR_XEON_D_MSRUNCORE_RATIO_LIMIT (0x00000620)
+  @param  EAX  Lower 32-bits of MSR value.
+               Described by the type MSR_XEON_D_MSRUNCORE_RATIO_LIMIT_REGISTER.
+  @param  EDX  Upper 32-bits of MSR value.
+               Described by the type MSR_XEON_D_MSRUNCORE_RATIO_LIMIT_REGISTER.
+
+  <b>Example usage</b>
+  @code
+  MSR_XEON_D_MSRUNCORE_RATIO_LIMIT_REGISTER  Msr;
+
+  Msr.Uint64 = AsmReadMsr64 (MSR_XEON_D_MSRUNCORE_RATIO_LIMIT);
+  AsmWriteMsr64 (MSR_XEON_D_MSRUNCORE_RATIO_LIMIT, Msr.Uint64);
+  @endcode
+**/
+#define MSR_XEON_D_MSRUNCORE_RATIO_LIMIT         0x00000620
+
+/**
+  MSR information returned for MSR index #MSR_XEON_D_MSRUNCORE_RATIO_LIMIT
+**/
+typedef union {
+  ///
+  /// Individual bit fields
+  ///
+  struct {
+    ///
+    /// [Bits 6:0] MAX_RATIO This field is used to limit the max ratio of the
+    /// LLC/Ring.
+    ///
+    UINT32  MAX_RATIO:7;
+    UINT32  Reserved1:1;
+    ///
+    /// [Bits 14:8] MIN_RATIO Writing to this field controls the minimum
+    /// possible ratio of the LLC/Ring.
+    ///
+    UINT32  MIN_RATIO:7;
+    UINT32  Reserved2:17;
+    UINT32  Reserved3:32;
+  } Bits;
+  ///
+  /// All bit fields as a 32-bit value
+  ///
+  UINT32  Uint32;
+  ///
+  /// All bit fields as a 64-bit value
+  ///
+  UINT64  Uint64;
+} MSR_XEON_D_MSRUNCORE_RATIO_LIMIT_REGISTER;
+
+/**
+  Package. Reserved (R/O) Reads return 0.
 
   @param  ECX  MSR_XEON_D_PP0_ENERGY_STATUS (0x00000639)
   @param  EAX  Lower 32-bits of MSR value.

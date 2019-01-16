@@ -6,7 +6,7 @@
   returned is a single 32-bit or 64-bit value, then a data structure is not
   provided for that MSR.
 
-  Copyright (c) 2016 - 2017, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2016 - 2018, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -16,16 +16,8 @@
   WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
   @par Specification Reference:
-  Intel(R) 64 and IA-32 Architectures Software Developer's Manual, Volume 3,
-  September 2016, Chapter 35 Model-Specific-Registers (MSR), Section 35.1.
-
-  @par Specification Reference:
-  Intel(R) 64 and IA-32 Architectures Software Developer's Manual, Volume 3,
-  September 2016, Appendix A VMX Capability Reporting Facility, Section A.1.
-
-  @par Specification Reference:
-  Intel(R) 64 and IA-32 Architectures Software Developer's Manual, Volume 3,
-  September 2016, Appendix A VMX Capability Reporting Facility, Section A.6.
+  Intel(R) 64 and IA-32 Architectures Software Developer's Manual, Volume 4,
+  May 2018, Volume 4: Model-Specific-Registers (MSR)
 
 **/
 
@@ -33,7 +25,7 @@
 #define __ARCHITECTURAL_MSR_H__
 
 /**
-  See Section 35.22, "MSRs in Pentium Processors.". Pentium Processor (05_01H).
+  See Section 2.22, "MSRs in Pentium Processors.". Pentium Processor (05_01H).
 
   @param  ECX  MSR_IA32_P5_MC_ADDR (0x00000000)
   @param  EAX  Lower 32-bits of MSR value.
@@ -52,7 +44,7 @@
 
 
 /**
-  See Section 35.22, "MSRs in Pentium Processors.". DF_DM = 05_01H.
+  See Section 2.22, "MSRs in Pentium Processors.". DF_DM = 05_01H.
 
   @param  ECX  MSR_IA32_P5_MC_TYPE (0x00000001)
   @param  EAX  Lower 32-bits of MSR value.
@@ -91,7 +83,7 @@
 
 
 /**
-  See Section 17.15, "Time-Stamp Counter.". Introduced at Display Family /
+  See Section 17.17, "Time-Stamp Counter.". Introduced at Display Family /
   Display Model 05_01H.
 
   @param  ECX  MSR_IA32_TIME_STAMP_COUNTER (0x00000010)
@@ -493,9 +485,8 @@ typedef union {
     UINT32  Valid:1;
     UINT32  Reserved1:1;
     ///
-    /// [Bit 2] Determines whether executions of VMXOFF unblock SMIs under the
-    /// default treatment of SMIs and SMM.  Executions of VMXOFF unblock SMIs
-    /// unless bit 2 is 1 (the value of bit 0 is irrelevant).
+    /// [Bit 2] Controls SMI unblocking by VMXOFF (see Section 34.14.4). If
+    /// IA32_VMX_MISC[28].
     ///
     UINT32  BlockSmi:1;
     UINT32  Reserved2:9;
@@ -1953,7 +1944,7 @@ typedef union {
 
 
 /**
-  SMRR Range Mask. (Writeable only in SMM)  Range Mask of SMM memory range. If
+  SMRR Range Mask (Writeable only in SMM) Range Mask of SMM memory range. If
   IA32_MTRRCAP[SMRR] = 1.
 
   @param  ECX  MSR_IA32_SMRR_PHYSMASK (0x000001F3)
@@ -4417,13 +4408,13 @@ typedef union {
   ///
   struct {
     ///
-    /// [Bit 0] Lock. See Section 42.11.3, "Interactions with Authenticated
+    /// [Bit 0] Lock. See Section 41.11.3, "Interactions with Authenticated
     /// Code Modules (ACMs)".
     ///
     UINT32  Lock:1;
     UINT32  Reserved1:15;
     ///
-    /// [Bits 23:16] SGX_SVN_SINIT. See Section 42.11.3, "Interactions with
+    /// [Bits 23:16] SGX_SVN_SINIT. See Section 41.11.3, "Interactions with
     /// Authenticated Code Modules (ACMs)".
     ///
     UINT32  SGX_SVN_SINIT:8;
@@ -4656,7 +4647,14 @@ typedef union {
     /// [Bit 3] User.
     ///
     UINT32  User:1;
-    UINT32  Reserved1:2;
+    ///
+    /// [Bit 4] PwrEvtEn.
+    ///
+    UINT32  PwrEvtEn:1;
+    ///
+    /// [Bit 5] FUPonPTW.
+    ///
+    UINT32  FUPonPTW:1;
     ///
     /// [Bit 6] FabricEn. If (CPUID.(EAX=07H, ECX=0):ECX[3] = 1).
     ///
@@ -4681,7 +4679,10 @@ typedef union {
     /// [Bit 11] DisRETC.
     ///
     UINT32  DisRETC:1;
-    UINT32  Reserved2:1;
+    ///
+    /// [Bit 12] PTWEn.
+    ///
+    UINT32  PTWEn:1;
     ///
     /// [Bit 13] BranchEn.
     ///
@@ -4925,16 +4926,11 @@ typedef union {
 
 
 /**
-  DS Save Area (R/W)  Points to the linear address of the first byte of the DS
+  DS Save Area (R/W) Points to the linear address of the first byte of the DS
   buffer management area, which is used to manage the BTS and PEBS buffers.
-  See Section 18.15.4, "Debug Store (DS) Mechanism.". If( CPUID.01H:EDX.DS[21]
-  = 1.
-
-    [Bits 31..0] The linear address of the first byte of the DS buffer
-    management area, if not in IA-32e mode.
-
-    [Bits 63..0] The linear address of the first byte of the DS buffer
-    management area, if IA-32e mode is active.
+  See Section 18.6.3.4, "Debug Store (DS) Mechanism.". If(
+  CPUID.01H:EDX.DS[21] = 1. The linear address of the first byte of the DS
+  buffer management area, if IA-32e mode is active.
 
   @param  ECX  MSR_IA32_DS_AREA (0x00000600)
   @param  EAX  Lower 32-bits of MSR value.
@@ -5922,6 +5918,51 @@ typedef union {
   UINT64  Uint64;
 } MSR_IA32_L3_QOS_CFG_REGISTER;
 
+/**
+  L2 QOS Configuration (R/W). If ( CPUID.(EAX=10H, ECX=2):ECX.[2] = 1 ).
+
+  @param  ECX  MSR_IA32_L2_QOS_CFG (0x00000C82)
+  @param  EAX  Lower 32-bits of MSR value.
+               Described by the type MSR_IA32_L2_QOS_CFG_REGISTER.
+  @param  EDX  Upper 32-bits of MSR value.
+               Described by the type MSR_IA32_L2_QOS_CFG_REGISTER.
+
+  <b>Example usage</b>
+  @code
+  MSR_IA32_L2_QOS_CFG_REGISTER  Msr;
+
+  Msr.Uint64 = AsmReadMsr64 (MSR_IA32_L2_QOS_CFG);
+  AsmWriteMsr64 (MSR_IA32_L2_QOS_CFG, Msr.Uint64);
+  @endcode
+  @note MSR_IA32_L2_QOS_CFG is defined as IA32_L2_QOS_CFG in SDM.
+**/
+#define MSR_IA32_L2_QOS_CFG                      0x00000C82
+
+/**
+  MSR information returned for MSR index #MSR_IA32_L2_QOS_CFG
+**/
+typedef union {
+  ///
+  /// Individual bit fields
+  ///
+  struct {
+    ///
+    /// [Bit 0] Enable (R/W) Set 1 to enable L2 CAT masks and COS to operate
+    /// in Code and Data Prioritization (CDP) mode.
+    ///
+    UINT32  Enable:1;
+    UINT32  Reserved1:31;
+    UINT32  Reserved2:32;
+  } Bits;
+  ///
+  /// All bit fields as a 32-bit value
+  ///
+  UINT32  Uint32;
+  ///
+  /// All bit fields as a 64-bit value
+  ///
+  UINT64  Uint64;
+} MSR_IA32_L2_QOS_CFG_REGISTER;
 
 /**
   Monitoring Event Select Register (R/W). If ( CPUID.(EAX=07H, ECX=0):EBX.[12]
@@ -6394,6 +6435,25 @@ typedef union {
 **/
 #define MSR_IA32_LSTAR                           0xC0000082
 
+/**
+  IA-32e Mode System Call Target Address (R/W) Not used, as the SYSCALL
+  instruction is not recognized in compatibility mode. If
+  CPUID.80000001:EDX.[29] = 1.
+
+  @param  ECX  MSR_IA32_CSTAR (0xC0000083)
+  @param  EAX  Lower 32-bits of MSR value.
+  @param  EDX  Upper 32-bits of MSR value.
+
+  <b>Example usage</b>
+  @code
+  UINT64  Msr;
+
+  Msr = AsmReadMsr64 (MSR_IA32_CSTAR);
+  AsmWriteMsr64 (MSR_IA32_CSTAR, Msr);
+  @endcode
+  @note MSR_IA32_CSTAR is defined as IA32_CSTAR in SDM.
+**/
+#define MSR_IA32_CSTAR                           0xC0000083
 
 /**
   System Call Flag Mask (R/W). If CPUID.80000001:EDX.[29] = 1.

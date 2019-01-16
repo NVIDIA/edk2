@@ -22,11 +22,7 @@
   PLATFORM_GUID                  = 05FD064D-1073-E844-936C-A0E16317107D
   PLATFORM_VERSION               = 0.3
   DSC_SPECIFICATION              = 0x00010005
-!if $(BUILD_32)
-  OUTPUT_DIRECTORY               = Build/Emulator32
-!else
-  OUTPUT_DIRECTORY               = Build/Emulator
-!endif
+  OUTPUT_DIRECTORY               = Build/Emulator$(ARCH)
 
   SUPPORTED_ARCHITECTURES        = X64|IA32
   BUILD_TARGETS                  = DEBUG|RELEASE
@@ -55,6 +51,7 @@
   PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
   PeCoffGetEntryPointLib|MdePkg/Library/BasePeCoffGetEntryPointLib/BasePeCoffGetEntryPointLib.inf
   BaseMemoryLib|MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf
+  FrameBufferBltLib|MdeModulePkg/Library/FrameBufferBltLib/FrameBufferBltLib.inf
 
   #
   # UEFI & PI
@@ -82,7 +79,9 @@
   UdpIoLib|MdeModulePkg/Library/DxeUdpIoLib/DxeUdpIoLib.inf
   DpcLib|MdeModulePkg/Library/DxeDpcLib/DxeDpcLib.inf
   OemHookStatusCodeLib|MdeModulePkg/Library/OemHookStatusCodeLibNull/OemHookStatusCodeLibNull.inf
-  GenericBdsLib|IntelFrameworkModulePkg/Library/GenericBdsLib/GenericBdsLib.inf
+  BootLogoLib|MdeModulePkg/Library/BootLogoLib/BootLogoLib.inf
+  FileExplorerLib|MdeModulePkg/Library/FileExplorerLib/FileExplorerLib.inf
+  UefiBootManagerLib|MdeModulePkg/Library/UefiBootManagerLib/UefiBootManagerLib.inf
   BmpSupportLib|MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
   CustomizedDisplayLib|MdeModulePkg/Library/CustomizedDisplayLib/CustomizedDisplayLib.inf
@@ -93,7 +92,7 @@
   #
   # Platform
   #
-  PlatformBdsLib|EmulatorPkg/Library/EmuBdsLib/EmuBdsLib.inf
+  PlatformBootManagerLib|EmulatorPkg/Library/PlatformBmLib/PlatformBmLib.inf
   KeyMapLib|EmulatorPkg/Library/KeyMapLibNull/KeyMapLibNull.inf
 
   #
@@ -110,7 +109,6 @@
   AuthVariableLib|MdeModulePkg/Library/AuthVariableLibNull/AuthVariableLibNull.inf
   VarCheckLib|MdeModulePkg/Library/VarCheckLib/VarCheckLib.inf
   SortLib|MdeModulePkg/Library/BaseSortLib/BaseSortLib.inf
-  UefiBootManagerLib|MdeModulePkg/Library/UefiBootManagerLib/UefiBootManagerLib.inf
   ShellLib|ShellPkg/Library/UefiShellLib/UefiShellLib.inf
   FileHandleLib|MdePkg/Library/UefiFileHandleLib/UefiFileHandleLib.inf
 
@@ -174,13 +172,6 @@
   ReportStatusCodeLib|MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
   TimerLib|EmulatorPkg/Library/DxeTimerLib/DxeTimerLib.inf
 
-[LibraryClasses.common.UEFI_DRIVER]
-  PcdLib|MdePkg/Library/DxePcdLib/DxePcdLib.inf
-
-[LibraryClasses.common.UEFI_APPLICATION]
-  PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
-
-
 [PcdsFeatureFlag]
   gEfiMdeModulePkgTokenSpaceGuid.PcdDxeIplSwitchToLongMode|FALSE
   gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeUseSerial|TRUE
@@ -188,6 +179,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdDxeIplBuildPageTables|FALSE
 
 [PcdsFixedAtBuild]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdImageProtectionPolicy|0x00000000
   gEfiMdeModulePkgTokenSpaceGuid.PcdResetOnMemoryTypeInformationChange|FALSE
   gEfiMdePkgTokenSpaceGuid.PcdDebugPrintErrorLevel|0x80000040
   gEfiMdePkgTokenSpaceGuid.PcdReportStatusCodePropertyMask|0x0f
@@ -201,9 +193,9 @@
 
   gEmulatorPkgTokenSpaceGuid.PcdEmuMemorySize|L"64!64"
 
-!ifndef $(USE_OLD_SHELL)
-  gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdShellFile|{ 0x83, 0xA5, 0x04, 0x7C, 0x3E, 0x9E, 0x1C, 0x4F, 0xAD, 0x65, 0xE0, 0x52, 0x68, 0xD0, 0xB4, 0xD1 }
-!endif
+  # Change PcdBootManagerMenuFile to UiApp
+  gEfiMdeModulePkgTokenSpaceGuid.PcdBootManagerMenuFile|{ 0x21, 0xaa, 0x2c, 0x46, 0x14, 0x76, 0x03, 0x45, 0x83, 0x6e, 0x8a, 0xb6, 0xf4, 0x66, 0x23, 0x31 }
+
 
 #define BOOT_WITH_FULL_CONFIGURATION                  0x00
 #define BOOT_WITH_MINIMAL_CONFIGURATION               0x01
@@ -223,7 +215,7 @@
   # For a CD-ROM/DVD use L"diag.dmg:RO:2048"
   gEmulatorPkgTokenSpaceGuid.PcdEmuVirtualDisk|L"disk.dmg:FW"
   gEmulatorPkgTokenSpaceGuid.PcdEmuGop|L"GOP Window"
-  gEmulatorPkgTokenSpaceGuid.PcdEmuFileSystem|L".!../../../../EdkShellBinPkg/Bin"
+  gEmulatorPkgTokenSpaceGuid.PcdEmuFileSystem|L"."
   gEmulatorPkgTokenSpaceGuid.PcdEmuSerialPort|L"/dev/ttyS0"
   gEmulatorPkgTokenSpaceGuid.PcdEmuNetworkInterface|L"en0"
 
@@ -241,7 +233,7 @@
 [PcdsDynamicHii.common.DEFAULT]
   gEfiMdeModulePkgTokenSpaceGuid.PcdConOutColumn|L"Setup"|gEmuSystemConfigGuid|0x0|80
   gEfiMdeModulePkgTokenSpaceGuid.PcdConOutRow|L"Setup"|gEmuSystemConfigGuid|0x4|25
-
+  gEfiMdePkgTokenSpaceGuid.PcdPlatformBootTimeOut|L"Timeout"|gEfiGlobalVariableGuid|0x0|10
 
 [Components]
 !ifdef $(UNIX_SEC_BUILD)
@@ -249,6 +241,13 @@
   #  Emulator, OS POSIX application
   ##
   EmulatorPkg/Unix/Host/Host.inf
+!endif
+
+!ifdef $(WIN_SEC_BUILD)
+  ##
+  #  Emulator, OS WIN application
+  ##
+  EmulatorPkg/Win/Host/WinHost.inf
 !endif
 
 !ifndef $(SKIP_MAIN_BUILD)
@@ -333,7 +332,17 @@
   }
 
   MdeModulePkg/Universal/Console/TerminalDxe/TerminalDxe.inf
-  IntelFrameworkModulePkg/Universal/BdsDxe/BdsDxe.inf
+  MdeModulePkg/Universal/BdsDxe/BdsDxe.inf
+  MdeModulePkg/Logo/LogoDxe.inf
+  MdeModulePkg/Universal/LoadFileOnFv2/LoadFileOnFv2.inf
+  MdeModulePkg/Application/UiApp/UiApp.inf {
+   <LibraryClasses>
+      NULL|MdeModulePkg/Library/DeviceManagerUiLib/DeviceManagerUiLib.inf
+      NULL|MdeModulePkg/Library/BootManagerUiLib/BootManagerUiLib.inf
+      NULL|MdeModulePkg/Library/BootMaintenanceManagerUiLib/BootMaintenanceManagerUiLib.inf
+  }
+  MdeModulePkg/Application/BootManagerMenuApp/BootManagerMenuApp.inf
+
   MdeModulePkg/Universal/DevicePathDxe/DevicePathDxe.inf
   #{
   #  <LibraryClasses>
@@ -366,8 +375,8 @@
   MdeModulePkg/Universal/Network/MnpDxe/MnpDxe.inf
   MdeModulePkg/Universal/Network/VlanConfigDxe/VlanConfigDxe.inf
   MdeModulePkg/Universal/Network/Mtftp4Dxe/Mtftp4Dxe.inf
-  MdeModulePkg/Universal/Network/Tcp4Dxe/Tcp4Dxe.inf
   MdeModulePkg/Universal/Network/Udp4Dxe/Udp4Dxe.inf
+  NetworkPkg/TcpDxe/TcpDxe.inf
 
   MdeModulePkg/Universal/SmbiosDxe/SmbiosDxe.inf
   MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
@@ -381,7 +390,6 @@
 
   FatPkg/EnhancedFatDxe/Fat.inf
 
-!ifndef $(USE_OLD_SHELL)
   ShellPkg/DynamicCommand/TftpDynamicCommand/TftpDynamicCommand.inf {
     <PcdsFixedAtBuild>
       gEfiShellPkgTokenSpaceGuid.PcdShellLibAutoInitialize|FALSE
@@ -409,7 +417,14 @@
       gEfiShellPkgTokenSpaceGuid.PcdShellLibAutoInitialize|FALSE
       gEfiMdePkgTokenSpaceGuid.PcdUefiLibMaxPrintBufferSize|8000
   }
-!endif
 
 !endif
+
+[BuildOptions]
+  MSFT:DEBUG_*_*_CC_FLAGS = /Od /Oy-
+  MSFT:NOOPT_*_*_CC_FLAGS = /Od /Oy-
+
+  MSFT:*_*_*_DLINK_FLAGS     = /ALIGN:4096 /FILEALIGN:4096 /SUBSYSTEM:CONSOLE
+  MSFT:DEBUG_*_*_DLINK_FLAGS = /EXPORT:InitializeDriver=$(IMAGE_ENTRY_POINT) /BASE:0x10000
+  MSFT:NOOPT_*_*_DLINK_FLAGS = /EXPORT:InitializeDriver=$(IMAGE_ENTRY_POINT) /BASE:0x10000
 

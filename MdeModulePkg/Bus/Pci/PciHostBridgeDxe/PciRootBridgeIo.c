@@ -17,9 +17,9 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include "PciRootBridge.h"
 #include "PciHostResource.h"
 
-extern EDKII_IOMMU_PROTOCOL        *mIoMmuProtocol;
-
 #define NO_MAPPING  (VOID *) (UINTN) -1
+
+#define RESOURCE_VALID(Resource) ((Resource)->Base <= (Resource)->Limit)
 
 //
 // Lookup table for increment values based on transfer widths
@@ -122,25 +122,25 @@ CreateRootBridge (
   //
   // Make sure Mem and MemAbove4G apertures are valid
   //
-  if (Bridge->Mem.Base <= Bridge->Mem.Limit) {
+  if (RESOURCE_VALID (&Bridge->Mem)) {
     ASSERT (Bridge->Mem.Limit < SIZE_4GB);
     if (Bridge->Mem.Limit >= SIZE_4GB) {
       return NULL;
     }
   }
-  if (Bridge->MemAbove4G.Base <= Bridge->MemAbove4G.Limit) {
+  if (RESOURCE_VALID (&Bridge->MemAbove4G)) {
     ASSERT (Bridge->MemAbove4G.Base >= SIZE_4GB);
     if (Bridge->MemAbove4G.Base < SIZE_4GB) {
       return NULL;
     }
   }
-  if (Bridge->PMem.Base <= Bridge->PMem.Limit) {
+  if (RESOURCE_VALID (&Bridge->PMem)) {
     ASSERT (Bridge->PMem.Limit < SIZE_4GB);
     if (Bridge->PMem.Limit >= SIZE_4GB) {
       return NULL;
     }
   }
-  if (Bridge->PMemAbove4G.Base <= Bridge->PMemAbove4G.Limit) {
+  if (RESOURCE_VALID (&Bridge->PMemAbove4G)) {
     ASSERT (Bridge->PMemAbove4G.Base >= SIZE_4GB);
     if (Bridge->PMemAbove4G.Base < SIZE_4GB) {
       return NULL;
@@ -157,11 +157,9 @@ CreateRootBridge (
       // support separate windows for Non-prefetchable and Prefetchable
       // memory.
       //
-      ASSERT (Bridge->PMem.Base > Bridge->PMem.Limit);
-      ASSERT (Bridge->PMemAbove4G.Base > Bridge->PMemAbove4G.Limit);
-      if ((Bridge->PMem.Base <= Bridge->PMem.Limit) ||
-          (Bridge->PMemAbove4G.Base <= Bridge->PMemAbove4G.Limit)
-          ) {
+      ASSERT (!RESOURCE_VALID (&Bridge->PMem));
+      ASSERT (!RESOURCE_VALID (&Bridge->PMemAbove4G));
+      if (RESOURCE_VALID (&Bridge->PMem) || RESOURCE_VALID (&Bridge->PMemAbove4G)) {
         return NULL;
       }
     }
@@ -171,11 +169,9 @@ CreateRootBridge (
       // If this bit is not set, then the PCI Root Bridge does not support
       // 64 bit memory windows.
       //
-      ASSERT (Bridge->MemAbove4G.Base > Bridge->MemAbove4G.Limit);
-      ASSERT (Bridge->PMemAbove4G.Base > Bridge->PMemAbove4G.Limit);
-      if ((Bridge->MemAbove4G.Base <= Bridge->MemAbove4G.Limit) ||
-          (Bridge->PMemAbove4G.Base <= Bridge->PMemAbove4G.Limit)
-          ) {
+      ASSERT (!RESOURCE_VALID (&Bridge->MemAbove4G));
+      ASSERT (!RESOURCE_VALID (&Bridge->PMemAbove4G));
+      if (RESOURCE_VALID (&Bridge->MemAbove4G) || RESOURCE_VALID (&Bridge->PMemAbove4G)) {
         return NULL;
       }
     }
@@ -301,6 +297,8 @@ CreateRootBridge (
 
   @retval EFI_INVALID_PARAMETER  Buffer is NULL.
 
+  @retval EFI_INVALID_PARAMETER  Address or Count is invalid.
+
   @retval EFI_UNSUPPORTED        The Buffer is not aligned for the given Width.
 
   @retval EFI_UNSUPPORTED        The address range specified by Address, Width,
@@ -321,6 +319,7 @@ RootBridgeIoCheckParameter (
   UINT64                                       Base;
   UINT64                                       Limit;
   UINT32                                       Size;
+  UINT64                                       Length;
 
   //
   // Check to see if Buffer is NULL
@@ -337,7 +336,7 @@ RootBridgeIoCheckParameter (
   }
 
   //
-  // For FIFO type, the target address won't increase during the access,
+  // For FIFO type, the device address won't increase during the access,
   // so treat Count as 1
   //
   if (Width >= EfiPciWidthFifoUint8 && Width <= EfiPciWidthFifoUint64) {
@@ -348,10 +347,25 @@ RootBridgeIoCheckParameter (
   Size  = 1 << Width;
 
   //
+  // Make sure (Count * Size) doesn't exceed MAX_UINT64
+  //
+  if (Count > DivU64x32 (MAX_UINT64, Size)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
   // Check to see if Address is aligned
   //
   if ((Address & (Size - 1)) != 0) {
     return EFI_UNSUPPORTED;
+  }
+
+  //
+  // Make sure (Address + Count * Size) doesn't exceed MAX_UINT64
+  //
+  Length = MultU64x32 (Count, Size);
+  if (Address > MAX_UINT64 - Length) {
+    return EFI_INVALID_PARAMETER;
   }
 
   RootBridge = ROOT_BRIDGE_FROM_THIS (This);
@@ -372,7 +386,7 @@ RootBridgeIoCheckParameter (
     //
     // Allow Legacy IO access
     //
-    if (Address + MultU64x32 (Count, Size) <= 0x1000) {
+    if (Address + Length <= 0x1000) {
       if ((RootBridge->Attributes & (
            EFI_PCI_ATTRIBUTE_ISA_IO | EFI_PCI_ATTRIBUTE_VGA_PALETTE_IO | EFI_PCI_ATTRIBUTE_VGA_IO |
            EFI_PCI_ATTRIBUTE_IDE_PRIMARY_IO | EFI_PCI_ATTRIBUTE_IDE_SECONDARY_IO |
@@ -386,7 +400,7 @@ RootBridgeIoCheckParameter (
     //
     // Allow Legacy MMIO access
     //
-    if ((Address >= 0xA0000) && (Address + MultU64x32 (Count, Size)) <= 0xC0000) {
+    if ((Address >= 0xA0000) && (Address + Length) <= 0xC0000) {
       if ((RootBridge->Attributes & EFI_PCI_ATTRIBUTE_VGA_MEMORY) != 0) {
         return EFI_SUCCESS;
       }
@@ -395,12 +409,18 @@ RootBridgeIoCheckParameter (
     // By comparing the Address against Limit we know which range to be used
     // for checking
     //
-    if (Address + MultU64x32 (Count, Size) <= RootBridge->Mem.Limit + 1) {
-      Base = RootBridge->Mem.Base;
+    if ((Address >= RootBridge->Mem.Base) && (Address + Length <= RootBridge->Mem.Limit + 1)) {
+      Base  = RootBridge->Mem.Base;
       Limit = RootBridge->Mem.Limit;
-    } else {
-      Base = RootBridge->MemAbove4G.Base;
+    } else if ((Address >= RootBridge->PMem.Base) && (Address + Length <= RootBridge->PMem.Limit + 1)) {
+      Base  = RootBridge->PMem.Base;
+      Limit = RootBridge->PMem.Limit;
+    } else if ((Address >= RootBridge->MemAbove4G.Base) && (Address + Length <= RootBridge->MemAbove4G.Limit + 1)) {
+      Base  = RootBridge->MemAbove4G.Base;
       Limit = RootBridge->MemAbove4G.Limit;
+    } else {
+      Base  = RootBridge->PMemAbove4G.Base;
+      Limit = RootBridge->PMemAbove4G.Limit;
     }
   } else {
     PciRbAddr = (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS*) &Address;
@@ -427,7 +447,7 @@ RootBridgeIoCheckParameter (
       return EFI_INVALID_PARAMETER;
   }
 
-  if (Address + MultU64x32 (Count, Size) > Limit + 1) {
+  if (Address + Length > Limit + 1) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -1247,7 +1267,7 @@ RootBridgeIoMap (
 
   RootBridge = ROOT_BRIDGE_FROM_THIS (This);
 
-  if (mIoMmuProtocol != NULL) {
+  if (mIoMmu != NULL) {
     if (!RootBridge->DmaAbove4G) {
       //
       // Clear 64bit support
@@ -1256,14 +1276,14 @@ RootBridgeIoMap (
         Operation = (EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_OPERATION) (Operation - EfiPciOperationBusMasterRead64);
       }
     }
-    Status = mIoMmuProtocol->Map (
-                               mIoMmuProtocol,
-                               (EDKII_IOMMU_OPERATION) Operation,
-                               HostAddress,
-                               NumberOfBytes,
-                               DeviceAddress,
-                               Mapping
-                               );
+    Status = mIoMmu->Map (
+                       mIoMmu,
+                       (EDKII_IOMMU_OPERATION) Operation,
+                       HostAddress,
+                       NumberOfBytes,
+                       DeviceAddress,
+                       Mapping
+                       );
     return Status;
   }
 
@@ -1391,11 +1411,11 @@ RootBridgeIoUnmap (
   PCI_ROOT_BRIDGE_INSTANCE *RootBridge;
   EFI_STATUS                Status;
 
-  if (mIoMmuProtocol != NULL) {
-    Status = mIoMmuProtocol->Unmap (
-                               mIoMmuProtocol,
-                               Mapping
-                               );
+  if (mIoMmu != NULL) {
+    Status = mIoMmu->Unmap (
+                       mIoMmu,
+                       Mapping
+                       );
     return Status;
   }
 
@@ -1517,21 +1537,21 @@ RootBridgeIoAllocateBuffer (
 
   RootBridge = ROOT_BRIDGE_FROM_THIS (This);
 
-  if (mIoMmuProtocol != NULL) {
+  if (mIoMmu != NULL) {
     if (!RootBridge->DmaAbove4G) {
       //
       // Clear DUAL_ADDRESS_CYCLE
       //
       Attributes &= ~((UINT64) EFI_PCI_ATTRIBUTE_DUAL_ADDRESS_CYCLE);
     }
-    Status = mIoMmuProtocol->AllocateBuffer (
-                               mIoMmuProtocol,
-                               Type,
-                               MemoryType,
-                               Pages,
-                               HostAddress,
-                               Attributes
-                               );
+    Status = mIoMmu->AllocateBuffer (
+                       mIoMmu,
+                       Type,
+                       MemoryType,
+                       Pages,
+                       HostAddress,
+                       Attributes
+                       );
     return Status;
   }
 
@@ -1581,12 +1601,12 @@ RootBridgeIoFreeBuffer (
 {
   EFI_STATUS                Status;
 
-  if (mIoMmuProtocol != NULL) {
-    Status = mIoMmuProtocol->FreeBuffer (
-                               mIoMmuProtocol,
-                               Pages,
-                               HostAddress
-                               );
+  if (mIoMmu != NULL) {
+    Status = mIoMmu->FreeBuffer (
+                       mIoMmu,
+                       Pages,
+                       HostAddress
+                       );
     return Status;
   }
 
