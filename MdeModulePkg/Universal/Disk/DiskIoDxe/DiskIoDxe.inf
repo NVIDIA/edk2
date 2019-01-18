@@ -24,7 +24,7 @@
   BASE_NAME                      = DiskIoDxe
   MODULE_UNI_FILE                = DiskIoDxe.uni
   FILE_GUID                      = 6B38F7B4-AD98-40e9-9093-ACA2B5A253C4
-  MODULE_TYPE                    = DXE_DRIVER
+  MODULE_TYPE                    = UEFI_DRIVER
   VERSION_STRING                 = 1.0
   ENTRY_POINT                    = InitializeDiskIo
 
@@ -69,6 +69,3 @@
 
 [UserExtensions.TianoCore."ExtraFiles"]
   DiskIoDxeExtra.uni
-
-[Depex]
-  TRUE
