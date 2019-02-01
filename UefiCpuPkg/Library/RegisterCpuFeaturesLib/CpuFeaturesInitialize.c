@@ -1,7 +1,7 @@
 /** @file
   CPU Features Initialize functions.
 
-  Copyright (c) 2017 - 2018, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2017 - 2019, Intel Corporation. All rights reserved.<BR>
   This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
   which accompanies this distribution.  The full text of the license may be found at
@@ -134,11 +134,10 @@ FillProcessorInfo (
 /**
   Prepares for private data used for CPU features.
 
-  @param[in]  NumberOfCpus  Number of processor in system
 **/
 VOID
 CpuInitDataInitialize (
-  IN UINTN                             NumberOfCpus
+  VOID
   )
 {
   EFI_STATUS                           Status;
@@ -157,12 +156,22 @@ CpuInitDataInitialize (
   ACPI_CPU_DATA                        *AcpiCpuData;
   CPU_STATUS_INFORMATION               *CpuStatus;
   UINT32                               *ValidCoreCountPerPackage;
+  UINTN                                NumberOfCpus;
+  UINTN                                NumberOfEnabledProcessors;
 
   Core    = 0;
   Package = 0;
   Thread  = 0;
 
   CpuFeaturesData = GetCpuFeaturesData ();
+
+  //
+  // Initialize CpuFeaturesData->MpService as early as possile, so later function can use it.
+  //
+  CpuFeaturesData->MpService = GetMpService ();
+
+  GetNumberOfProcessor (&NumberOfCpus, &NumberOfEnabledProcessors);
+
   CpuFeaturesData->InitOrder = AllocateZeroPool (sizeof (CPU_FEATURES_INIT_ORDER) * NumberOfCpus);
   ASSERT (CpuFeaturesData->InitOrder != NULL);
 
@@ -409,7 +418,7 @@ CollectProcessorData (
   CPU_FEATURES_DATA                    *CpuFeaturesData;
 
   CpuFeaturesData = (CPU_FEATURES_DATA *)Buffer;
-  ProcessorNumber = GetProcessorIndex ();
+  ProcessorNumber = GetProcessorIndex (CpuFeaturesData);
   CpuInfo = &CpuFeaturesData->InitOrder[ProcessorNumber].CpuInfo;
   //
   // collect processor information
@@ -473,8 +482,9 @@ DumpRegisterTableOnProcessor (
     case Msr:
       DEBUG ((
         DebugPrintErrorLevel,
-        "Processor: %d:   MSR: %x, Bit Start: %d, Bit Length: %d, Value: %lx\r\n",
+        "Processor: %04d: Index %04d, MSR  : %08x, Bit Start: %02d, Bit Length: %02d, Value: %016lx\r\n",
         ProcessorNumber,
+        FeatureIndex,
         RegisterTableEntry->Index,
         RegisterTableEntry->ValidBitStart,
         RegisterTableEntry->ValidBitLength,
@@ -484,8 +494,9 @@ DumpRegisterTableOnProcessor (
     case ControlRegister:
       DEBUG ((
         DebugPrintErrorLevel,
-        "Processor: %d:    CR: %x, Bit Start: %d, Bit Length: %d, Value: %lx\r\n",
+        "Processor: %04d: Index %04d, CR   : %08x, Bit Start: %02d, Bit Length: %02d, Value: %016lx\r\n",
         ProcessorNumber,
+        FeatureIndex,
         RegisterTableEntry->Index,
         RegisterTableEntry->ValidBitStart,
         RegisterTableEntry->ValidBitLength,
@@ -495,8 +506,9 @@ DumpRegisterTableOnProcessor (
     case MemoryMapped:
       DEBUG ((
         DebugPrintErrorLevel,
-        "Processor: %d:  MMIO: %lx, Bit Start: %d, Bit Length: %d, Value: %lx\r\n",
+        "Processor: %04d: Index %04d, MMIO : %08lx, Bit Start: %02d, Bit Length: %02d, Value: %016lx\r\n",
         ProcessorNumber,
+        FeatureIndex,
         RegisterTableEntry->Index | LShiftU64 (RegisterTableEntry->HighIndex, 32),
         RegisterTableEntry->ValidBitStart,
         RegisterTableEntry->ValidBitLength,
@@ -506,8 +518,9 @@ DumpRegisterTableOnProcessor (
     case CacheControl:
       DEBUG ((
         DebugPrintErrorLevel,
-        "Processor: %d: CACHE: %x, Bit Start: %d, Bit Length: %d, Value: %lx\r\n",
+        "Processor: %04d: Index %04d, CACHE: %08lx, Bit Start: %02d, Bit Length: %02d, Value: %016lx\r\n",
         ProcessorNumber,
+        FeatureIndex,
         RegisterTableEntry->Index,
         RegisterTableEntry->ValidBitStart,
         RegisterTableEntry->ValidBitLength,
@@ -517,8 +530,9 @@ DumpRegisterTableOnProcessor (
     case Semaphore:
       DEBUG ((
         DebugPrintErrorLevel,
-        "Processor: %d: Semaphore: Scope Value: %s\r\n",
+        "Processor: %04d: Index %04d, SEMAP: %s\r\n",
         ProcessorNumber,
+        FeatureIndex,
         mDependTypeStr[MIN ((UINT32)RegisterTableEntry->Value, InvalidDepType)]
         ));
       break;
@@ -827,13 +841,18 @@ ProgramProcessorRegister (
     RegisterTableEntry = &RegisterTableEntryHead[Index];
 
     DEBUG_CODE_BEGIN ();
-      AcquireSpinLock (&CpuFlags->ConsoleLogLock);
+      //
+      // Wait for the AP to release the MSR spin lock.
+      //
+      while (!AcquireSpinLockOrFail (&CpuFlags->ConsoleLogLock)) {
+        CpuPause ();
+      }
       ThreadIndex = ApLocation->Package * CpuStatus->MaxCoreCount * CpuStatus->MaxThreadCount +
               ApLocation->Core * CpuStatus->MaxThreadCount +
               ApLocation->Thread;
       DEBUG ((
         DEBUG_INFO,
-        "Processor = %lu, Entry Index %lu, Type = %s!\n",
+        "Processor = %08lu, Index %08lu, Type = %s!\n",
         (UINT64)ThreadIndex,
         (UINT64)Index,
         mRegisterTypeStr[MIN ((REGISTER_TYPE)RegisterTableEntry->RegisterType, InvalidReg)]
@@ -1100,15 +1119,11 @@ CpuFeaturesDetect (
   VOID
   )
 {
-  UINTN                  NumberOfCpus;
-  UINTN                  NumberOfEnabledProcessors;
   CPU_FEATURES_DATA      *CpuFeaturesData;
 
   CpuFeaturesData = GetCpuFeaturesData();
 
-  GetNumberOfProcessor (&NumberOfCpus, &NumberOfEnabledProcessors);
-
-  CpuInitDataInitialize (NumberOfCpus);
+  CpuInitDataInitialize ();
 
   //
   // Wakeup all APs for data collection.
@@ -1120,6 +1135,6 @@ CpuFeaturesDetect (
   //
   CollectProcessorData (CpuFeaturesData);
 
-  AnalysisProcessorFeatures (NumberOfCpus);
+  AnalysisProcessorFeatures (CpuFeaturesData->NumberOfCpus);
 }
 

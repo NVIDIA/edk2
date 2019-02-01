@@ -1,7 +1,7 @@
 ## @file
 # Common routines used by all tools
 #
-# Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -487,43 +487,6 @@ def SaveFileOnChange(File, Content, IsBinaryFile=True):
 
     return True
 
-## Make a Python object persistent on file system
-#
-#   @param      Data    The object to be stored in file
-#   @param      File    The path of file to store the object
-#
-def DataDump(Data, File):
-    Fd = None
-    try:
-        Fd = open(File, 'wb')
-        pickle.dump(Data, Fd, pickle.HIGHEST_PROTOCOL)
-    except:
-        EdkLogger.error("", FILE_OPEN_FAILURE, ExtraData=File, RaiseError=False)
-    finally:
-        if Fd is not None:
-            Fd.close()
-
-## Restore a Python object from a file
-#
-#   @param      File    The path of file stored the object
-#
-#   @retval     object  A python object
-#   @retval     None    If failure in file operation
-#
-def DataRestore(File):
-    Data = None
-    Fd = None
-    try:
-        Fd = open(File, 'rb')
-        Data = pickle.load(Fd)
-    except Exception as e:
-        EdkLogger.verbose("Failed to load [%s]\n\t%s" % (File, str(e)))
-        Data = None
-    finally:
-        if Fd is not None:
-            Fd.close()
-    return Data
-
 ## Retrieve and cache the real path name in file system
 #
 #   @param      Root    The root directory of path relative to
@@ -646,44 +609,6 @@ def GuidValue(CName, PackageList, Inffile = None):
                 GuidKeys = [x for x in P.Guids if x not in P._PrivateGuids]
         if CName in GuidKeys:
             return P.Guids[CName]
-    return None
-
-## Get Protocol value from given packages
-#
-#   @param      CName           The CName of the GUID
-#   @param      PackageList     List of packages looking-up in
-#   @param      Inffile         The driver file
-#
-#   @retval     GuidValue   if the CName is found in any given package
-#   @retval     None        if the CName is not found in all given packages
-#
-def ProtocolValue(CName, PackageList, Inffile = None):
-    for P in PackageList:
-        ProtocolKeys = P.Protocols.keys()
-        if Inffile and P._PrivateProtocols:
-            if not Inffile.startswith(P.MetaFile.Dir):
-                ProtocolKeys = [x for x in P.Protocols if x not in P._PrivateProtocols]
-        if CName in ProtocolKeys:
-            return P.Protocols[CName]
-    return None
-
-## Get PPI value from given packages
-#
-#   @param      CName           The CName of the GUID
-#   @param      PackageList     List of packages looking-up in
-#   @param      Inffile         The driver file
-#
-#   @retval     GuidValue   if the CName is found in any given package
-#   @retval     None        if the CName is not found in all given packages
-#
-def PpiValue(CName, PackageList, Inffile = None):
-    for P in PackageList:
-        PpiKeys = P.Ppis.keys()
-        if Inffile and P._PrivatePpis:
-            if not Inffile.startswith(P.MetaFile.Dir):
-                PpiKeys = [x for x in P.Ppis if x not in P._PrivatePpis]
-        if CName in PpiKeys:
-            return P.Ppis[CName]
     return None
 
 ## A string template class
@@ -1224,22 +1149,6 @@ class tdict:
                 keys |= self.data[Key].GetKeys(KeyIndex - 1)
             return keys
 
-def IsFieldValueAnArray (Value):
-    Value = Value.strip()
-    if Value.startswith(TAB_GUID) and Value.endswith(')'):
-        return True
-    if Value.startswith('L"') and Value.endswith('"')  and len(list(Value[2:-1])) > 1:
-        return True
-    if Value[0] == '"' and Value[-1] == '"' and len(list(Value[1:-1])) > 1:
-        return True
-    if Value[0] == '{' and Value[-1] == '}':
-        return True
-    if Value.startswith("L'") and Value.endswith("'") and len(list(Value[2:-1])) > 1:
-        return True
-    if Value[0] == "'" and Value[-1] == "'" and len(list(Value[1:-1])) > 1:
-        return True
-    return False
-
 def AnalyzePcdExpression(Setting):
     RanStr = ''.join(sample(string.ascii_letters + string.digits, 8))
     Setting = Setting.replace('\\\\', RanStr).strip()
@@ -1525,8 +1434,6 @@ def AnalyzeDscPcd(Setting, PcdType, DataType=''):
             Offset = FieldList[2]
         if len(FieldList) > 3:
             Value = FieldList[3]
-            if not Value:
-                IsValid = False
         if len(FieldList) > 4:
             Attribute = FieldList[4]
         return [HiiString, Guid, Offset, Value, Attribute], IsValid, 3
@@ -1605,35 +1512,6 @@ def CheckPcdDatum(Type, Value):
 
     return True, ""
 
-## Split command line option string to list
-#
-# subprocess.Popen needs the args to be a sequence. Otherwise there's problem
-# in non-windows platform to launch command
-#
-def SplitOption(OptionString):
-    OptionList = []
-    LastChar = " "
-    OptionStart = 0
-    QuotationMark = ""
-    for Index in range(0, len(OptionString)):
-        CurrentChar = OptionString[Index]
-        if CurrentChar in ['"', "'"]:
-            if QuotationMark == CurrentChar:
-                QuotationMark = ""
-            elif QuotationMark == "":
-                QuotationMark = CurrentChar
-            continue
-        elif QuotationMark:
-            continue
-
-        if CurrentChar in ["/", "-"] and LastChar in [" ", "\t", "\r", "\n"]:
-            if Index > OptionStart:
-                OptionList.append(OptionString[OptionStart:Index - 1])
-            OptionStart = Index
-        LastChar = CurrentChar
-    OptionList.append(OptionString[OptionStart:])
-    return OptionList
-
 def CommonPath(PathList):
     P1 = min(PathList).split(os.path.sep)
     P2 = max(PathList).split(os.path.sep)
@@ -1641,45 +1519,6 @@ def CommonPath(PathList):
         if P1[Index] != P2[Index]:
             return os.path.sep.join(P1[:Index])
     return os.path.sep.join(P1)
-
-#
-# Convert string to C format array
-#
-def ConvertStringToByteArray(Value):
-    Value = Value.strip()
-    if not Value:
-        return None
-    if Value[0] == '{':
-        if not Value.endswith('}'):
-            return None
-        Value = Value.replace(' ', '').replace('{', '').replace('}', '')
-        ValFields = Value.split(',')
-        try:
-            for Index in range(len(ValFields)):
-                ValFields[Index] = str(int(ValFields[Index], 0))
-        except ValueError:
-            return None
-        Value = '{' + ','.join(ValFields) + '}'
-        return Value
-
-    Unicode = False
-    if Value.startswith('L"'):
-        if not Value.endswith('"'):
-            return None
-        Value = Value[1:]
-        Unicode = True
-    elif not Value.startswith('"') or not Value.endswith('"'):
-        return None
-
-    Value = eval(Value)         # translate escape character
-    NewValue = '{'
-    for Index in range(0, len(Value)):
-        if Unicode:
-            NewValue = NewValue + str(ord(Value[Index]) % 0x10000) + ','
-        else:
-            NewValue = NewValue + str(ord(Value[Index]) % 0x100) + ','
-    Value = NewValue + '0}'
-    return Value
 
 class PathClass(object):
     def __init__(self, File='', Root='', AlterRoot='', Type='', IsBinary=False,
@@ -2064,12 +1903,6 @@ class SkuClass():
                 return self.SkuIdSet[0] if self.SkuIdSet[0] != 'DEFAULT' else self.SkuIdSet[1]
         else:
             return 'DEFAULT'
-
-#
-# Pack a registry format GUID
-#
-def PackRegistryFormatGuid(Guid):
-    return PackGUID(Guid.split('-'))
 
 ##  Get the integer value from string like "14U" or integer like 2
 #

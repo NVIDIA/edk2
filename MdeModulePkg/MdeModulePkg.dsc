@@ -152,6 +152,7 @@
   HobLib|MdePkg/Library/DxeHobLib/DxeHobLib.inf
   DebugLib|MdePkg/Library/UefiDebugLibConOut/UefiDebugLibConOut.inf
   MemoryAllocationLib|MdePkg/Library/SmmMemoryAllocationLib/SmmMemoryAllocationLib.inf
+  MmServicesTableLib|MdePkg/Library/MmServicesTableLib/MmServicesTableLib.inf
   SmmServicesTableLib|MdePkg/Library/SmmServicesTableLib/SmmServicesTableLib.inf
   LockBoxLib|MdeModulePkg/Library/SmmLockBoxLib/SmmLockBoxSmmLib.inf
   SmmMemLib|MdePkg/Library/SmmMemLib/SmmMemLib.inf
@@ -166,6 +167,12 @@
   HobLib|MdePkg/Library/DxeHobLib/DxeHobLib.inf
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
   DebugLib|MdePkg/Library/UefiDebugLibStdErr/UefiDebugLibStdErr.inf
+
+[LibraryClasses.common.MM_STANDALONE]
+  HobLib|MdeModulePkg/Library/BaseHobLibNull/BaseHobLibNull.inf
+  MemoryAllocationLib|MdeModulePkg/Library/BaseMemoryAllocationLibNull/BaseMemoryAllocationLibNull.inf
+  StandaloneMmDriverEntryPoint|MdePkg/Library/StandaloneMmDriverEntryPoint/StandaloneMmDriverEntryPoint.inf
+  MmServicesTableLib|MdePkg/Library/StandaloneMmServicesTableLib/StandaloneMmServicesTableLib.inf
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
   ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf
@@ -419,8 +426,10 @@
   MdeModulePkg/Library/DxeCapsuleLibFmp/DxeCapsuleLib.inf
   MdeModulePkg/Library/DxeCapsuleLibFmp/DxeRuntimeCapsuleLib.inf
 
+  MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteStandaloneMm.inf
+  MdeModulePkg/Universal/Variable/RuntimeDxe/VariableStandaloneMm.inf
+
 [Components.IA32, Components.X64, Components.AARCH64]
-  MdeModulePkg/Universal/DebugSupportDxe/DebugSupportDxe.inf
   MdeModulePkg/Universal/EbcDxe/EbcDxe.inf
   MdeModulePkg/Universal/EbcDxe/EbcDebugger.inf
   MdeModulePkg/Universal/EbcDxe/EbcDebuggerConfig.inf
@@ -437,6 +446,7 @@
   MdeModulePkg/Universal/Variable/EmuRuntimeDxe/EmuVariableRuntimeDxe.inf
 
 [Components.IA32, Components.X64]
+  MdeModulePkg/Universal/DebugSupportDxe/DebugSupportDxe.inf
   MdeModulePkg/Application/SmiHandlerProfileInfo/SmiHandlerProfileInfo.inf
   MdeModulePkg/Core/PiSmmCore/PiSmmIpl.inf
   MdeModulePkg/Core/PiSmmCore/PiSmmCore.inf

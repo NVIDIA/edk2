@@ -75,13 +75,11 @@ def resetFdsGlobalVariable():
     GenFdsGlobalVariable.WorkSpace = None
     GenFdsGlobalVariable.WorkSpaceDir = ''
     GenFdsGlobalVariable.ConfDir = ''
-    GenFdsGlobalVariable.EdkSourceDir = ''
     GenFdsGlobalVariable.OutputDirFromDscDict = {}
     GenFdsGlobalVariable.TargetName = ''
     GenFdsGlobalVariable.ToolChainTag = ''
     GenFdsGlobalVariable.RuleDict = {}
     GenFdsGlobalVariable.ArchList = None
-    GenFdsGlobalVariable.VtfDict = {}
     GenFdsGlobalVariable.ActivePlatform = None
     GenFdsGlobalVariable.FvAddressFileName = ''
     GenFdsGlobalVariable.VerboseMode = False
@@ -144,8 +142,6 @@ def GenFdsApi(FdsCommandDict, WorkSpaceDataBase=None):
         else:
             Workspace = os.path.normcase(FdsCommandDict.get("Workspace",os.environ.get('WORKSPACE')))
             GenFdsGlobalVariable.WorkSpaceDir = Workspace
-            if 'EDK_SOURCE' in os.environ:
-                GenFdsGlobalVariable.EdkSourceDir = os.path.normcase(os.environ['EDK_SOURCE'])
             if FdsCommandDict.get("debug"):
                 GenFdsGlobalVariable.VerboseLogger("Using Workspace:" + Workspace)
             if FdsCommandDict.get("GenfdsMultiThread"):
@@ -193,7 +189,6 @@ def GenFdsApi(FdsCommandDict, WorkSpaceDataBase=None):
         else:
             EdkLogger.error("GenFds", OPTION_MISSING, "Missing active platform")
 
-        GlobalData.BuildOptionPcd = FdsCommandDict.get("OptionPcd") if FdsCommandDict.get("OptionPcd") else {}
         GenFdsGlobalVariable.ActivePlatform = PathClass(NormPath(ActivePlatform))
 
         if FdsCommandDict.get("conf_directory"):
@@ -251,15 +246,7 @@ def GenFdsApi(FdsCommandDict, WorkSpaceDataBase=None):
                 if len(List) == 2:
                     if not List[1].strip():
                         EdkLogger.error("GenFds", OPTION_VALUE_INVALID, ExtraData="No Value given for Macro %s" %List[0])
-                    if List[0].strip() == "EFI_SOURCE":
-                        GlobalData.gEfiSource = List[1].strip()
-                        GlobalData.gGlobalDefines["EFI_SOURCE"] = GlobalData.gEfiSource
-                        continue
-                    elif List[0].strip() == "EDK_SOURCE":
-                        GlobalData.gEdkSource = List[1].strip()
-                        GlobalData.gGlobalDefines["EDK_SOURCE"] = GlobalData.gEdkSource
-                        continue
-                    elif List[0].strip() in ["WORKSPACE", "TARGET", "TOOLCHAIN"]:
+                    if List[0].strip() in ["WORKSPACE", "TARGET", "TOOLCHAIN"]:
                         GlobalData.gGlobalDefines[List[0].strip()] = List[1].strip()
                     else:
                         GlobalData.gCommandLineDefines[List[0].strip()] = List[1].strip()
