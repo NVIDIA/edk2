@@ -53,7 +53,7 @@ class AprioriSection (object):
     #   @retval string      Generated file name
     #
     def GenFfs (self, FvName, Dict = {}, IsMakefile = False):
-        Buffer = BytesIO('')
+        Buffer = BytesIO()
         if self.AprioriType == "PEI":
             AprioriFileGuid = PEI_APRIORI_GUID
         else:
@@ -97,7 +97,7 @@ class AprioriSection (object):
                                         % (InfFileName, GenFdsGlobalVariable.ArchList))
 
             GuidPart = Guid.split('-')
-            Buffer.write(pack('I', long(GuidPart[0], 16)))
+            Buffer.write(pack('I', int(GuidPart[0], 16)))
             Buffer.write(pack('H', int(GuidPart[1], 16)))
             Buffer.write(pack('H', int(GuidPart[2], 16)))
 

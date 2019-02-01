@@ -143,7 +143,7 @@ VPDPcdList = []
 def FileWrite(File, String, Wrapper=False):
     if Wrapper:
         String = textwrap.fill(String, 120)
-    File.write(String + gEndOfLine)
+    File.append(String + gEndOfLine)
 
 def ByteArrayForamt(Value):
     IsByteArray = False
@@ -250,7 +250,7 @@ def FileLinesSplit(Content=None, MaxLength=None):
     for NewLine in NewContentList:
         NewContent += NewLine + TAB_LINE_BREAK
 
-    NewContent = NewContent.replace(TAB_LINE_BREAK, gEndOfLine).replace('\r\r\n', gEndOfLine)
+    NewContent = NewContent.replace(gEndOfLine, TAB_LINE_BREAK).replace('\r\r\n', gEndOfLine)
     return NewContent
 
 
@@ -636,7 +636,7 @@ class ModuleReport(object):
 
                 Match = gTimeStampPattern.search(FileContents)
                 if Match:
-                    self.BuildTimeStamp = datetime.fromtimestamp(int(Match.group(1)))
+                    self.BuildTimeStamp = datetime.utcfromtimestamp(int(Match.group(1)))
             except IOError:
                 EdkLogger.warn(None, "Fail to read report file", FwReportFileName)
 
@@ -721,8 +721,8 @@ def ReadMessage(From, To, ExitFlag):
         # read one line a time
         Line = From.readline()
         # empty string means "end"
-        if Line is not None and Line != "":
-            To(Line.rstrip())
+        if Line is not None and Line != b"":
+            To(Line.rstrip().decode(encoding='utf-8', errors='ignore'))
         else:
             break
         if ExitFlag.isSet():
@@ -1026,22 +1026,34 @@ class PcdReport(object):
 
 
                 if Pcd.DatumType in TAB_PCD_NUMERIC_TYPES:
+                    if PcdValue.startswith('0') and not PcdValue.lower().startswith('0x') and \
+                            len(PcdValue) > 1 and PcdValue.lstrip('0'):
+                        PcdValue = PcdValue.lstrip('0')
                     PcdValueNumber = int(PcdValue.strip(), 0)
                     if DecDefaultValue is None:
                         DecMatch = True
                     else:
+                        if DecDefaultValue.startswith('0') and not DecDefaultValue.lower().startswith('0x') and \
+                                len(DecDefaultValue) > 1 and DecDefaultValue.lstrip('0'):
+                            DecDefaultValue = DecDefaultValue.lstrip('0')
                         DecDefaultValueNumber = int(DecDefaultValue.strip(), 0)
                         DecMatch = (DecDefaultValueNumber == PcdValueNumber)
 
                     if InfDefaultValue is None:
                         InfMatch = True
                     else:
+                        if InfDefaultValue.startswith('0') and not InfDefaultValue.lower().startswith('0x') and \
+                                len(InfDefaultValue) > 1 and InfDefaultValue.lstrip('0'):
+                            InfDefaultValue = InfDefaultValue.lstrip('0')
                         InfDefaultValueNumber = int(InfDefaultValue.strip(), 0)
                         InfMatch = (InfDefaultValueNumber == PcdValueNumber)
 
                     if DscDefaultValue is None:
                         DscMatch = True
                     else:
+                        if DscDefaultValue.startswith('0') and not DscDefaultValue.lower().startswith('0x') and \
+                                len(DscDefaultValue) > 1 and DscDefaultValue.lstrip('0'):
+                            DscDefaultValue = DscDefaultValue.lstrip('0')
                         DscDefaultValueNumber = int(DscDefaultValue.strip(), 0)
                         DscMatch = (DscDefaultValueNumber == PcdValueNumber)
                 else:
@@ -1163,6 +1175,9 @@ class PcdReport(object):
                         for ModulePath in ModuleOverride:
                             ModuleDefault = ModuleOverride[ModulePath]
                             if Pcd.DatumType in TAB_PCD_NUMERIC_TYPES:
+                                if ModuleDefault.startswith('0') and not ModuleDefault.lower().startswith('0x') and \
+                                        len(ModuleDefault) > 1 and ModuleDefault.lstrip('0'):
+                                    ModuleDefault = ModuleDefault.lstrip('0')
                                 ModulePcdDefaultValueNumber = int(ModuleDefault.strip(), 0)
                                 Match = (ModulePcdDefaultValueNumber == PcdValueNumber)
                                 if Pcd.DatumType == 'BOOLEAN':
@@ -1194,9 +1209,12 @@ class PcdReport(object):
     def ParseStruct(self, struct):
         HasDscOverride = False
         if struct:
-            for _, Values in struct.items():
-                if Values[1] and Values[1].endswith('.dsc'):
-                    HasDscOverride = True
+            for _, Values in list(struct.items()):
+                for Key, value in Values.items():
+                    if value[1] and value[1].endswith('.dsc'):
+                        HasDscOverride = True
+                        break
+                if HasDscOverride == True:
                     break
         return HasDscOverride
 
@@ -1261,6 +1279,8 @@ class PcdReport(object):
                     FileWrite(File, Array)
             else:
                 if Pcd.DatumType in TAB_PCD_CLEAN_NUMERIC_TYPES:
+                    if Value.startswith('0') and not Value.lower().startswith('0x') and len(Value) > 1 and Value.lstrip('0'):
+                        Value = Value.lstrip('0')
                     if Value.startswith(('0x', '0X')):
                         Value = '{} ({:d})'.format(Value, int(Value, 0))
                     else:
@@ -1405,7 +1425,7 @@ class PcdReport(object):
                         FiledOverrideFlag = False
                         OverrideValues = Pcd.SkuOverrideValues[Sku]
                         if OverrideValues:
-                            Keys = OverrideValues.keys()
+                            Keys = list(OverrideValues.keys())
                             OverrideFieldStruct = self.OverrideFieldValue(Pcd, OverrideValues[Keys[0]])
                             self.PrintStructureInfo(File, OverrideFieldStruct)
                             FiledOverrideFlag = True
@@ -2249,18 +2269,17 @@ class BuildReport(object):
     def GenerateReport(self, BuildDuration, AutoGenTime, MakeTime, GenFdsTime):
         if self.ReportFile:
             try:
-                File = BytesIO('')
+                File = []
                 for (Wa, MaList) in self.ReportList:
                     PlatformReport(Wa, MaList, self.ReportType).GenerateReport(File, BuildDuration, AutoGenTime, MakeTime, GenFdsTime, self.ReportType)
-                Content = FileLinesSplit(File.getvalue(), gLineMaxLength)
-                SaveFileOnChange(self.ReportFile, Content, True)
+                Content = FileLinesSplit(''.join(File), gLineMaxLength)
+                SaveFileOnChange(self.ReportFile, Content, False)
                 EdkLogger.quiet("Build report can be found at %s" % os.path.abspath(self.ReportFile))
             except IOError:
                 EdkLogger.error(None, FILE_WRITE_FAILURE, ExtraData=self.ReportFile)
             except:
                 EdkLogger.error("BuildReport", CODE_ERROR, "Unknown fatal error when generating build report", ExtraData=self.ReportFile, RaiseError=False)
                 EdkLogger.quiet("(Python %s on %s\n%s)" % (platform.python_version(), sys.platform, traceback.format_exc()))
-            File.close()
 
 # This acts like the main() function for the script, unless it is 'import'ed into another script.
 if __name__ == '__main__':

@@ -16,7 +16,7 @@
   VariableServiceSetVariable() should also check authenticate data to avoid buffer overflow,
   integer overflow. It should also check attribute to avoid authentication bypass.
 
-Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2015-2018 Hewlett Packard Enterprise Development LP<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
@@ -34,6 +34,7 @@ VARIABLE_MODULE_GLOBAL  *mVariableModuleGlobal;
 
 ///
 /// Define a memory cache that improves the search performance for a variable.
+/// For EmuNvMode == TRUE, it will be equal to NonVolatileVariableBase.
 ///
 VARIABLE_STORE_HEADER  *mNvVariableCache      = NULL;
 
@@ -262,26 +263,24 @@ UpdateVariableStore (
   UINT8                       *CurrBuffer;
   EFI_LBA                     LbaNumber;
   UINTN                       Size;
-  EFI_FIRMWARE_VOLUME_HEADER  *FwVolHeader;
   VARIABLE_STORE_HEADER       *VolatileBase;
   EFI_PHYSICAL_ADDRESS        FvVolHdr;
   EFI_PHYSICAL_ADDRESS        DataPtr;
   EFI_STATUS                  Status;
 
-  FwVolHeader = NULL;
+  FvVolHdr    = 0;
   DataPtr     = DataPtrIndex;
 
   //
   // Check if the Data is Volatile.
   //
-  if (!Volatile) {
+  if (!Volatile && !mVariableModuleGlobal->VariableGlobal.EmuNvMode) {
     if (Fvb == NULL) {
       return EFI_UNSUPPORTED;
     }
     Status = Fvb->GetPhysicalAddress(Fvb, &FvVolHdr);
     ASSERT_EFI_ERROR (Status);
 
-    FwVolHeader = (EFI_FIRMWARE_VOLUME_HEADER *) ((UINTN) FvVolHdr);
     //
     // Data Pointer should point to the actual Address where data is to be
     // written.
@@ -290,7 +289,7 @@ UpdateVariableStore (
       DataPtr += mVariableModuleGlobal->VariableGlobal.NonVolatileVariableBase;
     }
 
-    if ((DataPtr + DataSize) > ((EFI_PHYSICAL_ADDRESS) (UINTN) ((UINT8 *) FwVolHeader + FwVolHeader->FvLength))) {
+    if ((DataPtr + DataSize) > (FvVolHdr + mNvFvHeaderCache->FvLength)) {
       return EFI_OUT_OF_RESOURCES;
     }
   } else {
@@ -298,17 +297,30 @@ UpdateVariableStore (
     // Data Pointer should point to the actual Address where data is to be
     // written.
     //
-    VolatileBase = (VARIABLE_STORE_HEADER *) ((UINTN) mVariableModuleGlobal->VariableGlobal.VolatileVariableBase);
-    if (SetByIndex) {
-      DataPtr += mVariableModuleGlobal->VariableGlobal.VolatileVariableBase;
-    }
+    if (Volatile) {
+      VolatileBase = (VARIABLE_STORE_HEADER *) ((UINTN) mVariableModuleGlobal->VariableGlobal.VolatileVariableBase);
+      if (SetByIndex) {
+        DataPtr += mVariableModuleGlobal->VariableGlobal.VolatileVariableBase;
+      }
 
-    if ((DataPtr + DataSize) > ((UINTN) ((UINT8 *) VolatileBase + VolatileBase->Size))) {
-      return EFI_OUT_OF_RESOURCES;
+      if ((DataPtr + DataSize) > ((UINTN) VolatileBase + VolatileBase->Size)) {
+        return EFI_OUT_OF_RESOURCES;
+      }
+    } else {
+      //
+      // Emulated non-volatile variable mode.
+      //
+      if (SetByIndex) {
+        DataPtr += (UINTN) mNvVariableCache;
+      }
+
+      if ((DataPtr + DataSize) > ((UINTN) mNvVariableCache + mNvVariableCache->Size)) {
+        return EFI_OUT_OF_RESOURCES;
+      }
     }
 
     //
-    // If Volatile Variable just do a simple mem copy.
+    // If Volatile/Emulated Non-volatile Variable just do a simple mem copy.
     //
     CopyMem ((UINT8 *)(UINTN)DataPtr, Buffer, DataSize);
     return EFI_SUCCESS;
@@ -317,7 +329,7 @@ UpdateVariableStore (
   //
   // If we are here we are dealing with Non-Volatile Variables.
   //
-  LinearOffset  = (UINTN) FwVolHeader;
+  LinearOffset  = (UINTN) FvVolHdr;
   CurrWritePtr  = (UINTN) DataPtr;
   CurrWriteSize = DataSize;
   CurrBuffer    = Buffer;
@@ -989,7 +1001,7 @@ Reclaim (
   CommonUserVariableTotalSize = 0;
   HwErrVariableTotalSize  = 0;
 
-  if (IsVolatile) {
+  if (IsVolatile || mVariableModuleGlobal->VariableGlobal.EmuNvMode) {
     //
     // Start Pointers for the variable.
     //
@@ -1157,13 +1169,21 @@ Reclaim (
     CurrPtr += NewVariableSize;
   }
 
-  if (IsVolatile) {
+  if (IsVolatile || mVariableModuleGlobal->VariableGlobal.EmuNvMode) {
     //
-    // If volatile variable store, just copy valid buffer.
+    // If volatile/emulated non-volatile variable store, just copy valid buffer.
     //
     SetMem ((UINT8 *) (UINTN) VariableBase, VariableStoreHeader->Size, 0xff);
     CopyMem ((UINT8 *) (UINTN) VariableBase, ValidBuffer, (UINTN) CurrPtr - (UINTN) ValidBuffer);
     *LastVariableOffset = (UINTN) CurrPtr - (UINTN) ValidBuffer;
+    if (!IsVolatile) {
+      //
+      // Emulated non-volatile variable mode.
+      //
+      mVariableModuleGlobal->HwErrVariableTotalSize = HwErrVariableTotalSize;
+      mVariableModuleGlobal->CommonVariableTotalSize = CommonVariableTotalSize;
+      mVariableModuleGlobal->CommonUserVariableTotalSize = CommonUserVariableTotalSize;
+    }
     Status  = EFI_SUCCESS;
   } else {
     //
@@ -1202,7 +1222,7 @@ Reclaim (
   }
 
 Done:
-  if (IsVolatile) {
+  if (IsVolatile || mVariableModuleGlobal->VariableGlobal.EmuNvMode) {
     FreePool (ValidBuffer);
   } else {
     //
@@ -2141,7 +2161,6 @@ UpdateVariable (
   VARIABLE_POINTER_TRACK              *Variable;
   VARIABLE_POINTER_TRACK              NvVariable;
   VARIABLE_STORE_HEADER               *VariableStoreHeader;
-  UINTN                               CacheOffset;
   UINT8                               *BufferForMerge;
   UINTN                               MergedBufSize;
   BOOLEAN                             DataReady;
@@ -2150,7 +2169,7 @@ UpdateVariable (
   BOOLEAN                             IsCommonUserVariable;
   AUTHENTICATED_VARIABLE_HEADER       *AuthVariable;
 
-  if (mVariableModuleGlobal->FvbInstance == NULL) {
+  if (mVariableModuleGlobal->FvbInstance == NULL && !mVariableModuleGlobal->VariableGlobal.EmuNvMode) {
     //
     // The FVB protocol is not ready, so the EFI_VARIABLE_WRITE_ARCH_PROTOCOL is not installed.
     //
@@ -2569,80 +2588,105 @@ UpdateVariable (
       }
       goto Done;
     }
-    //
-    // Four steps
-    // 1. Write variable header
-    // 2. Set variable state to header valid
-    // 3. Write variable data
-    // 4. Set variable state to valid
-    //
-    //
-    // Step 1:
-    //
-    CacheOffset = mVariableModuleGlobal->NonVolatileLastVariableOffset;
-    Status = UpdateVariableStore (
-               &mVariableModuleGlobal->VariableGlobal,
-               FALSE,
-               TRUE,
-               Fvb,
-               mVariableModuleGlobal->NonVolatileLastVariableOffset,
-               (UINT32) GetVariableHeaderSize (),
-               (UINT8 *) NextVariable
-               );
 
-    if (EFI_ERROR (Status)) {
-      goto Done;
-    }
+    if (!mVariableModuleGlobal->VariableGlobal.EmuNvMode) {
+      //
+      // Four steps
+      // 1. Write variable header
+      // 2. Set variable state to header valid
+      // 3. Write variable data
+      // 4. Set variable state to valid
+      //
+      //
+      // Step 1:
+      //
+      Status = UpdateVariableStore (
+                 &mVariableModuleGlobal->VariableGlobal,
+                 FALSE,
+                 TRUE,
+                 Fvb,
+                 mVariableModuleGlobal->NonVolatileLastVariableOffset,
+                 (UINT32) GetVariableHeaderSize (),
+                 (UINT8 *) NextVariable
+                 );
 
-    //
-    // Step 2:
-    //
-    NextVariable->State = VAR_HEADER_VALID_ONLY;
-    Status = UpdateVariableStore (
-               &mVariableModuleGlobal->VariableGlobal,
-               FALSE,
-               TRUE,
-               Fvb,
-               mVariableModuleGlobal->NonVolatileLastVariableOffset + OFFSET_OF (VARIABLE_HEADER, State),
-               sizeof (UINT8),
-               &NextVariable->State
-               );
+      if (EFI_ERROR (Status)) {
+        goto Done;
+      }
 
-    if (EFI_ERROR (Status)) {
-      goto Done;
-    }
-    //
-    // Step 3:
-    //
-    Status = UpdateVariableStore (
-               &mVariableModuleGlobal->VariableGlobal,
-               FALSE,
-               TRUE,
-               Fvb,
-               mVariableModuleGlobal->NonVolatileLastVariableOffset + GetVariableHeaderSize (),
-               (UINT32) (VarSize - GetVariableHeaderSize ()),
-               (UINT8 *) NextVariable + GetVariableHeaderSize ()
-               );
+      //
+      // Step 2:
+      //
+      NextVariable->State = VAR_HEADER_VALID_ONLY;
+      Status = UpdateVariableStore (
+                 &mVariableModuleGlobal->VariableGlobal,
+                 FALSE,
+                 TRUE,
+                 Fvb,
+                 mVariableModuleGlobal->NonVolatileLastVariableOffset + OFFSET_OF (VARIABLE_HEADER, State),
+                 sizeof (UINT8),
+                 &NextVariable->State
+                 );
 
-    if (EFI_ERROR (Status)) {
-      goto Done;
-    }
-    //
-    // Step 4:
-    //
-    NextVariable->State = VAR_ADDED;
-    Status = UpdateVariableStore (
-               &mVariableModuleGlobal->VariableGlobal,
-               FALSE,
-               TRUE,
-               Fvb,
-               mVariableModuleGlobal->NonVolatileLastVariableOffset + OFFSET_OF (VARIABLE_HEADER, State),
-               sizeof (UINT8),
-               &NextVariable->State
-               );
+      if (EFI_ERROR (Status)) {
+        goto Done;
+      }
+      //
+      // Step 3:
+      //
+      Status = UpdateVariableStore (
+                 &mVariableModuleGlobal->VariableGlobal,
+                 FALSE,
+                 TRUE,
+                 Fvb,
+                 mVariableModuleGlobal->NonVolatileLastVariableOffset + GetVariableHeaderSize (),
+                 (UINT32) (VarSize - GetVariableHeaderSize ()),
+                 (UINT8 *) NextVariable + GetVariableHeaderSize ()
+                 );
 
-    if (EFI_ERROR (Status)) {
-      goto Done;
+      if (EFI_ERROR (Status)) {
+        goto Done;
+      }
+      //
+      // Step 4:
+      //
+      NextVariable->State = VAR_ADDED;
+      Status = UpdateVariableStore (
+                 &mVariableModuleGlobal->VariableGlobal,
+                 FALSE,
+                 TRUE,
+                 Fvb,
+                 mVariableModuleGlobal->NonVolatileLastVariableOffset + OFFSET_OF (VARIABLE_HEADER, State),
+                 sizeof (UINT8),
+                 &NextVariable->State
+                 );
+
+      if (EFI_ERROR (Status)) {
+        goto Done;
+      }
+
+      //
+      // Update the memory copy of Flash region.
+      //
+      CopyMem ((UINT8 *)mNvVariableCache + mVariableModuleGlobal->NonVolatileLastVariableOffset, (UINT8 *)NextVariable, VarSize);
+    } else {
+      //
+      // Emulated non-volatile variable mode.
+      //
+      NextVariable->State = VAR_ADDED;
+      Status = UpdateVariableStore (
+                 &mVariableModuleGlobal->VariableGlobal,
+                 FALSE,
+                 TRUE,
+                 Fvb,
+                 mVariableModuleGlobal->NonVolatileLastVariableOffset,
+                 (UINT32) VarSize,
+                 (UINT8 *) NextVariable
+                 );
+
+      if (EFI_ERROR (Status)) {
+        goto Done;
+      }
     }
 
     mVariableModuleGlobal->NonVolatileLastVariableOffset += HEADER_ALIGN (VarSize);
@@ -2655,10 +2699,6 @@ UpdateVariable (
         mVariableModuleGlobal->CommonUserVariableTotalSize += HEADER_ALIGN (VarSize);
       }
     }
-    //
-    // update the memory copy of Flash region.
-    //
-    CopyMem ((UINT8 *)mNvVariableCache + CacheOffset, (UINT8 *)NextVariable, VarSize);
   } else {
     //
     // Create a volatile variable.
@@ -2739,7 +2779,7 @@ UpdateVariable (
       }
     }
 
-    State = Variable->CurrPtr->State;
+    State = CacheVariable->CurrPtr->State;
     State &= VAR_DELETED;
 
     Status = UpdateVariableStore (
@@ -3730,9 +3770,9 @@ GetMaxVariableSize (
 }
 
 /**
-  Init non-volatile variable store.
+  Init real non-volatile variable store.
 
-  @param[out] NvFvHeader        Output pointer to non-volatile FV header address.
+  @param[out] VariableStoreBase Output pointer to real non-volatile variable store base.
 
   @retval EFI_SUCCESS           Function successfully executed.
   @retval EFI_OUT_OF_RESOURCES  Fail to allocate enough memory resource.
@@ -3740,16 +3780,13 @@ GetMaxVariableSize (
 
 **/
 EFI_STATUS
-InitNonVolatileVariableStore (
-  OUT EFI_FIRMWARE_VOLUME_HEADER    **NvFvHeader
+InitRealNonVolatileVariableStore (
+  OUT EFI_PHYSICAL_ADDRESS              *VariableStoreBase
   )
 {
   EFI_FIRMWARE_VOLUME_HEADER            *FvHeader;
-  VARIABLE_HEADER                       *Variable;
-  VARIABLE_HEADER                       *NextVariable;
-  EFI_PHYSICAL_ADDRESS                  VariableStoreBase;
-  UINT64                                VariableStoreLength;
-  UINTN                                 VariableSize;
+  VARIABLE_STORE_HEADER                 *VariableStore;
+  UINT32                                VariableStoreLength;
   EFI_HOB_GUID_TYPE                     *GuidHob;
   EFI_PHYSICAL_ADDRESS                  NvStorageBase;
   UINT8                                 *NvStorageData;
@@ -3775,10 +3812,9 @@ InitNonVolatileVariableStore (
     return EFI_OUT_OF_RESOURCES;
   }
 
-  NvStorageBase = (EFI_PHYSICAL_ADDRESS) PcdGet64 (PcdFlashNvStorageVariableBase64);
-  if (NvStorageBase == 0) {
-    NvStorageBase = (EFI_PHYSICAL_ADDRESS) PcdGet32 (PcdFlashNvStorageVariableBase);
-  }
+  NvStorageBase = NV_STORAGE_VARIABLE_BASE;
+  ASSERT (NvStorageBase != 0);
+
   //
   // Copy NV storage data to the memory buffer.
   //
@@ -3828,24 +3864,23 @@ InitNonVolatileVariableStore (
     return EFI_VOLUME_CORRUPTED;
   }
 
-  VariableStoreBase = (UINTN) FvHeader + FvHeader->HeaderLength;
+  VariableStore = (VARIABLE_STORE_HEADER *) ((UINTN) FvHeader + FvHeader->HeaderLength);
   VariableStoreLength = NvStorageSize - FvHeader->HeaderLength;
+  ASSERT (sizeof (VARIABLE_STORE_HEADER) <= VariableStoreLength);
+  ASSERT (VariableStore->Size == VariableStoreLength);
 
-  mNvFvHeaderCache = FvHeader;
-  mVariableModuleGlobal->VariableGlobal.NonVolatileVariableBase = VariableStoreBase;
-  mNvVariableCache = (VARIABLE_STORE_HEADER *) (UINTN) VariableStoreBase;
-  if (GetVariableStoreStatus (mNvVariableCache) != EfiValid) {
+  //
+  // Check if the Variable Store header is not corrupted
+  //
+  if (GetVariableStoreStatus (VariableStore) != EfiValid) {
     FreePool (NvStorageData);
-    mNvFvHeaderCache = NULL;
-    mNvVariableCache = NULL;
     DEBUG((EFI_D_ERROR, "Variable Store header is corrupted\n"));
     return EFI_VOLUME_CORRUPTED;
   }
-  ASSERT(mNvVariableCache->Size == VariableStoreLength);
 
-  ASSERT (sizeof (VARIABLE_STORE_HEADER) <= VariableStoreLength);
+  mNvFvHeaderCache = FvHeader;
 
-  mVariableModuleGlobal->VariableGlobal.AuthFormat = (BOOLEAN)(CompareGuid (&mNvVariableCache->Signature, &gEfiAuthenticatedVariableGuid));
+  *VariableStoreBase = (EFI_PHYSICAL_ADDRESS) (UINTN) VariableStore;
 
   HwErrStorageSize = PcdGet32 (PcdHwErrStorageSize);
   MaxUserNvVariableSpaceSize = PcdGet32 (PcdMaxUserNvVariableSpaceSize);
@@ -3880,14 +3915,142 @@ InitNonVolatileVariableStore (
   //
   ASSERT (GetNonVolatileMaxVariableSize () < (VariableStoreLength - sizeof (VARIABLE_STORE_HEADER)));
 
+  return EFI_SUCCESS;
+}
+
+/**
+  Init emulated non-volatile variable store.
+
+  @param[out] VariableStoreBase Output pointer to emulated non-volatile variable store base.
+
+  @retval EFI_SUCCESS           Function successfully executed.
+  @retval EFI_OUT_OF_RESOURCES  Fail to allocate enough memory resource.
+
+**/
+EFI_STATUS
+InitEmuNonVolatileVariableStore (
+  EFI_PHYSICAL_ADDRESS  *VariableStoreBase
+  )
+{
+  VARIABLE_STORE_HEADER *VariableStore;
+  UINT32                VariableStoreLength;
+  BOOLEAN               FullyInitializeStore;
+  UINT32                HwErrStorageSize;
+
+  FullyInitializeStore = TRUE;
+
+  VariableStoreLength = PcdGet32 (PcdVariableStoreSize);
+  ASSERT (sizeof (VARIABLE_STORE_HEADER) <= VariableStoreLength);
+
+  //
+  // Allocate memory for variable store.
+  //
+  if (PcdGet64 (PcdEmuVariableNvStoreReserved) == 0) {
+    VariableStore = (VARIABLE_STORE_HEADER *) AllocateRuntimePool (VariableStoreLength);
+    if (VariableStore == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+  } else {
+    //
+    // A memory location has been reserved for the NV variable store.  Certain
+    // platforms may be able to preserve a memory range across system resets,
+    // thereby providing better NV variable emulation.
+    //
+    VariableStore =
+      (VARIABLE_STORE_HEADER *)(VOID*)(UINTN)
+        PcdGet64 (PcdEmuVariableNvStoreReserved);
+    if ((VariableStore->Size == VariableStoreLength) &&
+        (CompareGuid (&VariableStore->Signature, &gEfiAuthenticatedVariableGuid) ||
+         CompareGuid (&VariableStore->Signature, &gEfiVariableGuid)) &&
+        (VariableStore->Format == VARIABLE_STORE_FORMATTED) &&
+        (VariableStore->State == VARIABLE_STORE_HEALTHY)) {
+      DEBUG((
+        DEBUG_INFO,
+        "Variable Store reserved at %p appears to be valid\n",
+        VariableStore
+        ));
+      FullyInitializeStore = FALSE;
+    }
+  }
+
+  if (FullyInitializeStore) {
+    SetMem (VariableStore, VariableStoreLength, 0xff);
+    //
+    // Use gEfiAuthenticatedVariableGuid for potential auth variable support.
+    //
+    CopyGuid (&VariableStore->Signature, &gEfiAuthenticatedVariableGuid);
+    VariableStore->Size       = VariableStoreLength;
+    VariableStore->Format     = VARIABLE_STORE_FORMATTED;
+    VariableStore->State      = VARIABLE_STORE_HEALTHY;
+    VariableStore->Reserved   = 0;
+    VariableStore->Reserved1  = 0;
+  }
+
+  *VariableStoreBase = (EFI_PHYSICAL_ADDRESS) (UINTN) VariableStore;
+
+  HwErrStorageSize = PcdGet32 (PcdHwErrStorageSize);
+
+  //
+  // Note that in EdkII variable driver implementation, Hardware Error Record type variable
+  // is stored with common variable in the same NV region. So the platform integrator should
+  // ensure that the value of PcdHwErrStorageSize is less than the value of
+  // (VariableStoreLength - sizeof (VARIABLE_STORE_HEADER)).
+  //
+  ASSERT (HwErrStorageSize < (VariableStoreLength - sizeof (VARIABLE_STORE_HEADER)));
+
+  mVariableModuleGlobal->CommonVariableSpace = ((UINTN) VariableStoreLength - sizeof (VARIABLE_STORE_HEADER) - HwErrStorageSize);
+  mVariableModuleGlobal->CommonMaxUserVariableSpace = mVariableModuleGlobal->CommonVariableSpace;
+  mVariableModuleGlobal->CommonRuntimeVariableSpace = mVariableModuleGlobal->CommonVariableSpace;
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Init non-volatile variable store.
+
+  @retval EFI_SUCCESS           Function successfully executed.
+  @retval EFI_OUT_OF_RESOURCES  Fail to allocate enough memory resource.
+  @retval EFI_VOLUME_CORRUPTED  Variable Store or Firmware Volume for Variable Store is corrupted.
+
+**/
+EFI_STATUS
+InitNonVolatileVariableStore (
+  VOID
+  )
+{
+  VARIABLE_HEADER                       *Variable;
+  VARIABLE_HEADER                       *NextVariable;
+  EFI_PHYSICAL_ADDRESS                  VariableStoreBase;
+  UINTN                                 VariableSize;
+  EFI_STATUS                            Status;
+
+  if (PcdGetBool (PcdEmuVariableNvModeEnable)) {
+    Status = InitEmuNonVolatileVariableStore (&VariableStoreBase);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+    mVariableModuleGlobal->VariableGlobal.EmuNvMode = TRUE;
+    DEBUG ((DEBUG_INFO, "Variable driver will work at emulated non-volatile variable mode!\n"));
+  } else {
+    Status = InitRealNonVolatileVariableStore (&VariableStoreBase);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+    mVariableModuleGlobal->VariableGlobal.EmuNvMode = FALSE;
+  }
+
+  mVariableModuleGlobal->VariableGlobal.NonVolatileVariableBase = VariableStoreBase;
+  mNvVariableCache = (VARIABLE_STORE_HEADER *) (UINTN) VariableStoreBase;
+  mVariableModuleGlobal->VariableGlobal.AuthFormat = (BOOLEAN)(CompareGuid (&mNvVariableCache->Signature, &gEfiAuthenticatedVariableGuid));
+
   mVariableModuleGlobal->MaxVariableSize = PcdGet32 (PcdMaxVariableSize);
   mVariableModuleGlobal->MaxAuthVariableSize = ((PcdGet32 (PcdMaxAuthVariableSize) != 0) ? PcdGet32 (PcdMaxAuthVariableSize) : mVariableModuleGlobal->MaxVariableSize);
 
   //
   // Parse non-volatile variable data and get last variable offset.
   //
-  Variable  = GetStartPointer ((VARIABLE_STORE_HEADER *)(UINTN)VariableStoreBase);
-  while (IsValidVariableHeader (Variable, GetEndPointer ((VARIABLE_STORE_HEADER *)(UINTN)VariableStoreBase))) {
+  Variable  = GetStartPointer (mNvVariableCache);
+  while (IsValidVariableHeader (Variable, GetEndPointer (mNvVariableCache))) {
     NextVariable = GetNextVariablePtr (Variable);
     VariableSize = (UINTN) NextVariable - (UINTN) Variable;
     if ((Variable->Attributes & (EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_HARDWARE_ERROR_RECORD)) == (EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_HARDWARE_ERROR_RECORD)) {
@@ -3898,9 +4061,8 @@ InitNonVolatileVariableStore (
 
     Variable = NextVariable;
   }
-  mVariableModuleGlobal->NonVolatileLastVariableOffset = (UINTN) Variable - (UINTN) VariableStoreBase;
+  mVariableModuleGlobal->NonVolatileLastVariableOffset = (UINTN) Variable - (UINTN) mNvVariableCache;
 
-  *NvFvHeader = FvHeader;
   return EFI_SUCCESS;
 }
 
@@ -4001,7 +4163,7 @@ FlushHobVariableToFlash (
 }
 
 /**
-  Initializes variable write service after FTW was ready.
+  Initializes variable write service.
 
   @retval EFI_SUCCESS          Function successfully executed.
   @retval Others               Fail to initialize the variable service.
@@ -4015,22 +4177,9 @@ VariableWriteServiceInitialize (
   EFI_STATUS                      Status;
   UINTN                           Index;
   UINT8                           Data;
-  EFI_PHYSICAL_ADDRESS            VariableStoreBase;
-  EFI_PHYSICAL_ADDRESS            NvStorageBase;
   VARIABLE_ENTRY_PROPERTY         *VariableEntry;
 
   AcquireLockOnlyAtBootTime(&mVariableModuleGlobal->VariableGlobal.VariableServicesLock);
-
-  NvStorageBase = (EFI_PHYSICAL_ADDRESS) PcdGet64 (PcdFlashNvStorageVariableBase64);
-  if (NvStorageBase == 0) {
-    NvStorageBase = (EFI_PHYSICAL_ADDRESS) PcdGet32 (PcdFlashNvStorageVariableBase);
-  }
-  VariableStoreBase = NvStorageBase + (mNvFvHeaderCache->HeaderLength);
-
-  //
-  // Let NonVolatileVariableBase point to flash variable store base directly after FTW ready.
-  //
-  mVariableModuleGlobal->VariableGlobal.NonVolatileVariableBase = VariableStoreBase;
 
   //
   // Check if the free area is really free.
@@ -4305,7 +4454,6 @@ VariableCommonInitialize (
   VARIABLE_STORE_HEADER           *VolatileVariableStore;
   UINTN                           ScratchSize;
   EFI_GUID                        *VariableGuid;
-  EFI_FIRMWARE_VOLUME_HEADER      *NvFvHeader;
 
   //
   // Allocate runtime memory for variable driver global structure.
@@ -4320,8 +4468,7 @@ VariableCommonInitialize (
   //
   // Init non-volatile variable store.
   //
-  NvFvHeader = NULL;
-  Status = InitNonVolatileVariableStore (&NvFvHeader);
+  Status = InitNonVolatileVariableStore ();
   if (EFI_ERROR (Status)) {
     FreePool (mVariableModuleGlobal);
     return Status;
@@ -4349,7 +4496,9 @@ VariableCommonInitialize (
   //
   Status = GetHobVariableStore (VariableGuid);
   if (EFI_ERROR (Status)) {
-    FreePool (NvFvHeader);
+    if (mNvFvHeaderCache != NULL) {
+      FreePool (mNvFvHeaderCache);
+    }
     FreePool (mVariableModuleGlobal);
     return Status;
   }
@@ -4368,7 +4517,9 @@ VariableCommonInitialize (
     if (mVariableModuleGlobal->VariableGlobal.HobVariableBase != 0) {
       FreePool ((VOID *) (UINTN) mVariableModuleGlobal->VariableGlobal.HobVariableBase);
     }
-    FreePool (NvFvHeader);
+    if (mNvFvHeaderCache != NULL) {
+      FreePool (mNvFvHeaderCache);
+    }
     FreePool (mVariableModuleGlobal);
     return EFI_OUT_OF_RESOURCES;
   }

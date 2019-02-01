@@ -1010,6 +1010,8 @@ def CreateModulePcdCode(Info, AutoGenC, AutoGenH, Pcd):
             try:
                 if Value.upper().endswith('L'):
                     Value = Value[:-1]
+                if Value.startswith('0') and not Value.lower().startswith('0x') and len(Value) > 1 and Value.lstrip('0'):
+                    Value = Value.lstrip('0')
                 ValueNumber = int (Value, 0)
             except:
                 EdkLogger.error("build", AUTOGEN_ERROR,
@@ -1051,7 +1053,7 @@ def CreateModulePcdCode(Info, AutoGenC, AutoGenH, Pcd):
                     else:
                         NewValue = NewValue + str(ord(Value[Index]) % 0x100) + ', '
                 if Unicode:
-                    ArraySize = ArraySize / 2
+                    ArraySize = ArraySize // 2
                 Value = NewValue + '0 }'
             if ArraySize < ValueSize:
                 if Pcd.MaxSizeUserSet:
@@ -1061,7 +1063,7 @@ def CreateModulePcdCode(Info, AutoGenC, AutoGenH, Pcd):
                 else:
                     ArraySize = Pcd.GetPcdSize()
                     if Unicode:
-                        ArraySize = ArraySize / 2
+                        ArraySize = ArraySize // 2
             Array = '[%d]' % ArraySize
         #
         # skip casting for fixed at build since it breaks ARM assembly.
@@ -1780,7 +1782,7 @@ def CreateIdfFileCode(Info, AutoGenC, StringH, IdfGenCFlag, IdfGenBinBuffer):
                                 TempBuffer += Buffer
                             elif File.Ext.upper() == '.JPG':
                                 ImageType, = struct.unpack('4s', Buffer[6:10])
-                                if ImageType != 'JFIF':
+                                if ImageType != b'JFIF':
                                     EdkLogger.error("build", FILE_TYPE_MISMATCH, "The file %s is not a standard JPG file." % File.Path)
                                 TempBuffer = pack('B', EFI_HII_IIBT_IMAGE_JPEG)
                                 TempBuffer += pack('I', len(Buffer))
@@ -1880,7 +1882,7 @@ def CreateIdfFileCode(Info, AutoGenC, StringH, IdfGenCFlag, IdfGenBinBuffer):
 
 def BmpImageDecoder(File, Buffer, PaletteIndex, TransParent):
     ImageType, = struct.unpack('2s', Buffer[0:2])
-    if ImageType!= 'BM': # BMP file type is 'BM'
+    if ImageType!= b'BM': # BMP file type is 'BM'
         EdkLogger.error("build", FILE_TYPE_MISMATCH, "The file %s is not a standard BMP file." % File.Path)
     BMP_IMAGE_HEADER = collections.namedtuple('BMP_IMAGE_HEADER', ['bfSize', 'bfReserved1', 'bfReserved2', 'bfOffBits', 'biSize', 'biWidth', 'biHeight', 'biPlanes', 'biBitCount', 'biCompression', 'biSizeImage', 'biXPelsPerMeter', 'biYPelsPerMeter', 'biClrUsed', 'biClrImportant'])
     BMP_IMAGE_HEADER_STRUCT = struct.Struct('IHHIIIIHHIIIIII')
@@ -1904,7 +1906,7 @@ def BmpImageDecoder(File, Buffer, PaletteIndex, TransParent):
         else:
             ImageBuffer = pack('B', EFI_HII_IIBT_IMAGE_1BIT)
         ImageBuffer += pack('B', PaletteIndex)
-        Width = (BmpHeader.biWidth + 7)/8
+        Width = (BmpHeader.biWidth + 7)//8
         if BmpHeader.bfOffBits > BMP_IMAGE_HEADER_STRUCT.size + 2:
             PaletteBuffer = Buffer[BMP_IMAGE_HEADER_STRUCT.size + 2 : BmpHeader.bfOffBits]
     elif BmpHeader.biBitCount == 4:
@@ -1913,7 +1915,7 @@ def BmpImageDecoder(File, Buffer, PaletteIndex, TransParent):
         else:
             ImageBuffer = pack('B', EFI_HII_IIBT_IMAGE_4BIT)
         ImageBuffer += pack('B', PaletteIndex)
-        Width = (BmpHeader.biWidth + 1)/2
+        Width = (BmpHeader.biWidth + 1)//2
         if BmpHeader.bfOffBits > BMP_IMAGE_HEADER_STRUCT.size + 2:
             PaletteBuffer = Buffer[BMP_IMAGE_HEADER_STRUCT.size + 2 : BmpHeader.bfOffBits]
     elif BmpHeader.biBitCount == 8:
@@ -1952,7 +1954,7 @@ def BmpImageDecoder(File, Buffer, PaletteIndex, TransParent):
         for Index in range(0, len(PaletteBuffer)):
             if Index % 4 == 3:
                 continue
-            PaletteTemp += PaletteBuffer[Index]
+            PaletteTemp += PaletteBuffer[Index:Index+1]
         PaletteBuffer = PaletteTemp[1:]
     return ImageBuffer, PaletteBuffer
 
@@ -2048,7 +2050,7 @@ def CreateCode(Info, AutoGenC, AutoGenH, StringH, UniGenCFlag, UniGenBinBuffer, 
             if Guid in Info.Module.GetGuidsUsedByPcd():
                 continue
             GuidMacros.append('#define %s %s' % (Guid, Info.Module.Guids[Guid]))
-        for Guid, Value in Info.Module.Protocols.items() + Info.Module.Ppis.items():
+        for Guid, Value in list(Info.Module.Protocols.items()) + list(Info.Module.Ppis.items()):
             GuidMacros.append('#define %s %s' % (Guid, Value))
         # supports FixedAtBuild and FeaturePcd usage in VFR file
         if Info.VfrFileList and Info.ModulePcdList:
