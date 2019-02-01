@@ -115,6 +115,9 @@
   MdePkg/Library/SmmLibNull/SmmLibNull.inf
   MdePkg/Library/BaseExtractGuidedSectionLib/BaseExtractGuidedSectionLib.inf
 
+  MdePkg/Library/StandaloneMmDriverEntryPoint/StandaloneMmDriverEntryPoint.inf
+  MdePkg/Library/StandaloneMmServicesTableLib/StandaloneMmServicesTableLib.inf
+
 [Components.IA32, Components.X64]
   MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf
   MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsicSev.inf
@@ -141,6 +144,7 @@
   MdePkg/Library/BaseRngLib/BaseRngLib.inf
   MdePkg/Library/SmmPciExpressLib/SmmPciExpressLib.inf
   MdePkg/Library/SmiHandlerProfileLibNull/SmiHandlerProfileLibNull.inf
+  MdePkg/Library/MmServicesTableLib/MmServicesTableLib.inf
 
 [Components.EBC]
   MdePkg/Library/BaseIoLibIntrinsic/BaseIoLibIntrinsic.inf

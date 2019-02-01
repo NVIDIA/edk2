@@ -3,6 +3,7 @@
 #
 # Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
 # Copyright (c) 2018, Hewlett Packard Enterprise Development, L.P.<BR>
+# Copyright (c) 2019, American Megatrends, Inc. All rights reserved.<BR>
 #
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
@@ -30,7 +31,7 @@ from io import BytesIO
 
 from .StrGather import *
 from .BuildEngine import BuildRule
-
+import shutil
 from Common.LongFilePathSupport import CopyLongFilePath
 from Common.BuildToolError import *
 from Common.DataType import *
@@ -170,6 +171,73 @@ ${tail_comments}
 ## @AsBuilt${BEGIN}
 ##   ${flags_item}${END}
 """)
+## Split command line option string to list
+#
+# subprocess.Popen needs the args to be a sequence. Otherwise there's problem
+# in non-windows platform to launch command
+#
+def _SplitOption(OptionString):
+    OptionList = []
+    LastChar = " "
+    OptionStart = 0
+    QuotationMark = ""
+    for Index in range(0, len(OptionString)):
+        CurrentChar = OptionString[Index]
+        if CurrentChar in ['"', "'"]:
+            if QuotationMark == CurrentChar:
+                QuotationMark = ""
+            elif QuotationMark == "":
+                QuotationMark = CurrentChar
+            continue
+        elif QuotationMark:
+            continue
+
+        if CurrentChar in ["/", "-"] and LastChar in [" ", "\t", "\r", "\n"]:
+            if Index > OptionStart:
+                OptionList.append(OptionString[OptionStart:Index - 1])
+            OptionStart = Index
+        LastChar = CurrentChar
+    OptionList.append(OptionString[OptionStart:])
+    return OptionList
+
+#
+# Convert string to C format array
+#
+def _ConvertStringToByteArray(Value):
+    Value = Value.strip()
+    if not Value:
+        return None
+    if Value[0] == '{':
+        if not Value.endswith('}'):
+            return None
+        Value = Value.replace(' ', '').replace('{', '').replace('}', '')
+        ValFields = Value.split(',')
+        try:
+            for Index in range(len(ValFields)):
+                ValFields[Index] = str(int(ValFields[Index], 0))
+        except ValueError:
+            return None
+        Value = '{' + ','.join(ValFields) + '}'
+        return Value
+
+    Unicode = False
+    if Value.startswith('L"'):
+        if not Value.endswith('"'):
+            return None
+        Value = Value[1:]
+        Unicode = True
+    elif not Value.startswith('"') or not Value.endswith('"'):
+        return None
+
+    Value = eval(Value)         # translate escape character
+    NewValue = '{'
+    for Index in range(0, len(Value)):
+        if Unicode:
+            NewValue = NewValue + str(ord(Value[Index]) % 0x10000) + ','
+        else:
+            NewValue = NewValue + str(ord(Value[Index]) % 0x100) + ','
+    Value = NewValue + '0}'
+    return Value
 
 ## Base class for AutoGen
 #
@@ -935,7 +1003,56 @@ class WorkspaceAutoGen(AutoGen):
 
     @property
     def GenFdsCommandDict(self):
-        return GenMake.TopLevelMakefile(self)._TemplateDict
+        FdsCommandDict = {}
+        LogLevel = EdkLogger.GetLevel()
+        if LogLevel == EdkLogger.VERBOSE:
+            FdsCommandDict["verbose"] = True
+        elif LogLevel <= EdkLogger.DEBUG_9:
+            FdsCommandDict["debug"] = LogLevel - 1
+        elif LogLevel == EdkLogger.QUIET:
+            FdsCommandDict["quiet"] = True
+
+        if GlobalData.gEnableGenfdsMultiThread:
+            FdsCommandDict["GenfdsMultiThread"] = True
+        if GlobalData.gIgnoreSource:
+            FdsCommandDict["IgnoreSources"] = True
+
+        FdsCommandDict["OptionPcd"] = []
+        for pcd in GlobalData.BuildOptionPcd:
+            if pcd[2]:
+                pcdname = '.'.join(pcd[0:3])
+            else:
+                pcdname = '.'.join(pcd[0:2])
+            if pcd[3].startswith('{'):
+                FdsCommandDict["OptionPcd"].append(pcdname + '=' + 'H' + '"' + pcd[3] + '"')
+            else:
+                FdsCommandDict["OptionPcd"].append(pcdname + '=' + pcd[3])
+
+        MacroList = []
+        # macros passed to GenFds
+        MacroDict = {}
+        MacroDict.update(GlobalData.gGlobalDefines)
+        MacroDict.update(GlobalData.gCommandLineDefines)
+        for MacroName in MacroDict:
+            if MacroDict[MacroName] != "":
+                MacroList.append('"%s=%s"' % (MacroName, MacroDict[MacroName].replace('\\', '\\\\')))
+            else:
+                MacroList.append('"%s"' % MacroName)
+        FdsCommandDict["macro"] = MacroList
+
+        FdsCommandDict["fdf_file"] = [self.FdfFile]
+        FdsCommandDict["build_target"] = self.BuildTarget
+        FdsCommandDict["toolchain_tag"] = self.ToolChain
+        FdsCommandDict["active_platform"] = str(self)
+
+        FdsCommandDict["conf_directory"] = GlobalData.gConfDirectory
+        FdsCommandDict["build_architecture_list"] = ','.join(self.ArchList)
+        FdsCommandDict["platform_build_directory"] = self.BuildDir
+
+        FdsCommandDict["fd"] = self.FdTargetList
+        FdsCommandDict["fv"] = self.FvTargetList
+        FdsCommandDict["cap"] = self.CapTargetList
+        return FdsCommandDict
 
     ## Create makefile for the platform and modules in it
     #
@@ -1719,11 +1836,11 @@ class PlatformAutoGen(AutoGen):
     def BuildCommand(self):
         RetVal = []
         if "MAKE" in self.ToolDefinition and "PATH" in self.ToolDefinition["MAKE"]:
-            RetVal += SplitOption(self.ToolDefinition["MAKE"]["PATH"])
+            RetVal += _SplitOption(self.ToolDefinition["MAKE"]["PATH"])
             if "FLAGS" in self.ToolDefinition["MAKE"]:
                 NewOption = self.ToolDefinition["MAKE"]["FLAGS"].strip()
                 if NewOption != '':
-                    RetVal += SplitOption(NewOption)
+                    RetVal += _SplitOption(NewOption)
             if "MAKE" in self.EdkIIBuildOption:
                 if "FLAGS" in self.EdkIIBuildOption["MAKE"]:
                     Flags = self.EdkIIBuildOption["MAKE"]["FLAGS"]
@@ -2174,42 +2291,7 @@ class PlatformAutoGen(AutoGen):
                     Pcd.MaxDatumSize = str(len(Value) - 1)
         return Pcds.values()
 
-    ## Resolve library names to library modules
-    #
-    # (for Edk.x modules)
-    #
-    #   @param  Module  The module from which the library names will be resolved
-    #
-    #   @retval library_list    The list of library modules
-    #
-    def ResolveLibraryReference(self, Module):
-        EdkLogger.verbose("")
-        EdkLogger.verbose("Library instances of module [%s] [%s]:" % (str(Module), self.Arch))
-        LibraryConsumerList = [Module]
 
-        # "CompilerStub" is a must for Edk modules
-        if Module.Libraries:
-            Module.Libraries.append("CompilerStub")
-        LibraryList = []
-        while len(LibraryConsumerList) > 0:
-            M = LibraryConsumerList.pop()
-            for LibraryName in M.Libraries:
-                Library = self.Platform.LibraryClasses[LibraryName, ':dummy:']
-                if Library is None:
-                    for Key in self.Platform.LibraryClasses.data:
-                        if LibraryName.upper() == Key.upper():
-                            Library = self.Platform.LibraryClasses[Key, ':dummy:']
-                            break
-                    if Library is None:
-                        EdkLogger.warn("build", "Library [%s] is not found" % LibraryName, File=str(M),
-                            ExtraData="\t%s [%s]" % (str(Module), self.Arch))
-                        continue
-
-                if Library not in LibraryList:
-                    LibraryList.append(Library)
-                    LibraryConsumerList.append(Library)
-                    EdkLogger.verbose("\t" + LibraryName + " : " + str(Library) + ' ' + str(type(Library)))
-        return LibraryList
 
     ## Calculate the priority value of the build option
     #
@@ -2377,12 +2459,8 @@ class PlatformAutoGen(AutoGen):
     #
     def ApplyBuildOption(self, Module):
         # Get the different options for the different style module
-        if Module.AutoGenVersion < 0x00010005:
-            PlatformOptions = self.EdkBuildOption
-            ModuleTypeOptions = self.Platform.GetBuildOptionsByModuleType(EDK_NAME, Module.ModuleType)
-        else:
-            PlatformOptions = self.EdkIIBuildOption
-            ModuleTypeOptions = self.Platform.GetBuildOptionsByModuleType(EDKII_NAME, Module.ModuleType)
+        PlatformOptions = self.EdkIIBuildOption
+        ModuleTypeOptions = self.Platform.GetBuildOptionsByModuleType(EDKII_NAME, Module.ModuleType)
         ModuleTypeOptions = self._ExpandBuildOption(ModuleTypeOptions)
         ModuleOptions = self._ExpandBuildOption(Module.BuildOptions)
         if Module in self.Platform.Modules:
@@ -2422,11 +2500,6 @@ class PlatformAutoGen(AutoGen):
                         else:
                             BuildOptions[Tool][Attr] = mws.handleWsMacro(Value)
 
-        if Module.AutoGenVersion < 0x00010005 and self.Workspace.UniFlag is not None:
-            #
-            # Override UNI flag only for EDK module.
-            #
-            BuildOptions['BUILD']['FLAGS'] = self.Workspace.UniFlag
         return BuildOptions, BuildRuleOrder
 
 #
@@ -2823,10 +2896,10 @@ class ModuleAutoGen(AutoGen):
                     if '.' not in item:
                         NewList.append(item)
                     else:
-                        if item not in self._FixedPcdVoidTypeDict:
+                        if item not in self.FixedVoidTypePcds:
                             EdkLogger.error("build", FORMAT_INVALID, "{} used in [Depex] section should be used as FixedAtBuild type and VOID* datum type in the module.".format(item))
                         else:
-                            Value = self._FixedPcdVoidTypeDict[item]
+                            Value = self.FixedVoidTypePcds[item]
                             if len(Value.split(',')) != 16:
                                 EdkLogger.error("build", FORMAT_INVALID,
                                                 "{} used in [Depex] section should be used as FixedAtBuild type and VOID* datum type and 16 bytes in the module.".format(item))
@@ -2962,14 +3035,13 @@ class ModuleAutoGen(AutoGen):
             # EDK II modules must not reference header files outside of the packages they depend on or
             # within the module's directory tree. Report error if violation.
             #
-            if self.AutoGenVersion >= 0x00010005:
-                for Path in IncPathList:
-                    if (Path not in self.IncludePathList) and (CommonPath([Path, self.MetaFile.Dir]) != self.MetaFile.Dir):
-                        ErrMsg = "The include directory for the EDK II module in this line is invalid %s specified in %s FLAGS '%s'" % (Path, Tool, FlagOption)
-                        EdkLogger.error("build",
-                                        PARAMETER_INVALID,
-                                        ExtraData=ErrMsg,
-                                        File=str(self.MetaFile))
+            for Path in IncPathList:
+                if (Path not in self.IncludePathList) and (CommonPath([Path, self.MetaFile.Dir]) != self.MetaFile.Dir):
+                    ErrMsg = "The include directory for the EDK II module in this line is invalid %s specified in %s FLAGS '%s'" % (Path, Tool, FlagOption)
+                    EdkLogger.error("build",
+                                    PARAMETER_INVALID,
+                                    ExtraData=ErrMsg,
+                                    File=str(self.MetaFile))
             RetVal += IncPathList
         return RetVal
 
@@ -2999,7 +3071,7 @@ class ModuleAutoGen(AutoGen):
                 continue
 
             # add the file path into search path list for file including
-            if F.Dir not in self.IncludePathList and self.AutoGenVersion >= 0x00010005:
+            if F.Dir not in self.IncludePathList:
                 self.IncludePathList.insert(0, F.Dir)
             RetVal.append(F)
 
@@ -3014,7 +3086,7 @@ class ModuleAutoGen(AutoGen):
         self.BuildOption
         for SingleFile in FileList:
             if self.BuildRuleOrder and SingleFile.Ext in self.BuildRuleOrder and SingleFile.Ext in self.BuildRules:
-                key = SingleFile.Path.split(SingleFile.Ext)[0]
+                key = SingleFile.Path.rsplit(SingleFile.Ext,1)[0]
                 if key in Order_Dict:
                     Order_Dict[key].append(SingleFile.Ext)
                 else:
@@ -3261,8 +3333,6 @@ class ModuleAutoGen(AutoGen):
         # only merge library classes and PCD for non-library module
         if self.IsLibrary:
             return []
-        if self.AutoGenVersion < 0x00010005:
-            return self.PlatformInfo.ResolveLibraryReference(self.Module)
         return self.PlatformInfo.ApplyLibraryInstance(self.Module)
 
     ## Get the list of PCDs from current module
@@ -3351,19 +3421,8 @@ class ModuleAutoGen(AutoGen):
     @cached_property
     def IncludePathList(self):
         RetVal = []
-        if self.AutoGenVersion < 0x00010005:
-            for Inc in self.Module.Includes:
-                if Inc not in RetVal:
-                    RetVal.append(Inc)
-                # for Edk modules
-                Inc = path.join(Inc, self.Arch.capitalize())
-                if os.path.exists(Inc) and Inc not in RetVal:
-                    RetVal.append(Inc)
-            # Edk module needs to put DEBUG_DIR at the end of search path and not to use SOURCE_DIR all the time
-            RetVal.append(self.DebugDir)
-        else:
-            RetVal.append(self.MetaFile.Dir)
-            RetVal.append(self.DebugDir)
+        RetVal.append(self.MetaFile.Dir)
+        RetVal.append(self.DebugDir)
 
         for Package in self.Module.Packages:
             PackageDir = mws.join(self.WorkspaceDir, Package.MetaFile.Dir)
@@ -3425,7 +3484,7 @@ class ModuleAutoGen(AutoGen):
                 Guid = gEfiVarStoreGuidPattern.search(Content, Pos)
                 if not Guid:
                     break
-                NameArray = ConvertStringToByteArray('L"' + Name.group(1) + '"')
+                NameArray = _ConvertStringToByteArray('L"' + Name.group(1) + '"')
                 NameGuids.add((NameArray, GuidStructureStringToGuidString(Guid.group(1))))
                 Pos = Content.find('efivarstore', Name.end())
         if not NameGuids:
@@ -3438,7 +3497,7 @@ class ModuleAutoGen(AutoGen):
                 Value = GuidValue(SkuInfo.VariableGuid, self.PlatformInfo.PackageList, self.MetaFile.Path)
                 if not Value:
                     continue
-                Name = ConvertStringToByteArray(SkuInfo.VariableName)
+                Name = _ConvertStringToByteArray(SkuInfo.VariableName)
                 Guid = GuidStructureStringToGuidString(Value)
                 if (Name, Guid) in NameGuids and Pcd not in HiiExPcds:
                     HiiExPcds.append(Pcd)
@@ -3524,10 +3583,6 @@ class ModuleAutoGen(AutoGen):
             return
 
         if self.IsAsBuiltInfCreated:
-            return
-
-        # Skip the following code for EDK I inf
-        if self.AutoGenVersion < 0x00010005:
             return
 
         # Skip the following code for libraries
@@ -3986,17 +4041,10 @@ class ModuleAutoGen(AutoGen):
 
         for File in self.AutoGenFileList:
             if GenC.Generate(File.Path, self.AutoGenFileList[File], File.IsBinary):
-                #Ignore Edk AutoGen.c
-                if self.AutoGenVersion < 0x00010005 and File.Name == 'AutoGen.c':
-                        continue
-
                 AutoGenList.append(str(File))
             else:
                 IgoredAutoGenList.append(str(File))
 
-        # Skip the following code for EDK I inf
-        if self.AutoGenVersion < 0x00010005:
-            return
 
         for ModuleType in self.DepexList:
             # Ignore empty [depex] section or [depex] section for SUP_MODULE_USER_DEFINED module

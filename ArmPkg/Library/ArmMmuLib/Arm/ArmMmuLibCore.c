@@ -135,6 +135,11 @@ PopulateLevel2PageTable (
     case ARM_MEMORY_REGION_ATTRIBUTE_NONSECURE_WRITE_BACK:
       PageAttributes = TT_DESCRIPTOR_PAGE_WRITE_BACK;
       break;
+    case ARM_MEMORY_REGION_ATTRIBUTE_WRITE_BACK_NONSHAREABLE:
+    case ARM_MEMORY_REGION_ATTRIBUTE_NONSECURE_WRITE_BACK_NONSHAREABLE:
+      PageAttributes = TT_DESCRIPTOR_PAGE_WRITE_BACK;
+      PageAttributes &= ~TT_DESCRIPTOR_PAGE_S_SHARED;
+      break;
     case ARM_MEMORY_REGION_ATTRIBUTE_WRITE_THROUGH:
     case ARM_MEMORY_REGION_ATTRIBUTE_NONSECURE_WRITE_THROUGH:
       PageAttributes = TT_DESCRIPTOR_PAGE_WRITE_THROUGH;
@@ -239,6 +244,10 @@ FillTranslationTable (
     case ARM_MEMORY_REGION_ATTRIBUTE_WRITE_BACK:
       Attributes = TT_DESCRIPTOR_SECTION_WRITE_BACK(0);
       break;
+    case ARM_MEMORY_REGION_ATTRIBUTE_WRITE_BACK_NONSHAREABLE:
+      Attributes = TT_DESCRIPTOR_SECTION_WRITE_BACK(0);
+      Attributes &= ~TT_DESCRIPTOR_SECTION_S_SHARED;
+      break;
     case ARM_MEMORY_REGION_ATTRIBUTE_WRITE_THROUGH:
       Attributes = TT_DESCRIPTOR_SECTION_WRITE_THROUGH(0);
       break;
@@ -250,6 +259,10 @@ FillTranslationTable (
       break;
     case ARM_MEMORY_REGION_ATTRIBUTE_NONSECURE_WRITE_BACK:
       Attributes = TT_DESCRIPTOR_SECTION_WRITE_BACK(1);
+      break;
+    case ARM_MEMORY_REGION_ATTRIBUTE_NONSECURE_WRITE_BACK_NONSHAREABLE:
+      Attributes = TT_DESCRIPTOR_SECTION_WRITE_BACK(1);
+      Attributes &= ~TT_DESCRIPTOR_SECTION_S_SHARED;
       break;
     case ARM_MEMORY_REGION_ATTRIBUTE_NONSECURE_WRITE_THROUGH:
       Attributes = TT_DESCRIPTOR_SECTION_WRITE_THROUGH(1);
@@ -281,8 +294,8 @@ FillTranslationTable (
       PhysicalBase += TT_DESCRIPTOR_SECTION_SIZE;
       RemainLength -= TT_DESCRIPTOR_SECTION_SIZE;
     } else {
-      PageMapLength = MIN (RemainLength, TT_DESCRIPTOR_SECTION_SIZE) -
-                      (PhysicalBase % TT_DESCRIPTOR_SECTION_SIZE);
+      PageMapLength = MIN (RemainLength, TT_DESCRIPTOR_SECTION_SIZE -
+                                         (PhysicalBase % TT_DESCRIPTOR_SECTION_SIZE));
 
       // Case: Physical address aligned on the Section Size (1MB) && the length
       //       does not fill a section
@@ -730,6 +743,10 @@ ArmSetMemoryAttributes (
   EFI_STATUS    Status;
   UINT64        ChunkLength;
   BOOLEAN       FlushTlbs;
+
+  if (BaseAddress > (UINT64)MAX_ADDRESS - Length + 1) {
+    return EFI_UNSUPPORTED;
+  }
 
   if (Length == 0) {
     return EFI_SUCCESS;

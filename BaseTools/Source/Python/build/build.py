@@ -32,6 +32,7 @@ import multiprocessing
 
 from struct import *
 from threading import *
+import threading
 from optparse import OptionParser
 from subprocess import *
 from Common import Misc as Utils
@@ -70,6 +71,43 @@ gToolsDefinition = "tools_def.txt"
 
 TemporaryTablePattern = re.compile(r'^_\d+_\d+_[a-fA-F0-9]+$')
 TmpTableDict = {}
+
+## Make a Python object persistent on file system
+#
+#   @param      Data    The object to be stored in file
+#   @param      File    The path of file to store the object
+#
+def _DataDump(Data, File):
+    Fd = None
+    try:
+        Fd = open(File, 'wb')
+        pickle.dump(Data, Fd, pickle.HIGHEST_PROTOCOL)
+    except:
+        EdkLogger.error("", FILE_OPEN_FAILURE, ExtraData=File, RaiseError=False)
+    finally:
+        if Fd is not None:
+            Fd.close()
+
+## Restore a Python object from a file
+#
+#   @param      File    The path of file stored the object
+#
+#   @retval     object  A python object
+#   @retval     None    If failure in file operation
+#
+def _DataRestore(File):
+    Data = None
+    Fd = None
+    try:
+        Fd = open(File, 'rb')
+        Data = pickle.load(Fd)
+    except Exception as e:
+        EdkLogger.verbose("Failed to load [%s]\n\t%s" % (File, str(e)))
+        Data = None
+    finally:
+        if Fd is not None:
+            Fd.close()
+    return Data
 
 ## Check environment PATH variable to make sure the specified tool is found
 #
@@ -122,64 +160,8 @@ def CheckEnvVariable():
             elif ' ' in Path:
                 EdkLogger.error("build", FORMAT_NOT_SUPPORTED, "No space is allowed in PACKAGES_PATH", ExtraData=Path)
 
-    #
-    # Check EFI_SOURCE (Edk build convention). EDK_SOURCE will always point to ECP
-    #
-    if "ECP_SOURCE" not in os.environ:
-        os.environ["ECP_SOURCE"] = mws.join(WorkspaceDir, GlobalData.gEdkCompatibilityPkg)
-    if "EFI_SOURCE" not in os.environ:
-        os.environ["EFI_SOURCE"] = os.environ["ECP_SOURCE"]
-    if "EDK_SOURCE" not in os.environ:
-        os.environ["EDK_SOURCE"] = os.environ["ECP_SOURCE"]
 
-    #
-    # Unify case of characters on case-insensitive systems
-    #
-    EfiSourceDir = os.path.normcase(os.path.normpath(os.environ["EFI_SOURCE"]))
-    EdkSourceDir = os.path.normcase(os.path.normpath(os.environ["EDK_SOURCE"]))
-    EcpSourceDir = os.path.normcase(os.path.normpath(os.environ["ECP_SOURCE"]))
-
-    os.environ["EFI_SOURCE"] = EfiSourceDir
-    os.environ["EDK_SOURCE"] = EdkSourceDir
-    os.environ["ECP_SOURCE"] = EcpSourceDir
     os.environ["EDK_TOOLS_PATH"] = os.path.normcase(os.environ["EDK_TOOLS_PATH"])
-
-    if not os.path.exists(EcpSourceDir):
-        EdkLogger.verbose("ECP_SOURCE = %s doesn't exist. Edk modules could not be built." % EcpSourceDir)
-    elif ' ' in EcpSourceDir:
-        EdkLogger.error("build", FORMAT_NOT_SUPPORTED, "No space is allowed in ECP_SOURCE path",
-                        ExtraData=EcpSourceDir)
-    if not os.path.exists(EdkSourceDir):
-        if EdkSourceDir == EcpSourceDir:
-            EdkLogger.verbose("EDK_SOURCE = %s doesn't exist. Edk modules could not be built." % EdkSourceDir)
-        else:
-            EdkLogger.error("build", PARAMETER_INVALID, "EDK_SOURCE does not exist",
-                            ExtraData=EdkSourceDir)
-    elif ' ' in EdkSourceDir:
-        EdkLogger.error("build", FORMAT_NOT_SUPPORTED, "No space is allowed in EDK_SOURCE path",
-                        ExtraData=EdkSourceDir)
-    if not os.path.exists(EfiSourceDir):
-        if EfiSourceDir == EcpSourceDir:
-            EdkLogger.verbose("EFI_SOURCE = %s doesn't exist. Edk modules could not be built." % EfiSourceDir)
-        else:
-            EdkLogger.error("build", PARAMETER_INVALID, "EFI_SOURCE does not exist",
-                            ExtraData=EfiSourceDir)
-    elif ' ' in EfiSourceDir:
-        EdkLogger.error("build", FORMAT_NOT_SUPPORTED, "No space is allowed in EFI_SOURCE path",
-                        ExtraData=EfiSourceDir)
-
-    # check those variables on single workspace case
-    if not PackagesPath:
-        # change absolute path to relative path to WORKSPACE
-        if EfiSourceDir.upper().find(WorkspaceDir.upper()) != 0:
-            EdkLogger.error("build", PARAMETER_INVALID, "EFI_SOURCE is not under WORKSPACE",
-                            ExtraData="WORKSPACE = %s\n    EFI_SOURCE = %s" % (WorkspaceDir, EfiSourceDir))
-        if EdkSourceDir.upper().find(WorkspaceDir.upper()) != 0:
-            EdkLogger.error("build", PARAMETER_INVALID, "EDK_SOURCE is not under WORKSPACE",
-                            ExtraData="WORKSPACE = %s\n    EDK_SOURCE = %s" % (WorkspaceDir, EdkSourceDir))
-        if EcpSourceDir.upper().find(WorkspaceDir.upper()) != 0:
-            EdkLogger.error("build", PARAMETER_INVALID, "ECP_SOURCE is not under WORKSPACE",
-                            ExtraData="WORKSPACE = %s\n    ECP_SOURCE = %s" % (WorkspaceDir, EcpSourceDir))
 
     # check EDK_TOOLS_PATH
     if "EDK_TOOLS_PATH" not in os.environ:
@@ -192,14 +174,8 @@ def CheckEnvVariable():
                         ExtraData="PATH")
 
     GlobalData.gWorkspace = WorkspaceDir
-    GlobalData.gEfiSource = EfiSourceDir
-    GlobalData.gEdkSource = EdkSourceDir
-    GlobalData.gEcpSource = EcpSourceDir
 
     GlobalData.gGlobalDefines["WORKSPACE"]  = WorkspaceDir
-    GlobalData.gGlobalDefines["EFI_SOURCE"] = EfiSourceDir
-    GlobalData.gGlobalDefines["EDK_SOURCE"] = EdkSourceDir
-    GlobalData.gGlobalDefines["ECP_SOURCE"] = EcpSourceDir
     GlobalData.gGlobalDefines["EDK_TOOLS_PATH"] = os.environ["EDK_TOOLS_PATH"]
 
 ## Get normalized file path
@@ -848,9 +824,6 @@ class Build():
         if "PACKAGES_PATH" in os.environ:
             # WORKSPACE env has been converted before. Print the same path style with WORKSPACE env.
             EdkLogger.quiet("%-16s = %s" % ("PACKAGES_PATH", os.path.normcase(os.path.normpath(os.environ["PACKAGES_PATH"]))))
-        EdkLogger.quiet("%-16s = %s" % ("ECP_SOURCE", os.environ["ECP_SOURCE"]))
-        EdkLogger.quiet("%-16s = %s" % ("EDK_SOURCE", os.environ["EDK_SOURCE"]))
-        EdkLogger.quiet("%-16s = %s" % ("EFI_SOURCE", os.environ["EFI_SOURCE"]))
         EdkLogger.quiet("%-16s = %s" % ("EDK_TOOLS_PATH", os.environ["EDK_TOOLS_PATH"]))
         if "EDK_TOOLS_BIN" in os.environ:
             # Print the same path style with WORKSPACE env.
@@ -1463,11 +1436,7 @@ class Build():
                             Name = StrList[1]
                             RelativeAddress = int (StrList[2], 16) - OrigImageBaseAddress
                             FunctionList.append ((Name, RelativeAddress))
-                            if ModuleInfo.Arch == 'IPF' and Name.endswith('_ModuleEntryPoint'):
-                                #
-                                # Get the real entry point address for IPF image.
-                                #
-                                ModuleInfo.Image.EntryPoint = RelativeAddress
+
                 ImageMap.close()
             #
             # Add general information.
@@ -1565,9 +1534,6 @@ class Build():
         RtSize  = 0
         # reserve 4K size in SMRAM to make SMM module address not from 0.
         SmmSize = 0x1000
-        IsIpfPlatform = False
-        if 'IPF' in self.ArchList:
-            IsIpfPlatform = True
         for ModuleGuid in ModuleList:
             Module = ModuleList[ModuleGuid]
             GlobalData.gProcessingFile = "%s [%s, %s, %s]" % (Module.MetaFile, Module.Arch, Module.ToolChain, Module.BuildTarget)
@@ -1591,9 +1557,6 @@ class Build():
                         BtSize += ImageInfo.Image.Size
                     elif Module.ModuleType in [SUP_MODULE_DXE_RUNTIME_DRIVER, EDK_COMPONENT_TYPE_RT_DRIVER, SUP_MODULE_DXE_SAL_DRIVER, EDK_COMPONENT_TYPE_SAL_RT_DRIVER]:
                         RtModuleList[Module.MetaFile] = ImageInfo
-                        #IPF runtime driver needs to be at 2 page alignment.
-                        if IsIpfPlatform and ImageInfo.Image.Size % 0x2000 != 0:
-                            ImageInfo.Image.Size = (ImageInfo.Image.Size / 0x2000 + 1) * 0x2000
                         RtSize += ImageInfo.Image.Size
                     elif Module.ModuleType in [SUP_MODULE_SMM_CORE, SUP_MODULE_DXE_SMM_DRIVER, SUP_MODULE_MM_STANDALONE, SUP_MODULE_MM_CORE_STANDALONE]:
                         SmmModuleList[Module.MetaFile] = ImageInfo
@@ -1640,10 +1603,6 @@ class Build():
             TopMemoryAddress = self.LoadFixAddress
             if TopMemoryAddress < RtSize + BtSize + PeiSize:
                 EdkLogger.error("build", PARAMETER_INVALID, "FIX_LOAD_TOP_MEMORY_ADDRESS is too low to load driver")
-            # Make IPF runtime driver at 2 page alignment.
-            if IsIpfPlatform:
-                ReservedRuntimeMemorySize = TopMemoryAddress % 0x2000
-                RtSize = RtSize + ReservedRuntimeMemorySize
 
         #
         # Patch FixAddress related PCDs into EFI image
@@ -2242,19 +2201,19 @@ class Build():
     def DumpBuildData(self):
         CacheDirectory = os.path.dirname(GlobalData.gDatabasePath)
         Utils.CreateDirectory(CacheDirectory)
-        Utils.DataDump(Utils.gFileTimeStampCache, os.path.join(CacheDirectory, "gFileTimeStampCache"))
-        Utils.DataDump(Utils.gDependencyDatabase, os.path.join(CacheDirectory, "gDependencyDatabase"))
+        Utils._DataDump(Utils.gFileTimeStampCache, os.path.join(CacheDirectory, "gFileTimeStampCache"))
+        Utils._DataDump(Utils.gDependencyDatabase, os.path.join(CacheDirectory, "gDependencyDatabase"))
 
     def RestoreBuildData(self):
         FilePath = os.path.join(os.path.dirname(GlobalData.gDatabasePath), "gFileTimeStampCache")
         if Utils.gFileTimeStampCache == {} and os.path.isfile(FilePath):
-            Utils.gFileTimeStampCache = Utils.DataRestore(FilePath)
+            Utils.gFileTimeStampCache = Utils._DataRestore(FilePath)
             if Utils.gFileTimeStampCache is None:
                 Utils.gFileTimeStampCache = {}
 
         FilePath = os.path.join(os.path.dirname(GlobalData.gDatabasePath), "gDependencyDatabase")
         if Utils.gDependencyDatabase == {} and os.path.isfile(FilePath):
-            Utils.gDependencyDatabase = Utils.DataRestore(FilePath)
+            Utils.gDependencyDatabase = Utils._DataRestore(FilePath)
             if Utils.gDependencyDatabase is None:
                 Utils.gDependencyDatabase = {}
 
@@ -2303,8 +2262,8 @@ def LogBuildTime(Time):
 #
 def MyOptionParser():
     Parser = OptionParser(description=__copyright__, version=__version__, prog="build.exe", usage="%prog [options] [all|fds|genc|genmake|clean|cleanall|cleanlib|modules|libraries|run]")
-    Parser.add_option("-a", "--arch", action="append", type="choice", choices=['IA32', 'X64', 'IPF', 'EBC', 'ARM', 'AARCH64'], dest="TargetArch",
-        help="ARCHS is one of list: IA32, X64, IPF, ARM, AARCH64 or EBC, which overrides target.txt's TARGET_ARCH definition. To specify more archs, please repeat this option.")
+    Parser.add_option("-a", "--arch", action="append", type="choice", choices=['IA32', 'X64', 'EBC', 'ARM', 'AARCH64'], dest="TargetArch",
+        help="ARCHS is one of list: IA32, X64, ARM, AARCH64 or EBC, which overrides target.txt's TARGET_ARCH definition. To specify more archs, please repeat this option.")
     Parser.add_option("-p", "--platform", action="callback", type="string", dest="PlatformFile", callback=SingleCheckCallback,
         help="Build the platform specified by the DSC file name argument, overriding target.txt's ACTIVE_PLATFORM definition.")
     Parser.add_option("-m", "--module", action="callback", type="string", dest="ModuleFile", callback=SingleCheckCallback,

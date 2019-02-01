@@ -1,7 +1,7 @@
 ## @file
 # This file is used to create a database used by build tool
 #
-# Copyright (c) 2008 - 2018, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2008 - 2019, Intel Corporation. All rights reserved.<BR>
 # (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
@@ -43,6 +43,22 @@ from Common.Misc import SaveFileOnChange
 from Workspace.BuildClassObject import PlatformBuildClassObject, StructurePcd, PcdClassObject, ModuleBuildClassObject
 from collections import OrderedDict, defaultdict
 from .BuildClassObject import ArrayIndex
+
+def _IsFieldValueAnArray (Value):
+    Value = Value.strip()
+    if Value.startswith(TAB_GUID) and Value.endswith(')'):
+        return True
+    if Value.startswith('L"') and Value.endswith('"')  and len(list(Value[2:-1])) > 1:
+        return True
+    if Value[0] == '"' and Value[-1] == '"' and len(list(Value[1:-1])) > 1:
+        return True
+    if Value[0] == '{' and Value[-1] == '}':
+        return True
+    if Value.startswith("L'") and Value.endswith("'") and len(list(Value[2:-1])) > 1:
+        return True
+    if Value[0] == "'" and Value[-1] == "'" and len(list(Value[1:-1])) > 1:
+        return True
+    return False
 
 PcdValueInitName = 'PcdValueInit'
 
@@ -706,19 +722,29 @@ class DscBuildData(PlatformBuildClassObject):
             GlobalData.gDefaultStores = sorted(self.DefaultStores.keys())
         return self.DefaultStores
 
+    def OverrideDuplicateModule(self):
+        RecordList = self._RawData[MODEL_META_DATA_COMPONENT, self._Arch]
+        Macros = self._Macros
+        Components = {}
+        for Record in RecordList:
+            ModuleId = Record[6]
+            file_guid = self._RawData[MODEL_META_DATA_HEADER, self._Arch, None, ModuleId]
+            file_guid_str = file_guid[0][2] if file_guid else "NULL"
+            ModuleFile = PathClass(NormPath(Record[0], Macros), GlobalData.gWorkspace, Arch=self._Arch)
+            if self._Arch != TAB_ARCH_COMMON and (file_guid_str,str(ModuleFile)) in Components:
+                self._RawData.DisableOverrideComponent(Components[(file_guid_str,str(ModuleFile))])
+            Components[(file_guid_str,str(ModuleFile))] = ModuleId
+        self._RawData._PostProcessed = False
     ## Retrieve [Components] section information
     @property
     def Modules(self):
         if self._Modules is not None:
             return self._Modules
-
+        self.OverrideDuplicateModule()
         self._Modules = OrderedDict()
         RecordList = self._RawData[MODEL_META_DATA_COMPONENT, self._Arch]
         Macros = self._Macros
-        Macros["EDK_SOURCE"] = GlobalData.gEcpSource
         for Record in RecordList:
-            DuplicatedFile = False
-
             ModuleFile = PathClass(NormPath(Record[0], Macros), GlobalData.gWorkspace, Arch=self._Arch)
             ModuleId = Record[6]
             LineNo = Record[7]
@@ -728,10 +754,6 @@ class DscBuildData(PlatformBuildClassObject):
             if ErrorCode != 0:
                 EdkLogger.error('build', ErrorCode, File=self.MetaFile, Line=LineNo,
                                 ExtraData=ErrorInfo)
-            # Check duplication
-            # If arch is COMMON, no duplicate module is checked since all modules in all component sections are selected
-            if self._Arch != TAB_ARCH_COMMON and ModuleFile in self._Modules:
-                DuplicatedFile = True
 
             Module = ModuleBuildClassObject()
             Module.MetaFile = ModuleFile
@@ -794,8 +816,6 @@ class DscBuildData(PlatformBuildClassObject):
                     Module.BuildOptions[ToolChainFamily, ToolChain] = OptionString + " " + Option
 
             RecordList = self._RawData[MODEL_META_DATA_HEADER, self._Arch, None, ModuleId]
-            if DuplicatedFile and not RecordList:
-                EdkLogger.error('build', FILE_DUPLICATED, File=self.MetaFile, ExtraData=str(ModuleFile), Line=LineNo)
             if RecordList:
                 if len(RecordList) != 1:
                     EdkLogger.error('build', OPTION_UNKNOWN, 'Only FILE_GUID can be listed in <Defines> section.',
@@ -858,8 +878,6 @@ class DscBuildData(PlatformBuildClassObject):
                         continue
                     self._LibraryClasses[LibraryClass, ModuleType] = LibraryInstance
 
-            # for Edk style library instances, which are listed in different section
-            Macros["EDK_SOURCE"] = GlobalData.gEcpSource
             RecordList = self._RawData[MODEL_EFI_LIBRARY_INSTANCE, self._Arch]
             for Record in RecordList:
                 File = PathClass(NormPath(Record[0], Macros), GlobalData.gWorkspace, Arch=self._Arch)
@@ -1105,7 +1123,7 @@ class DscBuildData(PlatformBuildClassObject):
             IsArray = False
             TokenCName += '.' + FieldName
         if PcdValue.startswith('H'):
-            if FieldName and IsFieldValueAnArray(PcdValue[1:]):
+            if FieldName and _IsFieldValueAnArray(PcdValue[1:]):
                 PcdDatumType = TAB_VOID
                 IsArray = True
             if FieldName and not IsArray:
@@ -1116,7 +1134,7 @@ class DscBuildData(PlatformBuildClassObject):
                 EdkLogger.error('Parser', FORMAT_INVALID, 'PCD [%s.%s] Value "%s",  %s' %
                                 (TokenSpaceGuidCName, TokenCName, PcdValue, Value))
         elif PcdValue.startswith("L'") or PcdValue.startswith("'"):
-            if FieldName and IsFieldValueAnArray(PcdValue):
+            if FieldName and _IsFieldValueAnArray(PcdValue):
                 PcdDatumType = TAB_VOID
                 IsArray = True
             if FieldName and not IsArray:
@@ -1128,7 +1146,7 @@ class DscBuildData(PlatformBuildClassObject):
                                 (TokenSpaceGuidCName, TokenCName, PcdValue, Value))
         elif PcdValue.startswith('L'):
             PcdValue = 'L"' + PcdValue[1:] + '"'
-            if FieldName and IsFieldValueAnArray(PcdValue):
+            if FieldName and _IsFieldValueAnArray(PcdValue):
                 PcdDatumType = TAB_VOID
                 IsArray = True
             if FieldName and not IsArray:
@@ -1157,7 +1175,7 @@ class DscBuildData(PlatformBuildClassObject):
                     Num = int(PcdValue, Base)
                 except:
                     PcdValue = '"' + PcdValue + '"'
-                if IsFieldValueAnArray(PcdValue):
+                if _IsFieldValueAnArray(PcdValue):
                     PcdDatumType = TAB_VOID
                     IsArray = True
                 if not IsArray:
@@ -1762,7 +1780,7 @@ class DscBuildData(PlatformBuildClassObject):
                 continue
             for FieldName in FieldList:
                 FieldName = "." + FieldName
-                IsArray = IsFieldValueAnArray(FieldList[FieldName.strip(".")][0])
+                IsArray = _IsFieldValueAnArray(FieldList[FieldName.strip(".")][0])
                 if IsArray and not (FieldList[FieldName.strip(".")][0].startswith('{GUID') and FieldList[FieldName.strip(".")][0].endswith('}')):
                     try:
                         Value = ValueExpressionEx(FieldList[FieldName.strip(".")][0], TAB_VOID, self._GuidDict)(True)
@@ -1793,7 +1811,7 @@ class DscBuildData(PlatformBuildClassObject):
                             continue
                         for FieldName in FieldList:
                             FieldName = "." + FieldName
-                            IsArray = IsFieldValueAnArray(FieldList[FieldName.strip(".")][0])
+                            IsArray = _IsFieldValueAnArray(FieldList[FieldName.strip(".")][0])
                             if IsArray and not (FieldList[FieldName.strip(".")][0].startswith('{GUID') and FieldList[FieldName.strip(".")][0].endswith('}')):
                                 try:
                                     Value = ValueExpressionEx(FieldList[FieldName.strip(".")][0], TAB_VOID, self._GuidDict)(True)
@@ -1817,7 +1835,7 @@ class DscBuildData(PlatformBuildClassObject):
             CApp = CApp + "// From fdf \n"
         for FieldName in Pcd.PcdFieldValueFromFdf:
             FieldName = "." + FieldName
-            IsArray = IsFieldValueAnArray(Pcd.PcdFieldValueFromFdf[FieldName.strip(".")][0])
+            IsArray = _IsFieldValueAnArray(Pcd.PcdFieldValueFromFdf[FieldName.strip(".")][0])
             if IsArray and not (Pcd.PcdFieldValueFromFdf[FieldName.strip(".")][0].startswith('{GUID') and Pcd.PcdFieldValueFromFdf[FieldName.strip(".")][0].endswith('}')):
                 try:
                     Value = ValueExpressionEx(Pcd.PcdFieldValueFromFdf[FieldName.strip(".")][0], TAB_VOID, self._GuidDict)(True)
@@ -1841,7 +1859,7 @@ class DscBuildData(PlatformBuildClassObject):
             CApp = CApp + "// From Command Line \n"
         for FieldName in Pcd.PcdFieldValueFromComm:
             FieldName = "." + FieldName
-            IsArray = IsFieldValueAnArray(Pcd.PcdFieldValueFromComm[FieldName.strip(".")][0])
+            IsArray = _IsFieldValueAnArray(Pcd.PcdFieldValueFromComm[FieldName.strip(".")][0])
             if IsArray and not (Pcd.PcdFieldValueFromComm[FieldName.strip(".")][0].startswith('{GUID') and Pcd.PcdFieldValueFromComm[FieldName.strip(".")][0].endswith('}')):
                 try:
                     Value = ValueExpressionEx(Pcd.PcdFieldValueFromComm[FieldName.strip(".")][0], TAB_VOID, self._GuidDict)(True)
@@ -1943,7 +1961,7 @@ class DscBuildData(PlatformBuildClassObject):
         CApp = CApp + '  UINT32  FieldSize;\n'
         CApp = CApp + '  CHAR8   *Value;\n'
         DefaultValueFromDec = Pcd.DefaultValueFromDec
-        IsArray = IsFieldValueAnArray(Pcd.DefaultValueFromDec)
+        IsArray = _IsFieldValueAnArray(Pcd.DefaultValueFromDec)
         if IsArray:
             try:
                 DefaultValueFromDec = ValueExpressionEx(Pcd.DefaultValueFromDec, TAB_VOID)(True)
@@ -1968,7 +1986,7 @@ class DscBuildData(PlatformBuildClassObject):
             if not FieldList:
                 continue
             for FieldName in FieldList:
-                IsArray = IsFieldValueAnArray(FieldList[FieldName][0])
+                IsArray = _IsFieldValueAnArray(FieldList[FieldName][0])
                 if IsArray:
                     try:
                         FieldList[FieldName][0] = ValueExpressionEx(FieldList[FieldName][0], TAB_VOID, self._GuidDict)(True)
@@ -2032,7 +2050,7 @@ class DscBuildData(PlatformBuildClassObject):
         pcddefaultvalue = self.GetPcdDscRawDefaultValue(Pcd, SkuName, DefaultStoreName)
         if pcddefaultvalue:
             FieldList = pcddefaultvalue
-            IsArray = IsFieldValueAnArray(FieldList)
+            IsArray = _IsFieldValueAnArray(FieldList)
             if IsArray:
                 if "{CODE(" not in FieldList:
                     try:
@@ -2083,7 +2101,7 @@ class DscBuildData(PlatformBuildClassObject):
             if (SkuName, DefaultStoreName) == (TAB_DEFAULT, TAB_DEFAULT_STORES_DEFAULT) or (( (SkuName, '') not in Pcd.ValueChain) and ( (SkuName, DefaultStoreName) not in Pcd.ValueChain )):
                 for FieldName in FieldList:
                     indicator = self.GetIndicator(index, FieldName,Pcd)
-                    IsArray = IsFieldValueAnArray(FieldList[FieldName][0])
+                    IsArray = _IsFieldValueAnArray(FieldList[FieldName][0])
                     if IsArray:
                         try:
                             FieldList[FieldName][0] = ValueExpressionEx(FieldList[FieldName][0], TAB_VOID, self._GuidDict)(True)
@@ -2132,7 +2150,7 @@ class DscBuildData(PlatformBuildClassObject):
             if not FieldList:
                 continue
             if pcddefaultvalue and FieldList == pcddefaultvalue:
-                IsArray = IsFieldValueAnArray(FieldList)
+                IsArray = _IsFieldValueAnArray(FieldList)
                 if IsArray:
                     try:
                         FieldList = ValueExpressionEx(FieldList, TAB_VOID)(True)
@@ -2151,7 +2169,7 @@ class DscBuildData(PlatformBuildClassObject):
                     CApp = CApp + '  memcpy (Pcd, Value, %d);\n' % (ValueSize)
                 continue
             for FieldName in FieldList:
-                IsArray = IsFieldValueAnArray(FieldList[FieldName][0])
+                IsArray = _IsFieldValueAnArray(FieldList[FieldName][0])
                 if IsArray:
                     try:
                         FieldList[FieldName][0] = ValueExpressionEx(FieldList[FieldName][0], TAB_VOID, self._GuidDict)(True)
@@ -2200,7 +2218,7 @@ class DscBuildData(PlatformBuildClassObject):
             if not FieldList:
                 continue
             if pcddefaultvalue and FieldList == pcddefaultvalue:
-                IsArray = IsFieldValueAnArray(FieldList)
+                IsArray = _IsFieldValueAnArray(FieldList)
                 if IsArray:
                     try:
                         FieldList = ValueExpressionEx(FieldList, TAB_VOID)(True)
@@ -2219,7 +2237,7 @@ class DscBuildData(PlatformBuildClassObject):
                     CApp = CApp + '  memcpy (Pcd, Value, %d);\n' % (ValueSize)
                 continue
             for FieldName in FieldList:
-                IsArray = IsFieldValueAnArray(FieldList[FieldName][0])
+                IsArray = _IsFieldValueAnArray(FieldList[FieldName][0])
                 if IsArray:
                     try:
                         FieldList[FieldName][0] = ValueExpressionEx(FieldList[FieldName][0], TAB_VOID, self._GuidDict)(True)
