@@ -1,7 +1,7 @@
 /** @file
   The driver binding and service binding protocol for IP6 driver.
 
-  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2019, Intel Corporation. All rights reserved.<BR>
   (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
 
   This program and the accompanying materials
@@ -564,7 +564,7 @@ Ip6DriverBindingStart (
                   NULL
                   );
   if (EFI_ERROR (Status)) {
-    goto ON_ERROR;
+    goto FREE_SERVICE;
   }
 
   //
@@ -573,7 +573,7 @@ Ip6DriverBindingStart (
   //
   Status = Ip6ConfigReadConfigData (IpSb->MacString, &IpSb->Ip6ConfigInstance);
   if (EFI_ERROR (Status)) {
-    goto ON_ERROR;
+    goto UNINSTALL_PROTOCOL;
   }
 
   //
@@ -587,8 +587,17 @@ Ip6DriverBindingStart (
                        DataItem->DataSize,
                        DataItem->Data.Ptr
                        );
-    if (EFI_ERROR(Status) && Status != EFI_NOT_READY) {
-      goto ON_ERROR;
+    if (Status == EFI_INVALID_PARAMETER || Status == EFI_BAD_BUFFER_SIZE) {
+      //
+      // Clean the invalid ManualAddress configuration.
+      //
+      Status = Ip6Cfg->SetData (
+                         Ip6Cfg,
+                         Ip6ConfigDataTypeManualAddress,
+                         0,
+                         NULL
+                         );
+      DEBUG ((EFI_D_WARN, "Ip6DriverBindingStart: Clean the invalid ManualAddress configuration.\n"));
     }
   }
 
@@ -603,8 +612,17 @@ Ip6DriverBindingStart (
                        DataItem->DataSize,
                        DataItem->Data.Ptr
                        );
-    if (EFI_ERROR(Status)) {
-      goto ON_ERROR;
+    if (Status == EFI_INVALID_PARAMETER || Status == EFI_BAD_BUFFER_SIZE) {
+      //
+      // Clean the invalid Gateway configuration.
+      //
+      Status = Ip6Cfg->SetData (
+                         Ip6Cfg,
+                         Ip6ConfigDataTypeGateway,
+                         0,
+                         NULL
+                         );
+      DEBUG ((EFI_D_WARN, "Ip6DriverBindingStart: Clean the invalid Gateway configuration.\n"));
     }
   }
 
@@ -613,7 +631,7 @@ Ip6DriverBindingStart (
   //
   Status = Ip6ReceiveFrame (Ip6AcceptFrame, IpSb);
   if (EFI_ERROR (Status)) {
-    goto ON_ERROR;
+    goto UNINSTALL_PROTOCOL;
   }
 
   //
@@ -625,7 +643,7 @@ Ip6DriverBindingStart (
                   TICKS_PER_MS * IP6_TIMER_INTERVAL_IN_MS
                   );
   if (EFI_ERROR (Status)) {
-    goto ON_ERROR;
+    goto UNINSTALL_PROTOCOL;
   }
 
   //
@@ -637,7 +655,7 @@ Ip6DriverBindingStart (
                   TICKS_PER_MS * IP6_ONE_SECOND_IN_MS
                   );
   if (EFI_ERROR (Status)) {
-    goto ON_ERROR;
+    goto UNINSTALL_PROTOCOL;
   }
 
   //
@@ -647,7 +665,17 @@ Ip6DriverBindingStart (
 
   return EFI_SUCCESS;
 
-ON_ERROR:
+UNINSTALL_PROTOCOL:
+  gBS->UninstallMultipleProtocolInterfaces (
+         ControllerHandle,
+         &gEfiIp6ServiceBindingProtocolGuid,
+         &IpSb->ServiceBinding,
+         &gEfiIp6ConfigProtocolGuid,
+         Ip6Cfg,
+         NULL
+         );
+
+FREE_SERVICE:
   Ip6CleanService (IpSb);
   FreePool (IpSb);
   return Status;

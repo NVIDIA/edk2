@@ -151,8 +151,13 @@ DumpAllEfiSysPartition (
   UINTN                      NumberEfiSystemPartitions;
   EFI_SHELL_PROTOCOL         *ShellProtocol;
 
-  ShellProtocol = GetShellProtocol ();
   NumberEfiSystemPartitions = 0;
+
+  ShellProtocol = GetShellProtocol ();
+  if (ShellProtocol == NULL) {
+    Print (L"Get Shell Protocol Fail\n");;
+    return ;
+  }
 
   Print (L"EFI System Partition list:\n");
 
@@ -421,7 +426,13 @@ GetUpdateFileSystem (
   EFI_BOOT_MANAGER_LOAD_OPTION    NewOption;
 
   MappedDevicePath = NULL;
+  BootOptionBuffer = NULL;
+
   ShellProtocol = GetShellProtocol ();
+  if (ShellProtocol == NULL) {
+    Print (L"Get Shell Protocol Fail\n");;
+    return EFI_NOT_FOUND;
+  }
 
   //
   // 1. If Fs is not assigned and there are capsule provisioned before,
@@ -434,7 +445,10 @@ GetUpdateFileSystem (
                (VOID **)&BootNextData,
                NULL
                );
-    if (!EFI_ERROR (Status)) {
+    if (EFI_ERROR (Status) || BootNextData == NULL) {
+      Print (L"Get Boot Next Data Fail. Status = %r\n", Status);
+      return EFI_NOT_FOUND;
+    } else {
       UnicodeSPrint (BootOptionName, sizeof (BootOptionName), L"Boot%04x", *BootNextData);
       Status = EfiBootManagerVariableToLoadOption (BootOptionName, &BootNextOption);
       if (!EFI_ERROR (Status)) {
@@ -468,7 +482,9 @@ GetUpdateFileSystem (
   // 2. Get EFI system partition form boot options.
   //
   BootOptionBuffer = EfiBootManagerGetLoadOptions (&BootOptionCount, LoadOptionTypeBoot);
-  if (BootOptionCount == 0 && Map == NULL) {
+  if ( (BootOptionBuffer == NULL) ||
+       (BootOptionCount == 0 && Map == NULL)
+     ) {
     return EFI_NOT_FOUND;
   }
 

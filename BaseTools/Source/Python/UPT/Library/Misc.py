@@ -1,7 +1,7 @@
 ## @file
 # Common routines used by all tools
 #
-# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2019, Intel Corporation. All rights reserved.<BR>
 #
 # This program and the accompanying materials are licensed and made available
 # under the terms and conditions of the BSD License which accompanies this
@@ -32,7 +32,7 @@ from os import linesep
 from os import walk
 from os import environ
 import re
-from collections import OrderedDict
+from collections import OrderedDict as Sdict
 
 import Logger.Log as Logger
 from Logger import StringTable as ST
@@ -788,7 +788,7 @@ def GetLibInstanceInfo(String, WorkSpace, LineNo):
     FileGuidString = ""
     VerString = ""
 
-    OrignalString = String
+    OriginalString = String
     String = String.strip()
     if not String:
         return None, None
@@ -808,7 +808,7 @@ def GetLibInstanceInfo(String, WorkSpace, LineNo):
                      ST.ERR_FILELIST_EXIST % (String),
                      File=GlobalData.gINF_MODULE_NAME,
                      Line=LineNo,
-                     ExtraData=OrignalString)
+                     ExtraData=OriginalString)
 
     #
     # Validate file exist/format.
@@ -821,7 +821,7 @@ def GetLibInstanceInfo(String, WorkSpace, LineNo):
                      ST.ERR_INF_PARSER_FILE_NOT_EXIST_OR_NAME_INVALID % (String),
                      File=GlobalData.gINF_MODULE_NAME,
                      Line=LineNo,
-                     ExtraData=OrignalString)
+                     ExtraData=OriginalString)
         return False
     if IsValidFileFlag:
         FileLinesList = []
@@ -973,7 +973,7 @@ def ValidateUNIFilePath(Path):
                         ExtraData=Path)
 
     #
-    # Check if '..' in the file name(without suffixe)
+    # Check if '..' in the file name(without suffix)
     #
     if (TAB_SPLIT + TAB_SPLIT) in Path:
         Logger.Error("Unicode File Parser",

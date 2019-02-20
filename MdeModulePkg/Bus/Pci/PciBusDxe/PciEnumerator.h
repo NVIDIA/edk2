@@ -1,7 +1,7 @@
 /** @file
   PCI bus enumeration logic function declaration for PCI bus module.
 
-Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
 This program and the accompanying materials
 are licensed and made available under the terms and conditions of the BSD License
 which accompanies this distribution.  The full text of the license may be found at
@@ -109,7 +109,7 @@ DetermineRootBridgeAttributes (
   @return Max size of option rom needed.
 
 **/
-UINT64
+UINT32
 GetMaxOptionRomSize (
   IN PCI_IO_DEVICE   *Bridge
   );
@@ -442,8 +442,8 @@ NotifyPhase (
   @retval EFI_INVALID_PARAMETER    Phase is not a valid phase that is defined in
                                    EFI_PCI_CONTROLLER_RESOURCE_ALLOCATION_PHASE.
   @retval EFI_DEVICE_ERROR         Programming failed due to a hardware error. The PCI enumerator should
-                                    not enumerate this device, including its child devices if it is a PCI-to-PCI
-                                    bridge.
+                                   not enumerate this device, including its child devices if it is a PCI-to-PCI
+                                   bridge.
 
 **/
 EFI_STATUS

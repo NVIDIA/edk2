@@ -149,7 +149,7 @@ def ByteArrayForamt(Value):
     IsByteArray = False
     SplitNum = 16
     ArrayList = []
-    if Value.startswith('{') and Value.endswith('}'):
+    if Value.startswith('{') and Value.endswith('}') and not Value.startswith("{CODE("):
         Value = Value[1:-1]
         ValueList = Value.split(',')
         if len(ValueList) >= SplitNum:
@@ -780,6 +780,13 @@ class PcdReport(object):
             # Collect the PCD defined in DSC/FDF file, but not used in module
             #
             UnusedPcdFullList = []
+            StructPcdDict = GlobalData.gStructurePcd.get(self.Arch, collections.OrderedDict())
+            for Name, Guid in StructPcdDict:
+                if (Name, Guid) not in Pa.Platform.Pcds:
+                    Pcd = StructPcdDict[(Name, Guid)]
+                    PcdList = self.AllPcds.setdefault(Guid, {}).setdefault(Pcd.Type, [])
+                    if Pcd not in PcdList and Pcd not in UnusedPcdFullList:
+                        UnusedPcdFullList.append(Pcd)
             for item in Pa.Platform.Pcds:
                 Pcd = Pa.Platform.Pcds[item]
                 if not Pcd.Type:
@@ -1111,20 +1118,13 @@ class PcdReport(object):
                                     SkuList = sorted(Pcd.SkuInfoList.keys())
                                     for Sku in SkuList:
                                         SkuInfo = Pcd.SkuInfoList[Sku]
-                                        if TypeName in ('DYNHII', 'DEXHII'):
-                                            if SkuInfo.DefaultStoreDict:
-                                                DefaultStoreList = sorted(SkuInfo.DefaultStoreDict.keys())
-                                                for DefaultStore in DefaultStoreList:
-                                                    OverrideValues = Pcd.SkuOverrideValues[Sku]
-                                                    DscOverride = self.ParseStruct(OverrideValues[DefaultStore])
-                                                    if DscOverride:
-                                                        break
-                                        else:
-                                            OverrideValues = Pcd.SkuOverrideValues[Sku]
-                                            if OverrideValues:
-                                                Keys = list(OverrideValues.keys())
-                                                OverrideFieldStruct = self.OverrideFieldValue(Pcd, OverrideValues[Keys[0]])
-                                                DscOverride = self.ParseStruct(OverrideFieldStruct)
+                                        if SkuInfo.DefaultStoreDict:
+                                            DefaultStoreList = sorted(SkuInfo.DefaultStoreDict.keys())
+                                            for DefaultStore in DefaultStoreList:
+                                                OverrideValues = Pcd.SkuOverrideValues[Sku]
+                                                DscOverride = self.ParseStruct(OverrideValues[DefaultStore])
+                                                if DscOverride:
+                                                    break
                                         if DscOverride:
                                             break
                         if DscOverride:
@@ -1288,7 +1288,10 @@ class PcdReport(object):
                 FileWrite(File, ' %-*s   : %6s %10s = %s' % (self.MaxLen, Flag + ' ' + PcdTokenCName, TypeName, '(' + Pcd.DatumType + ')', Value))
             if IsStructure:
                 FiledOverrideFlag = False
-                OverrideValues = Pcd.SkuOverrideValues
+                if (Pcd.TokenCName,Pcd.TokenSpaceGuidCName) in GlobalData.gPcdSkuOverrides:
+                    OverrideValues = GlobalData.gPcdSkuOverrides[(Pcd.TokenCName,Pcd.TokenSpaceGuidCName)]
+                else:
+                    OverrideValues = Pcd.SkuOverrideValues
                 if OverrideValues:
                     for Data in OverrideValues.values():
                         Struct = list(Data.values())
@@ -1645,14 +1648,14 @@ class PredictionReport(object):
         GuidList = os.path.join(self._EotDir, "GuidList.txt")
         DispatchList = os.path.join(self._EotDir, "Dispatch.txt")
 
-        TempFile = open(SourceList, "w+")
+        TempFile = []
         for Item in self._SourceList:
             FileWrite(TempFile, Item)
-        TempFile.close()
-        TempFile = open(GuidList, "w+")
+        SaveFileOnChange(SourceList, "".join(TempFile), False)
+        TempFile = []
         for Key in self._GuidMap:
             FileWrite(TempFile, "%s %s" % (Key, self._GuidMap[Key]))
-        TempFile.close()
+        SaveFileOnChange(GuidList, "".join(TempFile), False)
 
         try:
             from Eot.EotMain import Eot

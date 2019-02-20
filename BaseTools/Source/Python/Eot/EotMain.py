@@ -21,7 +21,8 @@ import Eot.EotGlobalData as EotGlobalData
 from optparse import OptionParser
 from Common.StringUtils import NormPath
 from Common import BuildToolError
-from Common.Misc import GuidStructureStringToGuidString, sdict
+from Common.Misc import GuidStructureStringToGuidString
+from collections import OrderedDict as sdict
 from Eot.Parser import *
 from Eot.InfParserLite import EdkInfParser
 from Common.StringUtils import GetSplitValueList
@@ -1514,7 +1515,7 @@ class Eot(object):
                             % (Identifier, '.NotifyPpi', '->NotifyPpi', MODEL_IDENTIFIER_FUNCTION_CALLING)
             SearchPpi(SqlCommand, Identifier, SourceFileID, SourceFileFullPath, ItemMode)
 
-            # Find Procotols
+            # Find Protocols
             ItemMode = 'Produced'
             SqlCommand = """select Value, Name, BelongsToFile, StartLine, EndLine from %s
                             where (Name like '%%%s%%' or Name like '%%%s%%' or Name like '%%%s%%' or Name like '%%%s%%') and Model = %s""" \

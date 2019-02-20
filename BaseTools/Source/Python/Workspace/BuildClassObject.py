@@ -176,7 +176,7 @@ class PcdClassObject(object):
     ## Convert the class to a string
     #
     #  Convert each member of the class to string
-    #  Organize to a signle line format string
+    #  Organize to a single line format string
     #
     #  @retval Rtn Formatted String
     #
@@ -222,6 +222,7 @@ class PcdClassObject(object):
         new_pcd.DefaultValue = self.DefaultValue
         new_pcd.TokenValue = self.TokenValue
         new_pcd.MaxDatumSize = self.MaxDatumSize
+        new_pcd.MaxSizeUserSet = self.MaxSizeUserSet
 
         new_pcd.Phase = self.Phase
         new_pcd.Pending = self.Pending
@@ -270,6 +271,7 @@ class StructurePcd(PcdClassObject):
         self.ValueChain = set()
         self.PcdFieldValueFromComm = OrderedDict()
         self.PcdFieldValueFromFdf = OrderedDict()
+        self.DefaultFromDSC=None
     def __repr__(self):
         return self.TypeName
 
@@ -326,7 +328,6 @@ class StructurePcd(PcdClassObject):
             self.PackageDecs = PcdObject.PackageDecs if PcdObject.PackageDecs else self.PackageDecs
             self.DefaultValues = PcdObject.DefaultValues if PcdObject.DefaultValues else self.DefaultValues
             self.PcdMode = PcdObject.PcdMode if PcdObject.PcdMode else self.PcdMode
-            self.DefaultFromDSC=None
             self.DefaultValueFromDec = PcdObject.DefaultValueFromDec if PcdObject.DefaultValueFromDec else self.DefaultValueFromDec
             self.SkuOverrideValues = PcdObject.SkuOverrideValues if PcdObject.SkuOverrideValues else self.SkuOverrideValues
             self.StructName = PcdObject.DatumType if PcdObject.DatumType else self.StructName

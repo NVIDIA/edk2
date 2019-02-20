@@ -187,6 +187,7 @@ typedef struct {
 #define SD_MMC_HC_V4_EN               BIT12
 #define SD_MMC_HC_64_ADDR_EN          BIT13
 #define SD_MMC_HC_26_DATA_LEN_ADMA_EN BIT10
+
 /**
   Dump the content of SD/MMC host controller's Capability Register.
 

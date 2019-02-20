@@ -1,7 +1,7 @@
 ## @file
 # This file is used to be the c coding style checking of ECC tool
 #
-# Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2009 - 2019, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -733,7 +733,7 @@ def SplitPredicateByOp(Str, Op, IsFuncCalling=False):
 
             while not LBFound and (Str[Index].isalnum() or Str[Index] == '_'):
                 Index += 1
-            # maybe type-cast at the begining, skip it.
+            # maybe type-cast at the beginning, skip it.
             RemainingStr = Str[Index:].lstrip()
             if RemainingStr.startswith(')') and not LBFound:
                 Index += 1
@@ -834,7 +834,7 @@ def GetDataTypeFromModifier(ModifierStr):
     for M in MList:
         if M in EccGlobalData.gConfig.ModifierSet:
             continue
-        # remove array sufix
+        # remove array suffix
         if M.startswith('[') or M.endswith(']'):
             continue
         ReturnType += M + ' '
@@ -1019,7 +1019,7 @@ def GetFinalTypeValue(Type, FieldName, TypedefDict, SUDict):
                 Type = GetDataTypeFromModifier(Field[0:Index])
                 return Type.strip()
             else:
-            # For the condition that the field in struct is an array with [] sufixes...
+            # For the condition that the field in struct is an array with [] suffixes...
                 if not Field[Index + len(FieldName)].isalnum():
                     Type = GetDataTypeFromModifier(Field[0:Index])
                     return Type.strip()
@@ -1511,7 +1511,7 @@ def CheckFuncLayoutBody(FullFileName):
 
     FileTable = 'Identifier' + str(FileID)
     Db = GetDB()
-    SqlStatement = """ select BodyStartColumn, EndColumn, ID
+    SqlStatement = """ select BodyStartColumn, EndColumn, ID, Name
                        from Function
                        where BelongsToFile = %d
                    """ % (FileID)
@@ -1520,9 +1520,15 @@ def CheckFuncLayoutBody(FullFileName):
         return ErrorMsgList
     for Result in ResultSet:
         if Result[0] != 0:
-            PrintErrorMsg(ERROR_C_FUNCTION_LAYOUT_CHECK_FUNCTION_BODY, 'open brace should be at the very beginning of a line.', 'Function', Result[2])
+            if not EccGlobalData.gException.IsException(ERROR_C_FUNCTION_LAYOUT_CHECK_FUNCTION_BODY, Result[3]):
+                PrintErrorMsg(ERROR_C_FUNCTION_LAYOUT_CHECK_FUNCTION_BODY,
+                              'The open brace should be at the very beginning of a line for the function [%s].' % Result[3],
+                              'Function', Result[2])
         if Result[1] != 0:
-            PrintErrorMsg(ERROR_C_FUNCTION_LAYOUT_CHECK_FUNCTION_BODY, 'close brace should be at the very beginning of a line.', 'Function', Result[2])
+            if not EccGlobalData.gException.IsException(ERROR_C_FUNCTION_LAYOUT_CHECK_FUNCTION_BODY, Result[3]):
+                PrintErrorMsg(ERROR_C_FUNCTION_LAYOUT_CHECK_FUNCTION_BODY,
+                              'The close brace should be at the very beginning of a line for the function [%s].' % Result[3],
+                              'Function', Result[2])
 
 def CheckFuncLayoutLocalVariable(FullFileName):
     ErrorMsgList = []
@@ -1623,7 +1629,7 @@ def CheckMemberVariableFormat(Name, Value, FileTable, TdId, ModelId):
         Field = Field.strip()
         if Field == '':
             continue
-        # For the condition that the field in struct is an array with [] sufixes...
+        # For the condition that the field in struct is an array with [] suffixes...
         if Field[-1] == ']':
             LBPos = Field.find('[')
             Field = Field[0:LBPos]

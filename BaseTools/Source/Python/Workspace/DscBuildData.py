@@ -343,7 +343,7 @@ class DscBuildData(PlatformBuildClassObject):
 
     ## Retrieve all information in [Defines] section
     #
-    #   (Retriving all [Defines] information in one-shot is just to save time.)
+    #   (Retrieving all [Defines] information in one-shot is just to save time.)
     #
     def _GetHeaderInfo(self):
         RecordList = self._RawData[MODEL_META_DATA_HEADER, self._Arch]
@@ -1519,9 +1519,9 @@ class DscBuildData(PlatformBuildClassObject):
                         else:
                             str_pcd_obj_str.DefaultFromDSC = {skuname:{defaultstore: str_pcd_obj.SkuInfoList[skuname].DefaultStoreDict.get(defaultstore, str_pcd_obj.SkuInfoList[skuname].DefaultValue) for defaultstore in DefaultStores} for skuname in str_pcd_obj.SkuInfoList}
                     S_pcd_set[Pcd] = str_pcd_obj_str
-        self.FilterStrcturePcd(S_pcd_set)
         if S_pcd_set:
-            GlobalData.gStructurePcd[self.Arch] = S_pcd_set
+            GlobalData.gStructurePcd[self.Arch] = S_pcd_set.copy()
+        self.FilterStrcturePcd(S_pcd_set)
         for stru_pcd in S_pcd_set.values():
             for skuid in SkuIds:
                 if skuid in stru_pcd.SkuOverrideValues:
@@ -1537,6 +1537,9 @@ class DscBuildData(PlatformBuildClassObject):
                     stru_pcd.SkuOverrideValues[skuid] = copy.deepcopy(stru_pcd.SkuOverrideValues[nextskuid]) if not NoDefault else copy.deepcopy({defaultstorename: stru_pcd.DefaultValues for defaultstorename in DefaultStores} if DefaultStores else {}) #{TAB_DEFAULT_STORES_DEFAULT:stru_pcd.DefaultValues})
                     if not NoDefault:
                         stru_pcd.ValueChain.add((skuid, ''))
+                if 'DEFAULT' in stru_pcd.SkuOverrideValues and not GlobalData.gPcdSkuOverrides.get((stru_pcd.TokenCName, stru_pcd.TokenSpaceGuidCName)):
+                    GlobalData.gPcdSkuOverrides.update(
+                        {(stru_pcd.TokenCName, stru_pcd.TokenSpaceGuidCName): {'DEFAULT':stru_pcd.SkuOverrideValues['DEFAULT']}})
             if stru_pcd.Type in [self._PCD_TYPE_STRING_[MODEL_PCD_DYNAMIC_HII], self._PCD_TYPE_STRING_[MODEL_PCD_DYNAMIC_EX_HII]]:
                 for skuid in SkuIds:
                     nextskuid = skuid
@@ -1613,7 +1616,7 @@ class DscBuildData(PlatformBuildClassObject):
                 elif TAB_DEFAULT in pcd.SkuInfoList and TAB_COMMON in pcd.SkuInfoList:
                     del pcd.SkuInfoList[TAB_COMMON]
 
-        list((self.FilterSkuSettings, [Pcds[pcdkey] for pcdkey in Pcds if Pcds[pcdkey].Type in DynamicPcdType]))
+        list(map(self.FilterSkuSettings, [Pcds[pcdkey] for pcdkey in Pcds if Pcds[pcdkey].Type in DynamicPcdType]))
         return Pcds
     @cached_property
     def PlatformUsedPcds(self):
@@ -1796,7 +1799,8 @@ class DscBuildData(PlatformBuildClassObject):
                         EdkLogger.error('Build', FORMAT_INVALID, "Invalid value format for %s. From %s Line %d " %
                                         (".".join((Pcd.TokenSpaceGuidCName, Pcd.TokenCName, FieldName.strip('.'))), FieldList[FieldName.strip(".")][1], FieldList[FieldName.strip(".")][2]))
                     Value, ValueSize = ParseFieldValue(Value)
-                    CApp = CApp + '  __FLEXIBLE_SIZE(*Size, %s, %s, %d / __ARRAY_ELEMENT_SIZE(%s, %s) + ((%d %% __ARRAY_ELEMENT_SIZE(%s, %s)) ? 1 : 0));  // From %s Line %d Value %s \n' % (Pcd.DatumType, FieldName.strip("."), ValueSize, Pcd.DatumType, FieldName.strip("."), ValueSize, Pcd.DatumType, FieldName.strip("."), FieldList[FieldName.strip(".")][1], FieldList[FieldName.strip(".")][2], FieldList[FieldName.strip(".")][0]);
+                    if not Pcd.IsArray:
+                        CApp = CApp + '  __FLEXIBLE_SIZE(*Size, %s, %s, %d / __ARRAY_ELEMENT_SIZE(%s, %s) + ((%d %% __ARRAY_ELEMENT_SIZE(%s, %s)) ? 1 : 0));  // From %s Line %d Value %s \n' % (Pcd.DatumType, FieldName.strip("."), ValueSize, Pcd.DatumType, FieldName.strip("."), ValueSize, Pcd.DatumType, FieldName.strip("."), FieldList[FieldName.strip(".")][1], FieldList[FieldName.strip(".")][2], FieldList[FieldName.strip(".")][0]);
                 else:
                     NewFieldName = ''
                     FieldName_ori = FieldName.strip('.')
@@ -1805,7 +1809,7 @@ class DscBuildData(PlatformBuildClassObject):
                         ArrayIndex = int(FieldName.split('[', 1)[1].split(']', 1)[0])
                         FieldName = FieldName.split(']', 1)[1]
                     FieldName = NewFieldName + FieldName
-                    while '[' in FieldName:
+                    while '[' in FieldName and not Pcd.IsArray:
                         FieldName = FieldName.rsplit('[', 1)[0]
                         CApp = CApp + '  __FLEXIBLE_SIZE(*Size, %s, %s, %d); // From %s Line %d Value %s\n' % (Pcd.DatumType, FieldName.strip("."), ArrayIndex + 1, FieldList[FieldName_ori][1], FieldList[FieldName_ori][2], FieldList[FieldName_ori][0])
         for skuname in Pcd.SkuOverrideValues:
@@ -1827,7 +1831,8 @@ class DscBuildData(PlatformBuildClassObject):
                                     EdkLogger.error('Build', FORMAT_INVALID, "Invalid value format for %s. From %s Line %d " %
                                                     (".".join((Pcd.TokenSpaceGuidCName, Pcd.TokenCName, FieldName.strip('.'))), FieldList[FieldName.strip(".")][1], FieldList[FieldName.strip(".")][2]))
                                 Value, ValueSize = ParseFieldValue(Value)
-                                CApp = CApp + '  __FLEXIBLE_SIZE(*Size, %s, %s, %d / __ARRAY_ELEMENT_SIZE(%s, %s) + ((%d %% __ARRAY_ELEMENT_SIZE(%s, %s)) ? 1 : 0)); // From %s Line %d Value %s\n' % (Pcd.DatumType, FieldName.strip("."), ValueSize, Pcd.DatumType, FieldName.strip("."), ValueSize, Pcd.DatumType, FieldName.strip("."), FieldList[FieldName.strip(".")][1], FieldList[FieldName.strip(".")][2], FieldList[FieldName.strip(".")][0]);
+                                if not Pcd.IsArray:
+                                    CApp = CApp + '  __FLEXIBLE_SIZE(*Size, %s, %s, %d / __ARRAY_ELEMENT_SIZE(%s, %s) + ((%d %% __ARRAY_ELEMENT_SIZE(%s, %s)) ? 1 : 0)); // From %s Line %d Value %s\n' % (Pcd.DatumType, FieldName.strip("."), ValueSize, Pcd.DatumType, FieldName.strip("."), ValueSize, Pcd.DatumType, FieldName.strip("."), FieldList[FieldName.strip(".")][1], FieldList[FieldName.strip(".")][2], FieldList[FieldName.strip(".")][0]);
                             else:
                                 NewFieldName = ''
                                 FieldName_ori = FieldName.strip('.')
@@ -1836,7 +1841,7 @@ class DscBuildData(PlatformBuildClassObject):
                                     ArrayIndex = int(FieldName.split('[', 1)[1].split(']', 1)[0])
                                     FieldName = FieldName.split(']', 1)[1]
                                 FieldName = NewFieldName + FieldName
-                                while '[' in FieldName:
+                                while '[' in FieldName and not Pcd.IsArray:
                                     FieldName = FieldName.rsplit('[', 1)[0]
                                     CApp = CApp + '  __FLEXIBLE_SIZE(*Size, %s, %s, %d); // From %s Line %d Value %s \n' % (Pcd.DatumType, FieldName.strip("."), ArrayIndex + 1, FieldList[FieldName_ori][1], FieldList[FieldName_ori][2], FieldList[FieldName_ori][0])
         if Pcd.PcdFieldValueFromFdf:
@@ -1851,7 +1856,8 @@ class DscBuildData(PlatformBuildClassObject):
                     EdkLogger.error('Build', FORMAT_INVALID, "Invalid value format for %s. From %s Line %d " %
                                     (".".join((Pcd.TokenSpaceGuidCName, Pcd.TokenCName, FieldName.strip('.'))), Pcd.PcdFieldValueFromFdf[FieldName.strip(".")][1], Pcd.PcdFieldValueFromFdf[FieldName.strip(".")][2]))
                 Value, ValueSize = ParseFieldValue(Value)
-                CApp = CApp + '  __FLEXIBLE_SIZE(*Size, %s, %s, %d / __ARRAY_ELEMENT_SIZE(%s, %s) + ((%d %% __ARRAY_ELEMENT_SIZE(%s, %s)) ? 1 : 0)); // From %s Line %d Value %s\n' % (Pcd.DatumType, FieldName.strip("."), ValueSize, Pcd.DatumType, FieldName.strip("."), ValueSize, Pcd.DatumType, FieldName.strip("."), Pcd.PcdFieldValueFromFdf[FieldName.strip(".")][1], Pcd.PcdFieldValueFromFdf[FieldName.strip(".")][2], Pcd.PcdFieldValueFromFdf[FieldName.strip(".")][0]);
+                if not Pcd.IsArray:
+                    CApp = CApp + '  __FLEXIBLE_SIZE(*Size, %s, %s, %d / __ARRAY_ELEMENT_SIZE(%s, %s) + ((%d %% __ARRAY_ELEMENT_SIZE(%s, %s)) ? 1 : 0)); // From %s Line %d Value %s\n' % (Pcd.DatumType, FieldName.strip("."), ValueSize, Pcd.DatumType, FieldName.strip("."), ValueSize, Pcd.DatumType, FieldName.strip("."), Pcd.PcdFieldValueFromFdf[FieldName.strip(".")][1], Pcd.PcdFieldValueFromFdf[FieldName.strip(".")][2], Pcd.PcdFieldValueFromFdf[FieldName.strip(".")][0]);
             else:
                 NewFieldName = ''
                 FieldName_ori = FieldName.strip('.')
@@ -1875,7 +1881,8 @@ class DscBuildData(PlatformBuildClassObject):
                     EdkLogger.error('Build', FORMAT_INVALID, "Invalid value format for %s. From %s Line %d " %
                                     (".".join((Pcd.TokenSpaceGuidCName, Pcd.TokenCName, FieldName.strip('.'))), Pcd.PcdFieldValueFromComm[FieldName.strip(".")][1], Pcd.PcdFieldValueFromComm[FieldName.strip(".")][2]))
                 Value, ValueSize = ParseFieldValue(Value)
-                CApp = CApp + '  __FLEXIBLE_SIZE(*Size, %s, %s, %d / __ARRAY_ELEMENT_SIZE(%s, %s) + ((%d %% __ARRAY_ELEMENT_SIZE(%s, %s)) ? 1 : 0)); // From %s Line %d Value %s\n' % (Pcd.DatumType, FieldName.strip("."), ValueSize, Pcd.DatumType, FieldName.strip("."), ValueSize, Pcd.DatumType, FieldName.strip("."), Pcd.PcdFieldValueFromComm[FieldName.strip(".")][1], Pcd.PcdFieldValueFromComm[FieldName.strip(".")][2], Pcd.PcdFieldValueFromComm[FieldName.strip(".")][0]);
+                if not Pcd.IsArray:
+                    CApp = CApp + '  __FLEXIBLE_SIZE(*Size, %s, %s, %d / __ARRAY_ELEMENT_SIZE(%s, %s) + ((%d %% __ARRAY_ELEMENT_SIZE(%s, %s)) ? 1 : 0)); // From %s Line %d Value %s\n' % (Pcd.DatumType, FieldName.strip("."), ValueSize, Pcd.DatumType, FieldName.strip("."), ValueSize, Pcd.DatumType, FieldName.strip("."), Pcd.PcdFieldValueFromComm[FieldName.strip(".")][1], Pcd.PcdFieldValueFromComm[FieldName.strip(".")][2], Pcd.PcdFieldValueFromComm[FieldName.strip(".")][0]);
             else:
                 NewFieldName = ''
                 FieldName_ori = FieldName.strip('.')
@@ -1884,7 +1891,7 @@ class DscBuildData(PlatformBuildClassObject):
                     ArrayIndex = int(FieldName.split('[', 1)[1].split(']', 1)[0])
                     FieldName = FieldName.split(']', 1)[1]
                 FieldName = NewFieldName + FieldName
-                while '[' in FieldName:
+                while '[' in FieldName and not Pcd.IsArray:
                     FieldName = FieldName.rsplit('[', 1)[0]
                     CApp = CApp + '  __FLEXIBLE_SIZE(*Size, %s, %s, %d); // From %s Line %d Value %s \n' % (Pcd.DatumType, FieldName.strip("."), ArrayIndex + 1, Pcd.PcdFieldValueFromComm[FieldName_ori][1], Pcd.PcdFieldValueFromComm[FieldName_ori][2], Pcd.PcdFieldValueFromComm[FieldName_ori][0])
         if Pcd.GetPcdMaxSize():
@@ -1915,10 +1922,11 @@ class DscBuildData(PlatformBuildClassObject):
                 PcdDefValue = Pcd.DefaultValue
             if lastoneisEmpty:
                 if "{CODE(" not in PcdDefValue:
-                    sizebasevalue_plus = "(%s / sizeof(%s) + 1)" % ((DscBuildData.GetStructurePcdMaxSize(Pcd), "".join(r_datatype)))
-                    sizebasevalue = "(%s / sizeof(%s))" % ((DscBuildData.GetStructurePcdMaxSize(Pcd), "".join(r_datatype)))
+                    sizebasevalue_plus = "(%s / sizeof(%s) + 1)" % ((DscBuildData.GetStructurePcdMaxSize(Pcd), Pcd.BaseDatumType))
+                    sizebasevalue = "(%s / sizeof(%s))" % ((DscBuildData.GetStructurePcdMaxSize(Pcd), Pcd.BaseDatumType))
                     sizeof = "sizeof(%s)" % Pcd.BaseDatumType
-                    CApp = '  Size = %s %% %s ? %s : %s ;\n' % ( (DscBuildData.GetStructurePcdMaxSize(Pcd), sizeof, sizebasevalue_plus, sizebasevalue))
+                    CApp = '  int ArraySize = %s %% %s ? %s : %s ;\n' % ( (DscBuildData.GetStructurePcdMaxSize(Pcd), sizeof, sizebasevalue_plus, sizebasevalue))
+                    CApp += '  Size = ArraySize * sizeof(%s); \n' % Pcd.BaseDatumType
                 else:
                     CApp = "  Size = 0;\n"
             else:
@@ -1978,9 +1986,7 @@ class DscBuildData(PlatformBuildClassObject):
                                 (Pcd.TokenSpaceGuidCName, Pcd.TokenCName, DefaultValueFromDec))
         DefaultValueFromDec = StringToArray(DefaultValueFromDec)
         Value, ValueSize = ParseFieldValue (DefaultValueFromDec)
-        if isinstance(Value, str):
-            CApp = CApp + '  Pcd = %s; // From DEC Default Value %s\n' % (Value, Pcd.DefaultValueFromDec)
-        elif IsArray:
+        if IsArray:
         #
         # Use memcpy() to copy value into field
         #
@@ -1989,6 +1995,8 @@ class DscBuildData(PlatformBuildClassObject):
             else:
                 CApp = CApp + '  Value     = %s; // From DEC Default Value %s\n' % (DscBuildData.IntToCString(Value, ValueSize), Pcd.DefaultValueFromDec)
                 CApp = CApp + '  memcpy (Pcd, Value, %d);\n' % (ValueSize)
+        elif isinstance(Value, str):
+            CApp = CApp + '  Pcd = %s; // From DEC Default Value %s\n' % (Value, Pcd.DefaultValueFromDec)
         for index in Pcd.DefaultValues:
             FieldList = Pcd.DefaultValues[index]
             if not FieldList:
@@ -2008,18 +2016,16 @@ class DscBuildData(PlatformBuildClassObject):
                     EdkLogger.error('Build', FORMAT_INVALID, "Invalid value format for %s. From %s Line %d " % (".".join((Pcd.TokenSpaceGuidCName, Pcd.TokenCName, FieldName)), FieldList[FieldName][1], FieldList[FieldName][2]))
 
                 indicator = self.GetIndicator(index, FieldName,Pcd)
-                if isinstance(Value, str):
-                    CApp = CApp + '  %s = %s; // From %s Line %d Value %s\n' % (indicator, Value, FieldList[FieldName][1], FieldList[FieldName][2], FieldList[FieldName][0])
-                elif IsArray:
+                if IsArray:
                     #
                     # Use memcpy() to copy value into field
                     #
-                    CApp = CApp + '  FieldSize = __FIELD_SIZE(%s, %s);\n' % (Pcd.DatumType, FieldName)
+                    CApp = CApp + '  FieldSize = __FIELD_SIZE(%s, %s);\n' % (Pcd.BaseDatumType, FieldName)
                     CApp = CApp + '  Value     = %s; // From %s Line %d Value %s\n' % (DscBuildData.IntToCString(Value, ValueSize), FieldList[FieldName][1], FieldList[FieldName][2], FieldList[FieldName][0])
-                    CApp = CApp + '  __STATIC_ASSERT((__FIELD_SIZE(%s, %s) >= %d) || (__FIELD_SIZE(%s, %s) == 0), "Input buffer exceeds the buffer array"); // From %s Line %d Value %s\n' % (Pcd.DatumType, FieldName, ValueSize, Pcd.DatumType, FieldName, FieldList[FieldName][1], FieldList[FieldName][2], FieldList[FieldName][0])
-                    CApp = CApp + '  memcpy (&Pcd->%s, Value, (FieldSize > 0 && FieldSize < %d) ? FieldSize : %d);\n' % (FieldName, ValueSize, ValueSize)
+                    CApp = CApp + '  __STATIC_ASSERT((__FIELD_SIZE(%s, %s) >= %d) || (__FIELD_SIZE(%s, %s) == 0), "Input buffer exceeds the buffer array"); // From %s Line %d Value %s\n' % (Pcd.BaseDatumType, FieldName, ValueSize, Pcd.BaseDatumType, FieldName, FieldList[FieldName][1], FieldList[FieldName][2], FieldList[FieldName][0])
                     CApp = CApp + '  memcpy (&%s, Value, (FieldSize > 0 && FieldSize < %d) ? FieldSize : %d);\n' % (indicator, ValueSize, ValueSize)
-
+                elif isinstance(Value, str):
+                    CApp = CApp + '  %s = %s; // From %s Line %d Value %s\n' % (indicator, Value, FieldList[FieldName][1], FieldList[FieldName][2], FieldList[FieldName][0])
                 else:
                     if '[' in FieldName and ']' in FieldName:
                         Index = int(FieldName.split('[')[1].split(']')[0])
@@ -2128,8 +2134,7 @@ class DscBuildData(PlatformBuildClassObject):
                     #
                         CApp = CApp + '  FieldSize = __FIELD_SIZE(%s, %s);\n' % (Pcd.BaseDatumType, FieldName)
                         CApp = CApp + '  Value     = %s; // From %s Line %d Value %s\n' % (DscBuildData.IntToCString(Value, ValueSize), FieldList[FieldName][1], FieldList[FieldName][2], FieldList[FieldName][0])
-                        CApp = CApp + '  __STATIC_ASSERT((__FIELD_SIZE(%s, %s) >= %d) || (__FIELD_SIZE(%s, %s) == 0), "Input buffer exceeds the buffer array"); // From %s Line %d Value %s\n' % (Pcd.DatumType, FieldName, ValueSize, Pcd.DatumType, FieldName, FieldList[FieldName][1], FieldList[FieldName][2], FieldList[FieldName][0])
-                        CApp = CApp + '  memcpy (&Pcd->%s, Value, (FieldSize > 0 && FieldSize < %d) ? FieldSize : %d);\n' % (FieldName, ValueSize, ValueSize)
+                        CApp = CApp + '  __STATIC_ASSERT((__FIELD_SIZE(%s, %s) >= %d) || (__FIELD_SIZE(%s, %s) == 0), "Input buffer exceeds the buffer array"); // From %s Line %d Value %s\n' % (Pcd.BaseDatumType, FieldName, ValueSize, Pcd.BaseDatumType, FieldName, FieldList[FieldName][1], FieldList[FieldName][2], FieldList[FieldName][0])
                         CApp = CApp + '  memcpy (&%s, Value, (FieldSize > 0 && FieldSize < %d) ? FieldSize : %d);\n' % (indicator, ValueSize, ValueSize)
                     else:
                         if '[' in FieldName and ']' in FieldName:
@@ -2198,7 +2203,7 @@ class DscBuildData(PlatformBuildClassObject):
                 #
                     CApp = CApp + '  FieldSize = __FIELD_SIZE(%s, %s);\n' % (Pcd.BaseDatumType, FieldName)
                     CApp = CApp + '  Value     = %s; // From %s Line %d Value %s\n' % (DscBuildData.IntToCString(Value, ValueSize), FieldList[FieldName][1], FieldList[FieldName][2], FieldList[FieldName][0])
-                    CApp = CApp + '  __STATIC_ASSERT((__FIELD_SIZE(%s, %s) >= %d) || (__FIELD_SIZE(%s, %s) == 0), "Input buffer exceeds the buffer array"); // From %s Line %d Value %s\n' % (Pcd.DatumType, FieldName, ValueSize, Pcd.DatumType, FieldName, FieldList[FieldName][1], FieldList[FieldName][2], FieldList[FieldName][0])
+                    CApp = CApp + '  __STATIC_ASSERT((__FIELD_SIZE(%s, %s) >= %d) || (__FIELD_SIZE(%s, %s) == 0), "Input buffer exceeds the buffer array"); // From %s Line %d Value %s\n' % (Pcd.BaseDatumType, FieldName, ValueSize, Pcd.BaseDatumType, FieldName, FieldList[FieldName][1], FieldList[FieldName][2], FieldList[FieldName][0])
                     CApp = CApp + '  memcpy (&Pcd->%s, Value, (FieldSize > 0 && FieldSize < %d) ? FieldSize : %d);\n' % (FieldName, ValueSize, ValueSize)
                 else:
                     if '[' in FieldName and ']' in FieldName:
@@ -2266,7 +2271,7 @@ class DscBuildData(PlatformBuildClassObject):
                 #
                     CApp = CApp + '  FieldSize = __FIELD_SIZE(%s, %s);\n' % (Pcd.BaseDatumType, FieldName)
                     CApp = CApp + '  Value     = %s; // From %s Line %d Value %s\n' % (DscBuildData.IntToCString(Value, ValueSize), FieldList[FieldName][1], FieldList[FieldName][2], FieldList[FieldName][0])
-                    CApp = CApp + '  __STATIC_ASSERT((__FIELD_SIZE(%s, %s) >= %d) || (__FIELD_SIZE(%s, %s) == 0), "Input buffer exceeds the buffer array"); // From %s Line %d Value %s\n' % (Pcd.DatumType, FieldName, ValueSize, Pcd.DatumType, FieldName, FieldList[FieldName][1], FieldList[FieldName][2], FieldList[FieldName][0])
+                    CApp = CApp + '  __STATIC_ASSERT((__FIELD_SIZE(%s, %s) >= %d) || (__FIELD_SIZE(%s, %s) == 0), "Input buffer exceeds the buffer array"); // From %s Line %d Value %s\n' % (Pcd.BaseDatumType, FieldName, ValueSize, Pcd.BaseDatumType, FieldName, FieldList[FieldName][1], FieldList[FieldName][2], FieldList[FieldName][0])
                     CApp = CApp + '  memcpy (&Pcd->%s, Value, (FieldSize > 0 && FieldSize < %d) ? FieldSize : %d);\n' % (FieldName, ValueSize, ValueSize)
                 else:
                     if '[' in FieldName and ']' in FieldName:
