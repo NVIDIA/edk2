@@ -241,6 +241,7 @@
   MdeModulePkg/Bus/Pci/SataControllerDxe/SataControllerDxe.inf
   MdeModulePkg/Bus/Ata/AtaBusDxe/AtaBusDxe.inf
   MdeModulePkg/Bus/Ata/AtaAtapiPassThru/AtaAtapiPassThru.inf
+  MdeModulePkg/Bus/Ata/AhciPei/AhciPei.inf
   MdeModulePkg/Bus/Scsi/ScsiBusDxe/ScsiBusDxe.inf
   MdeModulePkg/Bus/Scsi/ScsiDiskDxe/ScsiDiskDxe.inf
   MdeModulePkg/Bus/Usb/UsbBusDxe/UsbBusDxe.inf
@@ -286,6 +287,7 @@
   MdeModulePkg/Library/PeiReportStatusCodeLib/PeiReportStatusCodeLib.inf
   MdeModulePkg/Library/DxeReportStatusCodeLib/DxeReportStatusCodeLib.inf
   MdeModulePkg/Library/RuntimeDxeReportStatusCodeLib/RuntimeDxeReportStatusCodeLib.inf
+  MdeModulePkg/Library/RuntimeResetSystemLib/RuntimeResetSystemLib.inf
   MdeModulePkg/Library/BaseSerialPortLib16550/BaseSerialPortLib16550.inf
   MdeModulePkg/Library/BasePlatformHookLibNull/BasePlatformHookLibNull.inf
   MdeModulePkg/Library/DxeDebugPrintErrorLevelLib/DxeDebugPrintErrorLevelLib.inf

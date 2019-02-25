@@ -155,15 +155,14 @@ def GetDependencyList(FileStack, SearchPathList):
             if len(FileContent) == 0:
                 continue
 
-            if FileContent[0] == 0xff or FileContent[0] == 0xfe:
-                FileContent = FileContent.decode('utf-16')
-                IncludedFileList = gIncludePattern.findall(FileContent)
-            else:
-                try:
-                    FileContent = str(FileContent)
-                    IncludedFileList = gIncludePattern.findall(FileContent)
-                except:
-                    pass
+            try:
+                if FileContent[0] == 0xff or FileContent[0] == 0xfe:
+                    FileContent = FileContent.decode('utf-16')
+                else:
+                    FileContent = FileContent.decode()
+            except:
+                # The file is not txt file. for example .mcb file
+                continue
             IncludedFileList = gIncludePattern.findall(FileContent)
 
             for Inc in IncludedFileList:
@@ -2397,7 +2396,7 @@ class DscBuildData(PlatformBuildClassObject):
                     for defaultstore in skuinfo.DefaultStoreDict:
                         pcddscrawdefaultvalue = self.GetPcdDscRawDefaultValue(Pcd, skuname, defaultstore)
                         if pcddscrawdefaultvalue:
-                            Value = skuinfo[defaultstore]
+                            Value = skuinfo.DefaultStoreDict[defaultstore]
                             if "{CODE(" in Value:
                                 realvalue = Value.strip()[6:-2] # "{CODE(").rstrip(")}"
                                 CApp += "static %s %s_%s_%s_%s_Value%s = %s;\n" % (Pcd.BaseDatumType,Pcd.TokenSpaceGuidCName,Pcd.TokenCName,skuname,defaultstore,Demesion,realvalue)

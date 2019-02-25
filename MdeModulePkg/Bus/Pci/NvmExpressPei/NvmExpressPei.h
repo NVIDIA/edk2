@@ -2,7 +2,7 @@
   The NvmExpressPei driver is used to manage non-volatile memory subsystem
   which follows NVM Express specification at PEI phase.
 
-  Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2018 - 2019, Intel Corporation. All rights reserved.<BR>
 
   This program and the accompanying materials
   are licensed and made available under the terms and conditions
@@ -25,6 +25,7 @@
 #include <Ppi/NvmExpressHostController.h>
 #include <Ppi/BlockIo.h>
 #include <Ppi/BlockIo2.h>
+#include <Ppi/StorageSecurityCommand.h>
 #include <Ppi/IoMmu.h>
 #include <Ppi/EndOfPeiPhase.h>
 
@@ -44,6 +45,7 @@ typedef struct _PEI_NVME_CONTROLLER_PRIVATE_DATA  PEI_NVME_CONTROLLER_PRIVATE_DA
 #include "NvmExpressPeiHci.h"
 #include "NvmExpressPeiPassThru.h"
 #include "NvmExpressPeiBlockIo.h"
+#include "NvmExpressPeiStorageSecurity.h"
 
 //
 // NVME PEI driver implementation related definitions
@@ -90,10 +92,15 @@ struct _PEI_NVME_NAMESPACE_INFO {
 struct _PEI_NVME_CONTROLLER_PRIVATE_DATA {
   UINT32                                    Signature;
   UINTN                                     MmioBase;
+  UINTN                                     DevicePathLength;
+  EFI_DEVICE_PATH_PROTOCOL                  *DevicePath;
+
   EFI_PEI_RECOVERY_BLOCK_IO_PPI             BlkIoPpi;
   EFI_PEI_RECOVERY_BLOCK_IO2_PPI            BlkIo2Ppi;
+  EDKII_PEI_STORAGE_SECURITY_CMD_PPI        StorageSecurityPpi;
   EFI_PEI_PPI_DESCRIPTOR                    BlkIoPpiList;
   EFI_PEI_PPI_DESCRIPTOR                    BlkIo2PpiList;
+  EFI_PEI_PPI_DESCRIPTOR                    StorageSecurityPpiList;
   EFI_PEI_NOTIFY_DESCRIPTOR                 EndOfPeiNotifyList;
 
   //
@@ -139,21 +146,19 @@ struct _PEI_NVME_CONTROLLER_PRIVATE_DATA {
   PEI_NVME_NAMESPACE_INFO                   *NamespaceInfo;
 };
 
-#define GET_NVME_PEIM_HC_PRIVATE_DATA_FROM_THIS_BLKIO(a)     \
+#define GET_NVME_PEIM_HC_PRIVATE_DATA_FROM_THIS_BLKIO(a)               \
   CR (a, PEI_NVME_CONTROLLER_PRIVATE_DATA, BlkIoPpi, NVME_PEI_CONTROLLER_PRIVATE_DATA_SIGNATURE)
-#define GET_NVME_PEIM_HC_PRIVATE_DATA_FROM_THIS_BLKIO2(a)    \
+#define GET_NVME_PEIM_HC_PRIVATE_DATA_FROM_THIS_BLKIO2(a)              \
   CR (a, PEI_NVME_CONTROLLER_PRIVATE_DATA, BlkIo2Ppi, NVME_PEI_CONTROLLER_PRIVATE_DATA_SIGNATURE)
-#define GET_NVME_PEIM_HC_PRIVATE_DATA_FROM_THIS_NOTIFY(a)    \
+#define GET_NVME_PEIM_HC_PRIVATE_DATA_FROM_THIS_STROAGE_SECURITY(a)    \
+  CR (a, PEI_NVME_CONTROLLER_PRIVATE_DATA, StorageSecurityPpi, NVME_PEI_CONTROLLER_PRIVATE_DATA_SIGNATURE)
+#define GET_NVME_PEIM_HC_PRIVATE_DATA_FROM_THIS_NOTIFY(a)              \
   CR (a, PEI_NVME_CONTROLLER_PRIVATE_DATA, EndOfPeiNotifyList, NVME_PEI_CONTROLLER_PRIVATE_DATA_SIGNATURE)
 
 
-/**
-  Initialize IOMMU.
-**/
-VOID
-IoMmuInit (
-  VOID
-  );
+//
+// Internal functions
+//
 
 /**
   Allocates pages that are suitable for an OperationBusMasterCommonBuffer or
@@ -259,6 +264,85 @@ NvmePeimEndOfPei (
   IN EFI_PEI_SERVICES           **PeiServices,
   IN EFI_PEI_NOTIFY_DESCRIPTOR  *NotifyDescriptor,
   IN VOID                       *Ppi
+  );
+
+/**
+  Get the size of the current device path instance.
+
+  @param[in]  DevicePath             A pointer to the EFI_DEVICE_PATH_PROTOCOL
+                                     structure.
+  @param[out] InstanceSize           The size of the current device path instance.
+  @param[out] EntireDevicePathEnd    Indicate whether the instance is the last
+                                     one in the device path strucure.
+
+  @retval EFI_SUCCESS    The size of the current device path instance is fetched.
+  @retval Others         Fails to get the size of the current device path instance.
+
+**/
+EFI_STATUS
+GetDevicePathInstanceSize (
+  IN  EFI_DEVICE_PATH_PROTOCOL    *DevicePath,
+  OUT UINTN                       *InstanceSize,
+  OUT BOOLEAN                     *EntireDevicePathEnd
+  );
+
+/**
+  Check the validity of the device path of a NVM Express host controller.
+
+  @param[in] DevicePath          A pointer to the EFI_DEVICE_PATH_PROTOCOL
+                                 structure.
+  @param[in] DevicePathLength    The length of the device path.
+
+  @retval EFI_SUCCESS              The device path is valid.
+  @retval EFI_INVALID_PARAMETER    The device path is invalid.
+
+**/
+EFI_STATUS
+NvmeIsHcDevicePathValid (
+  IN EFI_DEVICE_PATH_PROTOCOL    *DevicePath,
+  IN UINTN                       DevicePathLength
+  );
+
+/**
+  Build the device path for an Nvm Express device with given namespace identifier
+  and namespace extended unique identifier.
+
+  @param[in]  Private              A pointer to the PEI_NVME_CONTROLLER_PRIVATE_DATA
+                                   data structure.
+  @param[in]  NamespaceId          The given namespace identifier.
+  @param[in]  NamespaceUuid        The given namespace extended unique identifier.
+  @param[out] DevicePathLength     The length of the device path in bytes specified
+                                   by DevicePath.
+  @param[out] DevicePath           The device path of Nvm Express device.
+
+  @retval EFI_SUCCESS              The operation succeeds.
+  @retval EFI_INVALID_PARAMETER    The parameters are invalid.
+  @retval EFI_OUT_OF_RESOURCES     The operation fails due to lack of resources.
+
+**/
+EFI_STATUS
+NvmeBuildDevicePath (
+  IN  PEI_NVME_CONTROLLER_PRIVATE_DATA    *Private,
+  IN  UINT32                              NamespaceId,
+  IN  UINT64                              NamespaceUuid,
+  OUT UINTN                               *DevicePathLength,
+  OUT EFI_DEVICE_PATH_PROTOCOL            **DevicePath
+  );
+
+/**
+  Determine if a specific NVM Express controller can be skipped for S3 phase.
+
+  @param[in]  HcDevicePath          Device path of the controller.
+  @param[in]  HcDevicePathLength    Length of the device path specified by
+                                    HcDevicePath.
+
+  @retval    The number of ports that need to be enumerated.
+
+**/
+BOOLEAN
+NvmeS3SkipThisController (
+  IN  EFI_DEVICE_PATH_PROTOCOL    *HcDevicePath,
+  IN  UINTN                       HcDevicePathLength
   );
 
 #endif

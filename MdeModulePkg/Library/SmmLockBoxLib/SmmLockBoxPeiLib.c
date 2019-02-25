@@ -1,6 +1,6 @@
 /** @file
 
-Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2010 - 2019, Intel Corporation. All rights reserved.<BR>
 
 This program and the accompanying materials
 are licensed and made available under the terms and conditions
@@ -477,7 +477,10 @@ SetLockBoxAttributes (
   @retval RETURN_SUCCESS            the information is saved successfully.
   @retval RETURN_INVALID_PARAMETER  the Guid is NULL, or Buffer is NULL, or Length is 0.
   @retval RETURN_NOT_FOUND          the requested GUID not found.
-  @retval RETURN_BUFFER_TOO_SMALL   the original buffer to too small to hold new information.
+  @retval RETURN_BUFFER_TOO_SMALL   for lockbox without attribute LOCK_BOX_ATTRIBUTE_RESTORE_IN_S3_ONLY,
+                                    the original buffer to too small to hold new information.
+  @retval RETURN_OUT_OF_RESOURCES   for lockbox with attribute LOCK_BOX_ATTRIBUTE_RESTORE_IN_S3_ONLY,
+                                    no enough resource to save the information.
   @retval RETURN_ACCESS_DENIED      it is too late to invoke this interface
   @retval RETURN_NOT_STARTED        it is too early to invoke this interface
   @retval RETURN_UNSUPPORTED        the service is not supported by implementaion.
@@ -542,7 +545,7 @@ RestoreLockBox (
   // } EFI_SMM_COMMUNICATE_HEADER;
   //
 
-  DEBUG ((EFI_D_INFO, "SmmLockBoxPeiLib RestoreLockBox - Enter\n"));
+  DEBUG ((DEBUG_INFO, "SmmLockBoxPeiLib RestoreLockBox - Enter\n"));
 
   //
   // Basic check
@@ -563,9 +566,9 @@ RestoreLockBox (
              (VOID **)&SmmCommunicationPpi
              );
   if (EFI_ERROR (Status)) {
-    DEBUG ((EFI_D_INFO, "SmmLockBoxPeiLib LocatePpi - (%r)\n", Status));
+    DEBUG ((DEBUG_INFO, "SmmLockBoxPeiLib LocatePpi - (%r)\n", Status));
     Status = InternalRestoreLockBoxFromSmram (Guid, Buffer, Length);
-    DEBUG ((EFI_D_INFO, "SmmLockBoxPeiLib RestoreLockBox - Exit (%r)\n", Status));
+    DEBUG ((DEBUG_INFO, "SmmLockBoxPeiLib RestoreLockBox - Exit (%r)\n", Status));
     return Status;
   }
 
@@ -581,13 +584,13 @@ RestoreLockBox (
     CommHeader->MessageLength = sizeof(*LockBoxParameterRestore);
   }
 
-  DEBUG ((EFI_D_INFO, "SmmLockBoxPeiLib CommBuffer - %x\n", &CommBuffer[0]));
+  DEBUG ((DEBUG_INFO, "SmmLockBoxPeiLib CommBuffer - %x\n", &CommBuffer[0]));
   if ((sizeof(UINTN) == sizeof(UINT32)) && (FeaturePcdGet (PcdDxeIplSwitchToLongMode)) ) {
     LockBoxParameterRestore = (EFI_SMM_LOCK_BOX_PARAMETER_RESTORE *)&CommBuffer[OFFSET_OF (EFI_SMM_COMMUNICATE_HEADER, MessageLength) + sizeof(UINT64)];
   } else {
     LockBoxParameterRestore = (EFI_SMM_LOCK_BOX_PARAMETER_RESTORE *)&CommBuffer[OFFSET_OF (EFI_SMM_COMMUNICATE_HEADER, MessageLength) + sizeof(UINTN)];
   }
-  DEBUG ((EFI_D_INFO, "SmmLockBoxPeiLib LockBoxParameterRestore - %x\n", LockBoxParameterRestore));
+  DEBUG ((DEBUG_INFO, "SmmLockBoxPeiLib LockBoxParameterRestore - %x\n", LockBoxParameterRestore));
   LockBoxParameterRestore->Header.Command    = EFI_SMM_LOCK_BOX_COMMAND_RESTORE;
   LockBoxParameterRestore->Header.DataLength = sizeof(*LockBoxParameterRestore);
   LockBoxParameterRestore->Header.ReturnStatus = (UINT64)-1;
@@ -616,14 +619,13 @@ RestoreLockBox (
     //
     // Pei SMM communication not ready yet, so we access SMRAM directly
     //
-    DEBUG ((EFI_D_INFO, "SmmLockBoxPeiLib Communicate - (%r)\n", Status));
+    DEBUG ((DEBUG_INFO, "SmmLockBoxPeiLib Communicate - (%r)\n", Status));
     Status = InternalRestoreLockBoxFromSmram (Guid, Buffer, Length);
     LockBoxParameterRestore->Header.ReturnStatus = (UINT64)Status;
     if (Length != NULL) {
       LockBoxParameterRestore->Length = (UINT64)*Length;
     }
   }
-  ASSERT_EFI_ERROR (Status);
 
   if (Length != NULL) {
     *Length = (UINTN)LockBoxParameterRestore->Length;
@@ -635,7 +637,7 @@ RestoreLockBox (
     Status |= MAX_BIT;
   }
 
-  DEBUG ((EFI_D_INFO, "SmmLockBoxPeiLib RestoreLockBox - Exit (%r)\n", Status));
+  DEBUG ((DEBUG_INFO, "SmmLockBoxPeiLib RestoreLockBox - Exit (%r)\n", Status));
 
   //
   // Done
@@ -673,7 +675,7 @@ RestoreAllLockBoxInPlace (
   // } EFI_SMM_COMMUNICATE_HEADER;
   //
 
-  DEBUG ((EFI_D_INFO, "SmmLockBoxPeiLib RestoreAllLockBoxInPlace - Enter\n"));
+  DEBUG ((DEBUG_INFO, "SmmLockBoxPeiLib RestoreAllLockBoxInPlace - Enter\n"));
 
   //
   // Get needed resource
@@ -685,9 +687,9 @@ RestoreAllLockBoxInPlace (
              (VOID **)&SmmCommunicationPpi
              );
   if (EFI_ERROR (Status)) {
-    DEBUG ((EFI_D_INFO, "SmmLockBoxPeiLib LocatePpi - (%r)\n", Status));
+    DEBUG ((DEBUG_INFO, "SmmLockBoxPeiLib LocatePpi - (%r)\n", Status));
     Status = InternalRestoreAllLockBoxInPlaceFromSmram ();
-    DEBUG ((EFI_D_INFO, "SmmLockBoxPeiLib RestoreAllLockBoxInPlace - Exit (%r)\n", Status));
+    DEBUG ((DEBUG_INFO, "SmmLockBoxPeiLib RestoreAllLockBoxInPlace - Exit (%r)\n", Status));
     return Status;
   }
 
@@ -725,7 +727,7 @@ RestoreAllLockBoxInPlace (
     //
     // Pei SMM communication not ready yet, so we access SMRAM directly
     //
-    DEBUG ((EFI_D_INFO, "SmmLockBoxPeiLib Communicate - (%r)\n", Status));
+    DEBUG ((DEBUG_INFO, "SmmLockBoxPeiLib Communicate - (%r)\n", Status));
     Status = InternalRestoreAllLockBoxInPlaceFromSmram ();
     LockBoxParameterRestoreAllInPlace->Header.ReturnStatus = (UINT64)Status;
   }
@@ -737,7 +739,7 @@ RestoreAllLockBoxInPlace (
     Status |= MAX_BIT;
   }
 
-  DEBUG ((EFI_D_INFO, "SmmLockBoxPeiLib RestoreAllLockBoxInPlace - Exit (%r)\n", Status));
+  DEBUG ((DEBUG_INFO, "SmmLockBoxPeiLib RestoreAllLockBoxInPlace - Exit (%r)\n", Status));
 
   //
   // Done

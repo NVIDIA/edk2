@@ -422,6 +422,9 @@
   ## Include/Guid/S3SmmInitDone.h
   gEdkiiS3SmmInitDoneGuid = { 0x8f9d4825, 0x797d, 0x48fc, { 0x84, 0x71, 0x84, 0x50, 0x25, 0x79, 0x2e, 0xf6 } }
 
+  ## Include/Guid/S3StorageDeviceInitList.h
+  gS3StorageDeviceInitListGuid = { 0x310e9b8c, 0xcf90, 0x421e, { 0x8e, 0x9b, 0x9e, 0xef, 0xb6, 0x17, 0xc8, 0xef } }
+
 [Ppis]
   ## Include/Ppi/AtaController.h
   gPeiAtaControllerPpiGuid       = { 0xa45e60d1, 0xc719, 0x44aa, { 0xb0, 0x7a, 0xaa, 0x77, 0x7f, 0x85, 0x90, 0x6d }}
@@ -479,6 +482,15 @@
 
   ## Include/Ppi/NvmExpressHostController.h
   gEdkiiPeiNvmExpressHostControllerPpiGuid  = { 0xcae3aa63, 0x676f, 0x4da3, { 0xbd, 0x50, 0x6c, 0xc5, 0xed, 0xde, 0x9a, 0xad } }
+
+  ## Include/Ppi/AtaAhciController.h
+  gEdkiiPeiAtaAhciHostControllerPpiGuid     = { 0x61dd33ea, 0x421f, 0x4cc0, { 0x89, 0x29, 0xff, 0xee, 0xa9, 0xa1, 0xa2, 0x61 } }
+
+  ## Include/Ppi/StorageSecurityCommand.h
+  gEdkiiPeiStorageSecurityCommandPpiGuid    = { 0x35de0b4e, 0x30fb, 0x46c3, { 0xbd, 0x84, 0x1f, 0xdb, 0xa1, 0x58, 0xbb, 0x56 } }
+
+  ## Include/Ppi/AtaPassThru.h
+  gEdkiiPeiAtaPassThruPpiGuid               = { 0xa16473fd, 0xd474, 0x4c89, { 0xae, 0xc7, 0x90, 0xb8, 0x3c, 0x73, 0x86, 0x9  } }
 
 [Protocols]
   ## Load File protocol provides capability to load and unload EFI image into memory and execute it.
@@ -869,18 +881,6 @@
   #   FALSE - PCI MMIO BARs of a device may be located above 4 GB even if it has an option ROM
   # @Prompt Degrade 64-bit PCI MMIO BARs for legacy BIOS option ROMs
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDegradeResourceForOptionRom|TRUE|BOOLEAN|0x0001003a
-
-  ## Indicates if SDHCI should disable 26-bit support even on 4.10+ controllers<BR><BR>
-  #   TRUE  - 26-bit support is disabled.<BR>
-  #   FALSE - 26-bit support is enabled if controller is 4.10+.<BR>
-  # @Prompt SDHCI Disable 26-bit support.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdSdhciDisable26bitSupport|FALSE|BOOLEAN|0xF0000000
-
-  ## Indicates if SDHCI should disable checking of CID<BR><BR>
-  #   TRUE  - CID check is skipped.<BR>
-  #   FALSE - CID check occurs.<BR>
-  # @Prompt SDHCI disable CID.
-  gEfiMdeModulePkgTokenSpaceGuid.PcdSdhciDisableCidSupport|FALSE|BOOLEAN|0xF0000001
 
 [PcdsFeatureFlag.IA32, PcdsFeatureFlag.ARM, PcdsFeatureFlag.AARCH64]
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDegradeResourceForOptionRom|FALSE|BOOLEAN|0x0001003a

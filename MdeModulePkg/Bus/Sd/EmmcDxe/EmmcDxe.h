@@ -67,8 +67,6 @@ extern EFI_COMPONENT_NAME2_PROTOCOL     gEmmcDxeComponentName2;
 #define EMMC_PARTITION_DATA_FROM_DISKINFO(a) \
     CR(a, EMMC_PARTITION, DiskInfo, EMMC_PARTITION_SIGNATURE)
 
-#define EMMC_CID_DISABLED_MODEL "CID_DISABLED"
-
 //
 // Take 2.5 seconds as generic time out value, 1 microsecond as unit.
 //

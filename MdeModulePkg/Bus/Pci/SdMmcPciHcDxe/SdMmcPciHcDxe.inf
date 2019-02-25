@@ -68,9 +68,6 @@
   gEfiPciIoProtocolGuid                         ## TO_START
   gEfiSdMmcPassThruProtocolGuid                 ## BY_START
 
-[FeaturePcd]
-  gEfiMdeModulePkgTokenSpaceGuid.PcdSdhciDisable26bitSupport
-
 # [Event]
 # EVENT_TYPE_PERIODIC_TIMER ## SOMETIMES_CONSUMES
 

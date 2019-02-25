@@ -1019,8 +1019,7 @@ SdMmcHcInitV4Enhancements (
     //
     // Check if controller version V4.10 or higher
     //
-    if (!FeaturePcdGet (PcdSdhciDisable26bitSupport) &&
-        (ControllerVer >= SD_MMC_HC_CTRL_VER_410)) {
+    if (ControllerVer >= SD_MMC_HC_CTRL_VER_410) {
       HostCtrl2 |= SD_MMC_HC_26_DATA_LEN_ADMA_EN;
       DEBUG ((DEBUG_INFO, "Enabled V4 26 bit data length ADMA support\n"));
     }
