@@ -179,8 +179,19 @@ BUILD_CPPFLAGS=
 OBJ=antlr.o scan.o err.o bits.o build.o fset2.o fset.o gen.o  \
         globals.o hash.o lex.o main.o misc.o set.o pred.o egman.o mrhoist.o fcache.o
 
-$(BIN_DIR)/antlr : $(OBJ) $(SRC)
-		$(BUILD_CC) $(BUILD_CFLAGS) -o $(BIN_DIR)/antlr $(OBJ)
+ifdef BASETOOLS_OUT_DIR
+OUTPUT_DIRECTORY = $(BASETOOLS_OUT_DIR)/antlr/
+else
+OUTPUT_DIRECTORY = ./
+endif
+OUT_OBJ = $(addprefix $(OUTPUT_DIRECTORY), $(OBJ))
+
+$(BIN_DIR)/antlr : $(OUT_OBJ) $(SRC)
+		$(BUILD_CC) $(BUILD_CFLAGS) -o $(BIN_DIR)/antlr $(OUT_OBJ)
+
+$(OUT_OBJ): $(OUTPUT_DIRECTORY)
+$(OUTPUT_DIRECTORY):
+	mkdir -p $@
 
 # what files does PCCTS generate (both ANTLR and DLG)
 PCCTS_GEN=antlr.c scan.c err.c tokens.h mode.h parser.dlg stdpccts.h remap.h
@@ -195,17 +206,17 @@ SRC=antlr.c scan.c err.c bits.c build.c fset2.c fset.c gen.c globals.c \
 #antlr.c stdpccts.h parser.dlg tokens.h err.c : antlr.g
 #	$(ANTLR) -gh antlr.g
 
-antlr.o : antlr.c mode.h tokens.h
+$(OUTPUT_DIRECTORY)antlr.o : antlr.c mode.h tokens.h
 
-scan.o : scan.c mode.h tokens.h
+$(OUTPUT_DIRECTORY)scan.o : scan.c mode.h tokens.h
 
 #scan.c mode.h: parser.dlg
 #	$(DLG) -C2 parser.dlg scan.c
 
-set.o : $(SET)/set.c
-	$(BUILD_CC) $(BUILD_CFLAGS) -c -o set.o $(SET)/set.c
+$(OUTPUT_DIRECTORY)set.o : $(SET)/set.c
+	$(BUILD_CC) $(BUILD_CFLAGS) -c -o $@ $(SET)/set.c
 
-%.o : %.c 
+$(OUTPUT_DIRECTORY)%.o : %.c
 	$(BUILD_CC) -c $(BUILD_CFLAGS) $(BUILD_CPPFLAGS) $< -o $@
 
 #
@@ -214,8 +225,8 @@ set.o : $(SET)/set.c
 
 #clean up all the intermediate files
 clean:
-	rm -f $(BIN_DIR)/antlr *.$(OBJ_EXT) core
+	rm -f $(BIN_DIR)/antlr $(OUTPUT_DIRECTORY)*.$(OBJ_EXT) core
 
 #remove everything in clean plus the PCCTS files generated
 scrub:
-	rm -f $(PCCTS_GEN) *.$(OBJ_EXT) core
+	rm -f $(PCCTS_GEN) $(OUTPUT_DIRECTORY)*.$(OBJ_EXT) core
