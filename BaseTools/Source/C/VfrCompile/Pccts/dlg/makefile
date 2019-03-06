@@ -125,19 +125,8 @@ OUT_OBJ = -o
 OBJ = dlg_p.o dlg_a.o main.o err.o set.o support.o output.o \
         relabel.o automata.o
 
-ifdef BASETOOLS_OUT_DIR
-OUTPUT_DIRECTORY = $(BASETOOLS_OUT_DIR)/dlg/
-else
-OUTPUT_DIRECTORY = ./
-endif
-OUT_OBJ = $(addprefix $(OUTPUT_DIRECTORY), $(OBJ))
-
-$(BIN_DIR)/dlg : $(OUT_OBJ) $(SRC)
-		$(BUILD_CC) $(BUILD_CFLAGS) -o $(BIN_DIR)/dlg $(OUT_OBJ)
-
-$(OUT_OBJ): $(OUTPUT_DIRECTORY)
-$(OUTPUT_DIRECTORY):
-	mkdir -p $@
+$(BIN_DIR)/dlg : $(OBJ) $(SRC)
+		$(BUILD_CC) $(BUILD_CFLAGS) -o $(BIN_DIR)/dlg $(OBJ)
 
 SRC = dlg_p.c dlg_a.c main.c err.c $(SET)/set.c support.c output.c \
         relabel.c automata.c
@@ -148,19 +137,19 @@ SRC = dlg_p.c dlg_a.c main.c err.c $(SET)/set.c support.c output.c \
 #dlg_a.c mode.h : parser.dlg
 #	$(DLG) -C2 parser.dlg dlg_a.c
 
-$(OUTPUT_DIRECTORY)dlg_p.$(OBJ_EXT) : dlg_p.c dlg.h tokens.h mode.h
-	$(BUILD_CC) $(BUILD_CFLAGS) -c dlg_p.c -o $@
+dlg_p.$(OBJ_EXT) : dlg_p.c dlg.h tokens.h mode.h
+	$(BUILD_CC) $(BUILD_CFLAGS) -c dlg_p.c
 
-$(OUTPUT_DIRECTORY)dlg_a.$(OBJ_EXT) : dlg_a.c dlg.h tokens.h mode.h
-	$(BUILD_CC) $(BUILD_CFLAGS) -c dlg_a.c -o $@
+dlg_a.$(OBJ_EXT) : dlg_a.c dlg.h tokens.h mode.h
+	$(BUILD_CC) $(BUILD_CFLAGS) -c dlg_a.c
 
-$(OUTPUT_DIRECTORY)main.$(OBJ_EXT) : main.c dlg.h
-	$(BUILD_CC) $(BUILD_CFLAGS) -c main.c -o $@
+main.$(OBJ_EXT) : main.c dlg.h
+	$(BUILD_CC) $(BUILD_CFLAGS) -c main.c
 
-$(OUTPUT_DIRECTORY)set.$(OBJ_EXT) : $(SET)/set.c
-	$(BUILD_CC) -c $(BUILD_CFLAGS) $(SET)/set.c -o $@
+set.$(OBJ_EXT) : $(SET)/set.c
+	$(BUILD_CC) -c $(BUILD_CFLAGS) $(SET)/set.c
 
-$(OUTPUT_DIRECTORY)%.o : %.c
+%.o : %.c 
 	$(BUILD_CC) -c $(BUILD_CFLAGS) $(BUILD_CPPFLAGS) $< -o $@
 
 lint:
@@ -168,4 +157,4 @@ lint:
 
 #clean up all the intermediate files
 clean:
-	rm -f $(BIN_DIR)/dlg $(OUTPUT_DIRECTORY)*.$(OBJ_EXT) core
+	rm -f $(BIN_DIR)/dlg *.$(OBJ_EXT) core

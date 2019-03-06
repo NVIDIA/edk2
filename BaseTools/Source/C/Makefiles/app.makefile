@@ -13,13 +13,6 @@
 
 MAKEROOT ?= ../..
 
-ifdef BASETOOLS_OUT_DIR
-OUTPUT_DIRECTORY = $(BASETOOLS_OUT_DIR)/$(APPNAME)/
-else
-OUTPUT_DIRECTORY = ./
-endif
-OUT_OBJECTS = $(addprefix $(OUTPUT_DIRECTORY), $(OBJECTS))
-
 include $(MAKEROOT)/Makefiles/header.makefile
 
 APPLICATION = $(MAKEROOT)/bin/$(APPNAME)
@@ -27,11 +20,9 @@ APPLICATION = $(MAKEROOT)/bin/$(APPNAME)
 .PHONY:all
 all: $(MAKEROOT)/bin $(APPLICATION) 
 
-$(APPLICATION): $(OUT_OBJECTS)
-	$(LINKER) -o $(APPLICATION) $(BUILD_LFLAGS) $(OUT_OBJECTS) -L$(MAKEROOT)/libs $(LIBS)
+$(APPLICATION): $(OBJECTS) 
+	$(LINKER) -o $(APPLICATION) $(BUILD_LFLAGS) $(OBJECTS) -L$(MAKEROOT)/libs $(LIBS)
 
-$(OUT_OBJECTS): $(MAKEROOT)/Include/Common/BuildVersion.h
+$(OBJECTS): $(MAKEROOT)/Include/Common/BuildVersion.h
 
 include $(MAKEROOT)/Makefiles/footer.makefile
-
-print-%  : ; @echo $* = $($*)

@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #
 
-DEPFILES = $(OUT_OBJECTS:%.o=%.d)
+DEPFILES = $(OBJECTS:%.o=%.d)
 
 $(MAKEROOT)/libs-$(HOST_ARCH):
 	mkdir -p $(MAKEROOT)/libs-$(HOST_ARCH)
@@ -20,18 +20,17 @@ $(MAKEROOT)/libs-$(HOST_ARCH):
 install: $(MAKEROOT)/libs-$(HOST_ARCH) $(LIBRARY)
 	cp $(LIBRARY) $(MAKEROOT)/libs-$(HOST_ARCH)
 
-$(LIBRARY): $(OUT_OBJECTS)
+$(LIBRARY): $(OBJECTS) 
 	$(BUILD_AR) crs $@ $^
 
-$(OUTPUT_DIRECTORY)%.o : %.c
-	mkdir -p $(dir $@)
+%.o : %.c 
 	$(BUILD_CC)  -c $(BUILD_CPPFLAGS) $(BUILD_CFLAGS) $< -o $@
 
-$(OUTPUT_DIRECTORY)%.o : %.cpp
+%.o : %.cpp
 	$(BUILD_CXX) -c $(BUILD_CPPFLAGS) $(BUILD_CXXFLAGS) $< -o $@
 
 .PHONY: clean
 clean:
-	@rm -f $(OUT_OBJECTS) $(LIBRARY) $(DEPFILES)
+	@rm -f $(OBJECTS) $(LIBRARY) $(DEPFILES)
 
 -include $(DEPFILES)
