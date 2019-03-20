@@ -391,7 +391,7 @@ class FirmwareVolume(Image):
         FfsDxeCoreGuid = None
         FfsPeiPrioriGuid = None
         FfsDxePrioriGuid = None
-        for FfsID in self.UnDispatchedFfsDict.keys():
+        for FfsID in list(self.UnDispatchedFfsDict.keys()):
             Ffs = self.UnDispatchedFfsDict[FfsID]
             if Ffs.Type == 0x03:
                 FfsSecCoreGuid = FfsID
@@ -497,7 +497,7 @@ class FirmwareVolume(Image):
     def DisPatchDxe(self, Db):
         IsInstalled = False
         ScheduleList = sdict()
-        for FfsID in self.UnDispatchedFfsDict.keys():
+        for FfsID in list(self.UnDispatchedFfsDict.keys()):
             CouldBeLoaded = False
             DepexString = ''
             FileDepex = None
@@ -562,7 +562,7 @@ class FirmwareVolume(Image):
 
     def DisPatchPei(self, Db):
         IsInstalled = False
-        for FfsID in self.UnDispatchedFfsDict.keys():
+        for FfsID in list(self.UnDispatchedFfsDict.keys()):
             CouldBeLoaded = True
             DepexString = ''
             FileDepex = None
@@ -1105,7 +1105,7 @@ class MultipleFv(FirmwareVolume):
             Fv.frombuffer(Buf, 0, len(Buf))
 
             self.BasicInfo.append([Fv.Name, Fv.FileSystemGuid, Fv.Size])
-            self.FfsDict.append(Fv.FfsDict)
+            self.FfsDict.update(Fv.FfsDict)
 
 ## Class Eot
 #
