@@ -6,13 +6,7 @@ This sequence is further divided into Blocks and Huffman codings are applied to
 each Block.
 
 Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -2281,10 +2275,11 @@ Returns:
 
     if (Len <= TableBits) {
 
+      if (Start[Len] >= NextCode || NextCode > MaxTableLength){
+        return (UINT16) BAD_TABLE;
+      }
+
       for (Index = Start[Len]; Index < NextCode; Index++) {
-        if (Index >= MaxTableLength) {
-          return (UINT16) BAD_TABLE;
-        }
         Table[Index] = Char;
       }
 

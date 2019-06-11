@@ -1,14 +1,8 @@
 /*++ @file
 Vfr Syntax
 
-Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2004 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 --*/
 
@@ -55,7 +49,6 @@ VfrParserStart (
   )
 {
   ParserBlackBox<CVfrDLGLexer, EfiVfrParser, ANTLRToken> VfrParser(File);
-  VfrParser.parser()->SetCompatibleMode (InputInfo->CompatibleMode);
   VfrParser.parser()->SetOverrideClassGuid (InputInfo->OverrideClassGuid);
   return VfrParser.parser()->vfrProgram();
 }
@@ -661,12 +654,6 @@ vfrFormSetDefinition :
 
                                                       SET_LINE_INFO (*FSObj, L);
                                                       FSObj->SetGuid (&Guid);
-                                                      //
-                                                      // for framework vfr to store formset guid used by varstore and efivarstore
-                                                      //
-                                                      if (mCompatibleMode) {
-                                                        memcpy (&mFormsetGuid, &Guid, sizeof (EFI_GUID));
-                                                      }
                                                       FSObj->SetFormSetTitle (_STOSID(S1->getText(), S1->getLine()));
                                                       FSObj->SetHelp (_STOSID(S2->getText(), S2->getLine()));
                                                     >>
@@ -681,13 +668,6 @@ vfrFormSetDefinition :
                                                     >>
   vfrFormSetList
   E:EndFormSet                                      <<
-                                                      if (mCompatibleMode) {
-                                                        //
-                                                        // declare all undefined varstore and efivarstore
-                                                        //
-                                                        _DeclareDefaultFrameworkVarStore (GET_LINENO(E));
-                                                      }
-                                                      
                                                       //
                                                       // Declare undefined Question so that they can be used in expression.
                                                       //
@@ -1020,12 +1000,6 @@ vfrStatementVarStoreLinear :
     | T:"EFI_HII_TIME" ","                          << TypeName = T->getText(); LineNum = T->getLine(); >>
     | R:"EFI_HII_REF" ","                           << TypeName = R->getText(); LineNum = R->getLine(); >>
   )
-  { Key "=" FID:Number ","                          << // Key is used to assign Varid in Framework VFR but no use in UEFI2.1 VFR
-                                                       if (mCompatibleMode) {
-                                                         VarStoreId = _STOU16(FID->getText(), FID->getLine());
-                                                       }
-                                                    >>
-  }
   {
     VarId "=" ID:Number ","                         <<
                                                        _PCATCH(
@@ -1039,11 +1013,8 @@ vfrStatementVarStoreLinear :
   Name "=" SN:StringIdentifier ","
   Uuid "=" guidDefinition[Guid]
                                                     <<
-                                                       if (mCompatibleMode) {
-                                                         StoreName = TypeName;
-                                                       } else {
-                                                         StoreName = SN->getText();
-                                                       }
+
+                                                       StoreName = SN->getText();
                                                        _PCATCH(gCVfrDataStorage.DeclareBufferVarStore (
                                                                                 StoreName,
                                                                                 &Guid,
@@ -1257,9 +1228,6 @@ vfrStatementDisableIfFormSet :
 vfrStatementSuppressIfFormSet :
   << CIfrSuppressIf SIObj;>>
   L:SuppressIf                                         <<
-                                                           if (mCompatibleMode) {
-                                                             _PCATCH (VFR_RETURN_UNSUPPORTED, L);
-                                                           }
                                                            SIObj.SetLineNo(L->getLine()); 
                                                        >>
   { FLAGS "=" flagsField ( "\|" flagsField )* "," }
@@ -1354,34 +1322,26 @@ questionheaderFlagsField[UINT8 & Flags] :
   | InteractiveFlag                                 << $Flags |= 0x04; >>
   | ResetRequiredFlag                               << $Flags |= 0x10; >>
   | ReconnectRequiredFlag                           << $Flags |= 0x40; >>
-  | O:OptionOnlyFlag                                << 
-                                                       if (mCompatibleMode) {
-                                                         $Flags |= 0x80;
-                                                       } else {
-                                                         gCVfrErrorHandle.HandleWarning (
-                                                            VFR_WARNING_OBSOLETED_FRAMEWORK_OPCODE,
-                                                            O->getLine(),
-                                                            O->getText()
-                                                            );
-                                                       }
+  | O:OptionOnlyFlag                                <<
+                                                       gCVfrErrorHandle.HandleWarning (
+                                                          VFR_WARNING_OBSOLETED_FRAMEWORK_OPCODE,
+                                                          O->getLine(),
+                                                          O->getText()
+                                                          );
                                                     >>
-  | N:NVAccessFlag                                  << 
-                                                       if (!mCompatibleMode) {
-                                                          gCVfrErrorHandle.HandleWarning (
-                                                            VFR_WARNING_OBSOLETED_FRAMEWORK_OPCODE,
-                                                            N->getLine(),
-                                                            N->getText()
-                                                            );
-                                                       }
+  | N:NVAccessFlag                                  <<
+                                                        gCVfrErrorHandle.HandleWarning (
+                                                          VFR_WARNING_OBSOLETED_FRAMEWORK_OPCODE,
+                                                          N->getLine(),
+                                                          N->getText()
+                                                          );
                                                     >>
-  | L:LateCheckFlag                                 << 
-                                                       if (!mCompatibleMode) {
-                                                          gCVfrErrorHandle.HandleWarning (
-                                                            VFR_WARNING_OBSOLETED_FRAMEWORK_OPCODE,
-                                                            L->getLine(),
-                                                            L->getText()
-                                                            );
-                                                       }
+  | L:LateCheckFlag                                 <<
+                                                        gCVfrErrorHandle.HandleWarning (
+                                                          VFR_WARNING_OBSOLETED_FRAMEWORK_OPCODE,
+                                                          L->getLine(),
+                                                          L->getText()
+                                                          );
                                                     >>
   ;
 
@@ -1408,18 +1368,6 @@ vfrStorageVarId[EFI_VARSTORE_INFO & Info, CHAR8 *&QuestVarIdStr, BOOLEAN CheckFl
                                                     >>
                                                     <<
                                                        VfrReturnCode = gCVfrDataStorage.GetVarStoreId(SName, &$Info.mVarStoreId);
-                                                       if (mCompatibleMode && VfrReturnCode == VFR_RETURN_UNDEFINED) {
-                                                          gCVfrDataStorage.DeclareBufferVarStore (
-                                                                             SName,
-                                                                             &mFormsetGuid,
-                                                                             &gCVfrVarDataTypeDB,
-                                                                             SName,
-                                                                             EFI_VARSTORE_ID_INVALID,
-                                                                             FALSE,
-                                                                             FALSE
-                                                                             );
-                                                          VfrReturnCode = gCVfrDataStorage.GetVarStoreId(SName, &$Info.mVarStoreId, &mFormsetGuid);
-                                                       }
                                                        if (CheckFlag || VfrReturnCode == VFR_RETURN_SUCCESS) {
                                                          _PCATCH(VfrReturnCode, SN1);
                                                          _PCATCH(gCVfrDataStorage.GetNameVarStoreInfo (&$Info, Idx), SN1);
@@ -1433,17 +1381,6 @@ vfrStorageVarId[EFI_VARSTORE_INFO & Info, CHAR8 *&QuestVarIdStr, BOOLEAN CheckFl
     SN2:StringIdentifier                            << SName = SN2->getText(); _STRCAT(&VarIdStr, SName); >>
                                                     <<
                                                        VfrReturnCode = gCVfrDataStorage.GetVarStoreId(SName, &$Info.mVarStoreId);
-                                                       if (mCompatibleMode && VfrReturnCode == VFR_RETURN_UNDEFINED) {
-                                                          gCVfrDataStorage.DeclareBufferVarStore (
-                                                                             SName,
-                                                                             &mFormsetGuid,
-                                                                             &gCVfrVarDataTypeDB,
-                                                                             SName,
-                                                                             EFI_VARSTORE_ID_INVALID,
-                                                                             FALSE
-                                                                             );
-                                                          VfrReturnCode = gCVfrDataStorage.GetVarStoreId(SName, &$Info.mVarStoreId, &mFormsetGuid);
-                                                       }
                                                        if (CheckFlag || VfrReturnCode == VFR_RETURN_SUCCESS) {
                                                          _PCATCH(VfrReturnCode, SN2);
                                                          VarStoreType = gCVfrDataStorage.GetVarStoreType ($Info.mVarStoreId);
@@ -1465,7 +1402,6 @@ vfrStorageVarId[EFI_VARSTORE_INFO & Info, CHAR8 *&QuestVarIdStr, BOOLEAN CheckFl
       {
         OpenBracket I2:Number CloseBracket          <<
                                                        Idx = _STOU32(I2->getText(), I2->getLine());
-                                                       if (mCompatibleMode) Idx --;
                                                        if (Idx > 0) {
                                                          //
                                                          // Idx == 0, [0] can be ignored.
@@ -1547,7 +1483,6 @@ vfrQuestionDataFieldName [EFI_QUESTION_ID &QId, UINT32 &Mask, CHAR8 *&VarIdStr, 
       {
         OpenBracket I2:Number CloseBracket          <<
                                                        Idx = _STOU32(I2->getText(), I2->getLine());
-                                                       if (mCompatibleMode) Idx --;
                                                        if (Idx > 0) {
                                                          //
                                                          // Idx == 0, [0] can be ignored.
@@ -1755,21 +1690,6 @@ vfrFormDefinition :
     vfrStatementRefreshEvent ";"
   )*
   E:EndForm                                         <<
-                                                      if (mCompatibleMode) {
-                                                        //
-                                                        // Add Label for Framework Vfr
-                                                        //
-                                                        CIfrLabel LObj1;
-                                                        LObj1.SetLineNo(E->getLine());
-                                                        LObj1.SetNumber (0xffff);  //add end label for UEFI, label number hardcode 0xffff
-                                                        CIfrLabel LObj2;
-                                                        LObj2.SetLineNo(E->getLine());
-                                                        LObj2.SetNumber (0x0);     //add dummy label for UEFI, label number hardcode 0x0
-                                                        CIfrLabel LObj3;
-                                                        LObj3.SetLineNo(E->getLine());
-                                                        LObj3.SetNumber (0xffff);  //add end label for UEFI, label number hardcode 0xffff
-                                                      }
-
                                                       {CIfrEnd EObj; EObj.SetLineNo (E->getLine()); mLastFormEndAddr = EObj.GetObjBinAddr<CHAR8>(); gAdjustOpcodeOffset = EObj.GetObjBinOffset ();}
                                                     >>
   ";"
@@ -2015,13 +1935,11 @@ vfrStatementConditionalNew :
   ;
 
 vfrStatementSuppressIfStat :
-  <<mCompatibleMode>>? vfrStatementSuppressIfStatOld
-  | vfrStatementSuppressIfStatNew
+  vfrStatementSuppressIfStatNew
   ;
 
 vfrStatementGrayOutIfStat :
-  <<mCompatibleMode>>? vfrStatementGrayOutIfStatOld
-  | vfrStatementGrayOutIfStatNew
+  vfrStatementGrayOutIfStatNew
   ;
 
 vfrStatementInvalid :
@@ -2040,23 +1958,19 @@ flagsField :
   | DefaultFlag 
   | ResetRequiredFlag 
   | ReconnectRequiredFlag
-  | N:NVAccessFlag                                     << 
-                                                          if (!mCompatibleMode) {
-                                                            gCVfrErrorHandle.HandleWarning (
-                                                              VFR_WARNING_OBSOLETED_FRAMEWORK_OPCODE,
-                                                              N->getLine(),
-                                                              N->getText()
-                                                              );
-                                                          }
+  | N:NVAccessFlag                                     <<
+                                                          gCVfrErrorHandle.HandleWarning (
+                                                            VFR_WARNING_OBSOLETED_FRAMEWORK_OPCODE,
+                                                            N->getLine(),
+                                                            N->getText()
+                                                            );
                                                        >>
-  | L:LateCheckFlag                                    << 
-                                                          if (!mCompatibleMode) {
-                                                            gCVfrErrorHandle.HandleWarning (
-                                                              VFR_WARNING_OBSOLETED_FRAMEWORK_OPCODE,
-                                                              L->getLine(),
-                                                              L->getText()
-                                                              );
-                                                          }
+  | L:LateCheckFlag                                    <<
+                                                          gCVfrErrorHandle.HandleWarning (
+                                                            VFR_WARNING_OBSOLETED_FRAMEWORK_OPCODE,
+                                                            L->getLine(),
+                                                            L->getText()
+                                                            );
                                                        >> 
   ;
 
@@ -2471,34 +2385,13 @@ vfrCheckBoxFlags [CIfrCheckBox & CBObj, UINT32 LineNum] :
 
 checkboxFlagsField[UINT8 & LFlags, UINT8 & HFlags] :
     N:Number                                           <<
-                                                          if (mCompatibleMode) {
-                                                            //
-                                                            // set question flag
-                                                            //
-                                                            $LFlags |= _STOU8(N->getText(), N->getLine());
-                                                          } else {
-                                                            _PCATCH(_STOU8(N->getText(), N->getLine()) == 0 ? VFR_RETURN_SUCCESS : VFR_RETURN_UNSUPPORTED, N->getLine());
-                                                          }
+                                                          _PCATCH(_STOU8(N->getText(), N->getLine()) == 0 ? VFR_RETURN_SUCCESS : VFR_RETURN_UNSUPPORTED, N->getLine());
                                                        >>
   | D:"DEFAULT"                                        <<
-                                                          if (mCompatibleMode) {
-                                                            //
-                                                            // set question Default flag
-                                                            //
-                                                            $LFlags |= 0x01;
-                                                          } else {
-                                                            _PCATCH (VFR_RETURN_UNSUPPORTED, D);
-                                                          }
+                                                          _PCATCH (VFR_RETURN_UNSUPPORTED, D);
                                                        >>
   | M:"MANUFACTURING"                                  <<
-                                                          if (mCompatibleMode) {
-                                                            //
-                                                            // set question MFG flag
-                                                            //
-                                                            $LFlags |= 0x02;
-                                                          } else {
-                                                            _PCATCH (VFR_RETURN_UNSUPPORTED, M);
-                                                          }
+                                                          _PCATCH (VFR_RETURN_UNSUPPORTED, M);
                                                        >>
   | "CHECKBOX_DEFAULT"                                 << $LFlags |= 0x01; >>
   | "CHECKBOX_DEFAULT_MFG"                             << $LFlags |= 0x02; >>
@@ -3518,9 +3411,7 @@ vfrStatementDisableIfStat :
 vfrStatementInconsistentIfStat :
   << CIfrInconsistentIf IIObj; >>
   L:InconsistentIf                                     <<
-                                                          if (!mCompatibleMode) {
-                                                            _PCATCH (VFR_RETURN_UNSUPPORTED, L);
-                                                          }
+                                                          _PCATCH (VFR_RETURN_UNSUPPORTED, L);
                                                           IIObj.SetLineNo(L->getLine());
                                                        >>
   Prompt "=" "STRING_TOKEN" "\(" S:Number "\)" ","     << IIObj.SetError (_STOSID(S->getText(), S->getLine())); >>
@@ -3567,40 +3458,6 @@ vfrStatementGrayOutIfStatNew :
   ";"
   ( vfrStatementStatList )*
   E: EndIf ";"                                       << CRT_END_OP (E); >>
-  ;
-
-vfrStatementSuppressIfStatOld :
-  <<
-    CIfrSuppressIf SIObj;
-    BOOLEAN        GrayOutExist = FALSE;
-  >>
-  L:SuppressIf                                       << SIObj.SetLineNo(L->getLine()); >>
-  { FLAGS "=" flagsField ( "\|" flagsField )* "," }
-  vfrStatementExpression[0]
-  ";"
-  {
-    vfrStatementsuppressIfGrayOutIf
-                                                     << GrayOutExist = TRUE; >>
-  }
-  ( vfrStatementStatListOld )*
-  E: EndIf ";"                                       << if (GrayOutExist) CRT_END_OP (E); CRT_END_OP (E);>>
-  ;
-
-vfrStatementGrayOutIfStatOld :
-  <<
-    CIfrGrayOutIf  GOIObj;
-    BOOLEAN        SuppressExist = FALSE;
-  >>
-  L:GrayOutIf                                          << GOIObj.SetLineNo(L->getLine()); >>
-  { FLAGS "=" flagsField ( "\|" flagsField )* "," }
-  vfrStatementExpression[0]
-  ";"
-  {
-    vfrStatementgrayoutIfSuppressIf
-                                                       << SuppressExist = TRUE; >>
-  }
-  ( vfrStatementStatListOld )*
-  E: EndIf ";"                                         << if (SuppressExist) CRT_END_OP (E); CRT_END_OP (E); >>
   ;
 
 vfrImageTag :
@@ -3875,9 +3732,7 @@ vfrStatementOneOfOption :
                                                        >>
   {
     "," Key "=" KN:Number                              <<
-                                                         if (!mCompatibleMode) {
-                                                           _PCATCH (VFR_RETURN_UNSUPPORTED, KN);
-                                                         }
+                                                         _PCATCH (VFR_RETURN_UNSUPPORTED, KN);
                                                          //
                                                          // Guid Option Key
                                                          //
@@ -3914,42 +3769,25 @@ oneofoptionFlagsField [UINT8 & HFlags, UINT8 & LFlags] :
   | ReconnectRequiredFlag                              << $HFlags |= 0x40; >>
   | ManufacturingFlag                                  << $LFlags |= 0x20; >>
   | DefaultFlag                                        << $LFlags |= 0x10; >>
-  | A:NVAccessFlag                                     << 
-                                                          if (mCompatibleMode) {
-                                                            $HFlags |= 0x08;
-                                                          } else {
-                                                            gCVfrErrorHandle.HandleWarning (
-                                                              VFR_WARNING_OBSOLETED_FRAMEWORK_OPCODE,
-                                                              A->getLine(),
-                                                              A->getText()
-                                                              );
-                                                          }
+  | A:NVAccessFlag                                     <<
+                                                          gCVfrErrorHandle.HandleWarning (
+                                                            VFR_WARNING_OBSOLETED_FRAMEWORK_OPCODE,
+                                                            A->getLine(),
+                                                            A->getText()
+                                                            );
                                                        >>
-  | L:LateCheckFlag                                    << 
-                                                          if (mCompatibleMode) {
-                                                            $HFlags |= 0x20;
-                                                          } else {
-                                                            gCVfrErrorHandle.HandleWarning (
-                                                              VFR_WARNING_OBSOLETED_FRAMEWORK_OPCODE,
-                                                              L->getLine(),
-                                                              L->getText()
-                                                              );
-                                                          }
+  | L:LateCheckFlag                                    <<
+                                                          gCVfrErrorHandle.HandleWarning (
+                                                            VFR_WARNING_OBSOLETED_FRAMEWORK_OPCODE,
+                                                            L->getLine(),
+                                                            L->getText()
+                                                            );
                                                        >>
   ;
 
 vfrStatementLabel :
   L:Label
   N:Number                                             <<
-                                                          if (mCompatibleMode) {
-                                                            //
-                                                            // Add end Label for Framework Vfr
-                                                            //
-                                                            CIfrLabel LObj1;
-                                                            LObj1.SetLineNo(L->getLine());
-                                                            LObj1.SetNumber (0xffff);  //add end label for UEFI, label number hardcode 0xffff
-                                                          }
-
                                                           {
                                                             CIfrLabel LObj2;
                                                             LObj2.SetLineNo(L->getLine());
@@ -3986,9 +3824,7 @@ vfrStatementBanner :
 //
 vfrStatementInvalidHidden :
   L:Hidden               <<
-                            if (!mCompatibleMode) {
-                              _PCATCH (VFR_RETURN_UNSUPPORTED, L);
-                            }
+                            _PCATCH (VFR_RETURN_UNSUPPORTED, L);
                          >>
   Value "=" Number ","
   Key "=" Number ";"
@@ -4005,9 +3841,7 @@ vfrStatementInvalidInconsistentIf :
 
 vfrStatementInvalidInventory :
   L:Inventory                                      <<
-                                                      if (!mCompatibleMode) {
-                                                        _PCATCH (VFR_RETURN_UNSUPPORTED, L);
-                                                      }
+                                                      _PCATCH (VFR_RETURN_UNSUPPORTED, L);
                                                    >>
   Help "=" "STRING_TOKEN" "\(" Number "\)" ","
   Text "=" "STRING_TOKEN" "\(" Number "\)" ","
@@ -4020,15 +3854,11 @@ vfrStatementInvalidInventory :
 vfrStatementInvalidSaveRestoreDefaults :
   (
    L:Save                                          <<
-                                                      if (!mCompatibleMode) {
-                                                        _PCATCH (VFR_RETURN_UNSUPPORTED, L);
-                                                      }
+                                                      _PCATCH (VFR_RETURN_UNSUPPORTED, L);
                                                    >>
   |
    K:Restore                                       <<
-                                                      if (!mCompatibleMode) {
-                                                        _PCATCH (VFR_RETURN_UNSUPPORTED, K);
-                                                      }
+                                                      _PCATCH (VFR_RETURN_UNSUPPORTED, K);
                                                    >>
   )
   Defaults ","
@@ -4333,9 +4163,7 @@ vareqvalExp [UINT32 & RootLevel, UINT32 & ExpOpCount] :
      EFI_VARSTORE_ID       VarStoreId   = EFI_VARSTORE_ID_INVALID;
   >>
   L:VarEqVal                                          <<
-                                                        if (!mCompatibleMode) {
                                                           _PCATCH (VFR_RETURN_UNSUPPORTED, L);
-                                                        }
                                                       >>
   VK:Var
   OpenParen
@@ -5012,10 +4840,6 @@ private:
   UINT16              mUsedDefaultArray[EFI_IFR_MAX_DEFAULT_TYPE];
   UINT16              mUsedDefaultCount;
 
-//
-// For framework vfr compatibility
-//
-  BOOLEAN             mCompatibleMode;
   EFI_GUID            mFormsetGuid;
 
   VOID                _CRT_OP (IN BOOLEAN);
@@ -5055,7 +4879,6 @@ public:
 
   VOID                _DeclareDefaultLinearVarStore (IN UINT32);
   VOID                _DeclareStandardDefaultStorage (IN UINT32);
-  VOID                _DeclareDefaultFrameworkVarStore (IN UINT32);
 
   VOID                AssignQuestionKey (IN CIfrQuestionHeader &, IN ANTLRTokenPtr);
 
@@ -5064,10 +4887,6 @@ public:
   VOID                IdEqIdDoSpecial       (IN UINT32 &, IN UINT32, IN EFI_QUESTION_ID, IN CHAR8 *, IN UINT32, IN EFI_QUESTION_ID, IN CHAR8 *, IN UINT32, IN EFI_COMPARE_TYPE);
   VOID                IdEqListDoSpecial     (IN UINT32 &, IN UINT32, IN EFI_QUESTION_ID, IN CHAR8 *, IN UINT32, IN UINT16, IN UINT16 *);
   VOID                SetOverrideClassGuid  (IN EFI_GUID *);
-//
-// For framework vfr compatibility
-//
-  VOID                SetCompatibleMode (IN BOOLEAN);
 >>
 }
 
@@ -5548,84 +5367,6 @@ EfiVfrParser::_STOR (
   return Ref;
 }
 
-//
-// framework vfr to default declare varstore for each structure
-//
-VOID
-EfiVfrParser::_DeclareDefaultFrameworkVarStore (
-  IN UINT32 LineNo
-  )
-{
-  SVfrVarStorageNode    *pNode;
-  UINT32                TypeSize;
-  BOOLEAN               FirstNode;
-  CONST CHAR8           VarName[] = "Setup";
-
-  FirstNode = TRUE;
-  pNode = gCVfrDataStorage.GetBufferVarStoreList();
-  if (pNode == NULL && gCVfrVarDataTypeDB.mFirstNewDataTypeName != NULL) {
-    //
-    // Create the default Buffer Var Store when no VarStore is defined.
-    // its name should be "Setup"
-    //
-    gCVfrVarDataTypeDB.GetDataTypeSize (gCVfrVarDataTypeDB.mFirstNewDataTypeName, &TypeSize);
-    CIfrVarStore      VSObj;
-    VSObj.SetLineNo (LineNo);
-    VSObj.SetVarStoreId (0x1); //the first and only one Buffer Var Store
-    VSObj.SetSize ((UINT16) TypeSize);
-    //VSObj.SetName (gCVfrVarDataTypeDB.mFirstNewDataTypeName);
-    VSObj.SetName ((CHAR8 *) VarName);
-    VSObj.SetGuid (&mFormsetGuid);
-#ifdef VFREXP_DEBUG
-    printf ("Create the default VarStoreName is %s\n", gCVfrVarDataTypeDB.mFirstNewDataTypeName);
-#endif
-  } else {
-    for (; pNode != NULL; pNode = pNode->mNext) {
-      //
-      // create the default varstore opcode for not declared varstore
-      // the first varstore name should be "Setup"
-      //
-      if (!pNode->mAssignedFlag) {
-        CIfrVarStore      VSObj;
-        VSObj.SetLineNo (LineNo);
-        VSObj.SetVarStoreId (pNode->mVarStoreId);
-        VSObj.SetSize ((UINT16) pNode->mStorageInfo.mDataType->mTotalSize);
-        if (FirstNode) {
-          VSObj.SetName ((CHAR8 *) VarName);
-          FirstNode = FALSE;
-        } else {
-          VSObj.SetName (pNode->mVarStoreName);
-        }
-        VSObj.SetGuid (&pNode->mGuid);
-#ifdef VFREXP_DEBUG
-        printf ("undefined VarStoreName is %s and Id is 0x%x\n", pNode->mVarStoreName, pNode->mVarStoreId);
-#endif
-      }
-    }
-  }
-
-  pNode = gCVfrDataStorage.GetEfiVarStoreList();
-  for (; pNode != NULL; pNode = pNode->mNext) {
-    //
-    // create the default efi varstore opcode for not exist varstore
-    //
-    if (!pNode->mAssignedFlag) {
-      CIfrVarStoreEfi VSEObj;
-      VSEObj.SetLineNo (LineNo);
-      VSEObj.SetAttributes (0x00000002); //hardcode EFI_VARIABLE_BOOTSERVICE_ACCESS attribute
-      VSEObj.SetGuid (&pNode->mGuid);
-      VSEObj.SetVarStoreId (pNode->mVarStoreId);
-      // Generate old efi varstore storage structure for compatible with old "VarEqVal" opcode,
-      // which is 3 bytes less than new structure define in UEFI Spec 2.3.1.
-      VSEObj.SetBinaryLength (sizeof (EFI_IFR_VARSTORE_EFI) - 3);
-#ifdef VFREXP_DEBUG
-      printf ("undefined Efi VarStoreName is %s and Id is 0x%x\n", pNode->mVarStoreName, pNode->mVarStoreId);
-#endif
-    }
-  }
-
-}
-
 VOID
 EfiVfrParser::_DeclareDefaultLinearVarStore (
   IN UINT32 LineNo
@@ -5923,16 +5664,6 @@ VOID
 EfiVfrParser::SetOverrideClassGuid (IN EFI_GUID *OverrideClassGuid)
 {
   mOverrideClassGuid = OverrideClassGuid;
-}
-
-//
-// For framework vfr compatibility
-//
-VOID
-EfiVfrParser::SetCompatibleMode (IN BOOLEAN Mode)
-{
-  mCompatibleMode = Mode;
-  mCVfrQuestionDB.SetCompatibleMode (Mode);
 }
 
 VOID

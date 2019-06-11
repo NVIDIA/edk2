@@ -4,13 +4,7 @@ Page Fault (#PF) handler for X64 processors
 Copyright (c) 2009 - 2019, Intel Corporation. All rights reserved.<BR>
 Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
 
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -1052,4 +1046,34 @@ SetPageTableAttributes (
   }
 
   return ;
+}
+
+/**
+  This function reads CR2 register when on-demand paging is enabled.
+
+  @param[out]  *Cr2  Pointer to variable to hold CR2 register value.
+**/
+VOID
+SaveCr2 (
+  OUT UINTN  *Cr2
+  )
+{
+  if (!mCpuSmmStaticPageTable) {
+    *Cr2 = AsmReadCr2 ();
+  }
+}
+
+/**
+  This function restores CR2 register when on-demand paging is enabled.
+
+  @param[in]  Cr2  Value to write into CR2 register.
+**/
+VOID
+RestoreCr2 (
+  IN UINTN  Cr2
+  )
+{
+  if (!mCpuSmmStaticPageTable) {
+    AsmWriteCr2 (Cr2);
+  }
 }

@@ -2,13 +2,7 @@
 # This file is used to define class Configuration
 #
 # Copyright (c) 2008 - 2018, Intel Corporation. All rights reserved.<BR>
-# This program and the accompanying materials
-# are licensed and made available under the terms and conditions of the BSD License
-# which accompanies this distribution.  The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 ##
@@ -120,6 +114,7 @@ _ConfigFileToInternalTranslation = {
     "SmmCommParaCheckBufferType":"SmmCommParaCheckBufferType",
     "SpaceCheckAll":"SpaceCheckAll",
     "SpellingCheckAll":"SpellingCheckAll",
+    "TokenReleaceList":"TokenReleaceList",
     "UniCheckAll":"UniCheckAll",
     "UniCheckHelpInfo":"UniCheckHelpInfo",
     "UniCheckPCDInfo":"UniCheckPCDInfo",
@@ -395,6 +390,8 @@ class Configuration(object):
         # A list for Copyright format
         self.Copyright = []
 
+        self.TokenReleaceList = []
+
         self.ParseConfig()
 
     def ParseConfig(self):
@@ -424,6 +421,8 @@ class Configuration(object):
                 if List[0] == 'BinaryExtList':
                     List[1] = GetSplitValueList(List[1], TAB_COMMA_SPLIT)
                 if List[0] == 'Copyright':
+                    List[1] = GetSplitValueList(List[1], TAB_COMMA_SPLIT)
+                if List[0] == 'TokenReleaceList':
                     List[1] = GetSplitValueList(List[1], TAB_COMMA_SPLIT)
                 self.__dict__[_ConfigFileToInternalTranslation[List[0]]] = List[1]
 

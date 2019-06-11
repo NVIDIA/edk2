@@ -3,13 +3,7 @@
 #
 # Copyright (c) 2008 - 2018, Intel Corporation. All rights reserved.<BR>
 # (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
-# This program and the accompanying materials
-# are licensed and made available under the terms and conditions of the BSD License
-# which accompanies this distribution.  The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 from __future__ import absolute_import
@@ -100,9 +94,7 @@ class InfBuildData(ModuleBuildClassObject):
         TAB_INF_DEFINES_VERSION_STRING              : "_Version",
         TAB_INF_DEFINES_VERSION                     : "_Version",
         TAB_INF_DEFINES_PCD_IS_DRIVER               : "_PcdIsDriver",
-        TAB_INF_DEFINES_SHADOW                      : "_Shadow",
-
-        TAB_COMPONENTS_SOURCE_OVERRIDE_PATH         : "_SourceOverridePath",
+        TAB_INF_DEFINES_SHADOW                      : "_Shadow"
     }
 
     # regular expression for converting XXX_FLAGS in [nmake] section to new type
@@ -135,10 +127,6 @@ class InfBuildData(ModuleBuildClassObject):
         self._Target = Target
         self._Toolchain = Toolchain
         self._Platform = TAB_COMMON
-        if FilePath.Key in GlobalData.gOverrideDir:
-            self._SourceOverridePath = GlobalData.gOverrideDir[FilePath.Key]
-        else:
-            self._SourceOverridePath = None
         self._TailComments = None
         self._BaseName = None
         self._DxsFile = None
@@ -667,9 +655,6 @@ class InfBuildData(ModuleBuildClassObject):
     @cached_property
     def Includes(self):
         RetVal = []
-        if self._SourceOverridePath:
-            RetVal.append(self._SourceOverridePath)
-
         Macros = self._Macros
         Macros['PROCESSOR'] = GlobalData.gEdkGlobal.get('PROCESSOR', self._Arch)
         RecordList = self._RawData[MODEL_EFI_INCLUDE, self._Arch, self._Platform]

@@ -90,7 +90,10 @@ BEGIN {
                 "no-threads",
                 "no-ts",
                 "no-ui",
-                "no-whirlpool"
+                "no-whirlpool",
+                # OpenSSL1_1_1b doesn't support default rand-seed-os for UEFI
+                # UEFI only support --with-rand-seed=none
+                "--with-rand-seed=none"
                 ) == 0 ||
                     die "OpenSSL Configure failed!\n";
 
@@ -124,6 +127,12 @@ foreach my $product ((@{$unified_info{libraries}},
         foreach my $s (@{$unified_info{sources}->{$o}}) {
             next if ($unified_info{generate}->{$s});
             next if $s =~ "crypto/bio/b_print.c";
+
+            # No need to add unused files in UEFI.
+            # So it can reduce porting time, compile time, library size.
+            next if $s =~ "crypto/rand/randfile.c";
+            next if $s =~ "crypto/store/";
+
             if ($product =~ "libssl") {
                 push @sslfilelist, '  $(OPENSSL_PATH)/' . $s . "\r\n";
                 next;

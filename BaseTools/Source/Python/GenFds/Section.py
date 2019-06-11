@@ -3,13 +3,7 @@
 #
 #  Copyright (c) 2007-2018, Intel Corporation. All rights reserved.<BR>
 #
-#  This program and the accompanying materials
-#  are licensed and made available under the terms and conditions of the BSD License
-#  which accompanies this distribution.  The full text of the license may be found at
-#  http://opensource.org/licenses/bsd-license.php
-#
-#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 ##
@@ -112,7 +106,7 @@ class Section (SectionClassObject):
     #   @param  Dict        dictionary contains macro and its value
     #   @retval tuple       (File list, boolean)
     #
-    def GetFileList(FfsInf, FileType, FileExtension, Dict = {}, IsMakefile=False):
+    def GetFileList(FfsInf, FileType, FileExtension, Dict = None, IsMakefile=False, SectionType=None):
         IsSect = FileType in Section.SectFileType
 
         if FileExtension is not None:
@@ -139,6 +133,11 @@ class Section (SectionClassObject):
                         GenFdsGlobalVariable.VerboseLogger ("\nFile Type \'%s\' of File %s in %s is not same with file type \'%s\' from Rule in FDF" %(File.Type, File.File, FfsInf.InfFileName, FileType))
                 else:
                     GenFdsGlobalVariable.InfLogger ("\nCurrent ARCH \'%s\' of File %s is not in the Support Arch Scope of %s specified by INF %s in FDF" %(FfsInf.CurrentArch, File.File, File.Arch, FfsInf.InfFileName))
+
+        elif FileType is None and SectionType == BINARY_FILE_TYPE_RAW:
+            for File in FfsInf.BinFileList:
+                if File.Ext == Suffix:
+                    FileList.append(File.Path)
 
         if (not IsMakefile and Suffix is not None and os.path.exists(FfsInf.EfiOutputPath)) or (IsMakefile and Suffix is not None):
             #

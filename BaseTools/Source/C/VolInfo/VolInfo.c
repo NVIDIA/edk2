@@ -2,13 +2,7 @@
 The tool dumps the contents of a firmware volume
 
 Copyright (c) 1999 - 2018, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -757,6 +751,7 @@ Returns:
   UINTN                       Signature[2];
   UINTN                       BytesRead;
   UINT32                      Size;
+  size_t                      ReadSize;
 
   BytesRead = 0;
   Size      = 0;
@@ -770,7 +765,10 @@ Returns:
   //
   // Read the header
   //
-  fread (&VolumeHeader, sizeof (EFI_FIRMWARE_VOLUME_HEADER) - sizeof (EFI_FV_BLOCK_MAP_ENTRY), 1, InputFile);
+  ReadSize = fread (&VolumeHeader, sizeof (EFI_FIRMWARE_VOLUME_HEADER) - sizeof (EFI_FV_BLOCK_MAP_ENTRY), 1, InputFile);
+  if (ReadSize != 1) {
+    return EFI_ABORTED;
+  }
   BytesRead     = sizeof (EFI_FIRMWARE_VOLUME_HEADER) - sizeof (EFI_FV_BLOCK_MAP_ENTRY);
   Signature[0]  = VolumeHeader.Signature;
   Signature[1]  = 0;
@@ -1059,7 +1057,10 @@ Returns:
   printf ("Revision:              0x%04X\n", VolumeHeader.Revision);
 
   do {
-    fread (&BlockMap, sizeof (EFI_FV_BLOCK_MAP_ENTRY), 1, InputFile);
+    ReadSize = fread (&BlockMap, sizeof (EFI_FV_BLOCK_MAP_ENTRY), 1, InputFile);
+    if (ReadSize != 1) {
+      return EFI_ABORTED;
+    }
     BytesRead += sizeof (EFI_FV_BLOCK_MAP_ENTRY);
 
     if (BlockMap.NumBlocks != 0) {

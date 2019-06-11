@@ -3,13 +3,7 @@
 #  Copyright (c) 2014-2016, Linaro Limited. All rights reserved.
 #  Copyright (c) 2015 - 2017, Intel Corporation. All rights reserved.
 #
-#  This program and the accompanying materials
-#  are licensed and made available under the terms and conditions of the BSD License
-#  which accompanies this distribution.  The full text of the license may be found at
-#  http://opensource.org/licenses/bsd-license.php
-#
-#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 ################################################################################
@@ -123,29 +117,8 @@ READ_LOCK_STATUS   = TRUE
   #
   # Networking stack
   #
-  INF MdeModulePkg/Universal/Network/DpcDxe/DpcDxe.inf
-  INF MdeModulePkg/Universal/Network/ArpDxe/ArpDxe.inf
-  INF MdeModulePkg/Universal/Network/Dhcp4Dxe/Dhcp4Dxe.inf
-  INF MdeModulePkg/Universal/Network/Ip4Dxe/Ip4Dxe.inf
-  INF MdeModulePkg/Universal/Network/MnpDxe/MnpDxe.inf
-  INF MdeModulePkg/Universal/Network/VlanConfigDxe/VlanConfigDxe.inf
-  INF MdeModulePkg/Universal/Network/Mtftp4Dxe/Mtftp4Dxe.inf
-  INF MdeModulePkg/Universal/Network/Udp4Dxe/Udp4Dxe.inf
-  INF NetworkPkg/TcpDxe/TcpDxe.inf
-  INF NetworkPkg/UefiPxeBcDxe/UefiPxeBcDxe.inf
-  INF NetworkPkg/IScsiDxe/IScsiDxe.inf
-!if $(NETWORK_IP6_ENABLE) == TRUE
-  INF NetworkPkg/Ip6Dxe/Ip6Dxe.inf
-  INF NetworkPkg/Udp6Dxe/Udp6Dxe.inf
-  INF NetworkPkg/Dhcp6Dxe/Dhcp6Dxe.inf
-  INF NetworkPkg/Mtftp6Dxe/Mtftp6Dxe.inf
-!endif
-!if $(HTTP_BOOT_ENABLE) == TRUE
-  INF NetworkPkg/DnsDxe/DnsDxe.inf
-  INF NetworkPkg/HttpUtilitiesDxe/HttpUtilitiesDxe.inf
-  INF NetworkPkg/HttpDxe/HttpDxe.inf
-  INF NetworkPkg/HttpBootDxe/HttpBootDxe.inf
-!endif
+!include NetworkPkg/Network.fdf.inc
+
 
   #
   # SCSI Bus and Disk Driver

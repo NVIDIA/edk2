@@ -2,15 +2,9 @@
   This driver is a sample implementation of the Graphics Output Protocol for
   the QEMU (Cirrus Logic 5446) video controller.
 
-  Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution. The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -207,6 +201,7 @@ QemuVideoControllerDriverStart (
   PCI_TYPE00                        Pci;
   QEMU_VIDEO_CARD                   *Card;
   EFI_PCI_IO_PROTOCOL               *ChildPciIo;
+  UINT64                            SupportedVgaIo;
 
   OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
 
@@ -284,12 +279,31 @@ QemuVideoControllerDriverStart (
   }
 
   //
+  // Get supported PCI attributes
+  //
+  Status = Private->PciIo->Attributes (
+                             Private->PciIo,
+                             EfiPciIoAttributeOperationSupported,
+                             0,
+                             &SupportedVgaIo
+                             );
+  if (EFI_ERROR (Status)) {
+    goto ClosePciIo;
+  }
+
+  SupportedVgaIo &= (UINT64)(EFI_PCI_IO_ATTRIBUTE_VGA_IO | EFI_PCI_IO_ATTRIBUTE_VGA_IO_16);
+  if (SupportedVgaIo == 0) {
+    Status = EFI_UNSUPPORTED;
+    goto ClosePciIo;
+  }
+
+  //
   // Set new PCI attributes
   //
   Status = Private->PciIo->Attributes (
                             Private->PciIo,
                             EfiPciIoAttributeOperationEnable,
-                            EFI_PCI_DEVICE_ENABLE | EFI_PCI_IO_ATTRIBUTE_VGA_MEMORY | EFI_PCI_IO_ATTRIBUTE_VGA_IO,
+                            EFI_PCI_DEVICE_ENABLE | EFI_PCI_IO_ATTRIBUTE_VGA_MEMORY | SupportedVgaIo,
                             NULL
                             );
   if (EFI_ERROR (Status)) {
@@ -986,19 +1000,6 @@ InitializeQemuVideo (
              &gQemuVideoComponentName,
              &gQemuVideoComponentName2
              );
-  ASSERT_EFI_ERROR (Status);
-
-  //
-  // Install EFI Driver Supported EFI Version Protocol required for
-  // EFI drivers that are on PCI and other plug in cards.
-  //
-  gQemuVideoDriverSupportedEfiVersion.FirmwareVersion = PcdGet32 (PcdDriverSupportedEfiVersion);
-  Status = gBS->InstallMultipleProtocolInterfaces (
-                  &ImageHandle,
-                  &gEfiDriverSupportedEfiVersionProtocolGuid,
-                  &gQemuVideoDriverSupportedEfiVersion,
-                  NULL
-                  );
   ASSERT_EFI_ERROR (Status);
 
   return Status;

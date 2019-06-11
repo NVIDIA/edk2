@@ -1,14 +1,8 @@
 /** @file
   UEFI Application to display CPUID leaf information.
 
-  Copyright (c) 2016 - 2018, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2016 - 2019, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -717,7 +711,7 @@ CpuidArchitecturalPerformanceMonitoring (
 **/
 VOID
 CpuidExtendedTopology (
-  VOID
+  UINT32                       LeafFunction
   )
 {
   CPUID_EXTENDED_TOPOLOGY_EAX  Eax;
@@ -726,27 +720,34 @@ CpuidExtendedTopology (
   UINT32                       Edx;
   UINT32                       LevelNumber;
 
-  if (CPUID_EXTENDED_TOPOLOGY > gMaximumBasicFunction) {
+  if (LeafFunction > gMaximumBasicFunction) {
+    return;
+  }
+  if ((LeafFunction != CPUID_EXTENDED_TOPOLOGY) && (LeafFunction != CPUID_V2_EXTENDED_TOPOLOGY)) {
     return;
   }
 
   LevelNumber = 0;
-  do {
+  for (LevelNumber = 0; ; LevelNumber++) {
     AsmCpuidEx (
-      CPUID_EXTENDED_TOPOLOGY, LevelNumber,
+      LeafFunction, LevelNumber,
       &Eax.Uint32, &Ebx.Uint32, &Ecx.Uint32, &Edx
       );
-    if (Eax.Bits.ApicIdShift != 0) {
-      Print (L"CPUID_EXTENDED_TOPOLOGY (Leaf %08x, Sub-Leaf %08x)\n", CPUID_EXTENDED_TOPOLOGY, LevelNumber);
-      Print (L"  EAX:%08x  EBX:%08x  ECX:%08x  EDX:%08x\n", Eax.Uint32, Ebx.Uint32, Ecx.Uint32, Edx);
-      PRINT_BIT_FIELD (Eax, ApicIdShift);
-      PRINT_BIT_FIELD (Ebx, LogicalProcessors);
-      PRINT_BIT_FIELD (Ecx, LevelNumber);
-      PRINT_BIT_FIELD (Ecx, LevelType);
-      PRINT_VALUE     (Edx, x2APIC_ID);
+    if (Ecx.Bits.LevelType == CPUID_EXTENDED_TOPOLOGY_LEVEL_TYPE_INVALID) {
+      break;
     }
-    LevelNumber++;
-  } while (Eax.Bits.ApicIdShift != 0);
+    Print (
+      L"%a (Leaf %08x, Sub-Leaf %08x)\n",
+      LeafFunction == CPUID_EXTENDED_TOPOLOGY ? "CPUID_EXTENDED_TOPOLOGY" : "CPUID_V2_EXTENDED_TOPOLOGY",
+      LeafFunction, LevelNumber
+      );
+    Print (L"  EAX:%08x  EBX:%08x  ECX:%08x  EDX:%08x\n", Eax.Uint32, Ebx.Uint32, Ecx.Uint32, Edx);
+    PRINT_BIT_FIELD (Eax, ApicIdShift);
+    PRINT_BIT_FIELD (Ebx, LogicalProcessors);
+    PRINT_BIT_FIELD (Ecx, LevelNumber);
+    PRINT_BIT_FIELD (Ecx, LevelType);
+    PRINT_VALUE     (Edx, x2APIC_ID);
+  }
 }
 
 /**
@@ -1386,39 +1387,6 @@ CpuidDeterministicAddressTranslationParameters (
 }
 
 /**
-  Display CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION main leaf and sub-leafs.
-
-**/
-VOID
-CpuidV2ExtendedTopologyEnumeration (
-  VOID
-  )
-{
-  CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_EAX  Eax;
-  CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_EBX  Ebx;
-  CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_ECX  Ecx;
-  UINT32                                      Edx;
-
-  if (CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION > gMaximumBasicFunction) {
-    return;
-  }
-
-  AsmCpuidEx (
-    CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION,
-    CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_MAIN_LEAF,
-    &Eax.Uint32, &Ebx.Uint32, &Ecx.Uint32, &Edx
-    );
-  Print (L"CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION (Leaf %08x, Sub-Leaf %08x)\n", CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION, CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_MAIN_LEAF);
-  Print (L"  EAX:%08x  EBX:%08x  ECX:%08x  EDX:%08x\n", Eax.Uint32, Ebx.Uint32, Ecx.Uint32, Edx);
-
-  PRINT_BIT_FIELD (Eax, BitsNum);
-  PRINT_BIT_FIELD (Ebx, ProcessorsNum);
-  PRINT_BIT_FIELD (Ecx, LevelNum);
-  PRINT_BIT_FIELD (Ecx, LevelType);
-  PRINT_VALUE     (Edx, x2APICID);
-}
-
-/**
   Display CPUID_EXTENDED_FUNCTION leaf.
 
 **/
@@ -1619,7 +1587,7 @@ UefiMain (
   CpuidStructuredExtendedFeatureFlags ();
   CpuidDirectCacheAccessInfo();
   CpuidArchitecturalPerformanceMonitoring ();
-  CpuidExtendedTopology ();
+  CpuidExtendedTopology (CPUID_EXTENDED_TOPOLOGY);
   CpuidExtendedStateMainLeaf ();
   CpuidIntelRdtMonitoringEnumerationSubLeaf ();
   CpuidIntelRdtMonitoringL3CacheCapabilitySubLeaf ();
@@ -1630,7 +1598,7 @@ UefiMain (
   CpuidProcessorFrequency ();
   CpuidSocVendor ();
   CpuidDeterministicAddressTranslationParameters ();
-  CpuidV2ExtendedTopologyEnumeration ();
+  CpuidExtendedTopology (CPUID_V2_EXTENDED_TOPOLOGY);
   CpuidExtendedFunction ();
   CpuidExtendedCpuSig ();
   CpuidProcessorBrandString ();

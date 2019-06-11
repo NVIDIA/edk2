@@ -16,13 +16,7 @@
 #
 # Copyright (C) 2018, Red Hat, Inc.
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, WITHOUT
-# WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 
 [Defines]
@@ -31,7 +25,7 @@
   FILE_GUID                      = 78f76ae8-ae62-4455-8148-c3a7ebaaa3f3
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = NvVarStoreFormattedLib|PEIM DXE_RUNTIME_DRIVER DXE_SMM_DRIVER
+  LIBRARY_CLASS                  = NvVarStoreFormattedLib|PEIM DXE_RUNTIME_DRIVER DXE_DRIVER DXE_SMM_DRIVER
   CONSTRUCTOR                    = NvVarStoreFormattedInitialize
 
 [Sources]
@@ -45,8 +39,8 @@
 #
 # The matching DEPEX section below will generate the EFI_SECTION_PEI_DEPEX,
 # EFI_SECTION_DXE_DEPEX or EFI_SECTION_MM_DEPEX leaf section for the PEIM
-# (EFI_FV_FILETYPE_PEIM), DXE_RUNTIME_DRIVER (EFI_FV_FILETYPE_DRIVER), or
+# (EFI_FV_FILETYPE_PEIM), DXE_RUNTIME_DRIVER/DXE_DRIVER (EFI_FV_FILETYPE_DRIVER), or
 # DXE_SMM_DRIVER (EFI_FV_FILETYPE_MM) module, respectively.
 #
-[Depex.common.PEIM, Depex.common.DXE_RUNTIME_DRIVER, Depex.common.DXE_SMM_DRIVER]
+[Depex.common.PEIM, Depex.common.DXE_RUNTIME_DRIVER, Depex.common.DXE_DRIVER, Depex.common.DXE_SMM_DRIVER]
   gEdkiiNvVarStoreFormattedGuid

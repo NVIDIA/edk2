@@ -4,13 +4,7 @@
 #  Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 #  Copyright (c) 2014-2016 Hewlett-Packard Development Company, L.P.<BR>
 #
-#  This program and the accompanying materials
-#  are licensed and made available under the terms and conditions of the BSD License
-#  which accompanies this distribution.  The full text of the license may be found at
-#  http://opensource.org/licenses/bsd-license.php
-#
-#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 ##
@@ -153,7 +147,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
     #   @param  self        The object pointer
     #   @param  Dict        dictionary contains macro and value pair
     #
-    def __InfParse__(self, Dict = {}):
+    def __InfParse__(self, Dict = None, IsGenFfs=False):
 
         GenFdsGlobalVariable.VerboseLogger( " Begine parsing INf file : %s" %self.InfFileName)
 
@@ -354,7 +348,10 @@ class FfsInfStatement(FfsInfStatementClassObject):
         #
         # Set OutputPath = ${WorkSpace}\Build\Fv\Ffs\${ModuleGuid}+ ${ModuleName}\
         #
-
+        if IsGenFfs:
+            Rule = self.__GetRule__()
+            if GlobalData.gGuidPatternEnd.match(Rule.NameGuid):
+                self.ModuleGuid = Rule.NameGuid
         self.OutputPath = os.path.join(GenFdsGlobalVariable.FfsDir, \
                                        self.ModuleGuid + self.BaseName)
         if not os.path.exists(self.OutputPath) :
@@ -444,7 +441,7 @@ class FfsInfStatement(FfsInfStatementClassObject):
         # Parse Inf file get Module related information
         #
 
-        self.__InfParse__(Dict)
+        self.__InfParse__(Dict, IsGenFfs=True)
         Arch = self.GetCurrentArch()
         SrcFile = mws.join( GenFdsGlobalVariable.WorkSpaceDir, self.InfFileName);
         DestFile = os.path.join( self.OutputPath, self.ModuleGuid + '.ffs')

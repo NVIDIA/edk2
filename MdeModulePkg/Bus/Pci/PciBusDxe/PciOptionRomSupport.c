@@ -2,13 +2,7 @@
   PCI Rom supporting funtions implementation for PCI Bus module.
 
 Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -696,13 +690,6 @@ ProcessOpRomImage (
     // Skip the image if it is not an EFI PCI Option ROM image
     //
     if (Pcir->CodeType != PCI_CODE_TYPE_EFI_IMAGE) {
-      goto NextImage;
-    }
-
-    //
-    // Skip the EFI PCI Option ROM image if its machine type is not supported
-    //
-    if (!EFI_IMAGE_MACHINE_TYPE_SUPPORTED (EfiRomHeader->EfiMachineType)) {
       goto NextImage;
     }
 

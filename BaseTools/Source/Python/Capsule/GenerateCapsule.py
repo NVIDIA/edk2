@@ -13,13 +13,7 @@
 #   * Do not support vendor code bytes in a capsule.
 #
 # Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
-# This program and the accompanying materials
-# are licensed and made available under the terms and conditions of the BSD License
-# which accompanies this distribution.  The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 '''
@@ -94,7 +88,7 @@ def SignPayloadSignTool (Payload, ToolPath, PfxFile):
 
     if Process.returncode != 0:
         shutil.rmtree (TempDirectoryName)
-        print (Result[1].decode())
+        print (Result[1].decode(encoding='utf-8', errors='ignore'))
         raise ValueError ('GenerateCapsule: error: signtool failed.')
 
     #
@@ -137,7 +131,7 @@ def SignPayloadOpenSsl (Payload, ToolPath, SignerPrivateCertFile, OtherPublicCer
         raise ValueError ('GenerateCapsule: error: can not run openssl.')
 
     if Process.returncode != 0:
-        print (Result[1].decode())
+        print (Result[1].decode(encoding='utf-8', errors='ignore'))
         raise ValueError ('GenerateCapsule: error: openssl failed.')
 
     return Signature
@@ -186,7 +180,7 @@ def VerifyPayloadOpenSsl (Payload, CertData, ToolPath, SignerPrivateCertFile, Ot
 
     if Process.returncode != 0:
         shutil.rmtree (TempDirectoryName)
-        print (Result[1].decode())
+        print (Result[1].decode(encoding='utf-8', errors='ignore'))
         raise ValueError ('GenerateCapsule: error: openssl failed.')
 
     shutil.rmtree (TempDirectoryName)

@@ -2,13 +2,7 @@
 
   Copyright (c) 2017 - 2019, ARM Limited. All rights reserved.
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Glossary:
     - Cm or CM   - Configuration Manager
@@ -57,6 +51,8 @@ The Dynamic Tables Framework implements the following ACPI table generators:
             from the Configuration Manager and builds the MCFG table.
   - IORT  : The IORT generator collates the IO Topology information from the
             Configuration Manager and builds the IORT table.
+  - PPTT  : The PPTT generator collates the processor topology information from
+            the Configuration Manager and builds the PPTT table.
 */
 
 /** The ACPI_TABLE_GENERATOR_ID type describes ACPI table generator ID.
@@ -78,6 +74,7 @@ typedef enum StdAcpiTableId {
   EStdAcpiTableIdSpcr,                          ///< SPCR Generator
   EStdAcpiTableIdMcfg,                          ///< MCFG Generator
   EStdAcpiTableIdIort,                          ///< IORT Generator
+  EStdAcpiTableIdPptt,                          ///< PPTT Generator
   EStdAcpiTableIdMax
 } ESTD_ACPI_TABLE_ID;
 

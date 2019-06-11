@@ -8,13 +8,7 @@
 # Copyright (c) 2009 - 2019, Intel Corporation. All rights reserved.<BR>
 # (C) Copyright 2015 Hewlett Packard Enterprise Development LP <BR>
 # Copyright (c) 2017, Microsoft Corporation.  All rights reserved. <BR>
-# This program and the accompanying materials are licensed and made available under
-# the terms and conditions of the BSD License which accompanies this distribution.
-# The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
 
@@ -416,7 +410,7 @@
   # PCD can be configured for different settings in different scenarios
   # Default setting is TCG2_BIOS_TPM_MANAGEMENT_FLAG_DEFAULT | TCG2_BIOS_STORAGE_MANAGEMENT_FLAG_DEFAULT
   # @Prompt Initial setting of TCG2 Persistent Firmware Management Flags
-  gEfiSecurityPkgTokenSpaceGuid.PcdTcg2PhysicalPresenceFlags|0x300E2|UINT32|0x0001001B
+  gEfiSecurityPkgTokenSpaceGuid.PcdTcg2PhysicalPresenceFlags|0x700E2|UINT32|0x0001001B
 
   ## Indicate current TPM2 Interrupt Number reported by _CRS control method.<BR><BR>
   # TPM2 Interrupt feature is disabled If the pcd is set to 0.<BR>
@@ -428,11 +422,11 @@
   # @Prompt Possible TPM2 Interrupt Number buffer
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2PossibleIrqNumBuf|{0x00, 0x00, 0x00, 0x00}|VOID*|0x0001001D
 
-  ## Indicates if Opal DXE driver skip unlock device flow.<BR><BR>
-  #   TRUE  - Skip unlock device flow.<BR>
-  #   FALSE - Does not skip unlock device flow.<BR>
-  # @Prompt Skip Opal DXE driver unlock device flow.
-  gEfiSecurityPkgTokenSpaceGuid.PcdSkipOpalDxeUnlock|FALSE|BOOLEAN|0x00010020
+  ## Indicates if Opal DXE driver skip password prompt.<BR><BR>
+  #   TRUE  - Skip password prompt.<BR>
+  #   FALSE - Does not skip password prompt.<BR>
+  # @Prompt Skip Opal DXE driver password prompt.
+  gEfiSecurityPkgTokenSpaceGuid.PcdSkipOpalPasswordPrompt|FALSE|BOOLEAN|0x00010020
 
 [PcdsDynamic, PcdsDynamicEx]
 

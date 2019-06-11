@@ -3,13 +3,7 @@
 #
 # Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 
 '''
 DataType
@@ -672,8 +666,6 @@ TAB_COMPONENTS_IPF = TAB_COMPONENTS + TAB_SPLIT + TAB_ARCH_IPF
 TAB_COMPONENTS_ARM = TAB_COMPONENTS + TAB_SPLIT + TAB_ARCH_ARM
 TAB_COMPONENTS_EBC = TAB_COMPONENTS + TAB_SPLIT + TAB_ARCH_EBC
 
-TAB_COMPONENTS_SOURCE_OVERRIDE_PATH = 'SOURCE_OVERRIDE_PATH'
-
 TAB_BUILD_OPTIONS = 'BuildOptions'
 
 TAB_DEFINE = 'DEFINE'
@@ -943,7 +935,6 @@ MODEL_META_DATA_PACKAGE = 5011
 MODEL_META_DATA_NMAKE = 5012
 MODEL_META_DATA_CONDITIONAL_STATEMENT_ELSEIF = 50013
 MODEL_META_DATA_CONDITIONAL_STATEMENT_ENDIF = 5014
-MODEL_META_DATA_COMPONENT_SOURCE_OVERRIDE_PATH = 5015
 
 TOOL_FAMILY_LIST = ["MSFT",
                     "INTEL",

@@ -3,13 +3,7 @@
 #
 # Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 # Portions copyright (c) 2011 - 2013, ARM Ltd. All rights reserved.<BR>
-# This program and the accompanying materials
-# are licensed and made available under the terms and conditions of the BSD License
-# which accompanies this distribution.  The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 
 ##
 # Common Definitions
@@ -94,6 +88,7 @@ EDK_COMPONENT_TYPE_SAL_RT_DRIVER = 'SAL_RT_DRIVER'
 EDK_COMPONENT_TYPE_APPLICATION = 'APPLICATION'
 EDK_NAME = 'EDK'
 EDKII_NAME = 'EDKII'
+MSG_EDKII_MAIL_ADDR = 'devel@edk2.groups.io'
 
 COMPONENT_TO_MODULE_MAP_DICT = {
     EDK_COMPONENT_TYPE_LIBRARY               :   SUP_MODULE_BASE,
@@ -127,6 +122,7 @@ BINARY_FILE_TYPE_VER = 'VER'
 BINARY_FILE_TYPE_UI = 'UI'
 BINARY_FILE_TYPE_BIN = 'BIN'
 BINARY_FILE_TYPE_FV = 'FV'
+BINARY_FILE_TYPE_RAW = 'RAW_BINARY'
 
 PLATFORM_COMPONENT_TYPE_LIBRARY_CLASS = 'LIBRARY_CLASS'
 PLATFORM_COMPONENT_TYPE_MODULE = 'MODULE'
@@ -305,8 +301,6 @@ TAB_COMPONENTS_X64 = TAB_COMPONENTS + TAB_SPLIT + TAB_ARCH_X64
 TAB_COMPONENTS_ARM = TAB_COMPONENTS + TAB_SPLIT + TAB_ARCH_ARM
 TAB_COMPONENTS_EBC = TAB_COMPONENTS + TAB_SPLIT + TAB_ARCH_EBC
 TAB_COMPONENTS_AARCH64 = TAB_COMPONENTS + TAB_SPLIT + TAB_ARCH_AARCH64
-
-TAB_COMPONENTS_SOURCE_OVERRIDE_PATH = 'SOURCE_OVERRIDE_PATH'
 
 TAB_BUILD_OPTIONS = 'BuildOptions'
 

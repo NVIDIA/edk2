@@ -13,14 +13,8 @@
 #  PEM handler functions, and pseudorandom number generator functions are not
 #  supported in this instance.
 #
-#  Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
-#  This program and the accompanying materials
-#  are licensed and made available under the terms and conditions of the BSD License
-#  which accompanies this distribution.  The full text of the license may be found at
-#  http://opensource.org/licenses/bsd-license.php
-#
-#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#  Copyright (c) 2010 - 2019, Intel Corporation. All rights reserved.<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
 
@@ -44,6 +38,7 @@
   Hash/CryptMd5.c
   Hash/CryptSha1.c
   Hash/CryptSha256.c
+  Hash/CryptSm3.c
   Hash/CryptSha512.c
   Hmac/CryptHmacMd5Null.c
   Hmac/CryptHmacSha1Null.c
@@ -54,10 +49,12 @@
 
   Pk/CryptRsaBasic.c
   Pk/CryptRsaExtNull.c
+  Pk/CryptPkcs1OaepNull.c
   Pk/CryptPkcs5Pbkdf2Null.c
   Pk/CryptPkcs7SignNull.c
   Pk/CryptPkcs7VerifyCommon.c
   Pk/CryptPkcs7VerifyBase.c
+  Pk/CryptPkcs7VerifyEku.c
 
   Pk/CryptDhNull.c
   Pk/CryptX509Null.c
@@ -97,3 +94,8 @@
   # -JCryptoPkg/Include : To disable the use of the system includes provided by RVCT
   # --diag_remark=1     : Reduce severity of "#1-D: last line of file ends without a newline"
   RVCT:*_*_ARM_CC_FLAGS = -JCryptoPkg/Include --diag_remark=1
+
+  GCC:*_CLANG35_*_CC_FLAGS = -std=c99
+  GCC:*_CLANG38_*_CC_FLAGS = -std=c99
+
+  XCODE:*_*_*_CC_FLAGS = -std=c99

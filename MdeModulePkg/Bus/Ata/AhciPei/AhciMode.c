@@ -4,14 +4,7 @@
 
   Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions
-  of the BSD License which accompanies this distribution.  The
-  full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -55,7 +48,13 @@ UINT8  mAtaTrustCommands[2] = {
 // Look up table (Lba48Bit) for maximum transfer block number
 //
 #define MAX_28BIT_TRANSFER_BLOCK_NUM     0x100
-#define MAX_48BIT_TRANSFER_BLOCK_NUM     0xFFFF
+//
+// Due to limited resource for VTd PEI DMA buffer on platforms, the driver
+// limits the maximum transfer block number for 48-bit addressing.
+// Here, setting to 0x800 means that for device with 512-byte block size, the
+// maximum buffer for DMA mapping will be 1M bytes in size.
+//
+#define MAX_48BIT_TRANSFER_BLOCK_NUM     0x800
 
 UINT32 mMaxTransferBlockNumber[2] = {
   MAX_28BIT_TRANSFER_BLOCK_NUM,
@@ -1714,7 +1713,7 @@ AhciModeInitialization (
   MaxPortNumber = MIN (MaxPortNumber, (UINT8)(UINTN)(HighBitSet32(PortImplementBitMap) + 1));
   MaxPortNumber = MIN (MaxPortNumber, AhciGetNumberOfPortsFromMap (Private->PortBitMap));
 
-  PortInitializeBitMap = Private->PortBitMap;
+  PortInitializeBitMap = Private->PortBitMap & PortImplementBitMap;
   AhciRegisters        = &Private->AhciRegisters;
   DeviceIndex          = 0;
   //
@@ -1722,6 +1721,13 @@ AhciModeInitialization (
   //
   for (PortIndex = 1; PortIndex <= MaxPortNumber; PortIndex ++) {
     Status = AhciGetPortFromMap (PortInitializeBitMap, PortIndex, &Port);
+    if (EFI_ERROR (Status)) {
+      //
+      // No more available port, just break out of the loop.
+      //
+      break;
+    }
+
     if ((PortImplementBitMap & (BIT0 << Port)) != 0) {
       //
       // Initialize FIS Base Address Register and Command List Base Address
@@ -1871,6 +1877,124 @@ AhciModeInitialization (
   }
 
   return EFI_SUCCESS;
+}
+
+/**
+  Transfer data from ATA device.
+
+  This function performs one ATA pass through transaction to transfer data from/to
+  ATA device. It chooses the appropriate ATA command and protocol to invoke PassThru
+  interface of ATA pass through.
+
+  @param[in]     DeviceData        A pointer to PEI_AHCI_ATA_DEVICE_DATA structure.
+  @param[in,out] Buffer            The pointer to the current transaction buffer.
+  @param[in]     StartLba          The starting logical block address to be accessed.
+  @param[in]     TransferLength    The block number or sector count of the transfer.
+  @param[in]     IsWrite           Indicates whether it is a write operation.
+
+  @retval EFI_SUCCESS    The data transfer is complete successfully.
+  @return others         Some error occurs when transferring data.
+
+**/
+EFI_STATUS
+TransferAtaDevice (
+  IN     PEI_AHCI_ATA_DEVICE_DATA    *DeviceData,
+  IN OUT VOID                        *Buffer,
+  IN     EFI_LBA                     StartLba,
+  IN     UINT32                      TransferLength,
+  IN     BOOLEAN                     IsWrite
+  )
+{
+  PEI_AHCI_CONTROLLER_PRIVATE_DATA    *Private;
+  EDKII_PEI_ATA_PASS_THRU_PPI         *AtaPassThru;
+  EFI_ATA_COMMAND_BLOCK               Acb;
+  EFI_ATA_PASS_THRU_COMMAND_PACKET    Packet;
+
+  Private     = DeviceData->Private;
+  AtaPassThru = &Private->AtaPassThruPpi;
+
+  //
+  // Ensure Lba48Bit and IsWrite are valid boolean values
+  //
+  ASSERT ((UINTN) DeviceData->Lba48Bit < 2);
+  ASSERT ((UINTN) IsWrite < 2);
+  if (((UINTN) DeviceData->Lba48Bit >= 2) ||
+      ((UINTN) IsWrite >= 2)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Prepare for ATA command block.
+  //
+  ZeroMem (&Acb, sizeof (EFI_ATA_COMMAND_BLOCK));
+  Acb.AtaCommand = mAtaCommands[DeviceData->Lba48Bit][IsWrite];
+  Acb.AtaSectorNumber = (UINT8) StartLba;
+  Acb.AtaCylinderLow  = (UINT8) RShiftU64 (StartLba, 8);
+  Acb.AtaCylinderHigh = (UINT8) RShiftU64 (StartLba, 16);
+  Acb.AtaDeviceHead   = (UINT8) (BIT7 | BIT6 | BIT5 |
+                                 (DeviceData->PortMultiplier == 0xFFFF ?
+                                 0 : (DeviceData->PortMultiplier << 4)));
+  Acb.AtaSectorCount  = (UINT8) TransferLength;
+  if (DeviceData->Lba48Bit) {
+    Acb.AtaSectorNumberExp = (UINT8) RShiftU64 (StartLba, 24);
+    Acb.AtaCylinderLowExp  = (UINT8) RShiftU64 (StartLba, 32);
+    Acb.AtaCylinderHighExp = (UINT8) RShiftU64 (StartLba, 40);
+    Acb.AtaSectorCountExp  = (UINT8) (TransferLength >> 8);
+  } else {
+    Acb.AtaDeviceHead      = (UINT8) (Acb.AtaDeviceHead | RShiftU64 (StartLba, 24));
+  }
+
+  //
+  // Prepare for ATA pass through packet.
+  //
+  ZeroMem (&Packet, sizeof (EFI_ATA_PASS_THRU_COMMAND_PACKET));
+  if (IsWrite) {
+    Packet.OutDataBuffer     = Buffer;
+    Packet.OutTransferLength = TransferLength;
+  } else {
+    Packet.InDataBuffer      = Buffer;
+    Packet.InTransferLength  = TransferLength;
+  }
+  Packet.Asb      = NULL;
+  Packet.Acb      = &Acb;
+  Packet.Protocol = mAtaPassThruCmdProtocols[IsWrite];
+  Packet.Length   = EFI_ATA_PASS_THRU_LENGTH_SECTOR_COUNT;
+  //
+  // |------------------------|-----------------|
+  // | ATA PIO Transfer Mode  |  Transfer Rate  |
+  // |------------------------|-----------------|
+  // |       PIO Mode 0       |  3.3Mbytes/sec  |
+  // |------------------------|-----------------|
+  // |       PIO Mode 1       |  5.2Mbytes/sec  |
+  // |------------------------|-----------------|
+  // |       PIO Mode 2       |  8.3Mbytes/sec  |
+  // |------------------------|-----------------|
+  // |       PIO Mode 3       | 11.1Mbytes/sec  |
+  // |------------------------|-----------------|
+  // |       PIO Mode 4       | 16.6Mbytes/sec  |
+  // |------------------------|-----------------|
+  //
+  // As AtaBus is used to manage ATA devices, we have to use the lowest transfer
+  // rate to calculate the possible maximum timeout value for each read/write
+  // operation. The timout value is rounded up to nearest integar and here an
+  // additional 30s is added to follow ATA spec in which it mentioned that the
+  // device may take up to 30s to respond commands in the Standby/Idle mode.
+  //
+  // Calculate the maximum timeout value for PIO read/write operation.
+  //
+  Packet.Timeout = TIMER_PERIOD_SECONDS (
+                     DivU64x32 (
+                       MultU64x32 (TransferLength, DeviceData->Media.BlockSize),
+                       3300000
+                       ) + 31
+                     );
+
+  return AtaPassThru->PassThru (
+                        AtaPassThru,
+                        DeviceData->Port,
+                        DeviceData->PortMultiplier,
+                        &Packet
+                        );
 }
 
 /**

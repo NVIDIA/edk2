@@ -6,14 +6,8 @@
   If a register returned is a single 32-bit value, then a data structure is
   not provided for that register.
 
-  Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials are licensed and made available under
-  the terms and conditions of the BSD License which accompanies this distribution.
-  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2015 - 2019, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Specification Reference:
   Intel(R) 64 and IA-32 Architectures Software Developer's Manual, Volume 2A,
@@ -1506,8 +1500,11 @@ typedef union {
     /// [Bits 14] AVX512_VPOPCNTDQ. (Intel Xeon Phi only.).
     ///
     UINT32  AVX512_VPOPCNTDQ:1;
-    UINT32  Reserved6:2;
-
+    UINT32  Reserved7:1;
+    ///
+    /// [Bits 16] Supports 5-level paging if 1.
+    ///
+    UINT32  FiveLevelPage:1;
     ///
     /// [Bits 21:17] The value of MAWAU used by the BNDLDX and BNDSTX instructions
     /// in 64-bit mode.
@@ -3620,130 +3617,20 @@ typedef union {
   number of logical processors available to BIOS/OS/Applications may be different from the
   value of EBX[15:0], depending on software and platform hardware configurations.
 
-  @param   EAX  CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION            (0x1F)
-  @param   ECX  CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_MAIN_LEAF  (0x0)
+  @param   EAX  CPUID_V2_EXTENDED_TOPOLOGY                        (0x1F)
+  @param   ECX  Level number
 
 **/
-#define CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION                         0x1F
-
-/**
-  CPUID V2 Extended Topology Enumeration Leaf
-
-  @param   EAX  CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION           (0x1F)
-  @param   ECX  CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_MAIN_LEAF (0x00)
-
-  @retval  EAX  Returns V2 Extended Topology Enumeration Leaf described by
-                the type CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_EAX.
-  @retval  EBX  Returns V2 Extended Topology Enumeration Leaf described by
-                the type CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_EBX.
-  @retval  ECX  Returns V2 Extended Topology Enumeration Leaf described by
-                the type CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_ECX.
-  @retval  EDX  Returns x2APIC ID the current logical processor.
-
-  <b>Example usage</b>
-  @code
-  CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_EAX         Eax;
-  CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_EBX         Ebx;
-  CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_ECX         Ecx;
-  UINT32                                             Edx;
-
-  AsmCpuidEx (
-    CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION,
-    CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_MAIN_LEAF,
-    &Eax.Uint32, &Ebx.Uint32, &Ecx.Uint32, &Edx
-    );
-  @endcode
-**/
-#define CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_MAIN_LEAF               0x00
-
-/**
-  CPUID V2 Extended Topology Enumeration Leaf EAX for CPUID leafs.
-**/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
-    ///
-    /// [Bits 4:0] Number of bits to shift right on x2APIC ID to get a unique
-    /// topology ID of the next level type. All logical processors with the
-    /// same next level ID share current level.
-    ///
-    UINT32  BitsNum:5;
-    ///
-    /// [Bits 31:5] Reserved.
-    ///
-    UINT32  Reserved:27;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32  Uint32;
-} CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_EAX;
-
-/**
-  CPUID V2 Extended Topology Enumeration Leaf EBX for CPUID leafs.
-**/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
-    ///
-    /// [Bits 15:0] Number of logical processors at this level type. The number
-    /// reflects configuration as shipped by Intel.
-    ///
-    UINT32  ProcessorsNum:16;
-    ///
-    /// [Bits 31:5] Reserved.
-    ///
-    UINT32  Reserved:16;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32  Uint32;
-} CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_EBX;
-
-/**
-  CPUID V2 Extended Topology Enumeration Leaf ECX for CPUID leafs.
-**/
-typedef union {
-  ///
-  /// Individual bit fields
-  ///
-  struct {
-    ///
-    /// [Bits 7:0] Level number. Same value in ECX input.
-    ///
-    UINT32  LevelNum:8;
-    ///
-    /// [Bits 7:0] Level type.
-    ///
-    UINT32  LevelType:8;
-
-    ///
-    /// [Bits 31:5] Reserved.
-    ///
-    UINT32  Reserved:16;
-  } Bits;
-  ///
-  /// All bit fields as a 32-bit value
-  ///
-  UINT32  Uint32;
-} CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_ECX;
+#define CPUID_V2_EXTENDED_TOPOLOGY                                     0x1F
 
 ///
-/// @{ Define value for CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_ECX.LevelType
+/// @{ Define value for CPUID_EXTENDED_TOPOLOGY_ECX.LevelType
 /// The value of the "level type" field is not related to level numbers in
 /// any way, higher "level type" values do not mean higher levels.
 ///
-#define   CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_LEVEL_TYPE_INVALID     0x00
-#define   CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_LEVEL_TYPE_SMT         0x01
-#define   CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_LEVEL_TYPE_CORE        0x02
-#define   CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_LEVEL_TYPE_MODULE      0x03
-#define   CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_LEVEL_TYPE_TILE        0x04
-#define   CPUID_V2_EXTENDED_TOPOLOGY_ENUMERATION_LEVEL_TYPE_DIE         0x05
+#define   CPUID_V2_EXTENDED_TOPOLOGY_LEVEL_TYPE_MODULE                  0x03
+#define   CPUID_V2_EXTENDED_TOPOLOGY_LEVEL_TYPE_TILE                    0x04
+#define   CPUID_V2_EXTENDED_TOPOLOGY_LEVEL_TYPE_DIE                     0x05
 ///
 /// @}
 ///

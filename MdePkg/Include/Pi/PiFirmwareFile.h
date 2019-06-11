@@ -2,13 +2,7 @@
   The firmware file related definitions in PI.
 
 Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Revision Reference:
   PI Version 1.6.
@@ -185,8 +179,15 @@ typedef struct {
 #define IS_FFS_FILE2(FfsFileHeaderPtr) \
     (((((EFI_FFS_FILE_HEADER *) (UINTN) FfsFileHeaderPtr)->Attributes) & FFS_ATTRIB_LARGE_FILE) == FFS_ATTRIB_LARGE_FILE)
 
-#define FFS_FILE_SIZE(FfsFileHeaderPtr) \
-    ((UINT32) (*((UINT32 *) ((EFI_FFS_FILE_HEADER *) (UINTN) FfsFileHeaderPtr)->Size) & 0x00ffffff))
+///
+/// The argument passed as the FfsFileHeaderPtr parameter to the
+/// FFS_FILE_SIZE() function-like macro below must not have side effects:
+/// FfsFileHeaderPtr is evaluated multiple times.
+///
+#define FFS_FILE_SIZE(FfsFileHeaderPtr) ((UINT32) ( \
+    (((EFI_FFS_FILE_HEADER *) (UINTN) (FfsFileHeaderPtr))->Size[0]      ) | \
+    (((EFI_FFS_FILE_HEADER *) (UINTN) (FfsFileHeaderPtr))->Size[1] <<  8) | \
+    (((EFI_FFS_FILE_HEADER *) (UINTN) (FfsFileHeaderPtr))->Size[2] << 16)))
 
 #define FFS_FILE2_SIZE(FfsFileHeaderPtr) \
     ((UINT32) (((EFI_FFS_FILE_HEADER2 *) (UINTN) FfsFileHeaderPtr)->ExtendedSize))
@@ -486,11 +487,18 @@ typedef struct {
   CHAR16                        VersionString[1];
 } EFI_VERSION_SECTION2;
 
-#define IS_SECTION2(SectionHeaderPtr) \
-    ((UINT32) (*((UINT32 *) ((EFI_COMMON_SECTION_HEADER *) (UINTN) SectionHeaderPtr)->Size) & 0x00ffffff) == 0x00ffffff)
+///
+/// The argument passed as the SectionHeaderPtr parameter to the SECTION_SIZE()
+/// and IS_SECTION2() function-like macros below must not have side effects:
+/// SectionHeaderPtr is evaluated multiple times.
+///
+#define SECTION_SIZE(SectionHeaderPtr) ((UINT32) ( \
+    (((EFI_COMMON_SECTION_HEADER *) (UINTN) (SectionHeaderPtr))->Size[0]      ) | \
+    (((EFI_COMMON_SECTION_HEADER *) (UINTN) (SectionHeaderPtr))->Size[1] <<  8) | \
+    (((EFI_COMMON_SECTION_HEADER *) (UINTN) (SectionHeaderPtr))->Size[2] << 16)))
 
-#define SECTION_SIZE(SectionHeaderPtr) \
-    ((UINT32) (*((UINT32 *) ((EFI_COMMON_SECTION_HEADER *) (UINTN) SectionHeaderPtr)->Size) & 0x00ffffff))
+#define IS_SECTION2(SectionHeaderPtr) \
+    (SECTION_SIZE (SectionHeaderPtr) == 0x00ffffff)
 
 #define SECTION2_SIZE(SectionHeaderPtr) \
     (((EFI_COMMON_SECTION_HEADER2 *) (UINTN) SectionHeaderPtr)->ExtendedSize)

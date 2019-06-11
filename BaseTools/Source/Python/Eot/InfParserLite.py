@@ -2,13 +2,7 @@
 # This file is used to parse INF file of EDK project
 #
 # Copyright (c) 2008 - 2018, Intel Corporation. All rights reserved.<BR>
-# This program and the accompanying materials
-# are licensed and made available under the terms and conditions of the BSD License
-# which accompanies this distribution.  The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 ##
@@ -40,11 +34,8 @@ class EdkInfParser(object):
     #  @param  Filename: INF file name
     #  @param  Database: Eot database
     #  @param  SourceFileList: A list for all source file belonging this INF file
-    #  @param  SourceOverridePath: Override path for source file
-    #  @param  Edk_Source: Environment variable EDK_SOURCE
-    #  @param  Efi_Source: Environment variable EFI_SOURCE
     #
-    def __init__(self, Filename = None, Database = None, SourceFileList = None, SourceOverridePath = None, Edk_Source = None, Efi_Source = None):
+    def __init__(self, Filename = None, Database = None, SourceFileList = None):
         self.Identification = Identification()
         self.Sources = []
         self.Macros = {}
@@ -53,7 +44,6 @@ class EdkInfParser(object):
         self.TblFile = Database.TblFile
         self.TblInf = Database.TblInf
         self.FileID = -1
-        self.SourceOverridePath = SourceOverridePath
 
         # Load Inf file if filename is not None
         if Filename is not None:

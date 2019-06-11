@@ -3,13 +3,7 @@
 #
 # Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 """
 This file contains user visible strings in a format that can be used for
@@ -322,8 +316,9 @@ MSG_NEW_FILE_NAME_FOR_DIST      = _(
     "Provide new filename for distribution file to be saved:\n")
 MSG_UPDATE_PACKAGE_DATABASE    = _("Update Distribution Package Database ...")
 MSG_PYTHON_ON                  = _("(Python %s on %s) ")
+MSG_EDKII_MAIL_ADDR            = 'devel@edk2.groups.io'
 MSG_SEARCH_FOR_HELP            = _(
-    "\n(Please send email to edk2-devel@lists.01.org for\n"
+    "\n(Please send email to %s for\n"
     " help, attach the following call stack trace.)\n")
 MSG_REMOVE_TEMP_FILE_STARTED   = _("Removing temp files started ... ")
 MSG_REMOVE_TEMP_FILE_DONE   = _("Removing temp files ... Done.")

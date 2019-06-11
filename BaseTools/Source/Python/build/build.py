@@ -5,13 +5,7 @@
 #  Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
 #  Copyright (c) 2018, Hewlett Packard Enterprise Development, L.P.<BR>
 #
-#  This program and the accompanying materials
-#  are licensed and made available under the terms and conditions of the BSD License
-#  which accompanies this distribution.  The full text of the license may be found at
-#  http://opensource.org/licenses/bsd-license.php
-#
-#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 ##
@@ -599,7 +593,7 @@ class BuildTask:
     #
     def AddDependency(self, Dependency):
         for Dep in Dependency:
-            if not Dep.BuildObject.IsBinaryModule:
+            if not Dep.BuildObject.IsBinaryModule and not Dep.BuildObject.CanSkipbyHash():
                 self.DependencyList.append(BuildTask.New(Dep))    # BuildTask list
 
     ## The thread wrapper of LaunchCommand function
@@ -611,6 +605,11 @@ class BuildTask:
         try:
             self.BuildItem.BuildObject.BuildTime = LaunchCommand(Command, WorkingDir)
             self.CompleteFlag = True
+
+            # Run hash operation post dependency, to account for libs
+            if GlobalData.gUseHashCache and self.BuildItem.BuildObject.IsLibrary:
+                HashFile = path.join(self.BuildItem.BuildObject.BuildDir, self.BuildItem.BuildObject.Name + ".hash")
+                SaveFileOnChange(HashFile, self.BuildItem.BuildObject.GenModuleHash(), True)
         except:
             #
             # TRICK: hide the output of threads left running, so that the user can
@@ -626,6 +625,16 @@ class BuildTask:
             BuildTask._ErrorFlag.set()
             BuildTask._ErrorMessage = "%s broken\n    %s [%s]" % \
                                       (threading.currentThread().getName(), Command, WorkingDir)
+
+        # Set the value used by hash invalidation flow in GlobalData.gModuleBuildTracking to 'SUCCESS'
+        # If Module or Lib is being tracked, it did not fail header check test, and built successfully
+        if (self.BuildItem.BuildObject.Arch in GlobalData.gModuleBuildTracking and
+           self.BuildItem.BuildObject in GlobalData.gModuleBuildTracking[self.BuildItem.BuildObject.Arch] and
+           GlobalData.gModuleBuildTracking[self.BuildItem.BuildObject.Arch][self.BuildItem.BuildObject] != 'FAIL_METAFILE' and
+           not BuildTask._ErrorFlag.isSet()
+           ):
+            GlobalData.gModuleBuildTracking[self.BuildItem.BuildObject.Arch][self.BuildItem.BuildObject] = 'SUCCESS'
+
         # indicate there's a thread is available for another build task
         BuildTask._RunningQueueLock.acquire()
         BuildTask._RunningQueue.pop(self.BuildItem)
@@ -1144,6 +1153,40 @@ class Build():
             if Process.returncode != 0 :
                 EdkLogger.error("Postbuild", POSTBUILD_ERROR, 'Postbuild process is not success!')
             EdkLogger.info("\n- Postbuild Done -\n")
+
+    ## Error handling for hash feature
+    #
+    # On BuildTask error, iterate through the Module Build tracking
+    # dictionary to determine wheather a module failed to build. Invalidate
+    # the hash associated with that module by removing it from storage.
+    #
+    #
+    def invalidateHash(self):
+        # Only for hashing feature
+        if not GlobalData.gUseHashCache:
+            return
+
+        # GlobalData.gModuleBuildTracking contains only modules or libs that cannot be skipped by hash
+        for moduleAutoGenObjArch in GlobalData.gModuleBuildTracking.keys():
+            for moduleAutoGenObj in GlobalData.gModuleBuildTracking[moduleAutoGenObjArch].keys():
+                # Skip invalidating for Successful Module/Lib builds
+                if GlobalData.gModuleBuildTracking[moduleAutoGenObjArch][moduleAutoGenObj] == 'SUCCESS':
+                    continue
+
+                # The module failed to build, failed to start building, or failed the header check test from this point on
+
+                # Remove .hash from build
+                ModuleHashFile = os.path.join(moduleAutoGenObj.BuildDir, moduleAutoGenObj.Name + ".hash")
+                if os.path.exists(ModuleHashFile):
+                    os.remove(ModuleHashFile)
+
+                # Remove .hash file from cache
+                if GlobalData.gBinCacheDest:
+                    FileDir = os.path.join(GlobalData.gBinCacheDest, moduleAutoGenObj.Arch, moduleAutoGenObj.SourceDir, moduleAutoGenObj.MetaFile.BaseName)
+                    HashFile = os.path.join(FileDir, moduleAutoGenObj.Name + '.hash')
+                    if os.path.exists(HashFile):
+                        os.remove(HashFile)
+
     ## Build a module or platform
     #
     # Create autogen code and makefile for a module or platform, and the launch
@@ -1200,10 +1243,6 @@ class Build():
 
         # run
         if Target == 'run':
-            RunDir = os.path.normpath(os.path.join(AutoGenObject.BuildDir, GlobalData.gGlobalDefines['ARCH']))
-            Command = '.\SecMain'
-            os.chdir(RunDir)
-            LaunchCommand(Command, RunDir)
             return True
 
         # build modules
@@ -1332,10 +1371,6 @@ class Build():
 
         # run
         if Target == 'run':
-            RunDir = os.path.normpath(os.path.join(AutoGenObject.BuildDir, GlobalData.gGlobalDefines['ARCH']))
-            Command = '.\SecMain'
-            os.chdir(RunDir)
-            LaunchCommand(Command, RunDir)
             return True
 
         # build library
@@ -1669,7 +1704,7 @@ class Build():
                 # Add ffs build to makefile
                 CmdListDict = {}
                 if GlobalData.gEnableGenfdsMultiThread and self.Fdf:
-                    CmdListDict = self._GenFfsCmd()
+                    CmdListDict = self._GenFfsCmd(Wa.ArchList)
 
                 for Arch in Wa.ArchList:
                     GlobalData.gGlobalDefines['ARCH'] = Arch
@@ -1762,7 +1797,7 @@ class Build():
                 # Add ffs build to makefile
                 CmdListDict = None
                 if GlobalData.gEnableGenfdsMultiThread and self.Fdf:
-                    CmdListDict = self._GenFfsCmd()
+                    CmdListDict = self._GenFfsCmd(Wa.ArchList)
                 self.Progress.Stop("done!")
                 MaList = []
                 ExitFlag = threading.Event()
@@ -1775,7 +1810,8 @@ class Build():
                     for Module in Pa.Platform.Modules:
                         if self.ModuleFile.Dir == Module.Dir and self.ModuleFile.Name == Module.Name:
                             Ma = ModuleAutoGen(Wa, Module, BuildTarget, ToolChain, Arch, self.PlatformFile)
-                            if Ma is None: continue
+                            if Ma is None:
+                                continue
                             MaList.append(Ma)
                             if Ma.CanSkipbyHash():
                                 self.HashSkipModules.append(Ma)
@@ -1800,6 +1836,11 @@ class Build():
                                 if self.Target == "genmake":
                                     return True
                             self.BuildModules.append(Ma)
+                            # Initialize all modules in tracking to 'FAIL'
+                            if Ma.Arch not in GlobalData.gModuleBuildTracking:
+                                GlobalData.gModuleBuildTracking[Ma.Arch] = dict()
+                            if Ma not in GlobalData.gModuleBuildTracking[Ma.Arch]:
+                                GlobalData.gModuleBuildTracking[Ma.Arch][Ma] = 'FAIL'
                     self.AutoGenTime += int(round((time.time() - AutoGenStart)))
                     MakeStart = time.time()
                     for Ma in self.BuildModules:
@@ -1810,6 +1851,7 @@ class Build():
                             # we need a full version of makefile for platform
                             ExitFlag.set()
                             BuildTask.WaitForComplete()
+                            self.invalidateHash()
                             Pa.CreateMakeFile(False)
                             EdkLogger.error("build", BUILD_ERROR, "Failed to build module", ExtraData=GlobalData.gBuildingModule)
                         # Start task scheduler
@@ -1819,6 +1861,7 @@ class Build():
                     # in case there's an interruption. we need a full version of makefile for platform
                     Pa.CreateMakeFile(False)
                     if BuildTask.HasError():
+                        self.invalidateHash()
                         EdkLogger.error("build", BUILD_ERROR, "Failed to build module", ExtraData=GlobalData.gBuildingModule)
                     self.MakeTime += int(round((time.time() - MakeStart)))
 
@@ -1828,6 +1871,7 @@ class Build():
                 self.CreateAsBuiltInf()
                 self.MakeTime += int(round((time.time() - MakeContiue)))
                 if BuildTask.HasError():
+                    self.invalidateHash()
                     EdkLogger.error("build", BUILD_ERROR, "Failed to build module", ExtraData=GlobalData.gBuildingModule)
 
                 self.BuildReport.AddPlatformReport(Wa, MaList)
@@ -1880,12 +1924,13 @@ class Build():
                     # Save MAP buffer into MAP file.
                     #
                     self._SaveMapFile (MapBuffer, Wa)
+        self.invalidateHash()
 
-    def _GenFfsCmd(self):
+    def _GenFfsCmd(self,ArchList):
         # convert dictionary of Cmd:(Inf,Arch)
         # to a new dictionary of (Inf,Arch):Cmd,Cmd,Cmd...
         CmdSetDict = defaultdict(set)
-        GenFfsDict = GenFds.GenFfsMakefile('', GlobalData.gFdfParser, self, self.ArchList, GlobalData)
+        GenFfsDict = GenFds.GenFfsMakefile('', GlobalData.gFdfParser, self, ArchList, GlobalData)
         for Cmd in GenFfsDict:
             tmpInf, tmpArch = GenFfsDict[Cmd]
             CmdSetDict[tmpInf, tmpArch].add(Cmd)
@@ -1929,7 +1974,7 @@ class Build():
                 # Add ffs build to makefile
                 CmdListDict = None
                 if GlobalData.gEnableGenfdsMultiThread and self.Fdf:
-                    CmdListDict = self._GenFfsCmd()
+                    CmdListDict = self._GenFfsCmd(Wa.ArchList)
 
                 # multi-thread exit flag
                 ExitFlag = threading.Event()
@@ -1978,6 +2023,11 @@ class Build():
                             if self.Target == "genmake":
                                 continue
                         self.BuildModules.append(Ma)
+                        # Initialize all modules in tracking to 'FAIL'
+                        if Ma.Arch not in GlobalData.gModuleBuildTracking:
+                            GlobalData.gModuleBuildTracking[Ma.Arch] = dict()
+                        if Ma not in GlobalData.gModuleBuildTracking[Ma.Arch]:
+                            GlobalData.gModuleBuildTracking[Ma.Arch][Ma] = 'FAIL'
                     self.Progress.Stop("done!")
                     self.AutoGenTime += int(round((time.time() - AutoGenStart)))
                     MakeStart = time.time()
@@ -1990,6 +2040,7 @@ class Build():
                             # we need a full version of makefile for platform
                             ExitFlag.set()
                             BuildTask.WaitForComplete()
+                            self.invalidateHash()
                             Pa.CreateMakeFile(False)
                             EdkLogger.error("build", BUILD_ERROR, "Failed to build module", ExtraData=GlobalData.gBuildingModule)
                         # Start task scheduler
@@ -1999,6 +2050,7 @@ class Build():
                     # in case there's an interruption. we need a full version of makefile for platform
                     Pa.CreateMakeFile(False)
                     if BuildTask.HasError():
+                        self.invalidateHash()
                         EdkLogger.error("build", BUILD_ERROR, "Failed to build module", ExtraData=GlobalData.gBuildingModule)
                     self.MakeTime += int(round((time.time() - MakeStart)))
 
@@ -2018,6 +2070,7 @@ class Build():
                 # has been signaled.
                 #
                 if BuildTask.HasError():
+                    self.invalidateHash()
                     EdkLogger.error("build", BUILD_ERROR, "Failed to build module", ExtraData=GlobalData.gBuildingModule)
 
                 # Create MAP file when Load Fix Address is enabled.
@@ -2062,6 +2115,7 @@ class Build():
                     # Save MAP buffer into MAP file.
                     #
                     self._SaveMapFile(MapBuffer, Wa)
+        self.invalidateHash()
 
     ## Generate GuidedSectionTools.txt in the FV directories.
     #
@@ -2149,10 +2203,21 @@ class Build():
             RemoveDirectory(os.path.dirname(GlobalData.gDatabasePath), True)
 
     def CreateAsBuiltInf(self):
+        all_lib_set = set()
+        all_mod_set = set()
         for Module in self.BuildModules:
             Module.CreateAsBuiltInf()
+            all_mod_set.add(Module)
         for Module in self.HashSkipModules:
             Module.CreateAsBuiltInf(True)
+            all_mod_set.add(Module)
+        for Module in all_mod_set:
+            for lib in Module.LibraryAutoGenList:
+                all_lib_set.add(lib)
+        for lib in all_lib_set:
+            lib.CreateAsBuiltInf(True)
+        all_lib_set.clear()
+        all_mod_set.clear()
         self.BuildModules = []
         self.HashSkipModules = []
     ## Do some clean-up works when error occurred
@@ -2429,7 +2494,7 @@ def Main():
                     "\nbuild",
                     CODE_ERROR,
                     "Unknown fatal error when processing [%s]" % MetaFile,
-                    ExtraData="\n(Please send email to edk2-devel@lists.01.org for help, attaching following call stack trace!)\n",
+                    ExtraData="\n(Please send email to %s for help, attaching following call stack trace!)\n" % MSG_EDKII_MAIL_ADDR,
                     RaiseError=False
                     )
         EdkLogger.quiet("(Python %s on %s) " % (platform.python_version(), sys.platform) + traceback.format_exc())

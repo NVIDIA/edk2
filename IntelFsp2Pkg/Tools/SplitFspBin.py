@@ -1,13 +1,7 @@
 ## @ FspTool.py
 #
-# Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
-# This program and the accompanying materials are licensed and made available under
-# the terms and conditions of the BSD License that accompanies this distribution.
-# The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php.
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# Copyright (c) 2015 - 2019, Intel Corporation. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
 
@@ -20,12 +14,12 @@ import argparse
 from   ctypes import *
 
 """
-This utility supports some operations for Intel FSP 2.0 image.
+This utility supports some operations for Intel FSP 1.x/2.x image.
 It supports:
-    - Display FSP 2.0 information header
-    - Split FSP 2.0 image into individual FSP-T/M/S/O component
-    - Rebase FSP 2.0 components to a different base address
-    - Generate FSP mapping C header file
+    - Display FSP 1.x/2.x information header
+    - Split FSP 2.x image into individual FSP-T/M/S/O component
+    - Rebase FSP 1.x/2.x components to a different base address
+    - Generate FSP 1.x/2.x mapping C header file
 """
 
 CopyRightHeaderFile = """/*
@@ -506,8 +500,6 @@ class FirmwareDevice:
 
         fih = None
         for fsp in self.FspList:
-            if fsp.Fih.HeaderRevision < 3:
-                raise Exception("ERROR: FSP 1.x is not supported by this tool !")
             if not fih:
                 fih = fsp.Fih
             else:
@@ -719,6 +711,8 @@ def SplitFspBin (fspfile, outdir, nametemplate):
     fd.ParseFsp ()
 
     for fsp in fd.FspList:
+        if fsp.Fih.HeaderRevision < 3:
+            raise Exception("ERROR: FSP 1.x is not supported by the split command !")
         ftype = fsp.Type
         if not nametemplate:
             nametemplate = fspfile
@@ -748,6 +742,11 @@ def RebaseFspBin (FspBinary, FspComponent, FspBase, OutputDir, OutputFile):
 
         found = False
         for fsp in fd.FspList:
+            # Is this FSP 1.x single binary?
+            if fsp.Fih.HeaderRevision < 3:
+                found = True
+                ftype = 'X'
+                break
             ftype = fsp.Type.lower()
             if ftype == fspcomp:
                 found = True

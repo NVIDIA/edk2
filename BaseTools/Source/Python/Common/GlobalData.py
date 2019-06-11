@@ -2,13 +2,7 @@
 # This file is used to define common static strings used by INF/DEC/DSC files
 #
 # Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
-# This program and the accompanying materials
-# are licensed and made available under the terms and conditions of the BSD License
-# which accompanies this distribution.  The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 
 import re
 
@@ -29,7 +23,6 @@ gPlatformOtherPcds = {}
 gActivePlatform = None
 gCommandLineDefines = {}
 gEdkGlobal = {}
-gOverrideDir = {}
 gCommandMaxLength = 4096
 # for debug trace purpose when problem occurs
 gProcessingFile = ''
@@ -115,3 +108,14 @@ gPackageHash = {}
 gModuleHash = {}
 gEnableGenfdsMultiThread = False
 gSikpAutoGenCache = set()
+
+# Dictionary for tracking Module build status as success or failure
+# Top Dict:     Key: Arch Type              Value: Dictionary
+# Second Dict:  Key: AutoGen Obj    Value: 'SUCCESS'\'FAIL'\'FAIL_METAFILE'
+gModuleBuildTracking = dict()
+
+# Dictionary of booleans that dictate whether a module or
+# library can be skiped
+# Top Dict:     Key: Arch Type              Value: Dictionary
+# Second Dict:  Key: Module\Library Name    Value: True\False
+gBuildHashSkipTracking = dict()

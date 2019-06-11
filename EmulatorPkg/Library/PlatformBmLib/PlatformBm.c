@@ -2,13 +2,7 @@
 
 Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 Portions copyright (c) 2011, Apple Inc. All rights reserved.
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -339,6 +333,35 @@ PlatformBdsRegisterStaticBootOptions (
 }
 
 /**
+  Returns the priority number.
+
+  @param BootOption
+**/
+UINTN
+BootOptionPriority (
+  CONST EFI_BOOT_MANAGER_LOAD_OPTION *BootOption
+  )
+{
+  //
+  // Make sure Shell is first
+  //
+  if (StrCmp (BootOption->Description, L"UEFI Shell") == 0) {
+    return 0;
+  }
+  return 100;
+}
+
+INTN
+EFIAPI
+CompareBootOption (
+  CONST EFI_BOOT_MANAGER_LOAD_OPTION  *Left,
+  CONST EFI_BOOT_MANAGER_LOAD_OPTION  *Right
+  )
+{
+  return BootOptionPriority (Left) - BootOptionPriority (Right);
+}
+
+/**
   Do the platform specific action after the console is connected.
 
   Such as:
@@ -383,6 +406,7 @@ PlatformBootManagerAfterConsole (
     PlatformBdsRegisterStaticBootOptions ();
     PlatformBdsConnectSequence ();
     EfiBootManagerRefreshAllBootOption ();
+    EfiBootManagerSortLoadOptionVariable (LoadOptionTypeBoot, (SORT_COMPARE)CompareBootOption);
     break;
   }
 }

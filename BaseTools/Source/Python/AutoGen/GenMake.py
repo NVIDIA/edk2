@@ -2,13 +2,7 @@
 # Create makefile for MS nmake and GNU make
 #
 # Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
-# This program and the accompanying materials
-# are licensed and made available under the terms and conditions of the BSD License
-# which accompanies this distribution.  The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 ## Import Modules
@@ -435,7 +429,7 @@ cleanlib:
         self.CommonFileDependency = []
         self.FileListMacros = {}
         self.ListFileMacros = {}
-
+        self.ObjTargetDict = OrderedDict()
         self.FileCache = {}
         self.LibraryBuildCommandList = []
         self.LibraryFileList = []
@@ -518,6 +512,9 @@ cleanlib:
                     # Remove duplicated include path, if any
                     if Attr == "FLAGS":
                         Value = RemoveDupOption(Value, IncPrefix, MyAgo.IncludePathList)
+                        if self._AutoGenObject.BuildRuleFamily == TAB_COMPILER_MSFT and Tool == 'CC' and '/GM' in Value:
+                            Value = Value.replace(' /MP', '')
+                            MyAgo.BuildOption[Tool][Attr] = Value
                         if Tool == "OPTROM" and PCI_COMPRESS_Flag:
                             ValueList = Value.split()
                             if ValueList:
@@ -618,6 +615,11 @@ cleanlib:
                 False
                 )
 
+        # Generate objlist used to create .obj file
+        for Type in self.ObjTargetDict:
+            NewLine = ' '.join(list(self.ObjTargetDict[Type]))
+            FileMacroList.append("OBJLIST_%s = %s" % (list(self.ObjTargetDict.keys()).index(Type), NewLine))
+
         BcTargetList = []
 
         MakefileName = self._FILE_NAME_[self._FileType]
@@ -716,7 +718,7 @@ cleanlib:
             for index, Str in enumerate(FfsCmdList):
                 if '-o' == Str:
                     OutputFile = FfsCmdList[index + 1]
-                if '-i' == Str:
+                if '-i' == Str or "-oi" == Str:
                     if DepsFileList == []:
                         DepsFileList = [FfsCmdList[index + 1]]
                     else:
@@ -903,6 +905,50 @@ cleanlib:
                                     ForceIncludedFile,
                                     self._AutoGenObject.IncludePathList + self._AutoGenObject.BuildOptionIncPathList
                                     )
+
+        # Check if header files are listed in metafile
+        # Get a list of unique module header source files from MetaFile
+        headerFilesInMetaFileSet = set()
+        for aFile in self._AutoGenObject.SourceFileList:
+            aFileName = str(aFile)
+            if not aFileName.endswith('.h'):
+                continue
+            headerFilesInMetaFileSet.add(aFileName.lower())
+
+        # Get a list of unique module autogen files
+        localAutoGenFileSet = set()
+        for aFile in self._AutoGenObject.AutoGenFileList:
+            localAutoGenFileSet.add(str(aFile).lower())
+
+        # Get a list of unique module dependency header files
+        # Exclude autogen files and files not in the source directory
+        headerFileDependencySet = set()
+        localSourceDir = str(self._AutoGenObject.SourceDir).lower()
+        for Dependency in FileDependencyDict.values():
+            for aFile in Dependency:
+                aFileName = str(aFile).lower()
+                if not aFileName.endswith('.h'):
+                    continue
+                if aFileName in localAutoGenFileSet:
+                    continue
+                if localSourceDir not in aFileName:
+                    continue
+                headerFileDependencySet.add(aFileName)
+
+        # Ensure that gModuleBuildTracking has been initialized per architecture
+        if self._AutoGenObject.Arch not in GlobalData.gModuleBuildTracking:
+            GlobalData.gModuleBuildTracking[self._AutoGenObject.Arch] = dict()
+
+        # Check if a module dependency header file is missing from the module's MetaFile
+        for aFile in headerFileDependencySet:
+            if aFile in headerFilesInMetaFileSet:
+                continue
+            if GlobalData.gUseHashCache:
+                GlobalData.gModuleBuildTracking[self._AutoGenObject.Arch][self._AutoGenObject] = 'FAIL_METAFILE'
+            EdkLogger.warn("build","Module MetaFile [Sources] is missing local header!",
+                        ExtraData = "Local Header: " + aFile + " not found in " + self._AutoGenObject.MetaFile.Path
+                        )
+
         DepSet = None
         for File,Dependency in FileDependencyDict.items():
             if not Dependency:
@@ -927,6 +973,10 @@ cleanlib:
         for File in DepSet:
             self.CommonFileDependency.append(self.PlaceMacro(File.Path, self.Macros))
 
+        CmdSumDict = {}
+        CmdTargetDict = {}
+        CmdCppDict = {}
+        DependencyDict = FileDependencyDict.copy()
         for File in FileDependencyDict:
             # skip non-C files
             if File.Ext not in [".c", ".C"] or File.Name == "AutoGen.c":
@@ -934,8 +984,15 @@ cleanlib:
             NewDepSet = set(FileDependencyDict[File])
             NewDepSet -= DepSet
             FileDependencyDict[File] = ["$(COMMON_DEPS)"] + list(NewDepSet)
+            DependencyDict[File] = list(NewDepSet)
 
         # Convert target description object to target string in makefile
+        if self._AutoGenObject.BuildRuleFamily == TAB_COMPILER_MSFT and TAB_C_CODE_FILE in self._AutoGenObject.Targets:
+            for T in self._AutoGenObject.Targets[TAB_C_CODE_FILE]:
+                NewFile = self.PlaceMacro(str(T), self.Macros)
+                if not self.ObjTargetDict.get(T.Target.SubDir):
+                    self.ObjTargetDict[T.Target.SubDir] = set()
+                self.ObjTargetDict[T.Target.SubDir].add(NewFile)
         for Type in self._AutoGenObject.Targets:
             for T in self._AutoGenObject.Targets[Type]:
                 # Generate related macros if needed
@@ -947,9 +1004,12 @@ cleanlib:
                     self.ListFileMacros[T.IncListFileMacro] = []
 
                 Deps = []
+                CCodeDeps = []
                 # Add force-dependencies
                 for Dep in T.Dependencies:
                     Deps.append(self.PlaceMacro(str(Dep), self.Macros))
+                    if Dep != '$(MAKE_FILE)':
+                        CCodeDeps.append(self.PlaceMacro(str(Dep), self.Macros))
                 # Add inclusion-dependencies
                 if len(T.Inputs) == 1 and T.Inputs[0] in FileDependencyDict:
                     for F in FileDependencyDict[T.Inputs[0]]:
@@ -973,17 +1033,69 @@ cleanlib:
                     if Type in [TAB_OBJECT_FILE, TAB_STATIC_LIBRARY]:
                         Deps.append("$(%s)" % T.ListFileMacro)
 
-                TargetDict = {
-                    "target"    :   self.PlaceMacro(T.Target.Path, self.Macros),
-                    "cmd"       :   "\n\t".join(T.Commands),
-                    "deps"      :   Deps
-                }
-                self.BuildTargetList.append(self._BUILD_TARGET_TEMPLATE.Replace(TargetDict))
+                if self._AutoGenObject.BuildRuleFamily == TAB_COMPILER_MSFT and Type == TAB_C_CODE_FILE:
+                    T, CmdTarget, CmdTargetDict, CmdCppDict = self.ParserCCodeFile(T, Type, CmdSumDict, CmdTargetDict, CmdCppDict, DependencyDict)
+                    TargetDict = {"target": self.PlaceMacro(T.Target.Path, self.Macros), "cmd": "\n\t".join(T.Commands),"deps": CCodeDeps}
+                    CmdLine = self._BUILD_TARGET_TEMPLATE.Replace(TargetDict).rstrip().replace('\t$(OBJLIST', '$(OBJLIST')
+                    if T.Commands:
+                        CmdLine = '%s%s' %(CmdLine, TAB_LINE_BREAK)
+                    if CCodeDeps or CmdLine:
+                        self.BuildTargetList.append(CmdLine)
+                else:
+                    TargetDict = {"target": self.PlaceMacro(T.Target.Path, self.Macros), "cmd": "\n\t".join(T.Commands),"deps": Deps}
+                    self.BuildTargetList.append(self._BUILD_TARGET_TEMPLATE.Replace(TargetDict))
 
+    def ParserCCodeFile(self, T, Type, CmdSumDict, CmdTargetDict, CmdCppDict, DependencyDict):
+        if not CmdSumDict:
+            for item in self._AutoGenObject.Targets[Type]:
+                CmdSumDict[item.Target.SubDir] = item.Target.BaseName
+                for CppPath in item.Inputs:
+                    Path = self.PlaceMacro(CppPath.Path, self.Macros)
+                    if CmdCppDict.get(item.Target.SubDir):
+                        CmdCppDict[item.Target.SubDir].append(Path)
+                    else:
+                        CmdCppDict[item.Target.SubDir] = ['$(MAKE_FILE)', Path]
+                    if CppPath.Path in DependencyDict:
+                        for Temp in DependencyDict[CppPath.Path]:
+                            try:
+                                Path = self.PlaceMacro(Temp.Path, self.Macros)
+                            except:
+                                continue
+                            if Path not in (self.CommonFileDependency + CmdCppDict[item.Target.SubDir]):
+                                CmdCppDict[item.Target.SubDir].append(Path)
+        if T.Commands:
+            CommandList = T.Commands[:]
+            for Item in CommandList[:]:
+                SingleCommandList = Item.split()
+                if len(SingleCommandList) > 0 and self.CheckCCCmd(SingleCommandList):
+                    for Temp in SingleCommandList:
+                        if Temp.startswith('/Fo'):
+                            CmdSign = '%s%s' % (Temp.rsplit(TAB_SLASH, 1)[0], TAB_SLASH)
+                            break
+                    else: continue
+                    if CmdSign not in list(CmdTargetDict.keys()):
+                        CmdTargetDict[CmdSign] = Item.replace(Temp, CmdSign)
+                    else:
+                        CmdTargetDict[CmdSign] = "%s %s" % (CmdTargetDict[CmdSign], SingleCommandList[-1])
+                    Index = CommandList.index(Item)
+                    CommandList.pop(Index)
+                    if SingleCommandList[-1].endswith("%s%s.c" % (TAB_SLASH, CmdSumDict[CmdSign.lstrip('/Fo').rsplit(TAB_SLASH, 1)[0]])):
+                        Cpplist = CmdCppDict[T.Target.SubDir]
+                        Cpplist.insert(0, '$(OBJLIST_%d): $(COMMON_DEPS)' % list(self.ObjTargetDict.keys()).index(T.Target.SubDir))
+                        T.Commands[Index] = '%s\n\t%s' % (' \\\n\t'.join(Cpplist), CmdTargetDict[CmdSign])
+                    else:
+                        T.Commands.pop(Index)
+        return T, CmdSumDict, CmdTargetDict, CmdCppDict
+
+    def CheckCCCmd(self, CommandList):
+        for cmd in CommandList:
+            if '$(CC)' in cmd:
+                return True
+        return False
     ## For creating makefile targets for dependent libraries
     def ProcessDependentLibrary(self):
         for LibraryAutoGen in self._AutoGenObject.LibraryAutoGenList:
-            if not LibraryAutoGen.IsBinaryModule:
+            if not LibraryAutoGen.IsBinaryModule and not LibraryAutoGen.CanSkipbyHash():
                 self.LibraryBuildDirectoryList.append(self.PlaceMacro(LibraryAutoGen.BuildDir, self.Macros))
 
     ## Return a list containing source file's dependencies
@@ -1486,7 +1598,7 @@ cleanlib:
     def GetLibraryBuildDirectoryList(self):
         DirList = []
         for LibraryAutoGen in self._AutoGenObject.LibraryAutoGenList:
-            if not LibraryAutoGen.IsBinaryModule:
+            if not LibraryAutoGen.IsBinaryModule and not LibraryAutoGen.CanSkipbyHash():
                 DirList.append(os.path.join(self._AutoGenObject.BuildDir, LibraryAutoGen.BuildDir))
         return DirList
 
@@ -1622,7 +1734,7 @@ class TopLevelMakefile(BuildFile):
     def GetLibraryBuildDirectoryList(self):
         DirList = []
         for LibraryAutoGen in self._AutoGenObject.LibraryAutoGenList:
-            if not LibraryAutoGen.IsBinaryModule:
+            if not LibraryAutoGen.IsBinaryModule and not LibraryAutoGen.CanSkipbyHash():
                 DirList.append(os.path.join(self._AutoGenObject.BuildDir, LibraryAutoGen.BuildDir))
         return DirList
 

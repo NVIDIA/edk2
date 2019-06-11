@@ -7,13 +7,7 @@
 # This tool has been tested with OpenSSL.
 #
 # Copyright (c) 2016 - 2017, Intel Corporation. All rights reserved.<BR>
-# This program and the accompanying materials
-# are licensed and made available under the terms and conditions of the BSD License
-# which accompanies this distribution.  The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 '''
@@ -122,7 +116,7 @@ if __name__ == '__main__':
   if Process.returncode != 0:
     print('ERROR: Open SSL command not available.  Please verify PATH or set OPENSSL_PATH')
     sys.exit(Process.returncode)
-  print(Version[0].decode())
+  print(Version[0].decode(encoding='utf-8', errors='ignore'))
 
   #
   # Read input file into a buffer and save input filename

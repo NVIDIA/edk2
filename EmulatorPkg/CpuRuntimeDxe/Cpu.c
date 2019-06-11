@@ -3,13 +3,7 @@
 
 Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
 Portions copyright (c) 2011 - 2012, Apple Inc. All rights reserved.
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -244,7 +238,10 @@ CpuUpdateSmbios (
   mCpuSmbiosType4.CoreCount        = (UINT8) MaxCpus;
   mCpuSmbiosType4.EnabledCoreCount = (UINT8) MaxCpus;
   mCpuSmbiosType4.ThreadCount      = (UINT8) MaxCpus;
-
+  //
+  // The value of 1234 is fake value for CPU frequency
+  //
+  mCpuSmbiosType4.CurrentSpeed = 1234;
   LogSmbiosData ((EFI_SMBIOS_TABLE_HEADER *)&mCpuSmbiosType4, mCpuSmbiosType4Strings);
 }
 

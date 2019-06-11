@@ -2,13 +2,7 @@
   PPTT table parser
 
   Copyright (c) 2019, ARM Limited. All rights reserved.
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Reference(s):
     - ACPI 6.2 Specification - Errata A, September 2017
@@ -86,11 +80,9 @@ ValidateCacheAttributes (
   IN VOID*  Context
   )
 {
-#if defined(MDE_CPU_ARM) || defined (MDE_CPU_AARCH64)
   // Reference: Advanced Configuration and Power Interface (ACPI) Specification
   //            Version 6.2 Errata A, September 2017
   // Table 5-153: Cache Type Structure
-
   UINT8 Attributes;
   Attributes = *(UINT8*)Ptr;
 
@@ -102,7 +94,6 @@ ValidateCacheAttributes (
       );
     return;
   }
-#endif
 }
 
 /**
@@ -156,7 +147,7 @@ STATIC CONST ACPI_PARSER IdStructureParser[] = {
   {L"Length", 1, 1, L"%d", NULL, NULL, NULL, NULL},
   {L"Reserved", 2, 2, L"0x%x", NULL, NULL, NULL, NULL},
 
-  {L"VENDOR_ID", 4, 4, L"0x%x", NULL, NULL, NULL, NULL},
+  {L"VENDOR_ID", 4, 4, NULL, Dump4Chars, NULL, NULL, NULL},
   {L"LEVEL_1_ID", 8, 8, L"0x%x", NULL, NULL, NULL, NULL},
   {L"LEVEL_2_ID", 8, 16, L"0x%x", NULL, NULL, NULL, NULL},
   {L"MAJOR_REV", 2, 24, L"0x%x", NULL, NULL, NULL, NULL},

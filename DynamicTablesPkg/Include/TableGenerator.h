@@ -1,14 +1,8 @@
 /** @file
 
-  Copyright (c) 2017, ARM Limited. All rights reserved.
+  Copyright (c) 2017 - 2019, ARM Limited. All rights reserved.
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Glossary:
     - ACPI   - Advanced Configuration and Power Interface
@@ -61,6 +55,7 @@ _______________________________________________________________________________
        7 - DBG2
        8 - SPCR
        9 - MCFG
+      10 - PPTT
 
     Standard SMBIOS Table IDs:
        0 - Reserved

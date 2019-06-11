@@ -2,13 +2,7 @@
 # Trim files preprocessed by compiler
 #
 # Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
-# This program and the accompanying materials
-# are licensed and made available under the terms and conditions of the BSD License
-# which accompanies this distribution.  The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 ##
@@ -18,7 +12,7 @@ import Common.LongFilePathOs as os
 import sys
 import re
 from io import BytesIO
-
+import codecs
 from optparse import OptionParser
 from optparse import make_option
 from Common.BuildToolError import *
@@ -61,70 +55,6 @@ gAslIncludePattern = re.compile("^(\s*)[iI]nclude\s*\(\"?([^\"\(\)]+)\"\)", re.M
 ## Regular expression for matching C style #include "XXX.asl" in asl file
 gAslCIncludePattern = re.compile(r'^(\s*)#include\s*[<"]\s*([-\\/\w.]+)\s*([>"])', re.MULTILINE)
 ## Patterns used to convert EDK conventions to EDK2 ECP conventions
-gImportCodePatterns = [
-    [
-        re.compile('^(\s*)\(\*\*PeiServices\)\.PciCfg\s*=\s*([^;\s]+);', re.MULTILINE),
-        '''\\1{
-\\1  STATIC EFI_PEI_PPI_DESCRIPTOR gEcpPeiPciCfgPpiList = {
-\\1    (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
-\\1    &gEcpPeiPciCfgPpiGuid,
-\\1    \\2
-\\1  };
-\\1  (**PeiServices).InstallPpi (PeiServices, &gEcpPeiPciCfgPpiList);
-\\1}'''
-    ],
-
-    [
-        re.compile('^(\s*)\(\*PeiServices\)->PciCfg\s*=\s*([^;\s]+);', re.MULTILINE),
-        '''\\1{
-\\1  STATIC EFI_PEI_PPI_DESCRIPTOR gEcpPeiPciCfgPpiList = {
-\\1    (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
-\\1    &gEcpPeiPciCfgPpiGuid,
-\\1    \\2
-\\1  };
-\\1  (**PeiServices).InstallPpi (PeiServices, &gEcpPeiPciCfgPpiList);
-\\1}'''
-    ],
-
-    [
-        re.compile("(\s*).+->Modify[\s\n]*\(", re.MULTILINE),
-        '\\1PeiLibPciCfgModify ('
-    ],
-
-    [
-        re.compile("(\W*)gRT->ReportStatusCode[\s\n]*\(", re.MULTILINE),
-        '\\1EfiLibReportStatusCode ('
-    ],
-
-    [
-        re.compile('#include\s+EFI_GUID_DEFINITION\s*\(FirmwareFileSystem\)', re.MULTILINE),
-        '#include EFI_GUID_DEFINITION (FirmwareFileSystem)\n#include EFI_GUID_DEFINITION (FirmwareFileSystem2)'
-    ],
-
-    [
-        re.compile('gEfiFirmwareFileSystemGuid', re.MULTILINE),
-        'gEfiFirmwareFileSystem2Guid'
-    ],
-
-    [
-        re.compile('EFI_FVH_REVISION', re.MULTILINE),
-        'EFI_FVH_PI_REVISION'
-    ],
-
-    [
-        re.compile("(\s*)\S*CreateEvent\s*\([\s\n]*EFI_EVENT_SIGNAL_READY_TO_BOOT[^,]*,((?:[^;]+\n)+)(\s*\));", re.MULTILINE),
-        '\\1EfiCreateEventReadyToBoot (\\2\\3;'
-    ],
-
-    [
-        re.compile("(\s*)\S*CreateEvent\s*\([\s\n]*EFI_EVENT_SIGNAL_LEGACY_BOOT[^,]*,((?:[^;]+\n)+)(\s*\));", re.MULTILINE),
-        '\\1EfiCreateEventLegacyBoot (\\2\\3;'
-    ],
-#    [
-#        re.compile("(\W)(PEI_PCI_CFG_PPI)(\W)", re.MULTILINE),
-#        '\\1ECP_\\2\\3'
-#    ]
-]
 
 ## file cache to avoid circular include in ASL file
 gIncludedAslFile = []
@@ -141,13 +71,10 @@ gIncludedAslFile = []
 def TrimPreprocessedFile(Source, Target, ConvertHex, TrimLong):
     CreateDirectory(os.path.dirname(Target))
     try:
-        f = open (Source, 'r')
+        with open(Source, "r") as File:
+            Lines = File.readlines()
     except:
         EdkLogger.error("Trim", FILE_OPEN_FAILURE, ExtraData=Source)
-
-    # read whole file
-    Lines = f.readlines()
-    f.close()
 
     PreprocessedFile = ""
     InjectedFile = ""
@@ -245,11 +172,10 @@ def TrimPreprocessedFile(Source, Target, ConvertHex, TrimLong):
 
     # save to file
     try:
-        f = open (Target, 'w')
+        with open(Target, 'w') as File:
+            File.writelines(NewLines)
     except:
         EdkLogger.error("Trim", FILE_OPEN_FAILURE, ExtraData=Target)
-    f.writelines(NewLines)
-    f.close()
 
 ## Trim preprocessed VFR file
 #
@@ -263,12 +189,11 @@ def TrimPreprocessedVfr(Source, Target):
     CreateDirectory(os.path.dirname(Target))
 
     try:
-        f = open (Source, 'r')
+        with open(Source, "r") as File:
+            Lines = File.readlines()
     except:
         EdkLogger.error("Trim", FILE_OPEN_FAILURE, ExtraData=Source)
     # read whole file
-    Lines = f.readlines()
-    f.close()
 
     FoundTypedef = False
     Brace = 0
@@ -312,11 +237,10 @@ def TrimPreprocessedVfr(Source, Target):
 
     # save all lines trimmed
     try:
-        f = open (Target, 'w')
+        with open(Target, 'w') as File:
+            File.writelines(Lines)
     except:
         EdkLogger.error("Trim", FILE_OPEN_FAILURE, ExtraData=Target)
-    f.writelines(Lines)
-    f.close()
 
 ## Read the content  ASL file, including ASL included, recursively
 #
@@ -342,7 +266,12 @@ def DoInclude(Source, Indent='', IncludePathList=[], LocalSearchPath=None):
         for IncludePath in SearchPathList:
             IncludeFile = os.path.join(IncludePath, Source)
             if os.path.isfile(IncludeFile):
-                F = open(IncludeFile, "r")
+                try:
+                    with open(IncludeFile, "r") as File:
+                        F = File.readlines()
+                except:
+                    with codecs.open(IncludeFile, "r", encoding='utf-8') as File:
+                        F = File.readlines()
                 break
         else:
             EdkLogger.error("Trim", "Failed to find include file %s" % Source)
@@ -377,7 +306,6 @@ def DoInclude(Source, Indent='', IncludePathList=[], LocalSearchPath=None):
         NewFileContent.append("\n")
 
     gIncludedAslFile.pop()
-    F.close()
 
     return NewFileContent
 
@@ -409,7 +337,9 @@ def TrimAslFile(Source, Target, IncludePathFile):
     if IncludePathFile:
         try:
             LineNum = 0
-            for Line in open(IncludePathFile, 'r'):
+            with open(IncludePathFile, 'r') as File:
+                FileLines = File.readlines()
+            for Line in FileLines:
                 LineNum += 1
                 if Line.startswith("/I") or Line.startswith ("-I"):
                     IncludePathList.append(Line[2:].strip())
@@ -427,12 +357,10 @@ def TrimAslFile(Source, Target, IncludePathFile):
 
     # save all lines trimmed
     try:
-        f = open (Target, 'w')
+        with open(Target, 'w') as File:
+            File.writelines(Lines)
     except:
         EdkLogger.error("Trim", FILE_OPEN_FAILURE, ExtraData=Target)
-
-    f.writelines(Lines)
-    f.close()
 
 def GenerateVfrBinSec(ModuleName, DebugDir, OutputFile):
     VfrNameList = []
@@ -453,7 +381,7 @@ def GenerateVfrBinSec(ModuleName, DebugDir, OutputFile):
         return
 
     try:
-        fInputfile = open(OutputFile, "wb+", 0)
+        fInputfile = open(OutputFile, "wb+")
     except:
         EdkLogger.error("Trim", FILE_OPEN_FAILURE, "File open failed for %s" %OutputFile, None)
 
@@ -494,97 +422,6 @@ def GenerateVfrBinSec(ModuleName, DebugDir, OutputFile):
     fStringIO.close ()
     fInputfile.close ()
 
-## Trim EDK source code file(s)
-#
-#
-# @param  Source    File or directory to be trimmed
-# @param  Target    File or directory to store the trimmed content
-#
-def TrimEdkSources(Source, Target):
-    if os.path.isdir(Source):
-        for CurrentDir, Dirs, Files in os.walk(Source):
-            if '.svn' in Dirs:
-                Dirs.remove('.svn')
-            elif "CVS" in Dirs:
-                Dirs.remove("CVS")
-
-            for FileName in Files:
-                Dummy, Ext = os.path.splitext(FileName)
-                if Ext.upper() not in ['.C', '.H']: continue
-                if Target is None or Target == '':
-                    TrimEdkSourceCode(
-                        os.path.join(CurrentDir, FileName),
-                        os.path.join(CurrentDir, FileName)
-                        )
-                else:
-                    TrimEdkSourceCode(
-                        os.path.join(CurrentDir, FileName),
-                        os.path.join(Target, CurrentDir[len(Source)+1:], FileName)
-                        )
-    else:
-        TrimEdkSourceCode(Source, Target)
-
-## Trim one EDK source code file
-#
-# Do following replacement:
-#
-#   (**PeiServices\).PciCfg = <*>;
-#   =>  {
-#         STATIC EFI_PEI_PPI_DESCRIPTOR gEcpPeiPciCfgPpiList = {
-#         (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
-#         &gEcpPeiPciCfgPpiGuid,
-#         <*>
-#       };
-#       (**PeiServices).InstallPpi (PeiServices, &gEcpPeiPciCfgPpiList);
-#
-#   <*>Modify(<*>)
-#   =>  PeiLibPciCfgModify (<*>)
-#
-#   gRT->ReportStatusCode (<*>)
-#   => EfiLibReportStatusCode (<*>)
-#
-#   #include <LoadFile\.h>
-#   =>  #include <FvLoadFile.h>
-#
-#   CreateEvent (EFI_EVENT_SIGNAL_READY_TO_BOOT, <*>)
-#   => EfiCreateEventReadyToBoot (<*>)
-#
-#   CreateEvent (EFI_EVENT_SIGNAL_LEGACY_BOOT, <*>)
-#   =>  EfiCreateEventLegacyBoot (<*>)
-#
-# @param  Source    File to be trimmed
-# @param  Target    File to store the trimmed content
-#
-def TrimEdkSourceCode(Source, Target):
-    EdkLogger.verbose("\t%s -> %s" % (Source, Target))
-    CreateDirectory(os.path.dirname(Target))
-
-    try:
-        f = open (Source, 'r')
-    except:
-        EdkLogger.error("Trim", FILE_OPEN_FAILURE, ExtraData=Source)
-    # read whole file
-    Lines = f.read()
-    f.close()
-
-    NewLines = None
-    for Re, Repl in gImportCodePatterns:
-        if NewLines is None:
-            NewLines = Re.sub(Repl, Lines)
-        else:
-            NewLines = Re.sub(Repl, NewLines)
-
-    # save all lines if trimmed
-    if Source == Target and NewLines == Lines:
-        return
-
-    try:
-        f = open (Target, 'w')
-    except:
-        EdkLogger.error("Trim", FILE_OPEN_FAILURE, ExtraData=Target)
-    f.write(NewLines)
-    f.close()
-
 
 ## Parse command line options
 #
@@ -603,9 +440,6 @@ def Options():
                           help="The input file is EFI image"),
         make_option("-a", "--asl-file", dest="FileType", const="Asl", action="store_const",
                           help="The input file is ASL file"),
-        make_option("-8", "--Edk-source-code", dest="FileType", const="EdkSourceCode", action="store_const",
-                          help="The input file is source code for Edk to be trimmed for ECP"),
-
         make_option("-c", "--convert-hex", dest="ConvertHex", action="store_true",
                           help="Convert standard hex format (0xabcd) to MASM format (abcdh)"),
 
@@ -680,8 +514,6 @@ def Main():
             if CommandOptions.OutputFile is None:
                 CommandOptions.OutputFile = os.path.splitext(InputFile)[0] + '.iii'
             TrimAslFile(InputFile, CommandOptions.OutputFile, CommandOptions.IncludePathFile)
-        elif CommandOptions.FileType == "EdkSourceCode":
-            TrimEdkSources(InputFile, CommandOptions.OutputFile)
         elif CommandOptions.FileType == "VfrOffsetBin":
             GenerateVfrBinSec(CommandOptions.ModuleName, CommandOptions.DebugDir, CommandOptions.OutputFile)
         else :
@@ -701,7 +533,7 @@ def Main():
                     "\nTrim",
                     CODE_ERROR,
                     "Unknown fatal error when trimming [%s]" % InputFile,
-                    ExtraData="\n(Please send email to edk2-devel@lists.01.org for help, attaching following call stack trace!)\n",
+                    ExtraData="\n(Please send email to %s for help, attaching following call stack trace!)\n" % MSG_EDKII_MAIL_ADDR,
                     RaiseError=False
                     )
         EdkLogger.quiet("(Python %s on %s) " % (platform.python_version(), sys.platform) + traceback.format_exc())

@@ -2,13 +2,7 @@
 # Common routines used by all tools
 #
 # Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
-# This program and the accompanying materials
-# are licensed and made available under the terms and conditions of the BSD License
-# which accompanies this distribution.  The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 ##
@@ -28,6 +22,7 @@ from random import sample
 from struct import pack
 import uuid
 import subprocess
+import tempfile
 from collections import OrderedDict
 
 import Common.LongFilePathOs as os
@@ -42,6 +37,7 @@ from Common.MultipleWorkspace import MultipleWorkspace as mws
 from CommonDataClass.Exceptions import BadExpression
 from Common.caching import cached_property
 
+ArrayIndex = re.compile("\[\s*[0-9a-fA-FxX]*\s*\]")
 ## Regular expression used to find out place holders in string template
 gPlaceholderPattern = re.compile("\$\{([^$()\s]+)\}", re.MULTILINE | re.UNICODE)
 
@@ -285,6 +281,7 @@ def ProcessDuplicatedInf(Path, BaseName, Workspace):
     #
     RtPath.Path = TempFullPath
     RtPath.BaseName = BaseName
+    RtPath.OriginalPath = Path
     #
     # If file exists, compare contents
     #
@@ -482,15 +479,23 @@ def SaveFileOnChange(File, Content, IsBinaryFile=True):
         if not os.access(DirName, os.W_OK):
             EdkLogger.error(None, PERMISSION_FAILURE, "Do not have write permission on directory %s" % DirName)
 
+    OpenMode = "w"
     if IsBinaryFile:
+        OpenMode = "wb"
+
+    if GlobalData.gIsWindows and not os.path.exists(File):
+        # write temp file, then rename the temp file to the real file
+        # to make sure the file be immediate saved to disk
+        with tempfile.NamedTemporaryFile(OpenMode, dir=os.path.dirname(File), delete=False) as tf:
+            tf.write(Content)
+            tempname = tf.name
         try:
-            with open(File, "wb") as Fd:
-                Fd.write(Content)
-        except IOError as X:
+            os.rename(tempname, File)
+        except:
             EdkLogger.error(None, FILE_CREATE_FAILURE, ExtraData='IOError %s' % X)
     else:
         try:
-            with open(File, 'w') as Fd:
+            with open(File, OpenMode) as Fd:
                 Fd.write(Content)
         except IOError as X:
             EdkLogger.error(None, FILE_CREATE_FAILURE, ExtraData='IOError %s' % X)
@@ -1032,7 +1037,7 @@ def ParseFieldValue (Value):
             p.stderr.close()
         if err:
             raise BadExpression("DevicePath: %s" % str(err))
-        out = out.decode()
+        out = out.decode(encoding='utf-8', errors='ignore')
         Size = len(out.split())
         out = ','.join(out.split())
         return '{' + out + '}', Size
@@ -1401,6 +1406,7 @@ class PathClass(object):
         self.TagName = TagName
         self.ToolCode = ToolCode
         self.ToolChainFamily = ToolChainFamily
+        self.OriginalPath = self
 
     ## Convert the object of this class to a string
     #

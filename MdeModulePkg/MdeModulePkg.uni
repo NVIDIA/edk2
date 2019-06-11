@@ -6,13 +6,7 @@
 //
 // Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
 //
-// This program and the accompanying materials are licensed and made available under
-// the terms and conditions of the BSD License that accompanies this distribution.
-// The full text of the license may be found at
-// http://opensource.org/licenses/bsd-license.php.
-//
-// THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-// WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+// SPDX-License-Identifier: BSD-2-Clause-Patent
 //
 // **/
 
@@ -165,6 +159,12 @@
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdSerialUseMmio_HELP  #language en-US "Indicates the 16550 serial port registers are in MMIO space, or in I/O space. Default is I/O space.<BR><BR>\n"
                                                                                   "TRUE  - 16550 serial port registers are in MMIO space.<BR>\n"
                                                                                   "FALSE - 16550 serial port registers are in I/O space.<BR>"
+
+#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdSerialRegisterAccessWidth_PROMPT  #language en-US "Serial port registers access width"
+
+#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdSerialRegisterAccessWidth_HELP  #language en-US "Sets the 16550 serial port registers access width in MMIO space. Default is 8 bits access.<BR><BR>\n"
+                                                                                  "8  - 16550 serial port MMIO register access are in 8 bits mode.<BR>\n"
+                                                                                  "32 - 16550 serial port MMIO registers acess are in 32 bits mode.<BR>"
 
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdSerialUseHardwareFlowControl_PROMPT  #language en-US "Enable serial port hardware flow control"
 
@@ -716,12 +716,6 @@
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdDisableDefaultKeyboardLayoutInUsbKbDriver_HELP  #language en-US "Disable default USB keyboard layout? The default keyboard layout serves as the backup when no keyboard layout can be retrieved from HII database.<BR><BR>\n"
                                                                                                               "TRUE  - disable<BR>\n"
                                                                                                               "FALSE - enable<BR>"
-
-#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdFrameworkCompatibilitySupport_PROMPT  #language en-US "Enable framework backward compatibility support"
-
-#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdFrameworkCompatibilitySupport_HELP  #language en-US "Indicates if backward compatibility to Framework HII and Framework FvHob is supported.<BR><BR>\n"
-                                                                                                  "TRUE  - Setup Browser supports GUID opcodes generated from Framework HII VFR file by VFR compiler. the PeiCore will handle the framework FvHob and install FvInfo PPI for it.<BR>\n"
-                                                                                                  "FALSE - Setup Browser doesn't support GUID opcodes generated from Framework HII VFR file by VFR compiler. the PeiCore will not handle the framework FvHob and install FvInfo PPI for it.<BR>"
 
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdHelloWorldPrintEnable_PROMPT  #language en-US "Enable HelloWorld print"
 

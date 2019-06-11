@@ -2,13 +2,7 @@
   Implementation of the HII for the Opal UEFI Driver.
 
 Copyright (c) 2016 - 2019, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -517,13 +511,15 @@ GetDiskNameStringId(
 /**
   Confirm whether user truly want to do the revert action.
 
-  @param     OpalDisk            The device which need to do the revert action.
+  @param     OpalDisk            The device which need to perform data removal action.
+  @param     ActionString        Specifies the action name shown on pop up menu.
 
   @retval  EFI_SUCCESS           Confirmed user want to do the revert action.
 **/
 EFI_STATUS
-HiiConfirmRevertAction (
-  IN OPAL_DISK                  *OpalDisk
+HiiConfirmDataRemovalAction (
+  IN OPAL_DISK                  *OpalDisk,
+  IN CHAR16                     *ActionString
 
   )
 {
@@ -543,14 +539,14 @@ HiiConfirmRevertAction (
   ApproveResponse = L'Y';
   RejectResponse  = L'N';
 
-  UnicodeSPrint(Unicode, StrSize(L"WARNING: Revert device needs about ####### seconds"), L"WARNING: Revert device needs about %d seconds", OpalDisk->EstimateTimeCost);
+  UnicodeSPrint(Unicode, StrSize(L"WARNING: ############# action needs about ####### seconds"), L"WARNING: %s action needs about %d seconds", ActionString, OpalDisk->EstimateTimeCost);
 
   do {
     CreatePopUp(
         EFI_LIGHTGRAY | EFI_BACKGROUND_BLUE,
         &Key,
         Unicode,
-        L" System should not be powered off until revert completion ",
+        L" System should not be powered off until action completion ",
         L" ",
         L" Press 'Y/y' to continue, press 'N/n' to cancal ",
         NULL
@@ -640,7 +636,16 @@ DriverCallback(
       case HII_KEY_ID_PSID_REVERT:
         OpalDisk = HiiGetOpalDiskCB(gHiiConfiguration.SelectedDiskIndex);
         if (OpalDisk != NULL) {
-          return HiiConfirmRevertAction (OpalDisk);
+          return HiiConfirmDataRemovalAction (OpalDisk, L"Revert");
+        } else {
+          ASSERT (FALSE);
+          return EFI_SUCCESS;
+        }
+
+      case HII_KEY_ID_SECURE_ERASE:
+        OpalDisk = HiiGetOpalDiskCB(gHiiConfiguration.SelectedDiskIndex);
+        if (OpalDisk != NULL) {
+          return HiiConfirmDataRemovalAction (OpalDisk, L"Secure erase");
         } else {
           ASSERT (FALSE);
           return EFI_SUCCESS;
@@ -1211,6 +1216,40 @@ OpalDiskInitialize (
 }
 
 /**
+  Update the device ownship
+
+  @param OpalDisk                The Opal device.
+
+  @retval EFI_SUCESS             Get ownership success.
+  @retval EFI_ACCESS_DENIED      Has send BlockSID command, can't change ownership.
+  @retval EFI_INVALID_PARAMETER  Not get Msid info before get ownership info.
+
+**/
+EFI_STATUS
+OpalDiskUpdateOwnerShip (
+  OPAL_DISK        *OpalDisk
+  )
+{
+  OPAL_SESSION  Session;
+
+  if (OpalDisk->MsidLength == 0) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (OpalDisk->SentBlockSID) {
+    return EFI_ACCESS_DENIED;
+  }
+
+  ZeroMem(&Session, sizeof(Session));
+  Session.Sscp = OpalDisk->Sscp;
+  Session.MediaId = OpalDisk->MediaId;
+  Session.OpalBaseComId = OpalDisk->OpalBaseComId;
+
+  OpalDisk->Owner = OpalUtilDetermineOwnership(&Session, OpalDisk->Msid, OpalDisk->MsidLength);
+  return EFI_SUCCESS;
+}
+
+/**
   Update the device info.
 
   @param OpalDisk                The Opal device.
@@ -1218,6 +1257,7 @@ OpalDiskInitialize (
   @retval EFI_SUCESS             Initialize the device success.
   @retval EFI_DEVICE_ERROR       Get info from device failed.
   @retval EFI_INVALID_PARAMETER  Not get Msid info before get ownership info.
+  @retval EFI_ACCESS_DENIED      Has send BlockSID command, can't change ownership.
 
 **/
 EFI_STATUS
@@ -1238,15 +1278,6 @@ OpalDiskUpdateStatus (
     return EFI_DEVICE_ERROR;
   }
 
-  if (OpalDisk->MsidLength == 0) {
-    return EFI_INVALID_PARAMETER;
-  } else {
-    //
-    // Base on the Msid info to get the ownership, so Msid info must get first.
-    //
-    OpalDisk->Owner = OpalUtilDetermineOwnership(&Session, OpalDisk->Msid, OpalDisk->MsidLength);
-  }
-
-  return EFI_SUCCESS;
+  return OpalDiskUpdateOwnerShip (OpalDisk);
 }
 

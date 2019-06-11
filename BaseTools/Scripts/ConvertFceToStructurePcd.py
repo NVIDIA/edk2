@@ -6,13 +6,7 @@
 # PCD setting in DEC/DSC/INF files.
 #
 # Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
-# This program and the accompanying materials
-# are licensed and made available under the terms and conditions of the BSD License
-# which accompanies this distribution.  The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 '''
@@ -512,6 +506,8 @@ class mainprocess(object):
     for i in range(len(info_list)-1,-1,-1):
       if len(info_list[i]) == 0:
         info_list.remove(info_list[i])
+    for i in (inf_list, title_all, header_list):
+      i.sort()
     return keys,title_all,info_list,header_list,inf_list
 
   def remove_bracket(self,List):
@@ -523,6 +519,9 @@ class mainprocess(object):
           List[List.index(i)][i.index(j)] = "|".join(tmp)
         else:
           List[List.index(i)][i.index(j)] = j
+    for i in List:
+      if type(i) == type([0,0]):
+        i.sort()
     return List
 
   def write_all(self):

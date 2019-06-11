@@ -3,13 +3,7 @@
 #
 # Copyright (c) 2008 - 2018, Intel Corporation. All rights reserved.<BR>
 # (C) Copyright 2015-2018 Hewlett Packard Enterprise Development LP<BR>
-# This program and the accompanying materials
-# are licensed and made available under the terms and conditions of the BSD License
-# which accompanies this distribution.  The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 ##
@@ -864,7 +858,6 @@ class DscParser(MetaFileParser):
         TAB_PCDS_DYNAMIC_EX_HII_NULL.upper()        :   MODEL_PCD_DYNAMIC_EX_HII,
         TAB_PCDS_DYNAMIC_EX_VPD_NULL.upper()        :   MODEL_PCD_DYNAMIC_EX_VPD,
         TAB_COMPONENTS.upper()                      :   MODEL_META_DATA_COMPONENT,
-        TAB_COMPONENTS_SOURCE_OVERRIDE_PATH.upper() :   MODEL_META_DATA_COMPONENT_SOURCE_OVERRIDE_PATH,
         TAB_DSC_DEFINES.upper()                     :   MODEL_META_DATA_HEADER,
         TAB_DSC_DEFINES_DEFINE                      :   MODEL_META_DATA_DEFINE,
         TAB_DSC_DEFINES_EDKGLOBAL                   :   MODEL_META_DATA_GLOBAL_DEFINE,
@@ -1292,8 +1285,6 @@ class DscParser(MetaFileParser):
 
         self._ValueList[0:len(TokenList)] = TokenList
 
-    def _CompponentSourceOverridePathParser(self):
-        self._ValueList[0] = self._CurrentLine
 
     ## [BuildOptions] section parser
     @ParseMacro
@@ -1368,7 +1359,6 @@ class DscParser(MetaFileParser):
             MODEL_PCD_DYNAMIC_EX_HII                        :   self.__ProcessPcd,
             MODEL_PCD_DYNAMIC_EX_VPD                        :   self.__ProcessPcd,
             MODEL_META_DATA_COMPONENT                       :   self.__ProcessComponent,
-            MODEL_META_DATA_COMPONENT_SOURCE_OVERRIDE_PATH  :   self.__ProcessSourceOverridePath,
             MODEL_META_DATA_BUILD_OPTION                    :   self.__ProcessBuildOption,
             MODEL_UNKNOWN                                   :   self._Skip,
             MODEL_META_DATA_USER_EXTENSION                  :   self._SkipUserExtension,
@@ -1703,9 +1693,6 @@ class DscParser(MetaFileParser):
     def __ProcessComponent(self):
         self._ValueList[0] = ReplaceMacro(self._ValueList[0], self._Macros)
 
-    def __ProcessSourceOverridePath(self):
-        self._ValueList[0] = ReplaceMacro(self._ValueList[0], self._Macros)
-
     def __ProcessBuildOption(self):
         self._ValueList = [ReplaceMacro(Value, self._Macros, RaiseError=False)
                            for Value in self._ValueList]
@@ -1731,7 +1718,6 @@ class DscParser(MetaFileParser):
         MODEL_PCD_DYNAMIC_EX_HII                        :   _PcdParser,
         MODEL_PCD_DYNAMIC_EX_VPD                        :   _PcdParser,
         MODEL_META_DATA_COMPONENT                       :   _ComponentParser,
-        MODEL_META_DATA_COMPONENT_SOURCE_OVERRIDE_PATH  :   _CompponentSourceOverridePathParser,
         MODEL_META_DATA_BUILD_OPTION                    :   _BuildOptionParser,
         MODEL_UNKNOWN                                   :   MetaFileParser._Skip,
         MODEL_META_DATA_USER_EXTENSION                  :   MetaFileParser._SkipUserExtension,

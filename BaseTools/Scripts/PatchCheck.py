@@ -1,16 +1,9 @@
 ## @file
 #  Check a patch for various format issues
 #
-#  Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2015 - 2019, Intel Corporation. All rights reserved.<BR>
 #
-#  This program and the accompanying materials are licensed and made
-#  available under the terms and conditions of the BSD License which
-#  accompanies this distribution. The full text of the license may be
-#  found at http://opensource.org/licenses/bsd-license.php
-#
-#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS"
-#  BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER
-#  EXPRESS OR IMPLIED.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 from __future__ import print_function
@@ -74,14 +67,17 @@ class CommitMessageCheck:
             print(prefix, line)
             count += 1
 
+    # Find 'contributed-under:' at the start of a line ignoring case and
+    # requires ':' to be present.  Matches if there is white space before
+    # the tag or between the tag and the ':'.
+    contributed_under_re = \
+        re.compile(r'^\s*contributed-under\s*:', re.MULTILINE|re.IGNORECASE)
+
     def check_contributed_under(self):
-        cu_msg='Contributed-under: TianoCore Contribution Agreement 1.1'
-        if self.msg.find(cu_msg) < 0:
-            # Allow 1.0 for now while EDK II community transitions to 1.1
-            cu_msg='Contributed-under: TianoCore Contribution Agreement 1.0'
-            if self.msg.find(cu_msg) < 0:
-                self.error('Missing Contributed-under! (Note: this must be ' +
-                           'added by the code contributor!)')
+        match = self.contributed_under_re.search(self.msg)
+        if match is not None:
+            self.error('Contributed-under! (Note: this must be ' +
+                       'removed by the code contributor!)')
 
     @staticmethod
     def make_signature_re(sig, re_input=False):

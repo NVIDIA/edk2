@@ -6,13 +6,7 @@
 
   Copyright (C) 2018, Red Hat, Inc.
 
-  This program and the accompanying materials are licensed and made available
-  under the terms and conditions of the BSD License which accompanies this
-  distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, WITHOUT
-  WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #include <IndustryStandard/PciExpress21.h>
@@ -309,6 +303,13 @@ InsertPciCap (
   // not the first instance of (Domain, CapId).
   //
   if (PciCap->Key.Instance > 0) {
+    //
+    // Suppress invalid "nullptr dereference" compiler/analyzer warnings: the
+    // only way for "PciCap->Key.Instance" to be positive here is for it to
+    // have been assigned *from* dereferencing "InstanceZero" above.
+    //
+    ASSERT (InstanceZero != NULL);
+
     InstanceZero->NumInstancesUnion.NumInstances++;
   }
   return RETURN_SUCCESS;

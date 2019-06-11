@@ -1,17 +1,11 @@
 /** @file
   GTDT table parser
 
-  Copyright (c) 2016 - 2018, ARM Limited. All rights reserved.
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2016 - 2019, ARM Limited. All rights reserved.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Reference(s):
-    - ACPI 6.2 Specification - Errata A, September 2017
+    - ACPI 6.3 Specification - January 2019
   **/
 
 #include <IndustryStandard/Acpi.h>
@@ -45,6 +39,21 @@ ValidateGtBlockTimerCount (
   );
 
 /**
+  This function validates the GT Frame Number.
+
+  @param [in] Ptr     Pointer to the start of the field data.
+  @param [in] Context Pointer to context specific information e.g. this
+                      could be a pointer to the ACPI table header.
+**/
+STATIC
+VOID
+EFIAPI
+ValidateGtFrameNumber (
+  IN UINT8* Ptr,
+  IN VOID*  Context
+  );
+
+/**
   An ACPI_PARSER array describing the ACPI GTDT Table.
 **/
 STATIC CONST ACPI_PARSER GtdtParser[] = {
@@ -68,7 +77,9 @@ STATIC CONST ACPI_PARSER GtdtParser[] = {
   {L"Platform Timer Count", 4, 88, L"%d", NULL,
    (VOID**)&GtdtPlatformTimerCount, NULL, NULL},
   {L"Platform Timer Offset", 4, 92, L"0x%x", NULL,
-   (VOID**)&GtdtPlatformTimerOffset, NULL, NULL}
+   (VOID**)&GtdtPlatformTimerOffset, NULL, NULL},
+  {L"Virtual EL2 Timer GSIV", 4, 96, L"0x%x", NULL, NULL, NULL, NULL},
+  {L"Virtual EL2 Timer Flags", 4, 100, L"0x%x", NULL, NULL, NULL, NULL}
 };
 
 /**
@@ -98,7 +109,7 @@ STATIC CONST ACPI_PARSER GtBlockParser[] = {
   An ACPI_PARSER array describing the GT Block timer.
 **/
 STATIC CONST ACPI_PARSER GtBlockTimerParser[] = {
-  {L"Frame Number", 1, 0, L"%d", NULL, NULL, NULL, NULL},
+  {L"Frame Number", 1, 0, L"%d", NULL, NULL, ValidateGtFrameNumber, NULL},
   {L"Reserved", 3, 1, L"%x %x %x", Dump3Chars, NULL, NULL, NULL},
   {L"Physical address (CntBaseX)", 8, 4, L"0x%lx", NULL, NULL, NULL, NULL},
   {L"Physical address (CntEL0BaseX)", 8, 12, L"0x%lx", NULL, NULL, NULL,
@@ -147,6 +158,34 @@ ValidateGtBlockTimerCount (
     Print (
       L"\nERROR: Timer Count = %d. Max Timer Count is 8.",
       BlockTimerCount
+      );
+  }
+}
+
+/**
+  This function validates the GT Frame Number.
+
+  @param [in] Ptr     Pointer to the start of the field data.
+  @param [in] Context Pointer to context specific information e.g. this
+                      could be a pointer to the ACPI table header.
+**/
+STATIC
+VOID
+EFIAPI
+ValidateGtFrameNumber (
+  IN UINT8* Ptr,
+  IN VOID*  Context
+  )
+{
+  UINT8 FrameNumber;
+
+  FrameNumber = *(UINT8*)Ptr;
+
+  if (FrameNumber > 7) {
+    IncrementErrorCount ();
+    Print (
+      L"\nERROR: GT Frame Number = %d. GT Frame Number must be in range 0-7.",
+      FrameNumber
       );
   }
 }

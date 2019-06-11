@@ -2,16 +2,10 @@
   16550 UART Serial Port library functions
 
   (C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
-  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
   Copyright (c) 2018, AMD Incorporated. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -68,7 +62,8 @@ typedef struct {
   Read an 8-bit 16550 register.  If PcdSerialUseMmio is TRUE, then the value is read from
   MMIO space.  If PcdSerialUseMmio is FALSE, then the value is read from I/O space.  The
   parameter Offset is added to the base address of the 16550 registers that is specified
-  by PcdSerialRegisterBase.
+  by PcdSerialRegisterBase. PcdSerialRegisterAccessWidth specifies the MMIO space access
+  width and defaults to 8 bit access, and supports 8 or 32 bit access.
 
   @param  Base    The base address register of UART device.
   @param  Offset  The offset of the 16550 register to read.
@@ -83,6 +78,9 @@ SerialPortReadRegister (
   )
 {
   if (PcdGetBool (PcdSerialUseMmio)) {
+    if (PcdGet8 (PcdSerialRegisterAccessWidth) == 32) {
+      return (UINT8) MmioRead32 (Base + Offset * PcdGet32 (PcdSerialRegisterStride));
+    }
     return MmioRead8 (Base + Offset * PcdGet32 (PcdSerialRegisterStride));
   } else {
     return IoRead8 (Base + Offset * PcdGet32 (PcdSerialRegisterStride));
@@ -93,7 +91,8 @@ SerialPortReadRegister (
   Write an 8-bit 16550 register.  If PcdSerialUseMmio is TRUE, then the value is written to
   MMIO space.  If PcdSerialUseMmio is FALSE, then the value is written to I/O space.  The
   parameter Offset is added to the base address of the 16550 registers that is specified
-  by PcdSerialRegisterBase.
+  by PcdSerialRegisterBase. PcdSerialRegisterAccessWidth specifies the MMIO space access
+  width and defaults to 8 bit access, and supports 8 or 32 bit access.
 
   @param  Base    The base address register of UART device.
   @param  Offset  The offset of the 16550 register to write.
@@ -110,6 +109,9 @@ SerialPortWriteRegister (
   )
 {
   if (PcdGetBool (PcdSerialUseMmio)) {
+    if (PcdGet8 (PcdSerialRegisterAccessWidth) == 32) {
+      return (UINT8) MmioWrite32 (Base + Offset * PcdGet32 (PcdSerialRegisterStride), (UINT8)Value);
+    }
     return MmioWrite8 (Base + Offset * PcdGet32 (PcdSerialRegisterStride), Value);
   } else {
     return IoWrite8 (Base + Offset * PcdGet32 (PcdSerialRegisterStride), Value);

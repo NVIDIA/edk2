@@ -2,13 +2,7 @@
   CPU Features Initialize functions.
 
   Copyright (c) 2017 - 2019, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -21,16 +15,21 @@ CHAR16 *mRegisterTypeStr[] = {L"MSR", L"CR", L"MMIO", L"CACHE", L"SEMAP", L"INVA
   Worker function to save PcdCpuFeaturesCapability.
 
   @param[in]  SupportedFeatureMask  The pointer to CPU feature bits mask buffer
+  @param[in]  FeatureMaskSize       CPU feature bits mask buffer size.
+
 **/
 VOID
 SetCapabilityPcd (
-  IN UINT8               *SupportedFeatureMask
+  IN UINT8               *SupportedFeatureMask,
+  IN UINT32              FeatureMaskSize
   )
 {
   EFI_STATUS             Status;
   UINTN                  BitMaskSize;
 
   BitMaskSize = PcdGetSize (PcdCpuFeaturesCapability);
+  ASSERT (FeatureMaskSize == BitMaskSize);
+
   Status = PcdSetPtrS (PcdCpuFeaturesCapability, &BitMaskSize, SupportedFeatureMask);
   ASSERT_EFI_ERROR (Status);
 }
@@ -51,48 +50,6 @@ SetSettingPcd (
   BitMaskSize = PcdGetSize (PcdCpuFeaturesSetting);
   Status = PcdSetPtrS (PcdCpuFeaturesSetting, &BitMaskSize, SupportedFeatureMask);
   ASSERT_EFI_ERROR (Status);
-}
-
-/**
-  Worker function to get PcdCpuFeaturesSupport.
-
-  @return  The pointer to CPU feature bits mask buffer.
-**/
-UINT8 *
-GetSupportPcd (
-  VOID
-  )
-{
-  UINT8                  *SupportBitMask;
-
-  SupportBitMask = AllocateCopyPool (
-          PcdGetSize (PcdCpuFeaturesSupport),
-          PcdGetPtr (PcdCpuFeaturesSupport)
-          );
-  ASSERT (SupportBitMask != NULL);
-
-  return SupportBitMask;
-}
-
-/**
-  Worker function to get PcdCpuFeaturesUserConfiguration.
-
-  @return  The pointer to CPU feature bits mask buffer.
-**/
-UINT8 *
-GetConfigurationPcd (
-  VOID
-  )
-{
-  UINT8                  *SupportBitMask;
-
-  SupportBitMask = AllocateCopyPool (
-          PcdGetSize (PcdCpuFeaturesUserConfiguration),
-          PcdGetPtr (PcdCpuFeaturesUserConfiguration)
-          );
-  ASSERT (SupportBitMask != NULL);
-
-  return SupportBitMask;
 }
 
 /**
@@ -282,12 +239,6 @@ CpuInitDataInitialize (
   ASSERT (CpuFeaturesData->CpuFlags.CoreSemaphoreCount != NULL);
   CpuFeaturesData->CpuFlags.PackageSemaphoreCount = AllocateZeroPool (sizeof (UINT32) * CpuStatus->PackageCount * CpuStatus->MaxCoreCount * CpuStatus->MaxThreadCount);
   ASSERT (CpuFeaturesData->CpuFlags.PackageSemaphoreCount != NULL);
-
-  //
-  // Get support and configuration PCDs
-  //
-  CpuFeaturesData->SupportPcd       = GetSupportPcd ();
-  CpuFeaturesData->ConfigurationPcd = GetConfigurationPcd ();
 }
 
 /**
@@ -307,7 +258,7 @@ SupportedMaskOr (
   UINT8                  *Data1;
   UINT8                  *Data2;
 
-  BitMaskSize = PcdGetSize (PcdCpuFeaturesSupport);
+  BitMaskSize = PcdGetSize (PcdCpuFeaturesSetting);
   Data1 = SupportedFeatureMask;
   Data2 = OrFeatureBitMask;
   for (Index = 0; Index < BitMaskSize; Index++) {
@@ -323,16 +274,16 @@ SupportedMaskOr (
 **/
 VOID
 SupportedMaskAnd (
-  IN UINT8               *SupportedFeatureMask,
-  IN UINT8               *AndFeatureBitMask
+  IN       UINT8               *SupportedFeatureMask,
+  IN CONST UINT8               *AndFeatureBitMask
   )
 {
   UINTN                  Index;
   UINTN                  BitMaskSize;
   UINT8                  *Data1;
-  UINT8                  *Data2;
+  CONST UINT8            *Data2;
 
-  BitMaskSize = PcdGetSize (PcdCpuFeaturesSupport);
+  BitMaskSize = PcdGetSize (PcdCpuFeaturesSetting);
   Data1 = SupportedFeatureMask;
   Data2 = AndFeatureBitMask;
   for (Index = 0; Index < BitMaskSize; Index++) {
@@ -357,7 +308,7 @@ SupportedMaskCleanBit (
   UINT8                  *Data1;
   UINT8                  *Data2;
 
-  BitMaskSize = PcdGetSize (PcdCpuFeaturesSupport);
+  BitMaskSize = PcdGetSize (PcdCpuFeaturesSetting);
   Data1 = SupportedFeatureMask;
   Data2 = AndFeatureBitMask;
   for (Index = 0; Index < BitMaskSize; Index++) {
@@ -388,7 +339,7 @@ IsBitMaskMatch (
   UINT8                  *Data1;
   UINT8                  *Data2;
 
-  BitMaskSize = PcdGetSize (PcdCpuFeaturesSupport);
+  BitMaskSize = PcdGetSize (PcdCpuFeaturesSetting);
 
   Data1 = SupportedFeatureMask;
   Data2 = ComparedFeatureBitMask;
@@ -427,21 +378,19 @@ CollectProcessorData (
   Entry = GetFirstNode (&CpuFeaturesData->FeatureList);
   while (!IsNull (&CpuFeaturesData->FeatureList, Entry)) {
     CpuFeature = CPU_FEATURE_ENTRY_FROM_LINK (Entry);
-    if (IsBitMaskMatch (CpuFeaturesData->SupportPcd, CpuFeature->FeatureMask)) {
-      if (CpuFeature->SupportFunc == NULL) {
-        //
-        // If SupportFunc is NULL, then the feature is supported.
-        //
-        SupportedMaskOr (
-          CpuFeaturesData->InitOrder[ProcessorNumber].FeaturesSupportedMask,
-          CpuFeature->FeatureMask
-          );
-      } else if (CpuFeature->SupportFunc (ProcessorNumber, CpuInfo, CpuFeature->ConfigData)) {
-        SupportedMaskOr (
-          CpuFeaturesData->InitOrder[ProcessorNumber].FeaturesSupportedMask,
-          CpuFeature->FeatureMask
-          );
-      }
+    if (CpuFeature->SupportFunc == NULL) {
+      //
+      // If SupportFunc is NULL, then the feature is supported.
+      //
+      SupportedMaskOr (
+        CpuFeaturesData->InitOrder[ProcessorNumber].FeaturesSupportedMask,
+        CpuFeature->FeatureMask
+        );
+    } else if (CpuFeature->SupportFunc (ProcessorNumber, CpuInfo, CpuFeature->ConfigData)) {
+      SupportedMaskOr (
+        CpuFeaturesData->InitOrder[ProcessorNumber].FeaturesSupportedMask,
+        CpuFeature->FeatureMask
+        );
     }
     Entry = Entry->ForwardLink;
   }
@@ -610,16 +559,9 @@ AnalysisProcessorFeatures (
   //
   // Calculate the last setting
   //
-
   CpuFeaturesData->SettingPcd = AllocateCopyPool (CpuFeaturesData->BitMaskSize, CpuFeaturesData->CapabilityPcd);
   ASSERT (CpuFeaturesData->SettingPcd != NULL);
-  SupportedMaskAnd (CpuFeaturesData->SettingPcd, CpuFeaturesData->ConfigurationPcd);
-
-  //
-  // Save PCDs and display CPU PCDs
-  //
-  SetCapabilityPcd (CpuFeaturesData->CapabilityPcd);
-  SetSettingPcd (CpuFeaturesData->SettingPcd);
+  SupportedMaskAnd (CpuFeaturesData->SettingPcd, PcdGetPtr (PcdCpuFeaturesSetting));
 
   //
   // Dump the last CPU feature list
@@ -641,15 +583,19 @@ AnalysisProcessorFeatures (
       DumpCpuFeature (CpuFeature);
       Entry = Entry->ForwardLink;
     }
-    DEBUG ((DEBUG_INFO, "PcdCpuFeaturesSupport:\n"));
-    DumpCpuFeatureMask (CpuFeaturesData->SupportPcd);
-    DEBUG ((DEBUG_INFO, "PcdCpuFeaturesUserConfiguration:\n"));
-    DumpCpuFeatureMask (CpuFeaturesData->ConfigurationPcd);
     DEBUG ((DEBUG_INFO, "PcdCpuFeaturesCapability:\n"));
     DumpCpuFeatureMask (CpuFeaturesData->CapabilityPcd);
-    DEBUG ((DEBUG_INFO, "PcdCpuFeaturesSetting:\n"));
+    DEBUG ((DEBUG_INFO, "Origin PcdCpuFeaturesSetting:\n"));
+    DumpCpuFeatureMask (PcdGetPtr (PcdCpuFeaturesSetting));
+    DEBUG ((DEBUG_INFO, "Final PcdCpuFeaturesSetting:\n"));
     DumpCpuFeatureMask (CpuFeaturesData->SettingPcd);
   );
+
+  //
+  // Save PCDs and display CPU PCDs
+  //
+  SetCapabilityPcd (CpuFeaturesData->CapabilityPcd, CpuFeaturesData->BitMaskSize);
+  SetSettingPcd (CpuFeaturesData->SettingPcd);
 
   for (ProcessorNumber = 0; ProcessorNumber < NumberOfCpus; ProcessorNumber++) {
     CpuInitOrder = &CpuFeaturesData->InitOrder[ProcessorNumber];

@@ -1,14 +1,8 @@
 /** @file
 Implementation for EFI_HII_DATABASE_PROTOCOL.
 
-Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -3369,14 +3363,19 @@ HiiGetConfigRespInfo(
   if (!EFI_ERROR (Status)){
     ConfigSize = StrSize(ConfigAltResp);
     if (ConfigSize > gConfigRespSize){
-      gConfigRespSize = ConfigSize;
+      //
+      // Do 25% overallocation to minimize the number of memory allocations after ReadyToBoot.
+      // Since lots of allocation after ReadyToBoot may change memory map and cause S4 resume issue.
+      //
+      gConfigRespSize = ConfigSize + (ConfigSize >> 2);
       if (gRTConfigRespBuffer != NULL){
         FreePool(gRTConfigRespBuffer);
+        DEBUG ((DEBUG_WARN, "[HiiDatabase]: Memory allocation is required after ReadyToBoot, which may change memory map and cause S4 resume issue.\n"));
       }
-      gRTConfigRespBuffer = (EFI_STRING)AllocateRuntimeZeroPool(ConfigSize);
+      gRTConfigRespBuffer = (EFI_STRING) AllocateRuntimeZeroPool (gConfigRespSize);
       if (gRTConfigRespBuffer == NULL){
         FreePool(ConfigAltResp);
-        DEBUG ((DEBUG_ERROR, "Not enough memory resource to get the ConfigResp string.\n"));
+        DEBUG ((DEBUG_ERROR, "[HiiDatabase]: No enough memory resource to store the ConfigResp string.\n"));
         return EFI_OUT_OF_RESOURCES;
       }
     } else {
@@ -3420,13 +3419,18 @@ HiiGetDatabaseInfo(
   ASSERT(Status == EFI_BUFFER_TOO_SMALL);
 
   if(DatabaseInfoSize > gDatabaseInfoSize ) {
-    gDatabaseInfoSize = DatabaseInfoSize;
+    //
+    // Do 25% overallocation to minimize the number of memory allocations after ReadyToBoot.
+    // Since lots of allocation after ReadyToBoot may change memory map and cause S4 resume issue.
+    //
+    gDatabaseInfoSize = DatabaseInfoSize + (DatabaseInfoSize >> 2);
     if (gRTDatabaseInfoBuffer != NULL){
       FreePool(gRTDatabaseInfoBuffer);
+      DEBUG ((DEBUG_WARN, "[HiiDatabase]: Memory allocation is required after ReadyToBoot, which may change memory map and cause S4 resume issue.\n"));
     }
-    gRTDatabaseInfoBuffer = AllocateRuntimeZeroPool(DatabaseInfoSize);
+    gRTDatabaseInfoBuffer = AllocateRuntimeZeroPool (gDatabaseInfoSize);
     if (gRTDatabaseInfoBuffer == NULL){
-      DEBUG ((DEBUG_ERROR, "Not enough memory resource to get the HiiDatabase info.\n"));
+      DEBUG ((DEBUG_ERROR, "[HiiDatabase]: No enough memory resource to store the HiiDatabase info.\n"));
       return EFI_OUT_OF_RESOURCES;
     }
   } else {
