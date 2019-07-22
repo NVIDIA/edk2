@@ -149,7 +149,6 @@
 
 [Components]
   SecurityPkg/Library/DxeImageVerificationLib/DxeImageVerificationLib.inf
-  #SecurityPkg/Library/DxeDeferImageLoadLib/DxeDeferImageLoadLib.inf
   SecurityPkg/Library/DxeImageAuthenticationStatusLib/DxeImageAuthenticationStatusLib.inf
 
   #
@@ -199,6 +198,11 @@
   SecurityPkg/Library/FmpAuthenticationLibPkcs7/FmpAuthenticationLibPkcs7.inf
   SecurityPkg/Library/FmpAuthenticationLibRsa2048Sha256/FmpAuthenticationLibRsa2048Sha256.inf
 
+  SecurityPkg/Library/DxeTpmMeasurementLib/DxeTpmMeasurementLib.inf
+  SecurityPkg/Library/PlatformSecureLibNull/PlatformSecureLibNull.inf
+  SecurityPkg/Library/Tcg2PpVendorLibNull/Tcg2PpVendorLibNull.inf
+  SecurityPkg/Library/TcgPpVendorLibNull/TcgPpVendorLibNull.inf
+
 [Components.IA32, Components.X64, Components.ARM, Components.AARCH64]
   SecurityPkg/Library/AuthVariableLib/AuthVariableLib.inf
 
@@ -222,6 +226,7 @@
   SecurityPkg/Library/HashInstanceLibSha256/HashInstanceLibSha256.inf
   SecurityPkg/Library/HashInstanceLibSha384/HashInstanceLibSha384.inf
   SecurityPkg/Library/HashInstanceLibSha512/HashInstanceLibSha512.inf
+  SecurityPkg/Library/HashInstanceLibSm3/HashInstanceLibSm3.inf
 
   SecurityPkg/Tcg/Tcg2Config/Tcg2ConfigPei.inf {
     <LibraryClasses>
@@ -236,6 +241,7 @@
       NULL|SecurityPkg/Library/HashInstanceLibSha256/HashInstanceLibSha256.inf
       NULL|SecurityPkg/Library/HashInstanceLibSha384/HashInstanceLibSha384.inf
       NULL|SecurityPkg/Library/HashInstanceLibSha512/HashInstanceLibSha512.inf
+      NULL|SecurityPkg/Library/HashInstanceLibSm3/HashInstanceLibSm3.inf
   }
 
   SecurityPkg/Tcg/Tcg2Dxe/Tcg2Dxe.inf {
@@ -246,6 +252,7 @@
       NULL|SecurityPkg/Library/HashInstanceLibSha256/HashInstanceLibSha256.inf
       NULL|SecurityPkg/Library/HashInstanceLibSha384/HashInstanceLibSha384.inf
       NULL|SecurityPkg/Library/HashInstanceLibSha512/HashInstanceLibSha512.inf
+      NULL|SecurityPkg/Library/HashInstanceLibSm3/HashInstanceLibSm3.inf
       PcdLib|MdePkg/Library/DxePcdLib/DxePcdLib.inf
   }
   SecurityPkg/Tcg/Tcg2Config/Tcg2ConfigDxe.inf {
@@ -286,6 +293,11 @@
   #
   SecurityPkg/HddPassword/HddPasswordDxe.inf
   SecurityPkg/HddPassword/HddPasswordPei.inf
+
+  #
+  # Common FV checker/verifier/reporter
+  #
+  SecurityPkg/FvReportPei/FvReportPei.inf
 
 [BuildOptions]
    MSFT:*_*_IA32_DLINK_FLAGS = /ALIGN:256

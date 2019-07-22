@@ -1,7 +1,7 @@
 /** @file
   DBG2 table parser
 
-  Copyright (c) 2016 - 2018, ARM Limited. All rights reserved.
+  Copyright (c) 2016 - 2019, ARM Limited. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Reference(s):
@@ -27,7 +27,7 @@ STATIC CONST UINT16* AddrSizeOffset;
 STATIC ACPI_DESCRIPTION_HEADER_INFO AcpiHdrInfo;
 
 /**
-  This function Validates the NameSpace string length.
+  This function validates the NameSpace string length.
 
   @param [in] Ptr     Pointer to the start of the buffer.
   @param [in] Context Pointer to context specific information e.g. this
@@ -37,24 +37,23 @@ STATIC
 VOID
 EFIAPI
 ValidateNameSpaceStrLen (
-  IN  UINT8* Ptr,
-  IN  VOID*  Context
-  );
+  IN UINT8* Ptr,
+  IN VOID*  Context
+  )
+{
+  UINT16 NameSpaceStrLen;
 
-/**
-  This function parses the debug device information structure.
+  NameSpaceStrLen = *(UINT16*)Ptr;
 
-  @param [in]  Ptr     Pointer to the start of the buffer.
-  @param [out] Length  Pointer in which the length of the debug
-                       device information is returned.
-**/
-STATIC
-VOID
-EFIAPI
-DumpDbgDeviceInfo (
-  IN  UINT8*  Ptr,
-  OUT UINT32* Length
-  );
+  if (NameSpaceStrLen < 2) {
+    IncrementErrorCount ();
+    Print (
+      L"\nERROR: NamespaceString Length = %d. If no Namespace device exists, " \
+        L"NamespaceString[] must contain a period '.'",
+      NameSpaceStrLen
+      );
+  }
+}
 
 /// An ACPI_PARSER array describing the ACPI DBG2 table.
 STATIC CONST ACPI_PARSER Dbg2Parser[] = {
@@ -90,35 +89,6 @@ STATIC CONST ACPI_PARSER DbgDevInfoParser[] = {
   {L"Address Size Offset", 2, 20, L"0x%x", NULL,
    (VOID**)&AddrSizeOffset, NULL, NULL}
 };
-
-/**
-  This function validates the NameSpace string length.
-
-  @param [in] Ptr     Pointer to the start of the buffer.
-  @param [in] Context Pointer to context specific information e.g. this
-                      could be a pointer to the ACPI table header.
-**/
-STATIC
-VOID
-EFIAPI
-ValidateNameSpaceStrLen (
-  IN UINT8* Ptr,
-  IN VOID*  Context
-  )
-{
-  UINT16 NameSpaceStrLen;
-
-  NameSpaceStrLen = *(UINT16*)Ptr;
-
-  if (NameSpaceStrLen < 2) {
-    IncrementErrorCount ();
-    Print (
-      L"\nERROR: NamespaceString Length = %d. If no Namespace device exists,\n"
-       L"    then NamespaceString[] must contain a period '.'",
-      NameSpaceStrLen
-      );
-  }
-}
 
 /**
   This function parses the debug device information structure.
@@ -190,6 +160,7 @@ DumpDbgDeviceInfo (
       Print (L"\n%-*s   ", OUTPUT_FIELD_COLUMN_WIDTH, L"");
     }
   }
+  Print (L"\n");
 
   *Length = *DbgDevInfoLen;
 }

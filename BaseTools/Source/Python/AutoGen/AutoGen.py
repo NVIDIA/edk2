@@ -794,6 +794,9 @@ class WorkspaceAutoGen(AutoGen):
         #
         AllWorkSpaceMetaFiles.add(os.path.join(self.BuildDir, 'PcdTokenNumber'))
 
+        for Pa in self.AutoGenObjectList:
+            AllWorkSpaceMetaFiles.add(Pa.ToolDefinitionFile)
+
         for Arch in self.ArchList:
             #
             # add dec
@@ -1165,6 +1168,17 @@ class PlatformAutoGen(AutoGen):
         self.ModuleBuildDirectoryList = []
 
         return True
+
+    ## hash() operator of PlatformAutoGen
+    #
+    #  The platform file path and arch string will be used to represent
+    #  hash value of this object
+    #
+    #   @retval   int Hash value of the platform file path and arch
+    #
+    @cached_class_function
+    def __hash__(self):
+        return hash((self.MetaFile, self.Arch))
 
     @cached_class_function
     def __repr__(self):
@@ -1850,7 +1864,7 @@ class PlatformAutoGen(AutoGen):
         if TAB_TOD_DEFINES_COMMAND_TYPE not in self.Workspace.ToolDef.ToolsDefTxtDatabase:
             EdkLogger.error('build', RESOURCE_NOT_AVAILABLE, "No tools found in configuration",
                             ExtraData="[%s]" % self.MetaFile)
-        RetVal = {}
+        RetVal = OrderedDict()
         DllPathList = set()
         for Def in ToolDefinition:
             Target, Tag, Arch, Tool, Attr = Def.split("_")
@@ -1864,7 +1878,7 @@ class PlatformAutoGen(AutoGen):
                 continue
 
             if Tool not in RetVal:
-                RetVal[Tool] = {}
+                RetVal[Tool] = OrderedDict()
             RetVal[Tool][Attr] = Value
 
         ToolsDef = ''
@@ -1898,8 +1912,8 @@ class PlatformAutoGen(AutoGen):
                     else:
                         ToolsDef += "%s_%s = %s\n" % (Tool, Attr, Value)
             ToolsDef += "\n"
-
-        SaveFileOnChange(self.ToolDefinitionFile, ToolsDef, False)
+        tool_def_file = os.path.join(self.MakeFileDir, "TOOLS_DEF." + self.Arch)
+        SaveFileOnChange(tool_def_file, ToolsDef, False)
         for DllPath in DllPathList:
             os.environ["PATH"] = DllPath + os.pathsep + os.environ["PATH"]
         os.environ["MAKE_FLAGS"] = MakeFlags
@@ -1909,7 +1923,10 @@ class PlatformAutoGen(AutoGen):
     ## Return the paths of tools
     @cached_property
     def ToolDefinitionFile(self):
-        return os.path.join(self.MakeFileDir, "TOOLS_DEF." + self.Arch)
+        tool_def_file = os.path.join(self.MakeFileDir, "TOOLS_DEF." + self.Arch)
+        if not os.path.exists(tool_def_file):
+            self.ToolDefinition
+        return tool_def_file
 
     ## Retrieve the toolchain family of given toolchain tag. Default to 'MSFT'.
     @cached_property
@@ -2579,6 +2596,16 @@ class ModuleAutoGen(AutoGen):
         self.ReferenceModules = []
         self.ConstPcd                  = {}
 
+    ## hash() operator of ModuleAutoGen
+    #
+    #  The module file path and arch string will be used to represent
+    #  hash value of this object
+    #
+    #   @retval   int Hash value of the module file path and arch
+    #
+    @cached_class_function
+    def __hash__(self):
+        return hash((self.MetaFile, self.Arch))
 
     def __repr__(self):
         return "%s [%s]" % (self.MetaFile, self.Arch)
@@ -2810,7 +2837,7 @@ class ModuleAutoGen(AutoGen):
                     # the type of build module is USER_DEFINED.
                     # All different DEPEX section tags would be copied into the As Built INF file
                     # and there would be separate DEPEX section tags
-                    if self.ModuleType.upper() == SUP_MODULE_USER_DEFINED:
+                    if self.ModuleType.upper() == SUP_MODULE_USER_DEFINED or self.ModuleType.upper() == SUP_MODULE_HOST_APPLICATION:
                         if (Arch.upper() == self.Arch.upper()) and (ModuleType.upper() != TAB_ARCH_COMMON):
                             DepexList.append({(Arch, ModuleType): DepexExpr})
                     else:
@@ -2820,7 +2847,7 @@ class ModuleAutoGen(AutoGen):
                             DepexList.append({(Arch, ModuleType): DepexExpr})
 
         #the type of build module is USER_DEFINED.
-        if self.ModuleType.upper() == SUP_MODULE_USER_DEFINED:
+        if self.ModuleType.upper() == SUP_MODULE_USER_DEFINED or self.ModuleType.upper() == SUP_MODULE_HOST_APPLICATION:
             for Depex in DepexList:
                 for key in Depex:
                     DepexStr += '[Depex.%s.%s]\n' % key
@@ -3009,7 +3036,7 @@ class ModuleAutoGen(AutoGen):
                 IncPathList = [NormPath(Path, self.Macros) for Path in BuildOptIncludeRegEx.findall(FlagOption)]
             else:
                 #
-                # RVCT may specify a list of directory seperated by commas
+                # RVCT may specify a list of directory separated by commas
                 #
                 IncPathList = []
                 for Path in BuildOptIncludeRegEx.findall(FlagOption):
@@ -3558,18 +3585,36 @@ class ModuleAutoGen(AutoGen):
         fInputfile.close ()
         return OutputName
 
+    @cached_property
+    def OutputFile(self):
+        retVal = set()
+        OutputDir = self.OutputDir.replace('\\', '/').strip('/')
+        DebugDir = self.DebugDir.replace('\\', '/').strip('/')
+        for Item in self.CodaTargetList:
+            File = Item.Target.Path.replace('\\', '/').strip('/').replace(DebugDir, '').replace(OutputDir, '').strip('/')
+            retVal.add(File)
+        if self.DepexGenerated:
+            retVal.add(self.Name + '.depex')
+
+        Bin = self._GenOffsetBin()
+        if Bin:
+            retVal.add(Bin)
+
+        for Root, Dirs, Files in os.walk(OutputDir):
+            for File in Files:
+                if File.lower().endswith('.pdb'):
+                    retVal.add(File)
+
+        return retVal
+
     ## Create AsBuilt INF file the module
     #
-    def CreateAsBuiltInf(self, IsOnlyCopy = False):
-        self.OutputFile = set()
-        if IsOnlyCopy and GlobalData.gBinCacheDest:
-            self.CopyModuleToCache()
-            return
+    def CreateAsBuiltInf(self):
 
         if self.IsAsBuiltInfCreated:
             return
 
-        # Skip the following code for libraries
+        # Skip INF file generation for libraries
         if self.IsLibrary:
             return
 
@@ -3691,7 +3736,6 @@ class ModuleAutoGen(AutoGen):
         DebugDir = self.DebugDir.replace('\\', '/').strip('/')
         for Item in self.CodaTargetList:
             File = Item.Target.Path.replace('\\', '/').strip('/').replace(DebugDir, '').replace(OutputDir, '').strip('/')
-            self.OutputFile.add(File)
             if os.path.isabs(File):
                 File = File.replace('\\', '/').strip('/').replace(OutputDir, '').strip('/')
             if Item.Target.Ext.lower() == '.aml':
@@ -3707,7 +3751,6 @@ class ModuleAutoGen(AutoGen):
             if os.path.exists(DepexFile):
                 self.DepexGenerated = True
         if self.DepexGenerated:
-            self.OutputFile.add(self.Name + '.depex')
             if self.ModuleType in [SUP_MODULE_PEIM]:
                 AsBuiltInfDict['binary_item'].append('PEI_DEPEX|' + self.Name + '.depex')
             elif self.ModuleType in [SUP_MODULE_DXE_DRIVER, SUP_MODULE_DXE_RUNTIME_DRIVER, SUP_MODULE_DXE_SAL_DRIVER, SUP_MODULE_UEFI_DRIVER]:
@@ -3718,13 +3761,11 @@ class ModuleAutoGen(AutoGen):
         Bin = self._GenOffsetBin()
         if Bin:
             AsBuiltInfDict['binary_item'].append('BIN|%s' % Bin)
-            self.OutputFile.add(Bin)
 
         for Root, Dirs, Files in os.walk(OutputDir):
             for File in Files:
                 if File.lower().endswith('.pdb'):
                     AsBuiltInfDict['binary_item'].append('DISPOSABLE|' + File)
-                    self.OutputFile.add(File)
         HeaderComments = self.Module.HeaderComments
         StartPos = 0
         for Index in range(len(HeaderComments)):
@@ -3893,39 +3934,31 @@ class ModuleAutoGen(AutoGen):
         SaveFileOnChange(os.path.join(self.OutputDir, self.Name + '.inf'), str(AsBuiltInf), False)
 
         self.IsAsBuiltInfCreated = True
-        if GlobalData.gBinCacheDest:
-            self.CopyModuleToCache()
 
     def CopyModuleToCache(self):
         FileDir = path.join(GlobalData.gBinCacheDest, self.PlatformInfo.OutputDir, self.BuildTarget + "_" + self.ToolChain, self.Arch, self.SourceDir, self.MetaFile.BaseName)
         CreateDirectory (FileDir)
         HashFile = path.join(self.BuildDir, self.Name + '.hash')
         if os.path.exists(HashFile):
-            shutil.copy2(HashFile, FileDir)
-        if not self.IsLibrary:
-            ModuleFile = path.join(self.OutputDir, self.Name + '.inf')
-            if os.path.exists(ModuleFile):
-                shutil.copy2(ModuleFile, FileDir)
-        else:
-            OutputDir = self.OutputDir.replace('\\', '/').strip('/')
-            DebugDir = self.DebugDir.replace('\\', '/').strip('/')
-            for Item in self.CodaTargetList:
-                File = Item.Target.Path.replace('\\', '/').strip('/').replace(DebugDir, '').replace(OutputDir, '').strip('/')
-                self.OutputFile.add(File)
+            CopyFileOnChange(HashFile, FileDir)
+        ModuleFile = path.join(self.OutputDir, self.Name + '.inf')
+        if os.path.exists(ModuleFile):
+            CopyFileOnChange(ModuleFile, FileDir)
+
         if not self.OutputFile:
             Ma = self.BuildDatabase[self.MetaFile, self.Arch, self.BuildTarget, self.ToolChain]
             self.OutputFile = Ma.Binaries
-        if self.OutputFile:
-            for File in self.OutputFile:
-                File = str(File)
-                if not os.path.isabs(File):
-                    File = os.path.join(self.OutputDir, File)
-                if os.path.exists(File):
-                    sub_dir = os.path.relpath(File, self.OutputDir)
-                    destination_file = os.path.join(FileDir, sub_dir)
-                    destination_dir = os.path.dirname(destination_file)
-                    CreateDirectory(destination_dir)
-                    shutil.copy2(File, destination_dir)
+
+        for File in self.OutputFile:
+            File = str(File)
+            if not os.path.isabs(File):
+                File = os.path.join(self.OutputDir, File)
+            if os.path.exists(File):
+                sub_dir = os.path.relpath(File, self.OutputDir)
+                destination_file = os.path.join(FileDir, sub_dir)
+                destination_dir = os.path.dirname(destination_file)
+                CreateDirectory(destination_dir)
+                CopyFileOnChange(File, destination_dir)
 
     def AttemptModuleCacheCopy(self):
         # If library or Module is binary do not skip by hash
@@ -3947,14 +3980,14 @@ class ModuleAutoGen(AutoGen):
                     for root, dir, files in os.walk(FileDir):
                         for f in files:
                             if self.Name + '.hash' in f:
-                                shutil.copy(HashFile, self.BuildDir)
+                                CopyFileOnChange(HashFile, self.BuildDir)
                             else:
                                 File = path.join(root, f)
                                 sub_dir = os.path.relpath(File, FileDir)
                                 destination_file = os.path.join(self.OutputDir, sub_dir)
                                 destination_dir = os.path.dirname(destination_file)
                                 CreateDirectory(destination_dir)
-                                shutil.copy(File, destination_dir)
+                                CopyFileOnChange(File, destination_dir)
                     if self.Name == "PcdPeim" or self.Name == "PcdDxe":
                         CreatePcdDatabaseCode(self, TemplateString(), TemplateString())
                     return True
@@ -3967,7 +4000,7 @@ class ModuleAutoGen(AutoGen):
     #
     @cached_class_function
     def CreateMakeFile(self, CreateLibraryMakeFile=True, GenFfsList = []):
-        # nest this function inside it's only caller.
+        # nest this function inside its only caller.
         def CreateTimeStamp():
             FileSet = {self.MetaFile.Path}
 
@@ -4055,7 +4088,7 @@ class ModuleAutoGen(AutoGen):
 
         for ModuleType in self.DepexList:
             # Ignore empty [depex] section or [depex] section for SUP_MODULE_USER_DEFINED module
-            if len(self.DepexList[ModuleType]) == 0 or ModuleType == SUP_MODULE_USER_DEFINED:
+            if len(self.DepexList[ModuleType]) == 0 or ModuleType == SUP_MODULE_USER_DEFINED or ModuleType == SUP_MODULE_HOST_APPLICATION:
                 continue
 
             Dpx = GenDepex.DependencyExpression(self.DepexList[ModuleType], ModuleType, True)

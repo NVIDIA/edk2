@@ -15,6 +15,7 @@
 
 [Includes]
   Include
+  Csm/Include
 
 [LibraryClasses]
   ##  @libraryclass  Loads and boots a Linux kernel image
@@ -79,6 +80,8 @@
   gXenBusRootDeviceGuid               = {0xa732241f, 0x383d, 0x4d9c, {0x8a, 0xe1, 0x8e, 0x09, 0x83, 0x75, 0x89, 0xd7}}
   gRootBridgesConnectedEventGroupGuid = {0x24a2d66f, 0xeedd, 0x4086, {0x90, 0x42, 0xf2, 0x6e, 0x47, 0x97, 0xee, 0x69}}
   gMicrosoftVendorGuid                = {0x77fa9abd, 0x0359, 0x4d32, {0xbd, 0x60, 0x28, 0xf4, 0xe7, 0x8f, 0x78, 0x4b}}
+  gEfiLegacyBiosGuid                  = {0x2E3044AC, 0x879F, 0x490F, {0x97, 0x60, 0xBB, 0xDF, 0xAF, 0x69, 0x5F, 0x50}}
+  gEfiLegacyDevOrderVariableGuid      = {0xa56074db, 0x65fe, 0x45f7, {0xbd, 0x21, 0x2d, 0x2b, 0xdd, 0x8e, 0x96, 0x52}}
 
 [Protocols]
   gVirtioDeviceProtocolGuid           = {0xfa920010, 0x6785, 0x4941, {0xb6, 0xec, 0x49, 0x8c, 0x57, 0x9f, 0x16, 0x0a}}
@@ -86,6 +89,13 @@
   gXenIoProtocolGuid                  = {0x6efac84f, 0x0ab0, 0x4747, {0x81, 0xbe, 0x85, 0x55, 0x62, 0x59, 0x04, 0x49}}
   gIoMmuAbsentProtocolGuid            = {0xf8775d50, 0x8abd, 0x4adf, {0x92, 0xac, 0x85, 0x3e, 0x51, 0xf6, 0xc8, 0xdc}}
   gEfiLegacy8259ProtocolGuid          = {0x38321dba, 0x4fe0, 0x4e17, {0x8a, 0xec, 0x41, 0x30, 0x55, 0xea, 0xed, 0xc1}}
+  gEfiFirmwareVolumeProtocolGuid      = {0x389F751F, 0x1838, 0x4388, {0x83, 0x90, 0xcd, 0x81, 0x54, 0xbd, 0x27, 0xf8}}
+  gEfiIsaAcpiProtocolGuid             = {0x64a892dc, 0x5561, 0x4536, {0x92, 0xc7, 0x79, 0x9b, 0xfc, 0x18, 0x33, 0x55}}
+  gEfiIsaIoProtocolGuid               = {0x7ee2bd44, 0x3da0, 0x11d4, {0x9a, 0x38, 0x0, 0x90, 0x27, 0x3f, 0xc1, 0x4d}}
+  gEfiLegacyBiosProtocolGuid          = {0xdb9a1e3d, 0x45cb, 0x4abb, {0x85, 0x3b, 0xe5, 0x38, 0x7f, 0xdb, 0x2e, 0x2d}}
+  gEfiLegacyBiosPlatformProtocolGuid  = {0x783658a3, 0x4172, 0x4421, {0xa2, 0x99, 0xe0, 0x09, 0x07, 0x9c, 0x0c, 0xb4}}
+  gEfiLegacyInterruptProtocolGuid     = {0x31ce593d, 0x108a, 0x485d, {0xad, 0xb2, 0x78, 0xf2, 0x1f, 0x29, 0x66, 0xbe}}
+  gEfiVgaMiniPortProtocolGuid         = {0xc7735a2f, 0x88f5, 0x4882, {0xae, 0x63, 0xfa, 0xac, 0x8c, 0x8b, 0x86, 0xb3}}
 
 [PcdsFixedAtBuild]
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfPeiMemFvBase|0x0|UINT32|0
@@ -149,6 +159,64 @@
   #  mode's interrrupt controller.
   #  For the corresponding bits, 0 = Edge triggered and 1 = Level triggered.
   gUefiOvmfPkgTokenSpaceGuid.Pcd8259LegacyModeEdgeLevel|0x0000|UINT16|0x5
+
+  ## Indicates if BiosVideo driver will switch to 80x25 Text VGA Mode when
+  #  exiting boot service.
+  #   TRUE  - Switch to Text VGA Mode.
+  #   FALSE - Does not switch to Text VGA Mode.
+  gUefiOvmfPkgTokenSpaceGuid.PcdBiosVideoSetTextVgaModeEnable|FALSE|BOOLEAN|0x28
+
+  ## Indicates if BiosVideo driver will check for VESA BIOS Extension service
+  #  support.
+  #   TRUE  - Check for VESA BIOS Extension service.
+  #   FALSE - Does not check for VESA BIOS Extension service.
+  gUefiOvmfPkgTokenSpaceGuid.PcdBiosVideoCheckVbeEnable|TRUE|BOOLEAN|0x29
+
+  ## Indicates if BiosVideo driver will check for VGA service support.
+  #  NOTE: If both PcdBiosVideoCheckVbeEnable and PcdBiosVideoCheckVgaEnable
+  #  are set to FALSE, that means Graphics Output protocol will not be
+  #  installed, the VGA miniport protocol will be installed instead.
+  #   TRUE  - Check for VGA service.<BR>
+  #   FALSE - Does not check for VGA service.<BR>
+  gUefiOvmfPkgTokenSpaceGuid.PcdBiosVideoCheckVgaEnable|TRUE|BOOLEAN|0x2a
+
+  ## Indicates if memory space for legacy region will be set as cacheable.
+  #   TRUE  - Set cachebility for legacy region.
+  #   FALSE - Does not set cachebility for legacy region.
+  gUefiOvmfPkgTokenSpaceGuid.PcdLegacyBiosCacheLegacyRegion|TRUE|BOOLEAN|0x2b
+
+  ## Specify memory size with bytes to reserve EBDA below 640K for OPROM.
+  #  The value should be a multiple of 4KB.
+  gUefiOvmfPkgTokenSpaceGuid.PcdEbdaReservedMemorySize|0x8000|UINT32|0x2c
+
+  ## Specify memory base address for OPROM to find free memory.
+  #  Some OPROMs do not use EBDA or PMM to allocate memory for its usage,
+  #  instead they find the memory filled with zero from 0x20000.
+  #  The value should be a multiple of 4KB.
+  #  The range should be below the EBDA reserved range from
+  #  (CONVENTIONAL_MEMORY_TOP - Reserved EBDA Memory Size) to
+  #  CONVENTIONAL_MEMORY_TOP.
+  gUefiOvmfPkgTokenSpaceGuid.PcdOpromReservedMemoryBase|0x60000|UINT32|0x2d
+
+  ## Specify memory size with bytes for OPROM to find free memory.
+  #  The value should be a multiple of 4KB. And the range should be below the
+  #  EBDA reserved range from
+  #  (CONVENTIONAL_MEMORY_TOP - Reserved EBDA Memory Size) to
+  #  CONVENTIONAL_MEMORY_TOP.
+  gUefiOvmfPkgTokenSpaceGuid.PcdOpromReservedMemorySize|0x28000|UINT32|0x2e
+
+  ## Specify the end of address below 1MB for the OPROM.
+  #  The last shadowed OpROM should not exceed this address.
+  gUefiOvmfPkgTokenSpaceGuid.PcdEndOpromShadowAddress|0xdffff|UINT32|0x2f
+
+  ## Specify the low PMM (Post Memory Manager) size with bytes below 1MB.
+  #  The value should be a multiple of 4KB.
+  # @Prompt Low PMM (Post Memory Manager) Size
+  gUefiOvmfPkgTokenSpaceGuid.PcdLowPmmMemorySize|0x10000|UINT32|0x30
+
+  ## Specify the high PMM (Post Memory Manager) size with bytes above 1MB.
+  #  The value should be a multiple of 4KB.
+  gUefiOvmfPkgTokenSpaceGuid.PcdHighPmmMemorySize|0x400000|UINT32|0x31
 
 [PcdsDynamic, PcdsDynamicEx]
   gUefiOvmfPkgTokenSpaceGuid.PcdEmuVariableEvent|0|UINT64|2

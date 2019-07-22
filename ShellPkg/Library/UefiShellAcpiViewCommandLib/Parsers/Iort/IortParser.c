@@ -1,7 +1,7 @@
 /** @file
   IORT table parser
 
-  Copyright (c) 2016 - 2018, ARM Limited. All rights reserved.
+  Copyright (c) 2016 - 2019, ARM Limited. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Reference(s):
@@ -17,24 +17,10 @@
 // Local variables
 STATIC ACPI_DESCRIPTION_HEADER_INFO AcpiHdrInfo;
 
-/**
-  The EIORT_NODE enum describes the IORT Node types.
-**/
-typedef enum IortNode {
-  Iort_Node_ITS_Group,        ///< ITS Group node
-  Iort_Node_Named_Component,  ///< Named Component node
-  Iort_Node_Root_Complex,     ///< Root Complex node
-  Iort_Node_SMMUV1_V2,        ///< SMMU v1/v2 node
-  Iort_Node_SMMUV3,           ///< SMMU v3 node
-  Iort_Node_PMCG,             ///< PMC group node
-  Iort_Node_Max
-} EIORT_NODE;
-
-// Local Variables
 STATIC CONST UINT32* IortNodeCount;
 STATIC CONST UINT32* IortNodeOffset;
 
-STATIC CONST UINT8* IortNodeType;
+STATIC CONST UINT8*  IortNodeType;
 STATIC CONST UINT16* IortNodeLength;
 STATIC CONST UINT32* IortIdMappingCount;
 STATIC CONST UINT32* IortIdMappingOffset;
@@ -59,7 +45,13 @@ EFIAPI
 ValidateItsIdMappingCount (
   IN UINT8* Ptr,
   IN VOID*  Context
-  );
+  )
+{
+  if (*(UINT32*)Ptr != 0) {
+    IncrementErrorCount ();
+    Print (L"\nERROR: IORT ID Mapping count must be zero.");
+  }
+}
 
 /**
   This function validates the ID Mapping array offset for the ITS node.
@@ -74,7 +66,13 @@ EFIAPI
 ValidateItsIdArrayReference (
   IN UINT8* Ptr,
   IN VOID*  Context
-  );
+  )
+{
+  if (*(UINT32*)Ptr != 0) {
+    IncrementErrorCount ();
+    Print (L"\nERROR: IORT ID Mapping offset must be zero.");
+  }
+}
 
 /**
   Helper Macro for populating the IORT Node header in the ACPI_PARSER array.
@@ -145,19 +143,19 @@ STATIC CONST ACPI_PARSER IortNodeSmmuV1V2Parser[] = {
   An ACPI_PARSER array describing the SMMUv1/2 Node Interrupt Array.
 **/
 STATIC CONST ACPI_PARSER InterruptArrayParser[] = {
-  {L"  Interrupt GSIV", 4, 0, L"0x%x", NULL, NULL, NULL, NULL},
-  {L"  Flags", 4, 4, L"0x%x", NULL, NULL, NULL, NULL}
+  {L"Interrupt GSIV", 4, 0, L"0x%x", NULL, NULL, NULL, NULL},
+  {L"Flags", 4, 4, L"0x%x", NULL, NULL, NULL, NULL}
 };
 
 /**
   An ACPI_PARSER array describing the IORT ID Mapping.
 **/
 STATIC CONST ACPI_PARSER IortNodeIdMappingParser[] = {
-  {L"  Input base", 4, 0, L"0x%x", NULL, NULL, NULL, NULL},
-  {L"  Number of IDs", 4, 4, L"0x%x", NULL, NULL, NULL, NULL},
-  {L"  Output base", 4, 8, L"0x%x", NULL, NULL, NULL, NULL},
-  {L"  Output reference", 4, 12, L"0x%x", NULL, NULL, NULL, NULL},
-  {L"  Flags", 4, 16, L"0x%x", NULL, NULL, NULL, NULL}
+  {L"Input base", 4, 0, L"0x%x", NULL, NULL, NULL, NULL},
+  {L"Number of IDs", 4, 4, L"0x%x", NULL, NULL, NULL, NULL},
+  {L"Output base", 4, 8, L"0x%x", NULL, NULL, NULL, NULL},
+  {L"Output reference", 4, 12, L"0x%x", NULL, NULL, NULL, NULL},
+  {L"Flags", 4, 16, L"0x%x", NULL, NULL, NULL, NULL}
 };
 
 /**
@@ -184,14 +182,14 @@ STATIC CONST ACPI_PARSER IortNodeItsParser[] = {
     ValidateItsIdMappingCount,
     ValidateItsIdArrayReference
     ),
-  {L"  Number of ITSs", 4, 16, L"%d", NULL, (VOID**)&ItsCount, NULL}
+  {L"Number of ITSs", 4, 16, L"%d", NULL, (VOID**)&ItsCount, NULL}
 };
 
 /**
   An ACPI_PARSER array describing the ITS ID.
 **/
 STATIC CONST ACPI_PARSER ItsIdParser[] = {
-  { L"  GIC ITS Identifier", 4, 0, L"%d", NULL, NULL, NULL }
+  { L"GIC ITS Identifier", 4, 0, L"%d", NULL, NULL, NULL }
 };
 
 /**
@@ -223,48 +221,6 @@ STATIC CONST ACPI_PARSER IortNodePmcgParser[] = {
   {L"Overflow interrupt GSIV", 4, 24, L"0x%x", NULL, NULL, NULL, NULL},
   {L"Node reference", 4, 28, L"0x%x", NULL, NULL, NULL, NULL},
 };
-
-/**
-  This function validates the ID Mapping array count for the ITS node.
-
-  @param [in] Ptr     Pointer to the start of the field data.
-  @param [in] Context Pointer to context specific information e.g. this
-                      could be a pointer to the ACPI table header.
-**/
-STATIC
-VOID
-EFIAPI
-ValidateItsIdMappingCount (
-  IN UINT8* Ptr,
-  IN VOID*     Context
-  )
-{
-  if (*(UINT32*)Ptr != 0) {
-    IncrementErrorCount ();
-    Print (L"\nERROR: IORT ID Mapping count must be zero.");
-  }
-}
-
-/**
-  This function validates the ID Mapping array offset for the ITS node.
-
-  @param [in] Ptr     Pointer to the start of the field data.
-  @param [in] Context Pointer to context specific information e.g. this
-                      could be a pointer to the ACPI table header.
-**/
-STATIC
-VOID
-EFIAPI
-ValidateItsIdArrayReference (
-  IN UINT8* Ptr,
-  IN VOID*  Context
-  )
-{
-  if (*(UINT32*)Ptr != 0) {
-    IncrementErrorCount ();
-    Print (L"\nERROR: IORT ID Mapping offset must be zero.");
-  }
-}
 
 /**
   This function parses the IORT Node Id Mapping array.
@@ -659,13 +615,13 @@ ParseAcpiIort (
     Print (L"0x%x\n", Offset);
 
     switch (*IortNodeType) {
-      case Iort_Node_ITS_Group:
+      case EFI_ACPI_IORT_TYPE_ITS_GROUP:
         DumpIortNodeIts (
           NodePtr,
           *IortNodeLength
           );
         break;
-      case Iort_Node_Named_Component:
+      case EFI_ACPI_IORT_TYPE_NAMED_COMP:
         DumpIortNodeNamedComponent (
           NodePtr,
           *IortNodeLength,
@@ -673,7 +629,7 @@ ParseAcpiIort (
           *IortIdMappingOffset
           );
         break;
-      case Iort_Node_Root_Complex:
+      case EFI_ACPI_IORT_TYPE_ROOT_COMPLEX:
         DumpIortNodeRootComplex (
           NodePtr,
           *IortNodeLength,
@@ -681,7 +637,7 @@ ParseAcpiIort (
           *IortIdMappingOffset
           );
         break;
-      case Iort_Node_SMMUV1_V2:
+      case EFI_ACPI_IORT_TYPE_SMMUv1v2:
         DumpIortNodeSmmuV1V2 (
           NodePtr,
           *IortNodeLength,
@@ -689,7 +645,7 @@ ParseAcpiIort (
           *IortIdMappingOffset
           );
         break;
-      case Iort_Node_SMMUV3:
+      case EFI_ACPI_IORT_TYPE_SMMUv3:
         DumpIortNodeSmmuV3 (
           NodePtr,
           *IortNodeLength,
@@ -697,7 +653,7 @@ ParseAcpiIort (
           *IortIdMappingOffset
           );
         break;
-      case Iort_Node_PMCG:
+      case EFI_ACPI_IORT_TYPE_PMCG:
         DumpIortNodePmcg (
           NodePtr,
           *IortNodeLength,
