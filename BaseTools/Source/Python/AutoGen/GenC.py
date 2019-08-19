@@ -1472,8 +1472,8 @@ def CreateModuleEntryPointCode(Info, AutoGenC, AutoGenH):
 
     if Info.ModuleType in [SUP_MODULE_PEI_CORE, SUP_MODULE_DXE_CORE, SUP_MODULE_SMM_CORE, SUP_MODULE_MM_CORE_STANDALONE]:
         if Info.SourceFileList:
-          if NumEntryPoints != 1:
-              EdkLogger.error(
+            if NumEntryPoints != 1:
+                EdkLogger.error(
                   "build",
                   AUTOGEN_ERROR,
                   '%s must have exactly one entry point' % Info.ModuleType,
@@ -1629,7 +1629,7 @@ def CreatePcdCode(Info, AutoGenC, AutoGenH):
         if Pcd.Type in PCD_DYNAMIC_EX_TYPE_SET and Pcd.TokenSpaceGuidCName not in TokenSpaceList:
             TokenSpaceList.append(Pcd.TokenSpaceGuidCName)
 
-    SkuMgr = Info.Workspace.Platform.SkuIdMgr
+    SkuMgr = Info.PlatformInfo.Platform.SkuIdMgr
     AutoGenH.Append("\n// Definition of SkuId Array\n")
     AutoGenH.Append("extern UINT64 _gPcd_SkuId_Array[];\n")
     # Add extern declarations to AutoGen.h if one or more Token Space GUIDs were found

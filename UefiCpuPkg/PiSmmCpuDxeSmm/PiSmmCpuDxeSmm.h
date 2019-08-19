@@ -53,8 +53,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <AcpiCpuData.h>
 #include <CpuHotPlugData.h>
 
-#include <Register/Cpuid.h>
-#include <Register/Msr.h>
+#include <Register/Intel/Cpuid.h>
+#include <Register/Intel/Msr.h>
 
 #include "CpuService.h"
 #include "SmmProfile.h"
@@ -1311,7 +1311,7 @@ RestoreCr2 (
                                             Note that timeout support is optional. Whether an implementation
                                             supports this feature can be determined via the Attributes data
                                             member.
-  @param[in,out]   CPUStatus                This optional pointer may be used to get the status code returned
+  @param[in,out]   CpuStatus                This optional pointer may be used to get the status code returned
                                             by Procedure when it completes execution on the target AP, or with
                                             EFI_TIMEOUT if the Procedure fails to complete within the optional
                                             timeout. The implementation will update this variable with
@@ -1329,7 +1329,7 @@ InternalSmmStartupThisAp (
   IN      EFI_AP_PROCEDURE2              Procedure,
   IN      UINTN                          CpuIndex,
   IN OUT  VOID                           *ProcArguments OPTIONAL,
-  IN      MM_COMPLETION                  *Token,
+  IN OUT  MM_COMPLETION                  *Token,
   IN      UINTN                          TimeoutInMicroseconds,
   IN OUT  EFI_STATUS                     *CpuStatus
   );
@@ -1387,7 +1387,7 @@ IsPresentAp (
   @param[in]     TimeoutInMicroseconds   Indicates the time limit in microseconds for
                                          APs to return from Procedure, either for
                                          blocking or non-blocking mode.
-  @param[in,out] ProcedureArgument       The parameter passed into Procedure for
+  @param[in,out] ProcedureArguments      The parameter passed into Procedure for
                                          all APs.
   @param[in,out] Token                   This is an optional parameter that allows the caller to execute the
                                          procedure in a blocking or non-blocking fashion. If it is NULL the
@@ -1437,8 +1437,8 @@ InternalSmmStartupAllAPs (
 **/
 EFI_STATUS
 RegisterStartupProcedure (
-  IN EFI_AP_PROCEDURE    Procedure,
-  IN VOID                *ProcedureArguments OPTIONAL
+  IN     EFI_AP_PROCEDURE    Procedure,
+  IN OUT VOID                *ProcedureArguments OPTIONAL
   );
 
 /**

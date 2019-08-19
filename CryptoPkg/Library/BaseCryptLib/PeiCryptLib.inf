@@ -34,6 +34,7 @@
 #
 
 [Sources]
+  InternalCryptLib.h
   Hash/CryptMd4Null.c
   Hash/CryptMd5.c
   Hash/CryptSha1.c
@@ -43,10 +44,10 @@
   Hmac/CryptHmacMd5Null.c
   Hmac/CryptHmacSha1Null.c
   Hmac/CryptHmacSha256Null.c
+  Kdf/CryptHkdfNull.c
   Cipher/CryptAesNull.c
   Cipher/CryptTdesNull.c
   Cipher/CryptArc4Null.c
-
   Pk/CryptRsaBasic.c
   Pk/CryptRsaExtNull.c
   Pk/CryptPkcs1OaepNull.c
@@ -55,13 +56,11 @@
   Pk/CryptPkcs7VerifyCommon.c
   Pk/CryptPkcs7VerifyBase.c
   Pk/CryptPkcs7VerifyEku.c
-
   Pk/CryptDhNull.c
   Pk/CryptX509Null.c
   Pk/CryptAuthenticodeNull.c
   Pk/CryptTsNull.c
   Pem/CryptPemNull.c
-
   Rand/CryptRandNull.c
 
   SysCall/CrtWrapper.c

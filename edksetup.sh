@@ -49,11 +49,11 @@ function SetWorkspace()
     return 0
   fi
 
-  if [ ! ${BASH_SOURCE[0]} -ef ./edksetup.sh ] && [ -z "$PACKAGES_PATH" ]
+  if [ ! ${BASH_SOURCE[0]} -ef ./$SCRIPTNAME ] && [ -z "$PACKAGES_PATH" ]
   then
     echo Run this script from the base of your tree.  For example:
     echo "  cd /Path/To/Edk/Root"
-    echo "  . edksetup.sh"
+    echo "  . $SCRIPTNAME"
     return 1
   fi
 
@@ -71,7 +71,7 @@ function SetWorkspace()
   #
   # Set $WORKSPACE
   #
-  export WORKSPACE=`pwd`
+  export WORKSPACE=$PWD
   return 0
 }
 
@@ -194,12 +194,12 @@ do
       RECONFIG=TRUE
       shift
     ;;
-    -?|-h|--help|*)
+    *)
       HelpMsg
       break
     ;;
   esac
-  I=$(($I - 1))
+  I=$((I - 1))
 done
 
 if [ $I -gt 0 ]

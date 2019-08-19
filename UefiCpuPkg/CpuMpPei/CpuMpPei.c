@@ -1,12 +1,14 @@
 /** @file
   CPU PEI Module installs CPU Multiple Processor PPI.
 
-  Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2015 - 2019, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include "CpuMpPei.h"
+
+extern EDKII_PEI_MP_SERVICES2_PPI            mMpServices2Ppi;
 
 //
 // CPU MP PPI to be installed
@@ -21,10 +23,17 @@ EFI_PEI_MP_SERVICES_PPI                mMpServicesPpi = {
   PeiWhoAmI,
 };
 
-EFI_PEI_PPI_DESCRIPTOR           mPeiCpuMpPpiDesc = {
-  (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
-  &gEfiPeiMpServicesPpiGuid,
-  &mMpServicesPpi
+EFI_PEI_PPI_DESCRIPTOR           mPeiCpuMpPpiList[] = {
+  {
+    EFI_PEI_PPI_DESCRIPTOR_PPI,
+    &gEdkiiPeiMpServices2PpiGuid,
+    &mMpServices2Ppi
+  },
+  {
+    (EFI_PEI_PPI_DESCRIPTOR_PPI | EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST),
+    &gEfiPeiMpServicesPpiGuid,
+    &mMpServicesPpi
+  }
 };
 
 /**
@@ -667,7 +676,7 @@ InitializeCpuMpWorker (
   //
   // Install CPU MP PPI
   //
-  Status = PeiServicesInstallPpi(&mPeiCpuMpPpiDesc);
+  Status = PeiServicesInstallPpi(mPeiCpuMpPpiList);
   ASSERT_EFI_ERROR (Status);
 
   return Status;

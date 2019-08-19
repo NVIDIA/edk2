@@ -7,7 +7,7 @@
 # customized using libraries and PCDs.
 #
 # Copyright (c) 2016, Microsoft Corporation. All rights reserved.<BR>
-# Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2018 - 2019, Intel Corporation. All rights reserved.<BR>
 #
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -28,6 +28,12 @@
   #
   DEFINE SYSTEM_FMP_ESRT_GUID   = B461B3BD-E62A-4A71-841C-50BA4E500267
   DEFINE DEVICE_FMP_ESRT_GUID   = 226034C4-8B67-4536-8653-D6EE7CE5A316
+
+  #
+  # TRUE  - Build FmpDxe module for with storage access enabled
+  # FALSE - Build FmpDxe module for with storage access disabled
+  #
+  DEFINE DEVICE_FMP_STORAGE_ACCESS_ENABLE = TRUE
 
 [LibraryClasses]
   UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
@@ -66,11 +72,15 @@
 [LibraryClasses.ARM]
   ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
 
+[PcdsPatchableInModule]
+  gFmpDevicePkgTokenSpaceGuid.PcdFmpDeviceImageTypeIdGuid|{0}
+
 [Components]
   #
   # Libraries
   #
   FmpDevicePkg/Library/CapsuleUpdatePolicyLibNull/CapsuleUpdatePolicyLibNull.inf
+  FmpDevicePkg/Library/CapsuleUpdatePolicyLibOnProtocol/CapsuleUpdatePolicyLibOnProtocol.inf
   FmpDevicePkg/Library/FmpPayloadHeaderLibV1/FmpPayloadHeaderLibV1.inf
   FmpDevicePkg/Library/FmpDeviceLibNull/FmpDeviceLibNull.inf
   FmpDevicePkg/FmpDxe/FmpDxeLib.inf
@@ -78,12 +88,34 @@
   #
   # Modules
   #
+  FmpDevicePkg/CapsuleUpdatePolicyDxe/CapsuleUpdatePolicyDxe.inf {
+    <LibraryClasses>
+      CapsuleUpdatePolicyLib|FmpDevicePkg/Library/CapsuleUpdatePolicyLibNull/CapsuleUpdatePolicyLibNull.inf
+  }
   FmpDevicePkg/FmpDxe/FmpDxe.inf {
     <Defines>
       #
       # FILE_GUID is used as ESRT GUID
       #
       FILE_GUID = $(SYSTEM_FMP_ESRT_GUID)
+    <PcdsFixedAtBuild>
+      #
+      # Unicode name string that is used to populate FMP Image Descriptor for this capsule update module
+      #
+      gFmpDevicePkgTokenSpaceGuid.PcdFmpDeviceImageIdName|L"Sample Firmware Device"
+      #
+      # Certificates used to authenticate capsule update image
+      #
+      !include BaseTools/Source/Python/Pkcs7Sign/TestRoot.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc
+    <PcdsPatchableInModule>
+      gFmpDevicePkgTokenSpaceGuid.PcdFmpDeviceImageTypeIdGuid|{GUID("$(SYSTEM_FMP_ESRT_GUID)")}
+    <LibraryClasses>
+      #
+      # Use CapsuleUpdatePolicyLib that calls the Capsule Update Policy Protocol.
+      # Depends on the CapsuleUpdatePolicyDxe module to produce the protocol.
+      # Required for FmpDxe modules that are intended to be platform independent.
+      #
+      CapsuleUpdatePolicyLib|FmpDevicePkg/Library/CapsuleUpdatePolicyLibOnProtocol/CapsuleUpdatePolicyLibOnProtocol.inf
   }
 
   FmpDevicePkg/FmpDxe/FmpDxe.inf {
@@ -92,6 +124,36 @@
       # FILE_GUID is used as ESRT GUID
       #
       FILE_GUID = $(DEVICE_FMP_ESRT_GUID)
+    <PcdsFeatureFlag>
+      gFmpDevicePkgTokenSpaceGuid.PcdFmpDeviceStorageAccessEnable|$(DEVICE_FMP_STORAGE_ACCESS_ENABLE)
+    <PcdsFixedAtBuild>
+!if $(DEVICE_FMP_STORAGE_ACCESS_ENABLE) == FALSE
+      #
+      # Disable test key detection
+      #
+      gFmpDevicePkgTokenSpaceGuid.PcdFmpDeviceTestKeySha256Digest|{0}
+!endif
+      #
+      # Unicode name string that is used to populate FMP Image Descriptor for this capsule update module
+      #
+!if $(DEVICE_FMP_STORAGE_ACCESS_ENABLE) == TRUE
+      gFmpDevicePkgTokenSpaceGuid.PcdFmpDeviceImageIdName|L"Sample Firmware Device"
+!else
+      gFmpDevicePkgTokenSpaceGuid.PcdFmpDeviceImageIdName|L"Sample Firmware Device No Storage Access"
+!endif
+      #
+      # Certificates used to authenticate capsule update image
+      #
+      !include BaseTools/Source/Python/Pkcs7Sign/TestRoot.cer.gFmpDevicePkgTokenSpaceGuid.PcdFmpDevicePkcs7CertBufferXdr.inc
+    <PcdsPatchableInModule>
+      gFmpDevicePkgTokenSpaceGuid.PcdFmpDeviceImageTypeIdGuid|{GUID("$(DEVICE_FMP_ESRT_GUID)")}
+    <LibraryClasses>
+      #
+      # Directly use a platform specific CapsuleUpdatePolicyLib instance.
+      # Only works for FmpDxe modules that are build from sources and included
+      # in a system firmware image.
+      #
+      CapsuleUpdatePolicyLib|FmpDevicePkg/Library/CapsuleUpdatePolicyLibNull/CapsuleUpdatePolicyLibNull.inf
   }
 
 [BuildOptions]

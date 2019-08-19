@@ -121,6 +121,10 @@ VerifyChecksum (
   UINT8 Checksum;
   UINTN OriginalAttribute;
 
+  //
+  // set local variables to suppress incorrect compiler/analyzer warnings
+  //
+  OriginalAttribute = 0;
   ByteCount = 0;
   Checksum = 0;
 
@@ -290,7 +294,7 @@ DumpUint64 (
 
   Val = *(UINT32*)(Ptr + sizeof (UINT32));
 
-  Val <<= 32;
+  Val = LShiftU64(Val,32);
   Val |= (UINT64)*(UINT32*)Ptr;
 
   Print (Format, Val);
@@ -472,6 +476,10 @@ ParseAcpi (
   BOOLEAN HighLight;
   UINTN   OriginalAttribute;
 
+  //
+  // set local variables to suppress incorrect compiler/analyzer warnings
+  //
+  OriginalAttribute = 0;
   Offset = 0;
 
   // Increment the Indent
@@ -589,23 +597,27 @@ STATIC CONST ACPI_PARSER GasParser[] = {
 
   @param [in] Ptr     Pointer to the start of the buffer.
   @param [in] Indent  Number of spaces to indent the output.
+  @param [in] Length  Length of the GAS structure buffer.
+
+  @retval Number of bytes parsed.
 **/
-VOID
+UINT32
 EFIAPI
 DumpGasStruct (
   IN UINT8*        Ptr,
-  IN UINT32        Indent
+  IN UINT32        Indent,
+  IN UINT32        Length
   )
 {
   Print (L"\n");
-  ParseAcpi (
-    TRUE,
-    Indent,
-    NULL,
-    Ptr,
-    GAS_LENGTH,
-    PARSER_PARAMS (GasParser)
-    );
+  return ParseAcpi (
+           TRUE,
+           Indent,
+           NULL,
+           Ptr,
+           Length,
+           PARSER_PARAMS (GasParser)
+           );
 }
 
 /**
@@ -621,7 +633,7 @@ DumpGas (
   IN UINT8*        Ptr
   )
 {
-  DumpGasStruct (Ptr, 2);
+  DumpGasStruct (Ptr, 2, GAS_LENGTH);
 }
 
 /**

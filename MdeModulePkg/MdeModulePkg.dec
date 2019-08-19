@@ -31,16 +31,6 @@
   ##  @libraryclass  Defines a set of helper functions for resetting the system.
   ResetUtilityLib|Include/Library/ResetUtilityLib.h
 
-  ##  @libraryclass  Defines a set of methods related do S3 mode.
-  #   This library class is no longer used and modules using this library should
-  #   directly locate EFI_PEI_S3_RESUME_PPI defined in PI 1.2 specification.
-  S3Lib|Include/Library/S3Lib.h
-
-  ##  @libraryclass  Defines a set of methods related recovery mode.
-  #   This library class is no longer used and modules using this library should
-  #   directly locate EFI_PEI_RECOVERY_MODULE_PPI defined in PI 1.2 specification.
-  RecoveryLib|Include/Library/RecoveryLib.h
-
   ##  @libraryclass  Provides HII related functions.
   HiiLib|Include/Library/HiiLib.h
 
@@ -499,9 +489,6 @@
   # Include/Protocol/DebuggerConfiguration.h
   gEfiDebuggerConfigurationProtocolGuid = { 0x577d959c, 0xe967, 0x4546, { 0x86, 0x20, 0xc7, 0x78, 0xfa, 0xe5, 0xda, 0x05 }}
 
-  ## Include/Protocol/Dpc.h
-  gEfiDpcProtocolGuid            = {0x480f8ae9, 0xc46, 0x4aa9,  { 0xbc, 0x89, 0xdb, 0x9f, 0xba, 0x61, 0x98, 0x6 }}
-
   ## Fault Tolerant Write protocol provides boot-time service to do fault tolerant write capability for block devices.
   #  Include/Protocol/FaultTolerantWrite.h
   gEfiFaultTolerantWriteProtocolGuid = { 0x3EBD9E82, 0x2C78, 0x4DE6, { 0x97, 0x86, 0x8D, 0x4B, 0xFC, 0xB7, 0xC8, 0x81 }}
@@ -567,6 +554,9 @@
 
   ## Include/Protocol/UfsHostController.h
   gEdkiiUfsHostControllerProtocolGuid = { 0xebc01af5, 0x7a9, 0x489e, { 0xb7, 0xce, 0xdc, 0x8, 0x9e, 0x45, 0x9b, 0x2f } }
+
+  ## Include/Protocol/UfsHostControllerPlatform.h
+  gEdkiiUfsHcPlatformProtocolGuid = { 0x3d18ba13, 0xd9b1, 0x4dd4, {0xb9, 0x16, 0xd3, 0x07, 0x96, 0x53, 0x9e, 0xd8}}
 
   ## Include/Protocol/EsrtManagement.h
   gEsrtManagementProtocolGuid         = { 0xa340c064, 0x723c, 0x4a9c, { 0xa4, 0xdd, 0xd5, 0xb4, 0x7a, 0x26, 0xfb, 0xb0 }}
@@ -1990,6 +1980,13 @@
   #  This mask should be applied when creating 1:1 virtual to physical mapping tables.
   # @Prompt The address mask when memory encryption is enabled.
   gEfiMdeModulePkgTokenSpaceGuid.PcdPteMemoryEncryptionAddressOrMask|0x0|UINT64|0x30001047
+
+  ## Indicates if 5-Level Paging will be enabled in long mode. 5-Level Paging will not be enabled
+  #  when the PCD is TRUE but CPU doesn't support 5-Level Paging.
+  #   TRUE  - 5-Level Paging will be enabled.<BR>
+  #   FALSE - 5-Level Paging will not be enabled.<BR>
+  # @Prompt Enable 5-Level Paging support in long mode.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdUse5LevelPageTable|FALSE|BOOLEAN|0x0001105F
 
   ## Capsule In Ram is to use memory to deliver the capsules that will be processed after system
   #  reset.<BR><BR>

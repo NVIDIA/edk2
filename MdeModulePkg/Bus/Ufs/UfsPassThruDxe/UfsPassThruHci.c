@@ -2,7 +2,7 @@
   UfsPassThruDxe driver is used to produce EFI_EXT_SCSI_PASS_THRU protocol interface
   for upper layer application to execute UFS-supported SCSI cmds.
 
-  Copyright (c) 2014 - 2018, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2014 - 2019, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -731,7 +731,7 @@ UfsFindAvailableSlotInTrl (
     return Status;
   }
 
-  Nutrs   = (UINT8)((Private->Capabilities & UFS_HC_CAP_NUTRS) + 1);
+  Nutrs   = (UINT8)((Private->UfsHcInfo.Capabilities & UFS_HC_CAP_NUTRS) + 1);
 
   for (Index = 0; Index < Nutrs; Index++) {
     if ((Data & (BIT0 << Index)) == 0) {
@@ -1202,8 +1202,6 @@ UfsSetFlag (
   return Status;
 }
 
-
-
 /**
   Read specified flag from a UFS device.
 
@@ -1633,11 +1631,8 @@ Exit1:
 /**
   Send UIC command.
 
-  @param[in] Private          The pointer to the UFS_PASS_THRU_PRIVATE_DATA data structure.
-  @param[in] UicOpcode        The opcode of the UIC command.
-  @param[in] Arg1             The value for 1st argument of the UIC command.
-  @param[in] Arg2             The value for 2nd argument of the UIC command.
-  @param[in] Arg3             The value for 3rd argument of the UIC command.
+  @param[in]      Private     The pointer to the UFS_PASS_THRU_PRIVATE_DATA data structure.
+  @param[in, out] UicCommand  UIC command descriptor. On exit contains UIC command results.
 
   @return EFI_SUCCESS      Successfully execute this UIC command and detect attached UFS device.
   @return EFI_DEVICE_ERROR Fail to execute this UIC command and detect attached UFS device.
@@ -1646,10 +1641,7 @@ Exit1:
 EFI_STATUS
 UfsExecUicCommands (
   IN  UFS_PASS_THRU_PRIVATE_DATA    *Private,
-  IN  UINT8                         UicOpcode,
-  IN  UINT32                        Arg1,
-  IN  UINT32                        Arg2,
-  IN  UINT32                        Arg3
+  IN OUT EDKII_UIC_COMMAND          *UicCommand
   )
 {
   EFI_STATUS  Status;
@@ -1675,17 +1667,17 @@ UfsExecUicCommands (
   // only after all the UIC command argument registers (UICCMDARG1, UICCMDARG2 and UICCMDARG3)
   // are set.
   //
-  Status = UfsMmioWrite32 (Private, UFS_HC_UCMD_ARG1_OFFSET, Arg1);
+  Status = UfsMmioWrite32 (Private, UFS_HC_UCMD_ARG1_OFFSET, UicCommand->Arg1);
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  Status = UfsMmioWrite32 (Private, UFS_HC_UCMD_ARG2_OFFSET, Arg2);
+  Status = UfsMmioWrite32 (Private, UFS_HC_UCMD_ARG2_OFFSET, UicCommand->Arg2);
   if (EFI_ERROR (Status)) {
     return Status;
   }
 
-  Status = UfsMmioWrite32 (Private, UFS_HC_UCMD_ARG3_OFFSET, Arg3);
+  Status = UfsMmioWrite32 (Private, UFS_HC_UCMD_ARG3_OFFSET, UicCommand->Arg3);
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -1698,7 +1690,7 @@ UfsExecUicCommands (
     return Status;
   }
 
-  Status = UfsMmioWrite32 (Private, UFS_HC_UIC_CMD_OFFSET, (UINT32)UicOpcode);
+  Status = UfsMmioWrite32 (Private, UFS_HC_UIC_CMD_OFFSET, UicCommand->Opcode);
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -1712,14 +1704,18 @@ UfsExecUicCommands (
     return Status;
   }
 
-  if (UicOpcode != UfsUicDmeReset) {
-    Status = UfsMmioRead32 (Private, UFS_HC_UCMD_ARG2_OFFSET, &Data);
+  if (UicCommand->Opcode != UfsUicDmeReset) {
+    Status = UfsMmioRead32 (Private, UFS_HC_UCMD_ARG2_OFFSET, &UicCommand->Arg2);
     if (EFI_ERROR (Status)) {
       return Status;
     }
-    if ((Data & 0xFF) != 0) {
+    Status = UfsMmioRead32 (Private, UFS_HC_UCMD_ARG3_OFFSET, &UicCommand->Arg3);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+    if ((UicCommand->Arg2 & 0xFF) != 0) {
       DEBUG_CODE_BEGIN();
-        DumpUicCmdExecResult (UicOpcode, (UINT8)(Data & 0xFF));
+        DumpUicCmdExecResult ((UINT8)UicCommand->Opcode, (UINT8)(UicCommand->Arg2 & 0xFF));
       DEBUG_CODE_END();
       return EFI_DEVICE_ERROR;
     }
@@ -1756,7 +1752,7 @@ UfsAllocateAlignCommonBuffer (
   BOOLEAN                              Is32BitAddr;
   EDKII_UFS_HOST_CONTROLLER_PROTOCOL   *UfsHc;
 
-  if ((Private->Capabilities & UFS_HC_CAP_64ADDR) == UFS_HC_CAP_64ADDR) {
+  if ((Private->UfsHcInfo.Capabilities & UFS_HC_CAP_64ADDR) == UFS_HC_CAP_64ADDR) {
     Is32BitAddr = FALSE;
   } else {
     Is32BitAddr = TRUE;
@@ -1837,6 +1833,14 @@ UfsEnableHostController (
   EFI_STATUS             Status;
   UINT32                 Data;
 
+  if (mUfsHcPlatform != NULL && mUfsHcPlatform->Callback != NULL) {
+    Status = mUfsHcPlatform->Callback (Private->Handle, EdkiiUfsHcPreHce, &Private->UfsHcDriverInterface);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "Failure from platform driver during EdkiiUfsHcPreHce, Status = %r\n", Status));
+      return Status;
+    }
+  }
+
   //
   // UFS 2.0 spec section 7.1.1 - Host Controller Initialization
   //
@@ -1880,6 +1884,14 @@ UfsEnableHostController (
     return EFI_DEVICE_ERROR;
   }
 
+  if (mUfsHcPlatform != NULL && mUfsHcPlatform->Callback != NULL) {
+    Status = mUfsHcPlatform->Callback (Private->Handle, EdkiiUfsHcPostHce, &Private->UfsHcDriverInterface);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "Failure from platform driver during EdkiiUfsHcPostHce, Status = %r\n", Status));
+      return Status;
+    }
+  }
+
   return EFI_SUCCESS;
 }
 
@@ -1898,16 +1910,29 @@ UfsDeviceDetection (
   IN  UFS_PASS_THRU_PRIVATE_DATA     *Private
   )
 {
-  UINTN       Retry;
-  EFI_STATUS  Status;
-  UINT32      Data;
+  UINTN              Retry;
+  EFI_STATUS         Status;
+  UINT32             Data;
+  EDKII_UIC_COMMAND  LinkStartupCommand;
+
+  if (mUfsHcPlatform != NULL && mUfsHcPlatform->Callback != NULL) {
+    Status = mUfsHcPlatform->Callback (Private->Handle, EdkiiUfsHcPreLinkStartup, &Private->UfsHcDriverInterface);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "Failure from platform driver during EdkiiUfsHcPreLinkStartup, Status = %r\n", Status));
+      return Status;
+    }
+  }
 
   //
   // Start UFS device detection.
   // Try up to 3 times for establishing data link with device.
   //
   for (Retry = 0; Retry < 3; Retry++) {
-    Status = UfsExecUicCommands (Private, UfsUicDmeLinkStartup, 0, 0, 0);
+    LinkStartupCommand.Opcode = UfsUicDmeLinkStartup;
+    LinkStartupCommand.Arg1 = 0;
+    LinkStartupCommand.Arg2 = 0;
+    LinkStartupCommand.Arg3 = 0;
+    Status = UfsExecUicCommands (Private, &LinkStartupCommand);
     if (EFI_ERROR (Status)) {
       return EFI_DEVICE_ERROR;
     }
@@ -1923,6 +1948,13 @@ UfsDeviceDetection (
         return EFI_DEVICE_ERROR;
       }
     } else {
+      if (mUfsHcPlatform != NULL && mUfsHcPlatform->Callback != NULL) {
+        Status = mUfsHcPlatform->Callback (Private->Handle, EdkiiUfsHcPostLinkStartup, &Private->UfsHcDriverInterface);
+        if (EFI_ERROR (Status)) {
+          DEBUG ((DEBUG_ERROR, "Failure from platform driver during EdkiiUfsHcPostLinkStartup, Status = %r\n", Status));
+          return Status;
+        }
+      }
       return EFI_SUCCESS;
     }
   }
@@ -1944,7 +1976,6 @@ UfsInitTaskManagementRequestList (
   IN  UFS_PASS_THRU_PRIVATE_DATA     *Private
   )
 {
-  UINT32                 Data;
   UINT8                  Nutmrs;
   VOID                   *CmdDescHost;
   EFI_PHYSICAL_ADDRESS   CmdDescPhyAddr;
@@ -1958,17 +1989,10 @@ UfsInitTaskManagementRequestList (
   CmdDescMapping = NULL;
   CmdDescPhyAddr = 0;
 
-  Status = UfsMmioRead32 (Private, UFS_HC_CAP_OFFSET, &Data);
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-
-  Private->Capabilities = Data;
-
   //
   // Allocate and initialize UTP Task Management Request List.
   //
-  Nutmrs = (UINT8) (RShiftU64 ((Private->Capabilities & UFS_HC_CAP_NUTMRS), 16) + 1);
+  Nutmrs = (UINT8) (RShiftU64 ((Private->UfsHcInfo.Capabilities & UFS_HC_CAP_NUTMRS), 16) + 1);
   Status = UfsAllocateAlignCommonBuffer (Private, Nutmrs * sizeof (UTP_TMRD), &CmdDescHost, &CmdDescPhyAddr, &CmdDescMapping);
   if (EFI_ERROR (Status)) {
     return Status;
@@ -2017,7 +2041,6 @@ UfsInitTransferRequestList (
   IN  UFS_PASS_THRU_PRIVATE_DATA     *Private
   )
 {
-  UINT32                 Data;
   UINT8                  Nutrs;
   VOID                   *CmdDescHost;
   EFI_PHYSICAL_ADDRESS   CmdDescPhyAddr;
@@ -2031,17 +2054,10 @@ UfsInitTransferRequestList (
   CmdDescMapping = NULL;
   CmdDescPhyAddr = 0;
 
-  Status = UfsMmioRead32 (Private, UFS_HC_CAP_OFFSET, &Data);
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-
-  Private->Capabilities = Data;
-
   //
   // Allocate and initialize UTP Transfer Request List.
   //
-  Nutrs  = (UINT8)((Private->Capabilities & UFS_HC_CAP_NUTRS) + 1);
+  Nutrs  = (UINT8)((Private->UfsHcInfo.Capabilities & UFS_HC_CAP_NUTRS) + 1);
   Status = UfsAllocateAlignCommonBuffer (Private, Nutrs * sizeof (UTP_TRD), &CmdDescHost, &CmdDescPhyAddr, &CmdDescMapping);
   if (EFI_ERROR (Status)) {
     return Status;
@@ -2361,5 +2377,74 @@ ProcessAsyncTaskList (
       }
     }
   }
+}
+
+/**
+  Execute UIC command.
+
+  @param[in]      This        Pointer to driver interface produced by the UFS controller.
+  @param[in, out] UicCommand  Descriptor of the command that will be executed.
+
+  @retval EFI_SUCCESS            Command executed successfully.
+  @retval EFI_INVALID_PARAMETER  This or UicCommand is NULL.
+  @retval Others                 Command failed to execute.
+**/
+EFI_STATUS
+EFIAPI
+UfsHcDriverInterfaceExecUicCommand (
+  IN     EDKII_UFS_HC_DRIVER_INTERFACE  *This,
+  IN OUT EDKII_UIC_COMMAND              *UicCommand
+  )
+{
+  UFS_PASS_THRU_PRIVATE_DATA    *Private;
+
+  if (This == NULL || UicCommand == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Private = UFS_PASS_THRU_PRIVATE_DATA_FROM_DRIVER_INTF (This);
+
+  return UfsExecUicCommands (Private, UicCommand);
+}
+
+/**
+  Initializes UfsHcInfo field in private data.
+
+  @param[in] Private  Pointer to host controller private data.
+
+  @retval EFI_SUCCESS  UfsHcInfo initialized successfully.
+  @retval Others       Failed to initalize UfsHcInfo.
+**/
+EFI_STATUS
+GetUfsHcInfo (
+  IN UFS_PASS_THRU_PRIVATE_DATA  *Private
+  )
+{
+  UINT32      Data;
+  EFI_STATUS  Status;
+
+  Status = UfsMmioRead32 (Private, UFS_HC_VER_OFFSET, &Data);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Private->UfsHcInfo.Version = Data;
+
+  Status = UfsMmioRead32 (Private, UFS_HC_CAP_OFFSET, &Data);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Private->UfsHcInfo.Capabilities = Data;
+
+  if (mUfsHcPlatform != NULL && mUfsHcPlatform->OverrideHcInfo != NULL) {
+    Status = mUfsHcPlatform->OverrideHcInfo (Private->Handle, &Private->UfsHcInfo);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "Failure from platform on OverrideHcInfo, Status = %r\n", Status));
+      return Status;
+    }
+  }
+
+  return EFI_SUCCESS;
 }
 

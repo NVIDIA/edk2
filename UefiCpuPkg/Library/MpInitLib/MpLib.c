@@ -790,6 +790,7 @@ FillExchangeInfoData (
   volatile MP_CPU_EXCHANGE_INFO    *ExchangeInfo;
   UINTN                            Size;
   IA32_SEGMENT_DESCRIPTOR          *Selector;
+  IA32_CR4                         Cr4;
 
   ExchangeInfo                  = CpuMpData->MpCpuExchangeInfo;
   ExchangeInfo->Lock            = 0;
@@ -813,6 +814,18 @@ FillExchangeInfoData (
   ExchangeInfo->EnableExecuteDisable = IsBspExecuteDisableEnabled ();
 
   ExchangeInfo->InitializeFloatingPointUnitsAddress = (UINTN)InitializeFloatingPointUnits;
+
+  //
+  // We can check either CPUID(7).ECX[bit16] or check CR4.LA57[bit12]
+  //  to determin whether 5-Level Paging is enabled.
+  // CPUID(7).ECX[bit16] shows CPU's capability, CR4.LA57[bit12] shows
+  // current system setting.
+  // Using latter way is simpler because it also eliminates the needs to
+  //  check whether platform wants to enable it.
+  //
+  Cr4.UintN = AsmReadCr4 ();
+  ExchangeInfo->Enable5LevelPaging = (BOOLEAN) (Cr4.Bits.LA57 == 1);
+  DEBUG ((DEBUG_INFO, "%a: 5-Level Paging = %d\n", gEfiCallerBaseName, ExchangeInfo->Enable5LevelPaging));
 
   //
   // Get the BSP's data of GDT and IDT
@@ -1607,38 +1620,42 @@ MpInitLibInitialize (
   CpuMpData->SwitchBspFlag    = FALSE;
   CpuMpData->CpuData          = (CPU_AP_DATA *) (CpuMpData + 1);
   CpuMpData->CpuInfoInHob     = (UINT64) (UINTN) (CpuMpData->CpuData + MaxLogicalProcessorNumber);
-  CpuMpData->MicrocodePatchRegionSize = PcdGet64 (PcdCpuMicrocodePatchRegionSize);
-  //
-  // If platform has more than one CPU, relocate microcode to memory to reduce
-  // loading microcode time.
-  //
-  MicrocodePatchInRam = NULL;
-  if (MaxLogicalProcessorNumber > 1) {
-    MicrocodePatchInRam = AllocatePages (
-                            EFI_SIZE_TO_PAGES (
-                              (UINTN)CpuMpData->MicrocodePatchRegionSize
-                              )
-                            );
+  if (OldCpuMpData == NULL) {
+    CpuMpData->MicrocodePatchRegionSize = PcdGet64 (PcdCpuMicrocodePatchRegionSize);
+    //
+    // If platform has more than one CPU, relocate microcode to memory to reduce
+    // loading microcode time.
+    //
+    MicrocodePatchInRam = NULL;
+    if (MaxLogicalProcessorNumber > 1) {
+      MicrocodePatchInRam = AllocatePages (
+                              EFI_SIZE_TO_PAGES (
+                                (UINTN)CpuMpData->MicrocodePatchRegionSize
+                                )
+                              );
+    }
+    if (MicrocodePatchInRam == NULL) {
+      //
+      // there is only one processor, or no microcode patch is available, or
+      // memory allocation failed
+      //
+      CpuMpData->MicrocodePatchAddress = PcdGet64 (PcdCpuMicrocodePatchAddress);
+    } else {
+      //
+      // there are multiple processors, and a microcode patch is available, and
+      // memory allocation succeeded
+      //
+      CopyMem (
+        MicrocodePatchInRam,
+        (VOID *)(UINTN)PcdGet64 (PcdCpuMicrocodePatchAddress),
+        (UINTN)CpuMpData->MicrocodePatchRegionSize
+        );
+      CpuMpData->MicrocodePatchAddress = (UINTN)MicrocodePatchInRam;
+    }
+  }else {
+    CpuMpData->MicrocodePatchRegionSize = OldCpuMpData->MicrocodePatchRegionSize;
+    CpuMpData->MicrocodePatchAddress    = OldCpuMpData->MicrocodePatchAddress;
   }
-  if (MicrocodePatchInRam == NULL) {
-    //
-    // there is only one processor, or no microcode patch is available, or
-    // memory allocation failed
-    //
-    CpuMpData->MicrocodePatchAddress = PcdGet64 (PcdCpuMicrocodePatchAddress);
-  } else {
-    //
-    // there are multiple processors, and a microcode patch is available, and
-    // memory allocation succeeded
-    //
-    CopyMem (
-      MicrocodePatchInRam,
-      (VOID *)(UINTN)PcdGet64 (PcdCpuMicrocodePatchAddress),
-      (UINTN)CpuMpData->MicrocodePatchRegionSize
-      );
-    CpuMpData->MicrocodePatchAddress = (UINTN)MicrocodePatchInRam;
-  }
-
   InitializeSpinLock(&CpuMpData->MpLock);
 
   //
@@ -2130,6 +2147,7 @@ MpInitLibGetNumberOfProcessors (
                                       number.  If FALSE, then all the enabled APs
                                       execute the function specified by Procedure
                                       simultaneously.
+  @param[in]  ExcludeBsp              Whether let BSP also trig this task.
   @param[in]  WaitEvent               The event created by the caller with CreateEvent()
                                       service.
   @param[in]  TimeoutInMicroseconds   Indicates the time limit in microseconds for
@@ -2151,9 +2169,10 @@ MpInitLibGetNumberOfProcessors (
 
 **/
 EFI_STATUS
-StartupAllAPsWorker (
+StartupAllCPUsWorker (
   IN  EFI_AP_PROCEDURE          Procedure,
   IN  BOOLEAN                   SingleThread,
+  IN  BOOLEAN                   ExcludeBsp,
   IN  EFI_EVENT                 WaitEvent               OPTIONAL,
   IN  UINTN                     TimeoutInMicroseconds,
   IN  VOID                      *ProcedureArgument      OPTIONAL,
@@ -2175,7 +2194,7 @@ StartupAllAPsWorker (
     *FailedCpuList = NULL;
   }
 
-  if (CpuMpData->CpuCount == 1) {
+  if (CpuMpData->CpuCount == 1 && ExcludeBsp) {
     return EFI_NOT_STARTED;
   }
 
@@ -2218,9 +2237,9 @@ StartupAllAPsWorker (
     }
   }
 
-  if (!HasEnabledAp) {
+  if (!HasEnabledAp && ExcludeBsp) {
     //
-    // If no enabled AP exists, return EFI_NOT_STARTED.
+    // If no enabled AP exists and not include Bsp to do the procedure, return EFI_NOT_STARTED.
     //
     return EFI_NOT_STARTED;
   }
@@ -2264,6 +2283,13 @@ StartupAllAPsWorker (
         break;
       }
     }
+  }
+
+  if (!ExcludeBsp) {
+    //
+    // Start BSP.
+    //
+    Procedure (ProcedureArgument);
   }
 
   Status = EFI_SUCCESS;
@@ -2411,3 +2437,47 @@ GetCpuMpDataFromGuidedHob (
   return CpuMpData;
 }
 
+/**
+  This service executes a caller provided function on all enabled CPUs.
+
+  @param[in]  Procedure               A pointer to the function to be run on
+                                      enabled APs of the system. See type
+                                      EFI_AP_PROCEDURE.
+  @param[in]  TimeoutInMicroseconds   Indicates the time limit in microseconds for
+                                      APs to return from Procedure, either for
+                                      blocking or non-blocking mode. Zero means
+                                      infinity. TimeoutInMicroseconds is ignored
+                                      for BSP.
+  @param[in]  ProcedureArgument       The parameter passed into Procedure for
+                                      all APs.
+
+  @retval EFI_SUCCESS             In blocking mode, all CPUs have finished before
+                                  the timeout expired.
+  @retval EFI_SUCCESS             In non-blocking mode, function has been dispatched
+                                  to all enabled CPUs.
+  @retval EFI_DEVICE_ERROR        Caller processor is AP.
+  @retval EFI_NOT_READY           Any enabled APs are busy.
+  @retval EFI_NOT_READY           MP Initialize Library is not initialized.
+  @retval EFI_TIMEOUT             In blocking mode, the timeout expired before
+                                  all enabled APs have finished.
+  @retval EFI_INVALID_PARAMETER   Procedure is NULL.
+
+**/
+EFI_STATUS
+EFIAPI
+MpInitLibStartupAllCPUs (
+  IN  EFI_AP_PROCEDURE          Procedure,
+  IN  UINTN                     TimeoutInMicroseconds,
+  IN  VOID                      *ProcedureArgument      OPTIONAL
+  )
+{
+  return StartupAllCPUsWorker (
+           Procedure,
+           FALSE,
+           FALSE,
+           NULL,
+           TimeoutInMicroseconds,
+           ProcedureArgument,
+           NULL
+           );
+}

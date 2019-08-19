@@ -9,7 +9,7 @@
 #include <Uefi.h>
 #include <Library/BaseLib.h>
 #include <Library/UefiLib.h>
-#include <Register/Cpuid.h>
+#include <Register/Intel/Cpuid.h>
 
 ///
 /// Macro used to display the value of a bit field in a register returned by CPUID.
@@ -708,6 +708,8 @@ CpuidArchitecturalPerformanceMonitoring (
 /**
   Display CPUID_EXTENDED_TOPOLOGY leafs for all supported levels.
 
+  @param[in] LeafFunction  Leaf function index for CPUID_EXTENDED_TOPOLOGY.
+  
 **/
 VOID
 CpuidExtendedTopology (

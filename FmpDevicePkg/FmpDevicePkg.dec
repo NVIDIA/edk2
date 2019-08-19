@@ -7,7 +7,7 @@
 # customized using libraries and PCDs.
 #
 # Copyright (c) 2016, Microsoft Corporation. All rights reserved.<BR>
-# Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2018 - 2019, Intel Corporation. All rights reserved.<BR>
 #
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -23,15 +23,10 @@
 [Includes]
   Include
 
-[LibraryClasses]
-  ##  @libraryclass  Provides services to retrieve values from a capsule's FMP
-  #                  Payload Header.  The structure is not included in the
-  #                  library class.  Instead, services are provided to retrieve
-  #                  information from the FMP Payload Header.  If information is
-  #                  added to the FMP Payload Header, then new services may be
-  #                  added to this library class to retrieve the new information.
-  FmpPayloadHeaderLib|Include/Library/FmpPayloadHeaderLib.h
+[Includes.Common.Private]
+  PrivateInclude
 
+[LibraryClasses]
   ##  @libraryclass  Provides platform policy services used during a capsule
   #                  update.
   CapsuleUpdatePolicyLib|Include/Library/CapsuleUpdatePolicyLib.h
@@ -40,9 +35,34 @@
   #                  updates of a firmware image stored in a firmware device.
   FmpDeviceLib|Include/Library/FmpDeviceLib.h
 
+[LibraryClasses.Common.Private]
+  ##  @libraryclass  Provides services to retrieve values from a capsule's FMP
+  #                  Payload Header.  The structure is not included in the
+  #                  library class.  Instead, services are provided to retrieve
+  #                  information from the FMP Payload Header.  If information is
+  #                  added to the FMP Payload Header, then new services may be
+  #                  added to this library class to retrieve the new information.
+  FmpPayloadHeaderLib|PrivateInclude/Library/FmpPayloadHeaderLib.h
+
 [Guids]
   ## Firmware Management Protocol Device Package Token Space GUID
   gFmpDevicePkgTokenSpaceGuid = { 0x40b2d964, 0xfe11, 0x40dc, { 0x82, 0x83, 0x2e, 0xfb, 0xda, 0x29, 0x53, 0x56 } }
+
+[Protocols.Common.Private]
+  ## Capsule Update Policy Protocol
+  gEdkiiCapuleUpdatePolicyProtocolGuid = { 0x487784c5, 0x6299, 0x4ba6, { 0xb0, 0x96, 0x5c, 0xc5, 0x27, 0x7c, 0xf7, 0x57 } }
+
+[PcdsFeatureFlag]
+  ## Indicates if the Firmware Management Protocol supports access to
+  #  to a firmware storage device.  If set to FALSE, then only GetImageInfo()
+  #  is supported.  This is used by FMP drivers that require the samllest
+  #  possible Firmware Management Protocol implementation that supports
+  #  advertising the updatable firmware device in the ESRT.<BR>
+  #    TRUE  - All Firmware Management Protocol services supported.<BR>
+  #    FALSE - Firmware Management Protocol returns EFI_UNSUPPORTED for
+  #            all services except GetImageInfo().<BR>
+  # @Prompt Firmware Device Storage Access Enabled.
+  gFmpDevicePkgTokenSpaceGuid.PcdFmpDeviceStorageAccessEnable|TRUE|BOOLEAN|0x40000011
 
 [PcdsFixedAtBuild]
   ## The SHA-256 hash of a PKCS7 test key that is used to detect if a test key
@@ -87,6 +107,11 @@
   #  disabled).
   # @Prompt Firmware Device Watchdog Time in Seconds.
   gFmpDevicePkgTokenSpaceGuid.PcdFmpDeviceProgressWatchdogTimeInSeconds|0x0|UINT8|0x4000000D
+
+  ## The Image Type ID to use if one is not provided by FmpDeviceLib. If this
+  #  PCD is not a valid GUID value, then gEfiCallerIdGuid is used.
+  # @Prompt Firmware Device Image Type ID
+  gFmpDevicePkgTokenSpaceGuid.PcdFmpDeviceImageTypeIdGuid|{0}|VOID*|0x40000010
 
 [PcdsFixedAtBuild, PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
   ## One or more PKCS7 certificates used to verify a firmware device capsule

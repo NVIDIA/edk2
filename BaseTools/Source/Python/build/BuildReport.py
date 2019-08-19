@@ -34,7 +34,7 @@ from Common.BuildToolError import FORMAT_INVALID
 from Common.LongFilePathSupport import OpenLongFilePath as open
 from Common.MultipleWorkspace import MultipleWorkspace as mws
 import Common.GlobalData as GlobalData
-from AutoGen.AutoGen import ModuleAutoGen
+from AutoGen.ModuleAutoGen import ModuleAutoGen
 from Common.Misc import PathClass
 from Common.StringUtils import NormPath
 from Common.DataType import *
@@ -558,6 +558,7 @@ class ModuleReport(object):
     def __init__(self, M, ReportType):
         self.ModuleName = M.Module.BaseName
         self.ModuleInfPath = M.MetaFile.File
+        self.ModuleArch = M.Arch
         self.FileGuid = M.Guid
         self.Size = 0
         self.BuildTimeStamp = None
@@ -668,6 +669,7 @@ class ModuleReport(object):
 
         FileWrite(File, "Module Summary")
         FileWrite(File, "Module Name:          %s" % self.ModuleName)
+        FileWrite(File, "Module Arch:          %s" % self.ModuleArch)
         FileWrite(File, "Module INF Path:      %s" % self.ModuleInfPath)
         FileWrite(File, "File GUID:            %s" % self.FileGuid)
         if self.Size:
@@ -2140,7 +2142,7 @@ class PlatformReport(object):
                         INFList = GlobalData.gFdfParser.Profile.InfDict[Pa.Arch]
                         for InfName in INFList:
                             InfClass = PathClass(NormPath(InfName), Wa.WorkspaceDir, Pa.Arch)
-                            Ma = ModuleAutoGen(Wa, InfClass, Pa.BuildTarget, Pa.ToolChain, Pa.Arch, Wa.MetaFile)
+                            Ma = ModuleAutoGen(Wa, InfClass, Pa.BuildTarget, Pa.ToolChain, Pa.Arch, Wa.MetaFile,Pa.DataPile)
                             if Ma is None:
                                 continue
                             if Ma not in ModuleAutoGenList:
