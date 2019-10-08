@@ -209,21 +209,12 @@ fi
 if [[ "$RUN_EMULATOR" == "yes" ]]; then
   case `uname` in
     Darwin*)
-      #
-      # On Darwin we can't use dlopen, so we have to load the real PE/COFF images.
-      # This .gdbinit script sets a breakpoint that loads symbols for the PE/COFFEE
-      # images that get loaded in Host
-      #
-      if [[ "$CLANG_VER" == *-ccc-host-triple* ]]
-      then
-      # only older versions of Xcode support -ccc-host-tripe, for newer versions
-      # it is -target
-        cp $WORKSPACE/EmulatorPkg/Unix/lldbefi.py "$BUILD_OUTPUT_DIR/${BUILDTARGET}_$TARGET_TOOLS/$PROCESSOR"
-        cd $BUILD_ROOT_ARCH; /usr/bin/lldb --source $WORKSPACE/EmulatorPkg/Unix/lldbinit Host
-        exit $? 
-      else
-        cp $WORKSPACE/EmulatorPkg/Unix/.gdbinit "$BUILD_OUTPUT_DIR/${BUILDTARGET}_$TARGET_TOOLS/$PROCESSOR"
-      fi
+      cd $BUILD_ROOT_ARCH
+      /usr/bin/lldb \
+        -o "command script import $WORKSPACE/EmulatorPkg/Unix/lldbefi.py" \
+        -o 'script lldb.debugger.SetAsync(True)' \
+        -o "run" ./Host
+      exit $?
       ;;
   esac
 
@@ -233,13 +224,13 @@ fi
 
 case $CLEAN_TYPE in
   clean)
-    build -p $WORKSPACE/EmulatorPkg/EmulatorPkg.dsc -a $PROCESSOR -b $BUILDTARGET -t $HOST_TOOLS -D UNIX_SEC_BUILD -n 3 clean
+    build -p $WORKSPACE/EmulatorPkg/EmulatorPkg.dsc -a $PROCESSOR -b $BUILDTARGET -t $HOST_TOOLS -n 3 clean
     build -p $WORKSPACE/EmulatorPkg/EmulatorPkg.dsc -a $PROCESSOR -b $BUILDTARGET -t $TARGET_TOOLS -n 3 clean
     exit $?
     ;;
   cleanall)
     make -C $WORKSPACE/BaseTools clean
-    build -p $WORKSPACE/EmulatorPkg/EmulatorPkg.dsc -a $PROCESSOR -b $BUILDTARGET -t $HOST_TOOLS -D UNIX_SEC_BUILD -n 3 clean
+    build -p $WORKSPACE/EmulatorPkg/EmulatorPkg.dsc -a $PROCESSOR -b $BUILDTARGET -t $HOST_TOOLS -n 3 clean
     build -p $WORKSPACE/EmulatorPkg/EmulatorPkg.dsc -a $PROCESSOR -b $BUILDTARGET -t $TARGET_TOOLS -n 3 clean
     build -p $WORKSPACE/ShellPkg/ShellPkg.dsc -a IA32 -b $BUILDTARGET -t $TARGET_TOOLS -n 3 clean
     exit $?
@@ -251,9 +242,9 @@ esac
 # Build the edk2 EmulatorPkg
 #
 if [[ $HOST_TOOLS == $TARGET_TOOLS ]]; then
-  build -p $WORKSPACE/EmulatorPkg/EmulatorPkg.dsc $BUILD_OPTIONS -a $PROCESSOR -b $BUILDTARGET -t $TARGET_TOOLS -D BUILD_$ARCH_SIZE -D UNIX_SEC_BUILD $NETWORK_SUPPORT $BUILD_NEW_SHELL $BUILD_FAT -n 3
+  build -p $WORKSPACE/EmulatorPkg/EmulatorPkg.dsc $BUILD_OPTIONS -a $PROCESSOR -b $BUILDTARGET -t $TARGET_TOOLS -D BUILD_$ARCH_SIZE $NETWORK_SUPPORT $BUILD_NEW_SHELL $BUILD_FAT -n 3
 else
-  build -p $WORKSPACE/EmulatorPkg/EmulatorPkg.dsc $BUILD_OPTIONS -a $PROCESSOR -b $BUILDTARGET -t $HOST_TOOLS  -D BUILD_$ARCH_SIZE -D UNIX_SEC_BUILD -D SKIP_MAIN_BUILD -n 3 modules
+  build -p $WORKSPACE/EmulatorPkg/EmulatorPkg.dsc $BUILD_OPTIONS -a $PROCESSOR -b $BUILDTARGET -t $HOST_TOOLS  -D BUILD_$ARCH_SIZE -D SKIP_MAIN_BUILD -n 3 modules
   build -p $WORKSPACE/EmulatorPkg/EmulatorPkg.dsc $BUILD_OPTIONS -a $PROCESSOR -b $BUILDTARGET -t $TARGET_TOOLS -D BUILD_$ARCH_SIZE $NETWORK_SUPPORT $BUILD_NEW_SHELL $BUILD_FAT -n 3
   cp "$BUILD_OUTPUT_DIR/${BUILDTARGET}_$HOST_TOOLS/$PROCESSOR/Host" $BUILD_ROOT_ARCH
 fi

@@ -150,10 +150,6 @@
                                                                                                   "entries. If greater than 0, then this PCD determines the number of entries,\n"
                                                                                                   "and PcdMaxPeiPerformanceLogEntries is ignored."
 
-#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdRealTimeClockUpdateTimeout_PROMPT  #language en-US "RTC Update Timeout Value"
-
-#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdRealTimeClockUpdateTimeout_HELP  #language en-US "RTC Update Timeout Value(microsecond)."
-
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdSerialUseMmio_PROMPT  #language en-US "Serial port registers use MMIO"
 
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdSerialUseMmio_HELP  #language en-US "Indicates the 16550 serial port registers are in MMIO space, or in I/O space. Default is I/O space.<BR><BR>\n"
@@ -207,12 +203,6 @@
                                                                                       "BIT5       - Enable 64-byte FIFO.  0 = Disable 64-byte FIFO.  1 = Enable 64-byte FIFO<BR>\n"
                                                                                       "BIT7..BIT6 - Reserved.  Must be 0.<BR>\n"
                                                                                       "Default is to enable and clear all FIFOs.<BR>"
-
-#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdTftpBlockSize_PROMPT  #language en-US "TFTP block size"
-
-#string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdTftpBlockSize_HELP  #language en-US "This setting can override the default TFTP block size. A value of 0 computes "
-                                                                                  "the default from MTU information. A non-zero value will be used as block size "
-                                                                                  "in bytes."
 
 #string STR_gEfiMdeModulePkgTokenSpaceGuid_PcdMaxEfiSystemTablePointerAddress_PROMPT  #language en-US "Maximum Efi System Table Pointer address"
 

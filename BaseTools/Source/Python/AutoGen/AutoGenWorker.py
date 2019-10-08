@@ -133,7 +133,7 @@ class AutoGenManager(threading.Thread):
     def kill(self):
         self.feedback_q.put(None)
 class AutoGenWorkerInProcess(mp.Process):
-    def __init__(self,module_queue,data_pipe_file_path,feedback_q,file_lock, share_data,log_q,error_event):
+    def __init__(self,module_queue,data_pipe_file_path,feedback_q,file_lock,cache_lock,share_data,log_q,error_event):
         mp.Process.__init__(self)
         self.module_queue = module_queue
         self.data_pipe_file_path =data_pipe_file_path
@@ -141,6 +141,7 @@ class AutoGenWorkerInProcess(mp.Process):
         self.feedback_q = feedback_q
         self.PlatformMetaFileSet = {}
         self.file_lock = file_lock
+        self.cache_lock = cache_lock
         self.share_data = share_data
         self.log_q = log_q
         self.error_event = error_event
@@ -154,10 +155,11 @@ class AutoGenWorkerInProcess(mp.Process):
         try:
             taskname = "Init"
             with self.file_lock:
-                if not os.path.exists(self.data_pipe_file_path):
+                try:
+                    self.data_pipe = MemoryDataPipe()
+                    self.data_pipe.load(self.data_pipe_file_path)
+                except:
                     self.feedback_q.put(taskname + ":" + "load data pipe %s failed." % self.data_pipe_file_path)
-                self.data_pipe = MemoryDataPipe()
-                self.data_pipe.load(self.data_pipe_file_path)
             EdkLogger.LogClientInitialize(self.log_q)
             loglevel = self.data_pipe.Get("LogLevel")
             if not loglevel:
@@ -182,6 +184,13 @@ class AutoGenWorkerInProcess(mp.Process):
             GlobalData.gDisableIncludePathCheck = False
             GlobalData.gFdfParser = self.data_pipe.Get("FdfParser")
             GlobalData.gDatabasePath = self.data_pipe.Get("DatabasePath")
+            GlobalData.gBinCacheSource = self.data_pipe.Get("BinCacheSource")
+            GlobalData.gBinCacheDest = self.data_pipe.Get("BinCacheDest")
+            GlobalData.gCacheIR = self.share_data
+            GlobalData.gEnableGenfdsMultiThread = self.data_pipe.Get("EnableGenfdsMultiThread")
+            GlobalData.file_lock = self.file_lock
+            GlobalData.cache_lock = self.cache_lock
+            CommandTarget = self.data_pipe.Get("CommandTarget")
             pcd_from_build_option = []
             for pcd_tuple in self.data_pipe.Get("BuildOptPcd"):
                 pcd_id = ".".join((pcd_tuple[0],pcd_tuple[1]))
@@ -193,10 +202,13 @@ class AutoGenWorkerInProcess(mp.Process):
             FfsCmd = self.data_pipe.Get("FfsCommand")
             if FfsCmd is None:
                 FfsCmd = {}
+            GlobalData.FfsCmd = FfsCmd
             PlatformMetaFile = self.GetPlatformMetaFile(self.data_pipe.Get("P_Info").get("ActivePlatform"),
                                              self.data_pipe.Get("P_Info").get("WorkspaceDir"))
             libConstPcd = self.data_pipe.Get("LibConstPcd")
             Refes = self.data_pipe.Get("REFS")
+            GlobalData.libConstPcd = libConstPcd
+            GlobalData.Refes = Refes
             while True:
                 if self.module_queue.empty():
                     break
@@ -223,8 +235,22 @@ class AutoGenWorkerInProcess(mp.Process):
                         Ma.ConstPcd = libConstPcd[(Ma.MetaFile.File,Ma.MetaFile.Root,Ma.Arch,Ma.MetaFile.Path)]
                     if (Ma.MetaFile.File,Ma.MetaFile.Root,Ma.Arch,Ma.MetaFile.Path) in Refes:
                         Ma.ReferenceModules = Refes[(Ma.MetaFile.File,Ma.MetaFile.Root,Ma.Arch,Ma.MetaFile.Path)]
+                if GlobalData.gBinCacheSource and CommandTarget in [None, "", "all"]:
+                    Ma.GenModuleFilesHash(GlobalData.gCacheIR)
+                    Ma.GenPreMakefileHash(GlobalData.gCacheIR)
+                    if Ma.CanSkipbyPreMakefileCache(GlobalData.gCacheIR):
+                        continue
+
                 Ma.CreateCodeFile(False)
-                Ma.CreateMakeFile(False,GenFfsList=FfsCmd.get((Ma.MetaFile.File, Ma.Arch),[]))
+                Ma.CreateMakeFile(False,GenFfsList=FfsCmd.get((Ma.MetaFile.Path, Ma.Arch),[]))
+
+                if GlobalData.gBinCacheSource and CommandTarget in [None, "", "all"]:
+                    Ma.GenMakeHeaderFilesHash(GlobalData.gCacheIR)
+                    Ma.GenMakeHash(GlobalData.gCacheIR)
+                    if Ma.CanSkipbyMakeCache(GlobalData.gCacheIR):
+                        continue
+                    else:
+                        Ma.PrintFirstMakeCacheMissFile(GlobalData.gCacheIR)
         except Empty:
             pass
         except:

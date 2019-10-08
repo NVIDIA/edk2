@@ -89,7 +89,7 @@ class MemoryDataPipe(DataPipe):
         libModules = {}
         for m in PlatformInfo.Platform.Modules:
             module_obj = BuildDB.BuildObject[m,PlatformInfo.Arch,PlatformInfo.BuildTarget,PlatformInfo.ToolChain]
-            Libs = GetModuleLibInstances(module_obj, PlatformInfo.Platform, BuildDB.BuildObject, PlatformInfo.Arch,PlatformInfo.BuildTarget,PlatformInfo.ToolChain)
+            Libs = GetModuleLibInstances(module_obj, PlatformInfo.Platform, BuildDB.BuildObject, PlatformInfo.Arch,PlatformInfo.BuildTarget,PlatformInfo.ToolChain,PlatformInfo.MetaFile,EdkLogger)
             for lib in Libs:
                 try:
                     libModules[(lib.MetaFile.File,lib.MetaFile.Root,lib.Arch,lib.MetaFile.Path)].append((m.File,m.Root,module_obj.Arch,m.Path))
@@ -158,3 +158,9 @@ class MemoryDataPipe(DataPipe):
         self.DataContainer = {"FdfParser": True if GlobalData.gFdfParser else False}
 
         self.DataContainer = {"LogLevel": EdkLogger.GetLevel()}
+
+        self.DataContainer = {"BinCacheSource":GlobalData.gBinCacheSource}
+
+        self.DataContainer = {"BinCacheDest":GlobalData.gBinCacheDest}
+
+        self.DataContainer = {"EnableGenfdsMultiThread":GlobalData.gEnableGenfdsMultiThread}

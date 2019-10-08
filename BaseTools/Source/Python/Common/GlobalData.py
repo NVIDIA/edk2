@@ -106,7 +106,7 @@ gBinCacheSource = None
 gPlatformHash = None
 gPackageHash = {}
 gModuleHash = {}
-gEnableGenfdsMultiThread = False
+gEnableGenfdsMultiThread = True
 gSikpAutoGenCache = set()
 
 # Dictionary for tracking Module build status as success or failure
@@ -119,3 +119,14 @@ gModuleBuildTracking = dict()
 # Top Dict:     Key: Arch Type              Value: Dictionary
 # Second Dict:  Key: Module\Library Name    Value: True\False
 gBuildHashSkipTracking = dict()
+
+# Common dictionary to share module cache intermediate result and state
+gCacheIR = None
+# Common lock for the module cache intermediate data
+cache_lock = None
+# Common lock for the file access in multiple process AutoGens
+file_lock = None
+# Common dictionary to share platform libraries' constant Pcd
+libConstPcd = None
+# Common dictionary to share platform libraries' reference info
+Refes = None

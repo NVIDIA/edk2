@@ -54,12 +54,17 @@
   UefiLib
   PlatformBmPrintScLib
   Tcg2PhysicalPresenceLib
+  XenPlatformLib
 
 [Pcd]
   gUefiOvmfPkgTokenSpaceGuid.PcdEmuVariableEvent
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfFlashVariablesEnable
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfHostBridgePciDevId
   gEfiMdePkgTokenSpaceGuid.PcdPlatformBootTimeOut
+  gEfiMdePkgTokenSpaceGuid.PcdUartDefaultBaudRate         ## CONSUMES
+  gEfiMdePkgTokenSpaceGuid.PcdUartDefaultDataBits         ## CONSUMES
+  gEfiMdePkgTokenSpaceGuid.PcdUartDefaultParity           ## CONSUMES
+  gEfiMdePkgTokenSpaceGuid.PcdUartDefaultStopBits         ## CONSUMES
 
 [Pcd.IA32, Pcd.X64]
   gEfiMdePkgTokenSpaceGuid.PcdFSBClock
@@ -73,7 +78,6 @@
   gEfiFirmwareVolume2ProtocolGuid               # PROTOCOL SOMETIMES_CONSUMED
 
 [Guids]
-  gEfiXenInfoGuid
   gEfiEndOfDxeEventGroupGuid
   gRootBridgesConnectedEventGroupGuid
   gUefiShellFileGuid

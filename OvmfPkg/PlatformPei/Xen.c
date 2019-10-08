@@ -64,7 +64,7 @@ XenGetE820Map (
 
 /**
   Connects to the Hypervisor.
- 
+
   @param  XenLeaf     CPUID index used to connect.
 
   @return EFI_STATUS
@@ -97,9 +97,6 @@ XenConnect (
           XenVersion >> 16, XenVersion & 0xFFFF));
   mXenInfo.VersionMajor = (UINT16)(XenVersion >> 16);
   mXenInfo.VersionMinor = (UINT16)(XenVersion & 0xFFFF);
-
-  /* TBD: Locate hvm_info and reserve it away. */
-  mXenInfo.HvmInfo = NULL;
 
   BuildGuidDataHob (
     &gEfiXenInfoGuid,

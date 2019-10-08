@@ -69,7 +69,7 @@ class GenFdsGlobalVariable:
     SecCmdList = []
     CopyList   = []
     ModuleFile = ''
-    EnableGenfdsMultiThread = False
+    EnableGenfdsMultiThread = True
 
     #
     # The list whose element are flags to indicate if large FFS or SECTION files exist in FV.
@@ -160,7 +160,7 @@ class GenFdsGlobalVariable:
         "OUTPUT_DIR":os.path.join(BuildDir, "OUTPUT"),
         "DEBUG_DIR":os.path.join(BuildDir, "DEBUG")
         }
-        
+
         BuildRules = {}
         for Type in BuildRuleDatabase.FileTypeList:
             #first try getting build rule by BuildRuleFamily
@@ -489,7 +489,7 @@ class GenFdsGlobalVariable:
                 if GlobalData.gGlobalDefines.get("FAMILY") == "MSFT":
                     Cmd = ['if', 'exist', Input[0]] + Cmd
                 else:
-                    Cmd = ['test', '-e', Input[0], "&&"] + Cmd
+                    Cmd = ['-test', '-e', Input[0], "&&"] + Cmd
                 if ' '.join(Cmd).strip() not in GenFdsGlobalVariable.SecCmdList:
                     GenFdsGlobalVariable.SecCmdList.append(' '.join(Cmd).strip())
             elif GenFdsGlobalVariable.NeedsUpdate(Output, list(Input) + [CommandFile]):
@@ -742,7 +742,7 @@ class GenFdsGlobalVariable:
     #   @param  MacroDict     Dictionary that contains macro value pair
     #
     @staticmethod
-    def MacroExtend (Str, MacroDict={}, Arch=DataType.TAB_COMMON):
+    def MacroExtend (Str, MacroDict=None, Arch=DataType.TAB_COMMON):
         if Str is None:
             return None
 
