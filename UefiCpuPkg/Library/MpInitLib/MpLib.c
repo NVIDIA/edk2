@@ -458,12 +458,13 @@ CollectProcessorCount (
   )
 {
   UINTN                  Index;
+  CPU_INFO_IN_HOB        *CpuInfoInHob;
+  BOOLEAN                X2Apic;
 
   //
   // Send 1st broadcast IPI to APs to wakeup APs
   //
-  CpuMpData->InitFlag     = ApInitConfig;
-  CpuMpData->X2ApicEnable = FALSE;
+  CpuMpData->InitFlag = ApInitConfig;
   WakeUpAP (CpuMpData, TRUE, 0, NULL, NULL, TRUE);
   CpuMpData->InitFlag = ApInitDone;
   ASSERT (CpuMpData->CpuCount <= PcdGet32 (PcdCpuMaxLogicalProcessorNumber));
@@ -474,13 +475,29 @@ CollectProcessorCount (
     CpuPause ();
   }
 
+  
+  //
+  // Enable x2APIC mode if
+  //  1. Number of CPU is greater than 255; or
+  //  2. There are any logical processors reporting an Initial APIC ID of 255 or greater.
+  //
+  X2Apic = FALSE;
   if (CpuMpData->CpuCount > 255) {
     //
     // If there are more than 255 processor found, force to enable X2APIC
     //
-    CpuMpData->X2ApicEnable = TRUE;
+    X2Apic = TRUE;
+  } else {
+    CpuInfoInHob = (CPU_INFO_IN_HOB *) (UINTN) CpuMpData->CpuInfoInHob;
+    for (Index = 0; Index < CpuMpData->CpuCount; Index++) {
+      if (CpuInfoInHob[Index].InitialApicId >= 0xFF) {
+        X2Apic = TRUE;
+        break;
+      }
+    }
   }
-  if (CpuMpData->X2ApicEnable) {
+
+  if (X2Apic) {
     DEBUG ((DEBUG_INFO, "Force x2APIC mode!\n"));
     //
     // Wakeup all APs to enable x2APIC mode
@@ -541,15 +558,6 @@ InitializeApData (
 
   CpuMpData->CpuData[ProcessorNumber].Waiting    = FALSE;
   CpuMpData->CpuData[ProcessorNumber].CpuHealthy = (BistData == 0) ? TRUE : FALSE;
-  if (CpuInfoInHob[ProcessorNumber].InitialApicId >= 0xFF) {
-    //
-    // Set x2APIC mode if there are any logical processor reporting
-    // an Initial APIC ID of 255 or greater.
-    //
-    AcquireSpinLock(&CpuMpData->MpLock);
-    CpuMpData->X2ApicEnable = TRUE;
-    ReleaseSpinLock(&CpuMpData->MpLock);
-  }
 
   InitializeSpinLock(&CpuMpData->CpuData[ProcessorNumber].ApLock);
   SetApState (&CpuMpData->CpuData[ProcessorNumber], CpuStateIdle);
@@ -1044,24 +1052,67 @@ WakeUpAP (
       SendInitSipiSipiAllExcludingSelf ((UINT32) ExchangeInfo->BufferStart);
     }
     if (CpuMpData->InitFlag == ApInitConfig) {
-      //
-      // Here support two methods to collect AP count through adjust
-      // PcdCpuApInitTimeOutInMicroSeconds values.
-      //
-      // one way is set a value to just let the first AP to start the
-      // initialization, then through the later while loop to wait all Aps
-      // finsh the initialization.
-      // The other way is set a value to let all APs finished the initialzation.
-      // In this case, the later while loop is useless.
-      //
-      TimedWaitForApFinish (
-        CpuMpData,
-        PcdGet32 (PcdCpuMaxLogicalProcessorNumber) - 1,
-        PcdGet32 (PcdCpuApInitTimeOutInMicroSeconds)
-        );
+      if (PcdGet32 (PcdCpuBootLogicalProcessorNumber) > 0) {
+        //
+        // The AP enumeration algorithm below is suitable only when the
+        // platform can tell us the *exact* boot CPU count in advance.
+        //
+        // The wait below finishes only when the detected AP count reaches
+        // (PcdCpuBootLogicalProcessorNumber - 1), regardless of how long that
+        // takes. If at least one AP fails to check in (meaning a platform
+        // hardware bug), the detection hangs forever, by design. If the actual
+        // boot CPU count in the system is higher than
+        // PcdCpuBootLogicalProcessorNumber (meaning a platform
+        // misconfiguration), then some APs may complete initialization after
+        // the wait finishes, and cause undefined behavior.
+        //
+        TimedWaitForApFinish (
+          CpuMpData,
+          PcdGet32 (PcdCpuBootLogicalProcessorNumber) - 1,
+          MAX_UINT32 // approx. 71 minutes
+          );
+      } else {
+        //
+        // The AP enumeration algorithm below is suitable for two use cases.
+        //
+        // (1) The check-in time for an individual AP is bounded, and APs run
+        //     through their initialization routines strongly concurrently. In
+        //     particular, the number of concurrently running APs
+        //     ("NumApsExecuting") is never expected to fall to zero
+        //     *temporarily* -- it is expected to fall to zero only when all
+        //     APs have checked-in.
+        //
+        //     In this case, the platform is supposed to set
+        //     PcdCpuApInitTimeOutInMicroSeconds to a low-ish value (just long
+        //     enough for one AP to start initialization). The timeout will be
+        //     reached soon, and remaining APs are collected by watching
+        //     NumApsExecuting fall to zero. If NumApsExecuting falls to zero
+        //     mid-process, while some APs have not completed initialization,
+        //     the behavior is undefined.
+        //
+        // (2) The check-in time for an individual AP is unbounded, and/or APs
+        //     may complete their initializations widely spread out. In
+        //     particular, some APs may finish initialization before some APs
+        //     even start.
+        //
+        //     In this case, the platform is supposed to set
+        //     PcdCpuApInitTimeOutInMicroSeconds to a high-ish value. The AP
+        //     enumeration will always take that long (except when the boot CPU
+        //     count happens to be maximal, that is,
+        //     PcdCpuMaxLogicalProcessorNumber). All APs are expected to
+        //     check-in before the timeout, and NumApsExecuting is assumed zero
+        //     at timeout. APs that miss the time-out may cause undefined
+        //     behavior.
+        //
+        TimedWaitForApFinish (
+          CpuMpData,
+          PcdGet32 (PcdCpuMaxLogicalProcessorNumber) - 1,
+          PcdGet32 (PcdCpuApInitTimeOutInMicroSeconds)
+          );
 
-      while (CpuMpData->MpCpuExchangeInfo->NumApsExecuting != 0) {
-        CpuPause();
+        while (CpuMpData->MpCpuExchangeInfo->NumApsExecuting != 0) {
+          CpuPause();
+        }
       }
     } else {
       //
@@ -1730,9 +1781,6 @@ MpInitLibInitialize (
     CpuInfoInHob = (CPU_INFO_IN_HOB *) (UINTN) CpuMpData->CpuInfoInHob;
     for (Index = 0; Index < CpuMpData->CpuCount; Index++) {
       InitializeSpinLock(&CpuMpData->CpuData[Index].ApLock);
-      if (CpuInfoInHob[Index].InitialApicId >= 255 || Index > 254) {
-        CpuMpData->X2ApicEnable = TRUE;
-      }
       CpuMpData->CpuData[Index].CpuHealthy = (CpuInfoInHob[Index].Health == 0)? TRUE:FALSE;
       CpuMpData->CpuData[Index].ApFunction = 0;
       CopyMem (&CpuMpData->CpuData[Index].VolatileRegisters, &VolatileRegisters, sizeof (CPU_VOLATILE_REGISTERS));
