@@ -512,7 +512,7 @@ EfiBootManagerInitializeLoadOption (
   Return the index of the load option in the load option array.
 
   The function consider two load options are equal when the
-  OptionType, Attributes, Description, FilePath and OptionalData are equal.
+  OptionType, Description, FilePath and OptionalData are equal.
 
   @param Key    Pointer to the load option to be found.
   @param Array  Pointer to the array of load options to be found.
@@ -533,7 +533,6 @@ EfiBootManagerFindLoadOption (
 
   for (Index = 0; Index < Count; Index++) {
     if ((Key->OptionType == Array[Index].OptionType) &&
-        (Key->Attributes == Array[Index].Attributes) &&
         (StrCmp (Key->Description, Array[Index].Description) == 0) &&
         (CompareMem (Key->FilePath, Array[Index].FilePath, GetDevicePathSize (Key->FilePath)) == 0) &&
         (Key->OptionalDataSize == Array[Index].OptionalDataSize) &&
