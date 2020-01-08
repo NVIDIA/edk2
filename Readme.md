@@ -3,6 +3,57 @@
 A modern, feature-rich, cross-platform firmware development environment
 for the UEFI and PI specifications from www.uefi.org.
 
+# Build Status
+
+<table>
+  <tr>
+    <th>Host Type</th>
+    <th>Toolchain</th>
+    <th>Branch</th>
+    <th>Build Status</th>
+    <th>Test Status</th>
+    <th>Code Coverage</th>
+  </tr>
+  <tr>
+    <td>Windows</td>
+    <td>VS2019</td>
+    <td>master</td>
+    <td>
+      <a  href="https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=32&branchName=master">
+      <img src="https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/Windows%20VS2019%20CI?branchName=master"/></a>
+    </td>
+    <td>
+      <a  href="https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=32&branchName=master">
+      <img src="https://img.shields.io/azure-devops/tests/tianocore/edk2-ci/32.svg"/></a>
+    </td>
+    <td>
+      <a  href="https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=32&branchName=master">
+      <img src="https://img.shields.io/badge/coverage-coming_soon-blue"/></a>
+    </td>
+  </tr>
+  <tr>
+    <td>Ubuntu</td>
+    <td>GCC</td>
+    <td>master</td>
+    <td>
+      <a  href="https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=31&branchName=master">
+      <img src="https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/Ubuntu%20GCC5%20CI?branchName=master"/></a>
+    </td>
+    <td>
+      <a  href="https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=31&branchName=master">
+      <img src="https://img.shields.io/azure-devops/tests/tianocore/edk2-ci/31.svg"/></a>
+    </td>
+    <td>
+      <a  href="https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=31&branchName=master">
+      <img src="https://img.shields.io/badge/coverage-coming_soon-blue"/></a>
+    </td>
+  </tr>
+</table>
+
+[More CI Build information](.pytool/Readme.md)
+
+# License Details
+
 The majority of the content in the EDK II open source project uses a
 [BSD-2-Clause Plus Patent License](License.txt).  The EDK II open source project
 contains the following components that are covered by additional licenses:
