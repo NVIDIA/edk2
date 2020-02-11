@@ -1,45 +1,13 @@
 /** @file
   HMAC-SHA1 Wrapper Implementation over OpenSSL.
 
-Copyright (c) 2010 - 2017, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2010 - 2020, Intel Corporation. All rights reserved.<BR>
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include "InternalCryptLib.h"
 #include <openssl/hmac.h>
-
-//
-// NOTE: OpenSSL redefines the size of HMAC_CTX at crypto/hmac/hmac_lcl.h
-//       #define HMAC_MAX_MD_CBLOCK_SIZE     144
-//
-//
-#define  HMAC_SHA1_CTX_SIZE   (sizeof(void *) * 4 + sizeof(unsigned int) + \
-                             sizeof(unsigned char) * 144)
-
-/**
-  Retrieves the size, in bytes, of the context buffer required for HMAC-SHA1 operations.
-  (NOTE: This API is deprecated.
-         Use HmacSha1New() / HmacSha1Free() for HMAC-SHA1 Context operations.)
-
-  @return  The size, in bytes, of the context buffer required for HMAC-SHA1 operations.
-
-**/
-UINTN
-EFIAPI
-HmacSha1GetContextSize (
-  VOID
-  )
-{
-  //
-  // Retrieves the OpenSSL HMAC-SHA1 Context Size
-  // NOTE: HMAC_CTX object was made opaque in openssl-1.1.x, here we just use the
-  //       fixed size as a workaround to make this API work for compatibility.
-  //       We should retire HmacSha15GetContextSize() in future, and use HmacSha1New()
-  //       and HmacSha1Free() for context allocation and release.
-  //
-  return (UINTN) HMAC_SHA1_CTX_SIZE;
-}
 
 /**
   Allocates and initializes one HMAC_CTX context for subsequent HMAC-SHA1 use.
@@ -79,22 +47,22 @@ HmacSha1Free (
 }
 
 /**
-  Initializes user-supplied memory pointed by HmacSha1Context as HMAC-SHA1 context for
-  subsequent use.
+  Set user-supplied key for subsequent use. It must be done before any
+  calling to HmacSha1Update().
 
   If HmacSha1Context is NULL, then return FALSE.
 
-  @param[out]  HmacSha1Context  Pointer to HMAC-SHA1 context being initialized.
+  @param[out]  HmacSha1Context  Pointer to HMAC-SHA1 context.
   @param[in]   Key              Pointer to the user-supplied key.
   @param[in]   KeySize          Key size in bytes.
 
-  @retval TRUE   HMAC-SHA1 context initialization succeeded.
-  @retval FALSE  HMAC-SHA1 context initialization failed.
+  @retval TRUE   The Key is set successfully.
+  @retval FALSE  The Key is set unsuccessfully.
 
 **/
 BOOLEAN
 EFIAPI
-HmacSha1Init (
+HmacSha1SetKey (
   OUT  VOID         *HmacSha1Context,
   IN   CONST UINT8  *Key,
   IN   UINTN        KeySize
@@ -107,13 +75,6 @@ HmacSha1Init (
     return FALSE;
   }
 
-  //
-  // OpenSSL HMAC-SHA1 Context Initialization
-  //
-  memset(HmacSha1Context, 0, HMAC_SHA1_CTX_SIZE);
-  if (HMAC_CTX_reset ((HMAC_CTX *)HmacSha1Context) != 1) {
-    return FALSE;
-  }
   if (HMAC_Init_ex ((HMAC_CTX *)HmacSha1Context, Key, (UINT32) KeySize, EVP_sha1(), NULL) != 1) {
     return FALSE;
   }
@@ -160,8 +121,8 @@ HmacSha1Duplicate (
 
   This function performs HMAC-SHA1 digest on a data buffer of the specified size.
   It can be called multiple times to compute the digest of long or discontinuous data streams.
-  HMAC-SHA1 context should be already correctly initialized by HmacSha1Init(), and should not
-  be finalized by HmacSha1Final(). Behavior with invalid context is undefined.
+  HMAC-SHA1 context should be initialized by HmacSha1New(), and should not be finalized by
+  HmacSha1Final(). Behavior with invalid context is undefined.
 
   If HmacSha1Context is NULL, then return FALSE.
 
@@ -211,8 +172,8 @@ HmacSha1Update (
   This function completes HMAC-SHA1 digest computation and retrieves the digest value into
   the specified memory. After this function has been called, the HMAC-SHA1 context cannot
   be used again.
-  HMAC-SHA1 context should be already correctly initialized by HmacSha1Init(), and should
-  not be finalized by HmacSha1Final(). Behavior with invalid HMAC-SHA1 context is undefined.
+  HMAC-SHA1 context should be initialized by HmacSha1New(), and should not be finalized by
+  HmacSha1Final(). Behavior with invalid HMAC-SHA1 context is undefined.
 
   If HmacSha1Context is NULL, then return FALSE.
   If HmacValue is NULL, then return FALSE.

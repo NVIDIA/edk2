@@ -361,6 +361,9 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdConOutGopSupport|TRUE
   gEfiMdeModulePkgTokenSpaceGuid.PcdConOutUgaSupport|FALSE
   gEfiMdeModulePkgTokenSpaceGuid.PcdInstallAcpiSdtProtocol|TRUE
+!ifdef $(CSM_ENABLE)
+  gUefiOvmfPkgTokenSpaceGuid.PcdCsmEnable|TRUE
+!endif
 
 [PcdsFixedAtBuild]
   gEfiMdeModulePkgTokenSpaceGuid.PcdStatusCodeMemorySize|1
@@ -481,10 +484,6 @@
   # Noexec settings for DXE.
   gEfiMdeModulePkgTokenSpaceGuid.PcdSetNxForStack|FALSE
   gEfiMdeModulePkgTokenSpaceGuid.PcdPropertiesTableEnable|FALSE
-
-  # UefiCpuPkg PCDs related to initial AP bringup and general AP management.
-  gUefiCpuPkgTokenSpaceGuid.PcdCpuMaxLogicalProcessorNumber|64
-  gUefiCpuPkgTokenSpaceGuid.PcdCpuApInitTimeOutInMicroSeconds|50000
 
   # Set memory encryption mask
   gEfiMdeModulePkgTokenSpaceGuid.PcdPteMemoryEncryptionAddressOrMask|0x0

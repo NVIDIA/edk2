@@ -1,7 +1,7 @@
 /** @file
   CPU MP Initialize Library common functions.
 
-  Copyright (c) 2016 - 2019, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2016 - 2020, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -1682,10 +1682,6 @@ MpInitLibInitialize (
   CpuMpData->SwitchBspFlag    = FALSE;
   CpuMpData->CpuData          = (CPU_AP_DATA *) (CpuMpData + 1);
   CpuMpData->CpuInfoInHob     = (UINT64) (UINTN) (CpuMpData->CpuData + MaxLogicalProcessorNumber);
-  if (OldCpuMpData != NULL) {
-    CpuMpData->MicrocodePatchRegionSize = OldCpuMpData->MicrocodePatchRegionSize;
-    CpuMpData->MicrocodePatchAddress    = OldCpuMpData->MicrocodePatchAddress;
-  }
   InitializeSpinLock(&CpuMpData->MpLock);
 
   //
@@ -1740,11 +1736,6 @@ MpInitLibInitialize (
       //
       CollectProcessorCount (CpuMpData);
     }
-
-    //
-    // Load required microcode patches data into memory
-    //
-    LoadMicrocodePatch (CpuMpData);
   } else {
     //
     // APs have been wakeup before, just get the CPU Information
@@ -1762,6 +1753,17 @@ MpInitLibInitialize (
     }
   }
 
+  if (!GetMicrocodePatchInfoFromHob (
+         &CpuMpData->MicrocodePatchAddress,
+         &CpuMpData->MicrocodePatchRegionSize
+         )) {
+    //
+    // The microcode patch information cache HOB does not exist, which means
+    // the microcode patches data has not been loaded into memory yet
+    //
+    ShadowMicrocodeUpdatePatch (CpuMpData);
+  }
+
   //
   // Detect and apply Microcode on BSP
   //
@@ -1775,11 +1777,15 @@ MpInitLibInitialize (
   // Wakeup APs to do some AP initialize sync (Microcode & MTRR)
   //
   if (CpuMpData->CpuCount > 1) {
+    CpuMpData->InitFlag = ApInitReconfig;
     WakeUpAP (CpuMpData, TRUE, 0, ApInitializeSync, CpuMpData, TRUE);
+    //
+    // Wait for all APs finished initialization
+    //
     while (CpuMpData->FinishedCount < (CpuMpData->CpuCount - 1)) {
       CpuPause ();
     }
-
+    CpuMpData->InitFlag = ApInitDone;
     for (Index = 0; Index < CpuMpData->CpuCount; Index++) {
       SetApState (&CpuMpData->CpuData[Index], CpuStateIdle);
     }

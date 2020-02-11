@@ -206,9 +206,9 @@ VirtualKeyboardDriverBindingStop (
                                 This and the language specified by Language was
                                 returned in DriverName.
 
-  @retval EFI_INVALID_PAVIRTUALETER Language is NULL.
+  @retval EFI_INVALID_PARAMETER Language is NULL.
 
-  @retval EFI_INVALID_PAVIRTUALETER DriverName is NULL.
+  @retval EFI_INVALID_PARAMETER DriverName is NULL.
 
   @retval EFI_UNSUPPORTED       The driver specified by This does not support
                                 the language specified by Language.
@@ -274,14 +274,14 @@ VirtualKeyboardComponentNameGetDriverName (
                                 driver specified by This was returned in
                                 DriverName.
 
-  @retval EFI_INVALID_PAVIRTUALETER ControllerHandle is NULL.
+  @retval EFI_INVALID_PARAMETER ControllerHandle is NULL.
 
-  @retval EFI_INVALID_PAVIRTUALETER ChildHandle is not NULL and it is not a valid
+  @retval EFI_INVALID_PARAMETER ChildHandle is not NULL and it is not a valid
                                 EFI_HANDLE.
 
-  @retval EFI_INVALID_PAVIRTUALETER Language is NULL.
+  @retval EFI_INVALID_PARAMETER Language is NULL.
 
-  @retval EFI_INVALID_PAVIRTUALETER ControllerName is NULL.
+  @retval EFI_INVALID_PARAMETER ControllerName is NULL.
 
   @retval EFI_UNSUPPORTED       The driver specified by This is not currently
                                 managing the controller specified by
@@ -323,7 +323,7 @@ VirtualKeyboardReset (
   );
 
 /**
-  Reset the input device and optionaly run diagnostics
+  Reset the input device and optionally run diagnostics
 
   @param  This                  Protocol instance pointer.
   @param  ExtendedVerification  Driver may perform diagnostics on reset.
@@ -351,7 +351,7 @@ VirtualKeyboardResetEx (
   @retval EFI_DEVICE_ERROR      The device is not functioning correctly and could
                                 not have the setting adjusted.
   @retval EFI_UNSUPPORTED       The device does not have the ability to set its state.
-  @retval EFI_INVALID_PAVIRTUALETER KeyToggleState is NULL.
+  @retval EFI_INVALID_PARAMETER KeyToggleState is NULL.
 
 **/
 EFI_STATUS
@@ -373,8 +373,8 @@ VirtualKeyboardSetState (
 
 
   @retval EFI_SUCCESS             The notification function was registered successfully.
-  @retval EFI_OUT_OF_RESOURCES    Unable to allocate resources for necesssary data structures.
-  @retval EFI_INVALID_PAVIRTUALETER   KeyData or NotifyHandle is NULL.
+  @retval EFI_OUT_OF_RESOURCES    Unable to allocate resources for necessary data structures.
+  @retval EFI_INVALID_PARAMETER   KeyData or NotifyHandle is NULL.
 
 **/
 EFI_STATUS
@@ -393,7 +393,7 @@ VirtualKeyboardRegisterKeyNotify (
   @param  NotificationHandle   The handle of the notification function being unregistered.
 
   @retval EFI_SUCCESS             The notification function was unregistered successfully.
-  @retval EFI_INVALID_PAVIRTUALETER   The NotificationHandle is invalid.
+  @retval EFI_INVALID_PARAMETER   The NotificationHandle is invalid.
 
 **/
 EFI_STATUS
@@ -412,7 +412,7 @@ VirtualKeyboardUnregisterKeyNotify (
   @param  ListHead   The list head
 
   @retval EFI_SUCCESS           Free the notify list successfully
-  @retval EFI_INVALID_PAVIRTUALETER ListHead is invalid.
+  @retval EFI_INVALID_PARAMETER ListHead is invalid.
 
 **/
 EFI_STATUS
@@ -429,7 +429,7 @@ VirtualKeyboardFreeNotifyList (
                             state data for the key that was pressed.
 
   @retval TRUE              Key be pressed matches a registered key.
-  @retval FLASE             Match failed.
+  @retval FALSE             Match failed.
 
 **/
 BOOLEAN
@@ -441,7 +441,7 @@ IsKeyRegistered (
 /**
   Waiting on the keyboard event, if there's any key pressed by the user, signal the event
 
-  @param  Event       The event that be siganlled when any key has been stroked.
+  @param  Event       The event that be signalled when any key has been struck.
   @param  Context     Pointer of the protocol EFI_SIMPLE_TEXT_INPUT_PROTOCOL.
 
 **/
@@ -455,7 +455,7 @@ VirtualKeyboardWaitForKey (
 /**
   Waiting on the keyboard event, if there's any key pressed by the user, signal the event
 
-  @param  Event    The event that be siganlled when any key has been stroked.
+  @param  Event    The event that be signalled when any key has been struck.
   @param  Context  Pointer of the protocol EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL.
 
 **/
@@ -514,17 +514,17 @@ VirtualKeyboardReadKeyStroke (
 
 /**
   Reads the next keystroke from the input device. The WaitForKey Event can
-  be used to test for existance of a keystroke via WaitForEvent () call.
+  be used to test for existence of a keystroke via WaitForEvent () call.
 
   @param  This         Protocol instance pointer.
   @param  KeyData      A pointer to a buffer that is filled in with the keystroke
                        state data for the key that was pressed.
 
   @retval  EFI_SUCCESS           The keystroke information was returned.
-  @retval  EFI_NOT_READY         There was no keystroke data availiable.
+  @retval  EFI_NOT_READY         There was no keystroke data available.
   @retval  EFI_DEVICE_ERROR      The keystroke information was not returned due to
                                  hardware errors.
-  @retval  EFI_INVALID_PAVIRTUALETER KeyData is NULL.
+  @retval  EFI_INVALID_PARAMETER KeyData is NULL.
 
 **/
 EFI_STATUS

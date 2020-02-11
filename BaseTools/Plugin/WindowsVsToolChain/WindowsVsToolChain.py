@@ -1,4 +1,4 @@
-## @file WindowsVsToolChain.py
+# @file WindowsVsToolChain.py
 # Plugin to configures paths for the VS2017 and VS2019 tool chain
 ##
 # This plugin works in conjuncture with the tools_def
@@ -14,6 +14,7 @@ from edk2toollib.windows.locate_tools import FindWithVsWhere
 from edk2toolext.environment import shell_environment
 from edk2toolext.environment import version_aggregator
 
+
 class WindowsVsToolChain(IUefiBuildPlugin):
 
     def do_post_build(self, thebuilder):
@@ -21,13 +22,16 @@ class WindowsVsToolChain(IUefiBuildPlugin):
 
     def do_pre_build(self, thebuilder):
         self.Logger = logging.getLogger("WindowsVsToolChain")
+        interesting_keys = ["ExtensionSdkDir", "INCLUDE", "LIB", "LIBPATH", "UniversalCRTSdkDir",
+                            "UCRTVersion", "WindowsLibPath", "WindowsSdkBinPath", "WindowsSdkDir", "WindowsSdkVerBinPath",
+                            "WindowsSDKVersion", "VCToolsInstallDir", "Path"]
 
 #
         # VS2017 - Follow VS2017 where there is potential for many versions of the tools.
         # If a specific version is required then the user must set both env variables:
-        ## VS150INSTALLPATH:  base install path on system to VC install dir.  Here you will find the VC folder, etc
-        ## VS150TOOLVER:      version number for the VC compiler tools
-        ## VS2017_PREFIX:     path to MSVC compiler folder with trailing slash (can be used instead of two vars above)
+        # VS150INSTALLPATH:  base install path on system to VC install dir.  Here you will find the VC folder, etc
+        # VS150TOOLVER:      version number for the VC compiler tools
+        # VS2017_PREFIX:     path to MSVC compiler folder with trailing slash (can be used instead of two vars above)
         if thebuilder.env.GetValue("TOOL_CHAIN_TAG") == "VS2017":
 
             # check to see if full path already configured
@@ -35,11 +39,13 @@ class WindowsVsToolChain(IUefiBuildPlugin):
                 self.Logger.info("VS2017_PREFIX is already set.")
 
             else:
-                install_path = self._get_vs_install_path("VS2017".lower(), "VS150INSTALLPATH")
+                install_path = self._get_vs_install_path(
+                    "VS2017".lower(), "VS150INSTALLPATH")
                 vc_ver = self._get_vc_version(install_path, "VS150TOOLVER")
 
                 if install_path is None or vc_ver is None:
-                    self.Logger.error("Failed to configure environment for VS2017")
+                    self.Logger.error(
+                        "Failed to configure environment for VS2017")
                     return -1
 
                 version_aggregator.GetVersionAggregator().ReportVersion(
@@ -47,10 +53,21 @@ class WindowsVsToolChain(IUefiBuildPlugin):
                 version_aggregator.GetVersionAggregator().ReportVersion(
                     "VC Version", vc_ver, version_aggregator.VersionTypes.TOOL)
 
-                #make VS2017_PREFIX to align with tools_def.txt
-                prefix = os.path.join(install_path, "VC", "Tools", "MSVC", vc_ver)
+                # make VS2017_PREFIX to align with tools_def.txt
+                prefix = os.path.join(install_path, "VC",
+                                      "Tools", "MSVC", vc_ver)
                 prefix = prefix + os.path.sep
                 shell_environment.GetEnvironment().set_shell_var("VS2017_PREFIX", prefix)
+
+                shell_env = shell_environment.GetEnvironment()
+                # Use the tools lib to determine the correct values for the vars that interest us.
+                vs_vars = locate_tools.QueryVcVariables(
+                    interesting_keys, "amd64", vs_version="vs2017")
+                for (k, v) in vs_vars.items():
+                    if k.upper() == "PATH":
+                        shell_env.insert_path(v)
+                    else:
+                        shell_env.set_shell_var(k, v)
 
             # now confirm it exists
             if not os.path.exists(shell_environment.GetEnvironment().get_shell_var("VS2017_PREFIX")):
@@ -60,9 +77,9 @@ class WindowsVsToolChain(IUefiBuildPlugin):
         #
         # VS2019 - Follow VS2019 where there is potential for many versions of the tools.
         # If a specific version is required then the user must set both env variables:
-        ## VS160INSTALLPATH:  base install path on system to VC install dir.  Here you will find the VC folder, etc
-        ## VS160TOOLVER:      version number for the VC compiler tools
-        ## VS2019_PREFIX:     path to MSVC compiler folder with trailing slash (can be used instead of two vars above)
+        # VS160INSTALLPATH:  base install path on system to VC install dir.  Here you will find the VC folder, etc
+        # VS160TOOLVER:      version number for the VC compiler tools
+        # VS2019_PREFIX:     path to MSVC compiler folder with trailing slash (can be used instead of two vars above)
         elif thebuilder.env.GetValue("TOOL_CHAIN_TAG") == "VS2019":
 
             # check to see if full path already configured
@@ -70,11 +87,13 @@ class WindowsVsToolChain(IUefiBuildPlugin):
                 self.Logger.info("VS2019_PREFIX is already set.")
 
             else:
-                install_path = self._get_vs_install_path("VS2019".lower(), "VS160INSTALLPATH")
+                install_path = self._get_vs_install_path(
+                    "VS2019".lower(), "VS160INSTALLPATH")
                 vc_ver = self._get_vc_version(install_path, "VS160TOOLVER")
 
                 if install_path is None or vc_ver is None:
-                    self.Logger.error("Failed to configure environment for VS2019")
+                    self.Logger.error(
+                        "Failed to configure environment for VS2019")
                     return -1
 
                 version_aggregator.GetVersionAggregator().ReportVersion(
@@ -82,10 +101,21 @@ class WindowsVsToolChain(IUefiBuildPlugin):
                 version_aggregator.GetVersionAggregator().ReportVersion(
                     "VC Version", vc_ver, version_aggregator.VersionTypes.TOOL)
 
-                #make VS2019_PREFIX to align with tools_def.txt
-                prefix = os.path.join(install_path, "VC", "Tools", "MSVC", vc_ver)
+                # make VS2019_PREFIX to align with tools_def.txt
+                prefix = os.path.join(install_path, "VC",
+                                      "Tools", "MSVC", vc_ver)
                 prefix = prefix + os.path.sep
                 shell_environment.GetEnvironment().set_shell_var("VS2019_PREFIX", prefix)
+
+                shell_env = shell_environment.GetEnvironment()
+                # Use the tools lib to determine the correct values for the vars that interest us.
+                vs_vars = locate_tools.QueryVcVariables(
+                    interesting_keys, "amd64", vs_version="vs2019")
+                for (k, v) in vs_vars.items():
+                    if k.upper() == "PATH":
+                        shell_env.insert_path(v)
+                    else:
+                        shell_env.set_shell_var(k, v)
 
             # now confirm it exists
             if not os.path.exists(shell_environment.GetEnvironment().get_shell_var("VS2019_PREFIX")):
@@ -103,14 +133,16 @@ class WindowsVsToolChain(IUefiBuildPlugin):
             if rc == 0 and path is not None and os.path.exists(path):
                 self.Logger.debug("Found VS instance for %s", vs_version)
             else:
-                self.Logger.error("Failed to find VS instance with VsWhere (%d)" % rc)
+                self.Logger.error(
+                    "Failed to find VS instance with VsWhere (%d)" % rc)
         return path
 
     def _get_vc_version(self, path, varname):
         # check if already specified
         vc_ver = shell_environment.GetEnvironment().get_shell_var(varname)
         if (path is None):
-            self.Logger.critical("Failed to find Visual Studio tools.  Might need to check for VS install")
+            self.Logger.critical(
+                "Failed to find Visual Studio tools.  Might need to check for VS install")
             return vc_ver
         if(vc_ver is None):
             # Not specified...find latest
@@ -122,5 +154,3 @@ class WindowsVsToolChain(IUefiBuildPlugin):
             vc_ver = os.listdir(p2)[-1].strip()  # get last in list
             self.Logger.debug("Found VC Tool version is %s" % vc_ver)
         return vc_ver
-
-

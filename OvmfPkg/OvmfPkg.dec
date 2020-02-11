@@ -257,6 +257,12 @@
   #  This PCD is only accessed if PcdSmmSmramRequire is TRUE (see below).
   gUefiOvmfPkgTokenSpaceGuid.PcdQ35TsegMbytes|8|UINT16|0x20
 
+  ## Set to TRUE by PlatformPei if the Q35 board supports the "SMRAM at default
+  #  SMBASE" feature.
+  #
+  #  This PCD is only accessed if PcdSmmSmramRequire is TRUE (see below).
+  gUefiOvmfPkgTokenSpaceGuid.PcdQ35SmramAtDefaultSmbase|FALSE|BOOLEAN|0x34
+
 [PcdsFeatureFlag]
   gUefiOvmfPkgTokenSpaceGuid.PcdQemuBootOrderPciTranslation|TRUE|BOOLEAN|0x1c
   gUefiOvmfPkgTokenSpaceGuid.PcdQemuBootOrderMmioTranslation|FALSE|BOOLEAN|0x1d
@@ -270,3 +276,8 @@
   #  runtime OS from tampering with firmware structures (special memory ranges
   #  used by OVMF, the varstore pflash chip, LockBox etc).
   gUefiOvmfPkgTokenSpaceGuid.PcdSmmSmramRequire|FALSE|BOOLEAN|0x1e
+
+  ## Informs modules (including pre-DXE-phase modules) whether the platform
+  #  firmware contains a CSM (Compatibility Support Module).
+  #
+  gUefiOvmfPkgTokenSpaceGuid.PcdCsmEnable|FALSE|BOOLEAN|0x35

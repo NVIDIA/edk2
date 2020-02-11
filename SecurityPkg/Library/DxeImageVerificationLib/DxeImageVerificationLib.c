@@ -704,7 +704,7 @@ GetImageExeInfoTableSize (
   @param[in]  Name            Input a null-terminated, user-friendly name.
   @param[in]  DevicePath      Input device path pointer.
   @param[in]  Signature       Input signature info in EFI_SIGNATURE_LIST data structure.
-  @param[in]  SignatureSize   Size of signature.
+  @param[in]  SignatureSize   Size of signature. Must be zero if Signature is NULL.
 
 **/
 VOID
@@ -761,6 +761,7 @@ AddImageExeInfo (
   //
   // Signature size can be odd. Pad after signature to ensure next EXECUTION_INFO entry align
   //
+  ASSERT (Signature != NULL || SignatureSize == 0);
   NewImageExeInfoEntrySize = sizeof (EFI_IMAGE_EXECUTION_INFO) + NameStringLen + DevicePathSize + SignatureSize;
 
   NewImageExeInfoTable      = (EFI_IMAGE_EXECUTION_INFO_TABLE *) AllocateRuntimePool (ImageExeInfoTableSize + NewImageExeInfoEntrySize);
@@ -1541,14 +1542,14 @@ Done:
                                  and non-NULL FileBuffer did authenticate, and the platform
                                  policy dictates that the DXE Foundation may execute the image in
                                  FileBuffer.
-  @retval EFI_OUT_RESOURCE       Fail to allocate memory.
   @retval EFI_SECURITY_VIOLATION The file specified by File did not authenticate, and
                                  the platform policy dictates that File should be placed
                                  in the untrusted state. The image has been added to the file
                                  execution table.
   @retval EFI_ACCESS_DENIED      The file specified by File and FileBuffer did not
                                  authenticate, and the platform policy dictates that the DXE
-                                 Foundation many not use File.
+                                 Foundation may not use File. The image has
+                                 been added to the file execution table.
 
 **/
 EFI_STATUS
@@ -1561,9 +1562,8 @@ DxeImageVerificationHandler (
   IN  BOOLEAN                          BootPolicy
   )
 {
-  EFI_STATUS                           Status;
   EFI_IMAGE_DOS_HEADER                 *DosHdr;
-  EFI_STATUS                           VerifyStatus;
+  BOOLEAN                              IsVerified;
   EFI_SIGNATURE_LIST                   *SignatureList;
   UINTN                                SignatureListSize;
   EFI_SIGNATURE_DATA                   *Signature;
@@ -1580,6 +1580,8 @@ DxeImageVerificationHandler (
   EFI_IMAGE_DATA_DIRECTORY             *SecDataDir;
   UINT32                               OffSet;
   CHAR16                               *NameStr;
+  RETURN_STATUS                        PeCoffStatus;
+  EFI_STATUS                           HashStatus;
 
   SignatureList     = NULL;
   SignatureListSize = 0;
@@ -1587,8 +1589,7 @@ DxeImageVerificationHandler (
   SecDataDir        = NULL;
   PkcsCertData      = NULL;
   Action            = EFI_IMAGE_EXECUTION_AUTH_UNTESTED;
-  Status            = EFI_ACCESS_DENIED;
-  VerifyStatus      = EFI_ACCESS_DENIED;
+  IsVerified        = FALSE;
 
 
   //
@@ -1621,7 +1622,8 @@ DxeImageVerificationHandler (
   //
   if (Policy == ALWAYS_EXECUTE) {
     return EFI_SUCCESS;
-  } else if (Policy == NEVER_EXECUTE) {
+  }
+  if (Policy == NEVER_EXECUTE) {
     return EFI_ACCESS_DENIED;
   }
 
@@ -1655,7 +1657,7 @@ DxeImageVerificationHandler (
   // Read the Dos header.
   //
   if (FileBuffer == NULL) {
-    return EFI_INVALID_PARAMETER;
+    return EFI_ACCESS_DENIED;
   }
 
   mImageBase  = (UINT8 *) FileBuffer;
@@ -1668,16 +1670,14 @@ DxeImageVerificationHandler (
   //
   // Get information about the image being loaded
   //
-  Status = PeCoffLoaderGetImageInfo (&ImageContext);
-  if (EFI_ERROR (Status)) {
+  PeCoffStatus = PeCoffLoaderGetImageInfo (&ImageContext);
+  if (RETURN_ERROR (PeCoffStatus)) {
     //
     // The information can't be got from the invalid PeImage
     //
     DEBUG ((DEBUG_INFO, "DxeImageVerificationLib: PeImage invalid. Cannot retrieve image information.\n"));
-    goto Done;
+    goto Failed;
   }
-
-  Status = EFI_ACCESS_DENIED;
 
   DosHdr = (EFI_IMAGE_DOS_HEADER *) mImageBase;
   if (DosHdr->e_magic == EFI_IMAGE_DOS_SIGNATURE) {
@@ -1698,7 +1698,7 @@ DxeImageVerificationHandler (
     // It is not a valid Pe/Coff file.
     //
     DEBUG ((DEBUG_INFO, "DxeImageVerificationLib: Not a valid PE/COFF image.\n"));
-    goto Done;
+    goto Failed;
   }
 
   if (mNtHeader.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
@@ -1729,7 +1729,7 @@ DxeImageVerificationHandler (
     //
     if (!HashPeImage (HASHALG_SHA256)) {
       DEBUG ((DEBUG_INFO, "DxeImageVerificationLib: Failed to hash this image using %s.\n", mHashTypeStr));
-      goto Done;
+      goto Failed;
     }
 
     if (IsSignatureFoundInDatabase (EFI_IMAGE_SECURITY_DATABASE1, mImageDigest, &mCertType, mImageDigestSize)) {
@@ -1737,7 +1737,7 @@ DxeImageVerificationHandler (
       // Image Hash is in forbidden database (DBX).
       //
       DEBUG ((DEBUG_INFO, "DxeImageVerificationLib: Image is not signed and %s hash of image is forbidden by DBX.\n", mHashTypeStr));
-      goto Done;
+      goto Failed;
     }
 
     if (IsSignatureFoundInDatabase (EFI_IMAGE_SECURITY_DATABASE, mImageDigest, &mCertType, mImageDigestSize)) {
@@ -1751,7 +1751,7 @@ DxeImageVerificationHandler (
     // Image Hash is not found in both forbidden and allowed database.
     //
     DEBUG ((DEBUG_INFO, "DxeImageVerificationLib: Image is not signed and %s hash of image is not found in DB/DBX.\n", mHashTypeStr));
-    goto Done;
+    goto Failed;
   }
 
   //
@@ -1802,8 +1802,8 @@ DxeImageVerificationHandler (
       continue;
     }
 
-    Status = HashPeImageByType (AuthData, AuthDataSize);
-    if (EFI_ERROR (Status)) {
+    HashStatus = HashPeImageByType (AuthData, AuthDataSize);
+    if (EFI_ERROR (HashStatus)) {
       continue;
     }
 
@@ -1812,16 +1812,16 @@ DxeImageVerificationHandler (
     //
     if (IsForbiddenByDbx (AuthData, AuthDataSize)) {
       Action = EFI_IMAGE_EXECUTION_AUTH_SIG_FAILED;
-      VerifyStatus = EFI_ACCESS_DENIED;
+      IsVerified = FALSE;
       break;
     }
 
     //
     // Check the digital signature against the valid certificate in allowed database (db).
     //
-    if (EFI_ERROR (VerifyStatus)) {
+    if (!IsVerified) {
       if (IsAllowedByDb (AuthData, AuthDataSize)) {
-        VerifyStatus = EFI_SUCCESS;
+        IsVerified = TRUE;
       }
     }
 
@@ -1831,11 +1831,12 @@ DxeImageVerificationHandler (
     if (IsSignatureFoundInDatabase (EFI_IMAGE_SECURITY_DATABASE1, mImageDigest, &mCertType, mImageDigestSize)) {
       Action = EFI_IMAGE_EXECUTION_AUTH_SIG_FOUND;
       DEBUG ((DEBUG_INFO, "DxeImageVerificationLib: Image is signed but %s hash of image is found in DBX.\n", mHashTypeStr));
-      VerifyStatus = EFI_ACCESS_DENIED;
+      IsVerified = FALSE;
       break;
-    } else if (EFI_ERROR (VerifyStatus)) {
+    }
+    if (!IsVerified) {
       if (IsSignatureFoundInDatabase (EFI_IMAGE_SECURITY_DATABASE, mImageDigest, &mCertType, mImageDigestSize)) {
-        VerifyStatus = EFI_SUCCESS;
+        IsVerified = TRUE;
       } else {
         DEBUG ((DEBUG_INFO, "DxeImageVerificationLib: Image is signed but signature is not allowed by DB and %s hash of image is not found in DB/DBX.\n", mHashTypeStr));
       }
@@ -1846,51 +1847,50 @@ DxeImageVerificationHandler (
     //
     // The Size in Certificate Table or the attribute certificate table is corrupted.
     //
-    VerifyStatus = EFI_ACCESS_DENIED;
+    IsVerified = FALSE;
   }
 
-  if (!EFI_ERROR (VerifyStatus)) {
+  if (IsVerified) {
     return EFI_SUCCESS;
-  } else {
-    Status = EFI_ACCESS_DENIED;
-    if (Action == EFI_IMAGE_EXECUTION_AUTH_SIG_FAILED || Action == EFI_IMAGE_EXECUTION_AUTH_SIG_FOUND) {
-      //
-      // Get image hash value as signature of executable.
-      //
-      SignatureListSize = sizeof (EFI_SIGNATURE_LIST) + sizeof (EFI_SIGNATURE_DATA) - 1 + mImageDigestSize;
-      SignatureList     = (EFI_SIGNATURE_LIST *) AllocateZeroPool (SignatureListSize);
-      if (SignatureList == NULL) {
-        Status = EFI_OUT_OF_RESOURCES;
-        goto Done;
-      }
-      SignatureList->SignatureHeaderSize  = 0;
-      SignatureList->SignatureListSize    = (UINT32) SignatureListSize;
-      SignatureList->SignatureSize        = (UINT32) (sizeof (EFI_SIGNATURE_DATA) - 1 + mImageDigestSize);
-      CopyMem (&SignatureList->SignatureType, &mCertType, sizeof (EFI_GUID));
-      Signature = (EFI_SIGNATURE_DATA *) ((UINT8 *) SignatureList + sizeof (EFI_SIGNATURE_LIST));
-      CopyMem (Signature->SignatureData, mImageDigest, mImageDigestSize);
+  }
+  if (Action == EFI_IMAGE_EXECUTION_AUTH_SIG_FAILED || Action == EFI_IMAGE_EXECUTION_AUTH_SIG_FOUND) {
+    //
+    // Get image hash value as signature of executable.
+    //
+    SignatureListSize = sizeof (EFI_SIGNATURE_LIST) + sizeof (EFI_SIGNATURE_DATA) - 1 + mImageDigestSize;
+    SignatureList     = (EFI_SIGNATURE_LIST *) AllocateZeroPool (SignatureListSize);
+    if (SignatureList == NULL) {
+      SignatureListSize = 0;
+      goto Failed;
     }
+    SignatureList->SignatureHeaderSize  = 0;
+    SignatureList->SignatureListSize    = (UINT32) SignatureListSize;
+    SignatureList->SignatureSize        = (UINT32) (sizeof (EFI_SIGNATURE_DATA) - 1 + mImageDigestSize);
+    CopyMem (&SignatureList->SignatureType, &mCertType, sizeof (EFI_GUID));
+    Signature = (EFI_SIGNATURE_DATA *) ((UINT8 *) SignatureList + sizeof (EFI_SIGNATURE_LIST));
+    CopyMem (Signature->SignatureData, mImageDigest, mImageDigestSize);
   }
 
-Done:
-  if (Status != EFI_SUCCESS) {
-    //
-    // Policy decides to defer or reject the image; add its information in image executable information table.
-    //
-    NameStr = ConvertDevicePathToText (File, FALSE, TRUE);
-    AddImageExeInfo (Action, NameStr, File, SignatureList, SignatureListSize);
-    if (NameStr != NULL) {
-      DEBUG((EFI_D_INFO, "The image doesn't pass verification: %s\n", NameStr));
-      FreePool(NameStr);
-    }
-    Status = EFI_SECURITY_VIOLATION;
+Failed:
+  //
+  // Policy decides to defer or reject the image; add its information in image
+  // executable information table in either case.
+  //
+  NameStr = ConvertDevicePathToText (File, FALSE, TRUE);
+  AddImageExeInfo (Action, NameStr, File, SignatureList, SignatureListSize);
+  if (NameStr != NULL) {
+    DEBUG ((DEBUG_INFO, "The image doesn't pass verification: %s\n", NameStr));
+    FreePool(NameStr);
   }
 
   if (SignatureList != NULL) {
     FreePool (SignatureList);
   }
 
-  return Status;
+  if (Policy == DEFER_EXECUTE_ON_SECURITY_VIOLATION) {
+    return EFI_SECURITY_VIOLATION;
+  }
+  return EFI_ACCESS_DENIED;
 }
 
 /**
