@@ -2,6 +2,8 @@
   Common header file for MP Initialize Library.
 
   Copyright (c) 2016 - 2020, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2020, AMD Inc. All rights reserved.<BR>
+
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -12,6 +14,7 @@
 #include <PiPei.h>
 
 #include <Register/Intel/Cpuid.h>
+#include <Register/Amd/Cpuid.h>
 #include <Register/Intel/Msr.h>
 #include <Register/Intel/LocalApic.h>
 #include <Register/Intel/Microcode.h>
@@ -30,9 +33,6 @@
 #include <Library/HobLib.h>
 
 #include <Guid/MicrocodePatchHob.h>
-
-#include <IndustryStandard/FirmwareInterfaceTable.h>
-
 
 #define WAKEUP_AP_SIGNAL SIGNATURE_32 ('S', 'T', 'A', 'P')
 
@@ -655,6 +655,22 @@ EFI_STATUS
 GetProcessorNumber (
   IN CPU_MP_DATA               *CpuMpData,
   OUT UINTN                    *ProcessorNumber
+  );
+
+/**
+  This funtion will try to invoke platform specific microcode shadow logic to
+  relocate microcode update patches into memory.
+
+  @param[in] CpuMpData  The pointer to CPU MP Data structure.
+
+  @retval EFI_SUCCESS              Shadow microcode success.
+  @retval EFI_OUT_OF_RESOURCES     No enough resource to complete the operation.
+  @retval EFI_UNSUPPORTED          Can't find platform specific microcode shadow
+                                   PPI/Protocol.
+**/
+EFI_STATUS
+PlatformShadowMicrocode (
+  IN OUT CPU_MP_DATA             *CpuMpData
   );
 
 #endif

@@ -74,3 +74,13 @@ MarkIoMemoryRangeForRuntimeAccess (
 
   return EFI_SUCCESS;
 }
+
+VOID
+SetPcdFlashNvStorageBaseAddresses (
+  VOID
+  )
+{
+  //
+  // Do nothing.
+  //
+}
