@@ -286,7 +286,7 @@ UpdateRegionMappingRecursive (
                  AttributeSetMask, AttributeClearMask, TranslationTable,
                  Level + 1);
       if (EFI_ERROR (Status)) {
-    	  if (!IsTableEntry (*Entry, Level)) {
+        if (!IsTableEntry (*Entry, Level)) {
           //
           // We are creating a new table entry, so on failure, we can free all
           // allocations we made recursively, given that the whole subhierarchy
