@@ -19,9 +19,6 @@
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
 
-// We use this index definition to define an invalid block entry
-#define TT_ATTR_INDX_INVALID    ((UINT32)~0)
-
 STATIC
 UINT64
 ArmMemoryAttributeToPageAttribute (
@@ -57,69 +54,26 @@ ArmMemoryAttributeToPageAttribute (
   }
 }
 
-UINT64
-PageAttributeToGcdAttribute (
-  IN UINT64 PageAttributes
-  )
-{
-  UINT64  GcdAttributes;
-
-  switch (PageAttributes & TT_ATTR_INDX_MASK) {
-  case TT_ATTR_INDX_DEVICE_MEMORY:
-    GcdAttributes = EFI_MEMORY_UC;
-    break;
-  case TT_ATTR_INDX_MEMORY_NON_CACHEABLE:
-    GcdAttributes = EFI_MEMORY_WC;
-    break;
-  case TT_ATTR_INDX_MEMORY_WRITE_THROUGH:
-    GcdAttributes = EFI_MEMORY_WT;
-    break;
-  case TT_ATTR_INDX_MEMORY_WRITE_BACK:
-    GcdAttributes = EFI_MEMORY_WB;
-    break;
-  default:
-    DEBUG ((DEBUG_ERROR,
-      "PageAttributeToGcdAttribute: PageAttributes:0x%lX not supported.\n",
-      PageAttributes));
-    ASSERT (0);
-    // The Global Coherency Domain (GCD) value is defined as a bit set.
-    // Returning 0 means no attribute has been set.
-    GcdAttributes = 0;
-  }
-
-  // Determine protection attributes
-  if (((PageAttributes & TT_AP_MASK) == TT_AP_NO_RO) ||
-      ((PageAttributes & TT_AP_MASK) == TT_AP_RO_RO)) {
-    // Read only cases map to write-protect
-    GcdAttributes |= EFI_MEMORY_RO;
-  }
-
-  // Process eXecute Never attribute
-  if ((PageAttributes & (TT_PXN_MASK | TT_UXN_MASK)) != 0) {
-    GcdAttributes |= EFI_MEMORY_XP;
-  }
-
-  return GcdAttributes;
-}
-
 #define MIN_T0SZ        16
 #define BITS_PER_LEVEL  9
+#define MAX_VA_BITS     48
 
-VOID
-GetRootTranslationTableInfo (
-  IN UINTN     T0SZ,
-  OUT UINTN   *TableLevel,
-  OUT UINTN   *TableEntryCount
+STATIC
+UINTN
+GetRootTableEntryCount (
+  IN  UINTN T0SZ
   )
 {
-  // Get the level of the root table
-  if (TableLevel) {
-    *TableLevel = (T0SZ - MIN_T0SZ) / BITS_PER_LEVEL;
-  }
+  return TT_ENTRY_COUNT >> (T0SZ - MIN_T0SZ) % BITS_PER_LEVEL;
+}
 
-  if (TableEntryCount) {
-    *TableEntryCount = 1UL << (BITS_PER_LEVEL - (T0SZ - MIN_T0SZ) % BITS_PER_LEVEL);
-  }
+STATIC
+UINTN
+GetRootTableLevel (
+  IN  UINTN T0SZ
+  )
+{
+  return (T0SZ - MIN_T0SZ) / BITS_PER_LEVEL;
 }
 
 STATIC
@@ -330,36 +284,6 @@ UpdateRegionMappingRecursive (
 }
 
 STATIC
-VOID
-LookupAddresstoRootTable (
-  IN  UINT64  MaxAddress,
-  OUT UINTN  *T0SZ,
-  OUT UINTN  *TableEntryCount
-  )
-{
-  UINTN TopBit;
-
-  // Check the parameters are not NULL
-  ASSERT ((T0SZ != NULL) && (TableEntryCount != NULL));
-
-  // Look for the highest bit set in MaxAddress
-  for (TopBit = 63; TopBit != 0; TopBit--) {
-    if ((1ULL << TopBit) & MaxAddress) {
-      // MaxAddress top bit is found
-      TopBit = TopBit + 1;
-      break;
-    }
-  }
-  ASSERT (TopBit != 0);
-
-  // Calculate T0SZ from the top bit of the MaxAddress
-  *T0SZ = 64 - TopBit;
-
-  // Get the Table info from T0SZ
-  GetRootTranslationTableInfo (*T0SZ, NULL, TableEntryCount);
-}
-
-STATIC
 EFI_STATUS
 UpdateRegionMapping (
   IN  UINT64  RegionStart,
@@ -368,7 +292,6 @@ UpdateRegionMapping (
   IN  UINT64  AttributeClearMask
   )
 {
-  UINTN     RootTableLevel;
   UINTN     T0SZ;
 
   if (((RegionStart | RegionLength) & EFI_PAGE_MASK)) {
@@ -376,11 +299,10 @@ UpdateRegionMapping (
   }
 
   T0SZ = ArmGetTCR () & TCR_T0SZ_MASK;
-  GetRootTranslationTableInfo (T0SZ, &RootTableLevel, NULL);
 
   return UpdateRegionMappingRecursive (RegionStart, RegionStart + RegionLength,
            AttributeSetMask, AttributeClearMask, ArmGetTTBR0BaseAddress (),
-           RootTableLevel);
+           GetRootTableLevel (T0SZ));
 }
 
 STATIC
@@ -553,6 +475,7 @@ ArmConfigureMmu (
   )
 {
   VOID*                         TranslationTable;
+  UINTN                         MaxAddressBits;
   UINT64                        MaxAddress;
   UINTN                         T0SZ;
   UINTN                         RootTableEntryCount;
@@ -571,11 +494,11 @@ ArmConfigureMmu (
   // into account the architectural limitations that result from UEFI's
   // use of 4 KB pages.
   //
-  MaxAddress = MIN (LShiftU64 (1ULL, ArmGetPhysicalAddressBits ()) - 1,
-                    MAX_ALLOC_ADDRESS);
+  MaxAddressBits = MIN (ArmGetPhysicalAddressBits (), MAX_VA_BITS);
+  MaxAddress = LShiftU64 (1ULL, MaxAddressBits) - 1;
 
-  // Lookup the Table Level to get the information
-  LookupAddresstoRootTable (MaxAddress, &T0SZ, &RootTableEntryCount);
+  T0SZ = 64 - MaxAddressBits;
+  RootTableEntryCount = GetRootTableEntryCount (T0SZ);
 
   //
   // Set TCR that allows us to retrieve T0SZ in the subsequent functions
