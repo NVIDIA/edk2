@@ -686,18 +686,31 @@ ApWakeupFunction (
         WAKEUP_AP_SIGNAL,
         0
         );
-      if (CpuMpData->ApLoopMode == ApInHltLoop) {
+
+      if (CpuMpData->InitFlag == ApInitReconfig) {
         //
-        // Restore AP's volatile registers saved
+        // ApInitReconfig happens when:
+        // 1. AP is re-enabled after it's disabled, in either PEI or DXE phase.
+        // 2. AP is initialized in DXE phase.
+        // In either case, use the volatile registers value derived from BSP.
+        // NOTE: IDTR.BASE stored in CpuMpData->CpuData[0].VolatileRegisters points to a
+        //   different IDT shared by all APs.
         //
-        RestoreVolatileRegisters (&CpuMpData->CpuData[ProcessorNumber].VolatileRegisters, TRUE);
-      } else {
-        //
-        // The CPU driver might not flush TLB for APs on spot after updating
-        // page attributes. AP in mwait loop mode needs to take care of it when
-        // woken up.
-        //
-        CpuFlushTlb ();
+        RestoreVolatileRegisters (&CpuMpData->CpuData[0].VolatileRegisters, FALSE);
+      }  else {
+        if (CpuMpData->ApLoopMode == ApInHltLoop) {
+          //
+          // Restore AP's volatile registers saved before AP is halted
+          //
+          RestoreVolatileRegisters (&CpuMpData->CpuData[ProcessorNumber].VolatileRegisters, TRUE);
+        } else {
+          //
+          // The CPU driver might not flush TLB for APs on spot after updating
+          // page attributes. AP in mwait loop mode needs to take care of it when
+          // woken up.
+          //
+          CpuFlushTlb ();
+        }
       }
 
       if (GetApState (&CpuMpData->CpuData[ProcessorNumber]) == CpuStateReady) {
@@ -1780,7 +1793,6 @@ MpInitLibInitialize (
       InitializeSpinLock(&CpuMpData->CpuData[Index].ApLock);
       CpuMpData->CpuData[Index].CpuHealthy = (CpuInfoInHob[Index].Health == 0)? TRUE:FALSE;
       CpuMpData->CpuData[Index].ApFunction = 0;
-      CopyMem (&CpuMpData->CpuData[Index].VolatileRegisters, &VolatileRegisters, sizeof (CPU_VOLATILE_REGISTERS));
     }
   }
 
@@ -1808,7 +1820,14 @@ MpInitLibInitialize (
   // Wakeup APs to do some AP initialize sync (Microcode & MTRR)
   //
   if (CpuMpData->CpuCount > 1) {
-    CpuMpData->InitFlag = ApInitReconfig;
+    if (OldCpuMpData != NULL) {
+      //
+      // Only needs to use this flag for DXE phase to update the wake up
+      // buffer. Wakeup buffer allocated in PEI phase is no longer valid
+      // in DXE.
+      //
+      CpuMpData->InitFlag = ApInitReconfig;
+    }
     WakeUpAP (CpuMpData, TRUE, 0, ApInitializeSync, CpuMpData, TRUE);
     //
     // Wait for all APs finished initialization
@@ -1816,7 +1835,9 @@ MpInitLibInitialize (
     while (CpuMpData->FinishedCount < (CpuMpData->CpuCount - 1)) {
       CpuPause ();
     }
-    CpuMpData->InitFlag = ApInitDone;
+    if (OldCpuMpData != NULL) {
+      CpuMpData->InitFlag = ApInitDone;
+    }
     for (Index = 0; Index < CpuMpData->CpuCount; Index++) {
       SetApState (&CpuMpData->CpuData[Index], CpuStateIdle);
     }
@@ -1858,9 +1879,16 @@ MpInitLibGetProcessorInfo (
   CPU_MP_DATA            *CpuMpData;
   UINTN                  CallerNumber;
   CPU_INFO_IN_HOB        *CpuInfoInHob;
+  UINTN                  OriginalProcessorNumber;
 
   CpuMpData = GetCpuMpData ();
   CpuInfoInHob = (CPU_INFO_IN_HOB *) (UINTN) CpuMpData->CpuInfoInHob;
+
+  //
+  // Lower 24 bits contains the actual processor number.
+  //
+  OriginalProcessorNumber = ProcessorNumber;
+  ProcessorNumber &= BIT24 - 1;
 
   //
   // Check whether caller processor is BSP
@@ -1901,6 +1929,18 @@ MpInitLibGetProcessorInfo (
     &ProcessorInfoBuffer->Location.Core,
     &ProcessorInfoBuffer->Location.Thread
     );
+
+  if ((OriginalProcessorNumber & CPU_V2_EXTENDED_TOPOLOGY) != 0) {
+    GetProcessorLocation2ByApicId (
+      CpuInfoInHob[ProcessorNumber].ApicId,
+      &ProcessorInfoBuffer->ExtendedInformation.Location2.Package,
+      &ProcessorInfoBuffer->ExtendedInformation.Location2.Die,
+      &ProcessorInfoBuffer->ExtendedInformation.Location2.Tile,
+      &ProcessorInfoBuffer->ExtendedInformation.Location2.Module,
+      &ProcessorInfoBuffer->ExtendedInformation.Location2.Core,
+      &ProcessorInfoBuffer->ExtendedInformation.Location2.Thread
+      );
+  }
 
   if (HealthData != NULL) {
     HealthData->Uint32 = CpuInfoInHob[ProcessorNumber].Health;

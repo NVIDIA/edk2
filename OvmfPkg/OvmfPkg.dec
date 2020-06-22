@@ -60,6 +60,10 @@
   #
   QemuFwCfgS3Lib|Include/Library/QemuFwCfgS3Lib.h
 
+  ##  @libraryclass  Parse the contents of named fw_cfg files as simple
+  #                  (scalar) data types.
+  QemuFwCfgSimpleParserLib|Include/Library/QemuFwCfgSimpleParserLib.h
+
   ##  @libraryclass  Rewrite the BootOrder NvVar based on QEMU's "bootorder"
   #                  fw_cfg file.
   #
@@ -162,6 +166,13 @@
   #  This constant defines how many micro-seconds to wait between each
   #  polling loop iteration.
   gUefiOvmfPkgTokenSpaceGuid.PcdPvScsiWaitForCmpStallInUsecs|5|UINT32|0x38
+
+  ## Set the *inclusive* number of targets that MptScsi exposes for scan
+  #  by ScsiBusDxe.
+  gUefiOvmfPkgTokenSpaceGuid.PcdMptScsiMaxTargetLimit|7|UINT8|0x39
+
+  ## Microseconds to stall between polling for MptScsi request result
+  gUefiOvmfPkgTokenSpaceGuid.PcdMptScsiStallPerPollUsec|5|UINT32|0x40
 
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfFlashNvStorageEventLogBase|0x0|UINT32|0x8
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfFlashNvStorageEventLogSize|0x0|UINT32|0x9
