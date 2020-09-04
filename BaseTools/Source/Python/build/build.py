@@ -873,7 +873,7 @@ class Build():
 
                     PcdMa.CreateCodeFile(False)
                     PcdMa.CreateMakeFile(False,GenFfsList = DataPipe.Get("FfsCommand").get((PcdMa.MetaFile.Path, PcdMa.Arch),[]))
-
+                    PcdMa.CreateAsBuiltInf()
                     # Force cache miss for PCD driver
                     if GlobalData.gBinCacheSource and self.Target in [None, "", "all"]:
                         cqueue.put((PcdMa.MetaFile.Path, PcdMa.Arch, "MakeCache", False))
@@ -1217,7 +1217,7 @@ class Build():
             mqueue = mp.Queue()
             for m in AutoGenObject.GetAllModuleInfo:
                 mqueue.put(m)
-
+            mqueue.put((None,None,None,None,None,None,None))
             AutoGenObject.DataPipe.DataContainer = {"CommandTarget": self.Target}
             AutoGenObject.DataPipe.DataContainer = {"Workspace_timestamp": AutoGenObject.Workspace._SrcTimeStamp}
             AutoGenObject.CreateLibModuelDirs()
@@ -1265,7 +1265,6 @@ class Build():
         if BuildModule:
             BuildCommand = BuildCommand + [Target]
             LaunchCommand(BuildCommand, AutoGenObject.MakeFileDir)
-            self.CreateAsBuiltInf()
             if GlobalData.gBinCacheDest:
                 self.GenDestCache()
             elif GlobalData.gUseHashCache and not GlobalData.gBinCacheSource:
@@ -2174,6 +2173,7 @@ class Build():
             data_pipe_file = os.path.join(Pa.BuildDir, "GlobalVar_%s_%s.bin" % (str(Pa.Guid),Pa.Arch))
             Pa.DataPipe.dump(data_pipe_file)
 
+            mqueue.put((None,None,None,None,None,None,None))
             autogen_rt, errorcode = self.StartAutoGen(mqueue, Pa.DataPipe, self.SkipAutoGen, PcdMaList, cqueue)
 
             if not autogen_rt:
@@ -2275,7 +2275,6 @@ class Build():
                 #
                 ExitFlag.set()
                 BuildTask.WaitForComplete()
-                self.CreateAsBuiltInf()
                 if GlobalData.gBinCacheDest:
                     self.GenDestCache()
                 elif GlobalData.gUseHashCache and not GlobalData.gBinCacheSource:

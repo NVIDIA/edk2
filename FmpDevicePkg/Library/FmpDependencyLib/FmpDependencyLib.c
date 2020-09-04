@@ -1,6 +1,7 @@
 /** @file
   Supports Fmp Capsule Dependency Expression.
 
+  Copyright (c) Microsoft Corporation.<BR>
   Copyright (c) 2020, Intel Corporation. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -285,6 +286,7 @@ EvaluateDependency (
       Iterator += AsciiStrnLenS ((CHAR8 *) Iterator, DependenciesSize - (Iterator - Dependencies->Dependencies));
       if (Iterator == (UINT8 *) Dependencies->Dependencies + DependenciesSize) {
         DEBUG ((DEBUG_ERROR, "EvaluateDependency: STRING extends beyond end of dependency expression!\n"));
+        goto Error;
       }
       break;
     case EFI_FMP_DEP_AND:
@@ -420,7 +422,7 @@ EvaluateDependency (
     Iterator++;
   }
 
-  DEBUG ((DEBUG_ERROR, "EvaluateDependency: No EFI_FMP_DEP_END Opcode in exression!\n"));
+  DEBUG ((DEBUG_ERROR, "EvaluateDependency: No EFI_FMP_DEP_END Opcode in expression!\n"));
 
 Error:
   return FALSE;
@@ -433,8 +435,8 @@ Error:
   @param[in]   MaxDepexSize   Max size of the dependency.
   @param[out]  DepexSize      Size of dependency.
 
-  @retval TRUE    The capsule is valid.
-  @retval FALSE   The capsule is invalid.
+  @retval TRUE    The dependency expression is valid.
+  @retval FALSE   The dependency expression is invalid.
 
 **/
 BOOLEAN

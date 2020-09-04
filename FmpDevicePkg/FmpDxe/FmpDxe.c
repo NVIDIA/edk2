@@ -3,7 +3,7 @@
   image stored in a firmware device with platform and firmware device specific
   information provided through PCDs and libraries.
 
-  Copyright (c) 2016, Microsoft Corporation. All rights reserved.<BR>
+  Copyright (c) Microsoft Corporation.<BR>
   Copyright (c) 2018 - 2020, Intel Corporation. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -179,7 +179,7 @@ GetImageTypeIdGuid (
     if (ImageTypeIdGuidSize == sizeof (EFI_GUID)) {
       FmpDeviceLibGuid = (EFI_GUID *)PcdGetPtr (PcdFmpDeviceImageTypeIdGuid);
     } else {
-      DEBUG ((DEBUG_INFO, "FmpDxe(%s): Fall back to ImageTypeIdGuid of gEfiCallerIdGuid\n", mImageIdName));
+      DEBUG ((DEBUG_WARN, "FmpDxe(%s): Fall back to ImageTypeIdGuid of gEfiCallerIdGuid\n", mImageIdName));
       FmpDeviceLibGuid = &gEfiCallerIdGuid;
     }
   }
@@ -277,6 +277,11 @@ PopulateDescriptor (
 {
   EFI_STATUS  Status;
   UINT32      DependenciesSize;
+
+  if (Private == NULL) {
+    DEBUG ((DEBUG_ERROR, "FmpDxe(%s): PopulateDescriptor() - Private is NULL.\n", mImageIdName));
+    return;
+  }
 
   if (Private->DescriptorPopulated) {
     return;
@@ -451,6 +456,12 @@ GetTheImageInfo (
 
   Status = EFI_SUCCESS;
 
+  if (This == NULL) {
+    DEBUG ((DEBUG_ERROR, "FmpDxe(%s): GetImageInfo() - This is NULL.\n", mImageIdName));
+    Status = EFI_INVALID_PARAMETER;
+    goto cleanup;
+  }
+
   //
   // Retrieve the private context structure
   //
@@ -561,6 +572,12 @@ GetTheImage (
 
   Status = EFI_SUCCESS;
 
+  if (This == NULL) {
+    DEBUG ((DEBUG_ERROR, "FmpDxe(%s): GetImage() - This is NULL.\n", mImageIdName));
+    Status = EFI_INVALID_PARAMETER;
+    goto cleanup;
+  }
+
   //
   // Retrieve the private context structure
   //
@@ -615,7 +632,8 @@ cleanup:
   @param[in]   Image                 Pointer to the image.
   @param[in]   ImageSize             Size of the image.
   @param[in]   AdditionalHeaderSize  Size of any headers that cannot be calculated by this function.
-  @param[out]  PayloadSize
+  @param[out]  PayloadSize           An optional pointer to a UINTN that holds the size of the payload
+                                     (image size minus headers)
 
   @retval  !NULL  Valid pointer to the header.
   @retval  NULL   Structure is bad and pointer cannot be found.
@@ -626,7 +644,7 @@ GetFmpHeader (
   IN  CONST EFI_FIRMWARE_IMAGE_AUTHENTICATION  *Image,
   IN  CONST UINTN                              ImageSize,
   IN  CONST UINTN                              AdditionalHeaderSize,
-  OUT UINTN                                    *PayloadSize
+  OUT UINTN                                    *PayloadSize OPTIONAL
   )
 {
   //
@@ -640,7 +658,10 @@ GetFmpHeader (
     return NULL;
   }
 
-  *PayloadSize = ImageSize - (sizeof (Image->MonotonicCount) + Image->AuthInfo.Hdr.dwLength + AdditionalHeaderSize);
+  if (PayloadSize != NULL) {
+    *PayloadSize = ImageSize - (sizeof (Image->MonotonicCount) + Image->AuthInfo.Hdr.dwLength + AdditionalHeaderSize);
+  }
+
   return (VOID *)((UINT8 *)Image + sizeof (Image->MonotonicCount) + Image->AuthInfo.Hdr.dwLength  + AdditionalHeaderSize);
 }
 
@@ -662,6 +683,11 @@ GetAllHeaderSize (
   )
 {
   UINT32  CalculatedSize;
+
+  if (Image == NULL) {
+    DEBUG ((DEBUG_ERROR, "FmpDxe(%s): GetAllHeaderSize() - Image is NULL.\n", mImageIdName));
+    return 0;
+  }
 
   CalculatedSize = sizeof (Image->MonotonicCount) +
                    AdditionalHeaderSize +
@@ -741,6 +767,12 @@ CheckTheImage (
 
   if (!FeaturePcdGet (PcdFmpDeviceStorageAccessEnable)) {
     return EFI_UNSUPPORTED;
+  }
+
+  if (This == NULL) {
+    DEBUG ((DEBUG_ERROR, "FmpDxe(%s): CheckImage() - This is NULL.\n", mImageIdName));
+    Status = EFI_INVALID_PARAMETER;
+    goto cleanup;
   }
 
   //
@@ -851,7 +883,7 @@ CheckTheImage (
   if (ImageIndex != 1) {
     DEBUG ((DEBUG_ERROR, "FmpDxe(%s): CheckImage() - Image Index Invalid.\n", mImageIdName));
     *ImageUpdatable = IMAGE_UPDATABLE_INVALID_TYPE;
-    Status = EFI_SUCCESS;
+    Status = EFI_INVALID_PARAMETER;
     goto cleanup;
   }
 
@@ -1011,6 +1043,7 @@ SetTheImage (
   UINT32                            DependenciesSize;
 
   Status             = EFI_SUCCESS;
+  Private            = NULL;
   Updateable         = 0;
   BooleanValue       = FALSE;
   FmpHeaderSize      = 0;
@@ -1024,6 +1057,12 @@ SetTheImage (
 
   if (!FeaturePcdGet (PcdFmpDeviceStorageAccessEnable)) {
     return EFI_UNSUPPORTED;
+  }
+
+  if (This == NULL) {
+    DEBUG ((DEBUG_ERROR, "FmpDxe(%s): SetTheImage() - This is NULL.\n", mImageIdName));
+    Status = EFI_INVALID_PARAMETER;
+    goto cleanup;
   }
 
   //
@@ -1255,7 +1294,10 @@ SetTheImage (
 
 cleanup:
   mProgressFunc = NULL;
-  SetLastAttemptStatusInVariable (Private, LastAttemptStatus);
+
+  if (Private != NULL) {
+    SetLastAttemptStatusInVariable (Private, LastAttemptStatus);
+  }
 
   if (Progress != NULL) {
     //
@@ -1268,7 +1310,9 @@ cleanup:
   // Need repopulate after SetImage is called to
   // update LastAttemptVersion and LastAttemptStatus.
   //
-  Private->DescriptorPopulated = FALSE;
+  if (Private != NULL) {
+    Private->DescriptorPopulated = FALSE;
+  }
 
   return Status;
 }
@@ -1381,6 +1425,11 @@ FmpDxeLockEventNotify (
 {
   EFI_STATUS                        Status;
   FIRMWARE_MANAGEMENT_PRIVATE_DATA  *Private;
+
+  if (Context == NULL) {
+    ASSERT (Context != NULL);
+    return;
+  }
 
   Private = (FIRMWARE_MANAGEMENT_PRIVATE_DATA *)Context;
 
@@ -1679,7 +1728,7 @@ FmpDxeEntryPoint (
     //
     // PcdFmpDeviceImageIdName must be set to a non-empty Unicode string
     //
-    DEBUG ((DEBUG_ERROR, "FmpDxe: PcdFmpDeviceImageIdName is an empty string.\n"));
+    DEBUG ((DEBUG_ERROR, "FmpDxe(%g): PcdFmpDeviceImageIdName is an empty string.\n", &gEfiCallerIdGuid));
     ASSERT (FALSE);
     return EFI_UNSUPPORTED;
   }

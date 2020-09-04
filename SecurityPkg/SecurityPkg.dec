@@ -84,6 +84,9 @@
   #
   VariableKeyLib|Include/Library/VariableKeyLib.h
 
+  ## @libraryclass  Provides interfaces about firmware TPM measurement.
+  #
+  TcgEventLogRecordLib|Include/Library/TcgEventLogRecordLib.h
 [Guids]
   ## Security package token space guid.
   # Include/Guid/SecurityPkgTokenSpace.h
@@ -202,6 +205,9 @@
 
   ## Include/Ppi/FirmwareVolumeInfoStoredHashFv.h
   gEdkiiPeiFirmwareVolumeInfoStoredHashFvPpiGuid = {0x7f5e4e31, 0x81b1, 0x47e5, { 0x9e, 0x21, 0x1e, 0x4b, 0x5b, 0xc2, 0xf6, 0x1d } }
+
+  ## Include/Ppi/Tcg.h
+  gEdkiiTcgPpiGuid = {0x57a13b87, 0x133d, 0x4bf3, { 0xbf, 0xf1, 0x1b, 0xca, 0xc7, 0x17, 0x6c, 0xf1 } }
 
 #
 # [Error.gEfiSecurityPkgTokenSpaceGuid]

@@ -1,7 +1,9 @@
 ## @file
 #  EFI/Framework Open Virtual Machine Firmware (OVMF) platform
 #
+#  Copyright (c) 2020, Rebecca Cran <rebecca@bsdio.com>
 #  Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2014, Pluribus Networks, Inc.
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -18,6 +20,9 @@
   Csm/Include
 
 [LibraryClasses]
+  ##  @libraryclass  Access bhyve's firmware control interface.
+  BhyveFwCtlLib|Include/Library/BhyveFwCtlLib.h
+
   ##  @libraryclass  Loads and boots a Linux kernel image
   #
   LoadLinuxLib|Include/Library/LoadLinuxLib.h
@@ -172,7 +177,15 @@
   gUefiOvmfPkgTokenSpaceGuid.PcdMptScsiMaxTargetLimit|7|UINT8|0x39
 
   ## Microseconds to stall between polling for MptScsi request result
-  gUefiOvmfPkgTokenSpaceGuid.PcdMptScsiStallPerPollUsec|5|UINT32|0x40
+  gUefiOvmfPkgTokenSpaceGuid.PcdMptScsiStallPerPollUsec|5|UINT32|0x3a
+
+  ## Set the *inclusive* number of targets and LUNs that LsiScsi exposes for
+  #  scan by ScsiBusDxe.
+  gUefiOvmfPkgTokenSpaceGuid.PcdLsiScsiMaxTargetLimit|7|UINT8|0x3b
+  gUefiOvmfPkgTokenSpaceGuid.PcdLsiScsiMaxLunLimit|0|UINT8|0x3c
+
+  ## Microseconds to stall between polling for LsiScsi request result
+  gUefiOvmfPkgTokenSpaceGuid.PcdLsiScsiStallPerPollUsec|5|UINT32|0x3d
 
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfFlashNvStorageEventLogBase|0x0|UINT32|0x8
   gUefiOvmfPkgTokenSpaceGuid.PcdOvmfFlashNvStorageEventLogSize|0x0|UINT32|0x9
@@ -280,6 +293,15 @@
 
   ## Number of page frames to use for storing grant table entries.
   gUefiOvmfPkgTokenSpaceGuid.PcdXenGrantFrames|4|UINT32|0x33
+
+  ## Specify the extra page table needed to mark the GHCB as unencrypted.
+  #  The value should be a multiple of 4KB for each.
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecGhcbPageTableBase|0x0|UINT32|0x3e
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecGhcbPageTableSize|0x0|UINT32|0x3f
+
+  ## The base address of the SEC GHCB page used by SEV-ES.
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecGhcbBase|0|UINT32|0x40
+  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfSecGhcbSize|0|UINT32|0x41
 
 [PcdsDynamic, PcdsDynamicEx]
   gUefiOvmfPkgTokenSpaceGuid.PcdEmuVariableEvent|0|UINT64|2
