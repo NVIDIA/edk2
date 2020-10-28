@@ -1752,7 +1752,7 @@ XhcPollPortStatusChange (
       // Therefore, retry the device slot initialization if it fails due to a
       // device error.
       //
-    } while ((Status == EFI_DEVICE_ERROR) && (Retries--));
+    } while ((Status == EFI_DEVICE_ERROR) && (Retries-- != 0));
   }
 
   return Status;
