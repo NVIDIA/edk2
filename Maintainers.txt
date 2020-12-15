@@ -98,6 +98,11 @@ F: */Arm/
 M: Leif Lindholm <leif@nuviainc.com>
 M: Ard Biesheuvel <ard.biesheuvel@arm.com>
 
+RISCV64
+F: */RiscV64/
+M: Abner Chang <abner.chang@hpe.com>
+R: Daniel Schaefer <daniel.schaefer@hpe.com>
+
 EDK II Continuous Integration:
 ------------------------------
 .azurepipelines/
@@ -151,6 +156,16 @@ F: ArmVirtPkg/XenAcpiPlatformDxe/
 F: ArmVirtPkg/XenPlatformHasAcpiDtDxe/
 F: ArmVirtPkg/XenioFdtDxe/
 R: Julien Grall <julien@xen.org>
+
+ArmVirtPkg: Kvmtool emulated platform support
+F: ArmVirtPkg/ArmVirtKvmTool.*
+F: ArmVirtPkg/KvmtoolPlatformDxe/
+F: ArmVirtPkg/Library/Fdt16550SerialPortHookLib/
+F: ArmVirtPkg/Library/KvmtoolPlatformPeiLib/
+F: ArmVirtPkg/Library/KvmtoolRtcFdtClientLib/
+F: ArmVirtPkg/Library/KvmtoolVirtMemInfoLib/
+F: ArmVirtPkg/Library/NorFlashKvmtoolLib/
+R: Sami Mujawar <sami.mujawar@arm.com>
 
 BaseTools
 F: BaseTools/
@@ -497,6 +512,11 @@ PcAtChipsetPkg
 F: PcAtChipsetPkg/
 W: https://github.com/tianocore/tianocore.github.io/wiki/PcAtChipsetPkg
 M: Ray Ni <ray.ni@intel.com>
+
+RedfishPkg: Redfish related modules
+F: RedfishPkg/
+M: Abner Chang <abner.chang@hpe.com>
+R: Nickle Wang <nickle.wang@hpe.com>
 
 SecurityPkg
 F: SecurityPkg/

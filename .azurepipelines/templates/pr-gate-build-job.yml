@@ -31,7 +31,7 @@ jobs:
         Build.Pkgs: 'MdeModulePkg'
         Build.Targets: 'RELEASE,NO-TARGET'
       TARGET_NETWORK:
-        Build.Pkgs: 'NetworkPkg'
+        Build.Pkgs: 'NetworkPkg,RedfishPkg'
         Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
       TARGET_OTHER:
         Build.Pkgs: 'PcAtChipsetPkg,ShellPkg'
@@ -41,7 +41,7 @@ jobs:
         Build.Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
       TARGET_CRYPTO:
         Build.Pkgs: 'CryptoPkg'
-        Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
+        Build.Targets: 'DEBUG,RELEASE,NO-TARGET,NOOPT'
       TARGET_SECURITY:
         Build.Pkgs: 'SecurityPkg'
         Build.Targets: 'DEBUG,RELEASE,NO-TARGET'
