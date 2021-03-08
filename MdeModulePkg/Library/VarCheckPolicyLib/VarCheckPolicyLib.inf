@@ -13,11 +13,13 @@
   MODULE_TYPE                    = DXE_RUNTIME_DRIVER
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = NULL|DXE_RUNTIME_DRIVER DXE_SMM_DRIVER
-  CONSTRUCTOR                    = VarCheckPolicyLibConstructor
+  CONSTRUCTOR                    = VarCheckPolicyLibTraditionalConstructor
 
 
 [Sources]
   VarCheckPolicyLib.c
+  VarCheckPolicyLibTraditional.c
+  VarCheckPolicyLib.h
 
 
 [Packages]
@@ -29,7 +31,6 @@
   BaseLib
   DebugLib
   BaseMemoryLib
-  DxeServicesLib
   MemoryAllocationLib
   VarCheckLib
   VariablePolicyLib

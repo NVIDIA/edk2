@@ -17,6 +17,31 @@
         ],
         ## Both file path and directory path are accepted.
         "IgnoreFiles": [
+            ## Below are files incorporated with open source which are
+            ## not edk2 coding standard compliant.
+            ##
+            ## EDK2 CRT library which is not edk2 coding
+            ## standard compliant.
+            ## C runtime library for RedfishPkg modules
+            "PrivateInclude/Crt/sys",
+            "PrivateInclude/Crt/assert.h",
+            "PrivateInclude/Crt/errno.h",
+            "PrivateInclude/Crt/limits.h",
+            "PrivateInclude/Crt/math.h",
+            "PrivateInclude/Crt/stdarg.h",
+            "PrivateInclude/Crt/stddef.h",
+            "PrivateInclude/Crt/stdio.h",
+            "PrivateInclude/Crt/stdlib.h",
+            "PrivateInclude/Crt/string.h",
+            "PrivateInclude/Crt/time.h",
+            "PrivateInclude/Library/RedfishCrtLib.h",
+            "PrivateLibrary/RedfishCrtLib/RedfishCrtLib.c",
+            ##
+            ## For jansson library open source
+            ## load.c is overrided from open source.
+            "Library/JsonLib/load.c",
+            "Library/JsonLib/jansson_config.h",
+            "Library/JsonLib/jansson_private_config.h"
         ]
     },
     "CompilerPlugin": {

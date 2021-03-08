@@ -2,7 +2,7 @@
 # Redfish Package
 #
 # Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
-# (C) Copyright 2020 Hewlett-Packard Enterprise Development LP.
+# (C) Copyright 2021 Hewlett-Packard Enterprise Development LP.
 #
 #    SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -32,6 +32,12 @@
   DebugPrintErrorLevelLib|MdePkg/Library/BaseDebugPrintErrorLevelLib/BaseDebugPrintErrorLevelLib.inf
   PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
   RedfishPlatformHostInterfaceLib|RedfishPkg/Library/PlatformHostInterfaceLibNull/PlatformHostInterfaceLibNull.inf
+  HttpLib|NetworkPkg/Library/DxeHttpLib/DxeHttpLib.inf
+  HttpIoLib|NetworkPkg/Library/DxeHttpIoLib/DxeHttpIoLib.inf
+  NetLib|NetworkPkg/Library/DxeNetLib/DxeNetLib.inf
+  DpcLib|NetworkPkg/Library/DxeDpcLib/DxeDpcLib.inf
+  RedfishPlatformCredentialLib|RedfishPkg/Library/PlatformCredentialLibNull/PlatformCredentialLibNull.inf
+  RedfishContentCodingLib|RedfishPkg/Library/RedfishContentCodingLibNull/RedfishContentCodingLibNull.inf
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
   #
@@ -43,5 +49,11 @@
 
 [Components]
   RedfishPkg/Library/PlatformHostInterfaceLibNull/PlatformHostInterfaceLibNull.inf
+  RedfishPkg/Library/PlatformCredentialLibNull/PlatformCredentialLibNull.inf
+  RedfishPkg/Library/RedfishContentCodingLibNull/RedfishContentCodingLibNull.inf
+  RedfishPkg/Library/DxeRestExLib/DxeRestExLib.inf
+  RedfishPkg/Library/BaseUcs2Utf8Lib/BaseUcs2Utf8Lib.inf
+  RedfishPkg/PrivateLibrary/RedfishCrtLib/RedfishCrtLib.inf
+  RedfishPkg/Library/JsonLib/JsonLib.inf
 
   !include RedfishPkg/Redfish.dsc.inc

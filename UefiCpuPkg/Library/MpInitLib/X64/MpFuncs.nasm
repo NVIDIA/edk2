@@ -1,5 +1,5 @@
 ;------------------------------------------------------------------------------ ;
-; Copyright (c) 2015 - 2019, Intel Corporation. All rights reserved.<BR>
+; Copyright (c) 2015 - 2021, Intel Corporation. All rights reserved.<BR>
 ; SPDX-License-Identifier: BSD-2-Clause-Patent
 ;
 ; Module Name:
@@ -161,18 +161,12 @@ LongModeStart:
     add        edi, LockLocation
     mov        rax, NotVacantFlag
 
-TestLock:
-    xchg       qword [edi], rax
-    cmp        rax, NotVacantFlag
-    jz         TestLock
+    mov        edi, esi
+    add        edi, ApIndexLocation
+    mov        ebx, 1
+    lock xadd  dword [edi], ebx                 ; EBX = ApIndex++
+    inc        ebx                              ; EBX is CpuNumber
 
-    lea        ecx, [esi + ApIndexLocation]
-    inc        dword [ecx]
-    mov        ebx, [ecx]
-
-Releaselock:
-    mov        rax, VacantFlag
-    xchg       qword [edi], rax
     ; program stack
     mov        edi, esi
     add        edi, StackSizeLocation
@@ -303,17 +297,17 @@ GetProcessorNumber:
     ;
     xor         ebx, ebx
     lea         eax, [esi + CpuInfoLocation]
-    mov         edi, [eax]
+    mov         rdi, [eax]
 
 GetNextProcNumber:
-    cmp         dword [edi], edx                      ; APIC ID match?
+    cmp         dword [rdi], edx                      ; APIC ID match?
     jz          ProgramStack
-    add         edi, 20
+    add         rdi, 20
     inc         ebx
     jmp         GetNextProcNumber
 
 ProgramStack:
-    mov         rsp, qword [edi + 12]
+    mov         rsp, qword [rdi + 12]
 
 CProcedureInvoke:
     push       rbp               ; Push BIST data at top of AP stack

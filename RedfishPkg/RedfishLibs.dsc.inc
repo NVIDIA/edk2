@@ -11,5 +11,10 @@
 #
 ##
 !if $(REDFISH_ENABLE) == TRUE
+  RestExLib|RedfishPkg/Library/DxeRestExLib/DxeRestExLib.inf
+  Ucs2Utf8Lib|RedfishPkg/Library/BaseUcs2Utf8Lib/BaseUcs2Utf8Lib.inf
+  BaseSortLib|MdeModulePkg/Library/BaseSortLib/BaseSortLib.inf
+  RedfishCrtLib|RedfishPkg/PrivateLibrary/RedfishCrtLib/RedfishCrtLib.inf
+  JsonLib|RedfishPkg/Library/JsonLib/JsonLib.inf
 !endif
 
