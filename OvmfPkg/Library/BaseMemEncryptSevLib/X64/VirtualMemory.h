@@ -58,8 +58,6 @@ InternalGetMemEncryptionAddressMask (
   @param[in]  PhysicalAddress         The physical address that is the start
                                       address of a memory region.
   @param[in]  Length                  The length of memory region
-  @param[in]  Flush                   Flush the caches before applying the
-                                      encryption mask
 
   @retval RETURN_SUCCESS              The attributes were cleared for the
                                       memory region.
@@ -72,8 +70,7 @@ EFIAPI
 InternalMemEncryptSevSetMemoryDecrypted (
   IN  PHYSICAL_ADDRESS        Cr3BaseAddress,
   IN  PHYSICAL_ADDRESS        PhysicalAddress,
-  IN  UINTN                   Length,
-  IN  BOOLEAN                 Flush
+  IN  UINTN                   Length
   );
 
 /**
@@ -85,8 +82,6 @@ InternalMemEncryptSevSetMemoryDecrypted (
   @param[in]  PhysicalAddress         The physical address that is the start
                                       address of a memory region.
   @param[in]  Length                  The length of memory region
-  @param[in]  Flush                   Flush the caches before applying the
-                                      encryption mask
 
   @retval RETURN_SUCCESS              The attributes were set for the memory
                                       region.
@@ -99,8 +94,7 @@ EFIAPI
 InternalMemEncryptSevSetMemoryEncrypted (
   IN  PHYSICAL_ADDRESS        Cr3BaseAddress,
   IN  PHYSICAL_ADDRESS        PhysicalAddress,
-  IN  UINTN                   Length,
-  IN  BOOLEAN                 Flush
+  IN  UINTN                   Length
   );
 
 /**
@@ -126,4 +120,27 @@ InternalMemEncryptSevGetAddressRangeState (
   IN UINTN                    Length
   );
 
+/**
+  This function clears memory encryption bit for the MMIO region specified by
+  PhysicalAddress and Length.
+
+  @param[in]  Cr3BaseAddress          Cr3 Base Address (if zero then use
+                                      current CR3)
+  @param[in]  PhysicalAddress         The physical address that is the start
+                                      address of a MMIO region.
+  @param[in]  Length                  The length of memory region
+
+  @retval RETURN_SUCCESS              The attributes were cleared for the
+                                      memory region.
+  @retval RETURN_INVALID_PARAMETER    Length is zero.
+  @retval RETURN_UNSUPPORTED          Clearing the memory encyrption attribute
+                                      is not supported
+**/
+RETURN_STATUS
+EFIAPI
+InternalMemEncryptSevClearMmioPageEncMask (
+  IN  PHYSICAL_ADDRESS        Cr3BaseAddress,
+  IN  PHYSICAL_ADDRESS        PhysicalAddress,
+  IN  UINTN                   Length
+  );
 #endif
