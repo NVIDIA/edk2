@@ -512,7 +512,7 @@ ScsiDiskReset (
   SCSI_DISK_DEV *ScsiDiskDevice;
   EFI_STATUS    Status;
 
-  OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
+  OldTpl = gBS->RaiseTPL (TPL_NOTIFY);
 
   ScsiDiskDevice  = SCSI_DISK_DEV_FROM_BLKIO (This);
 
@@ -579,7 +579,7 @@ ScsiDiskReadBlocks (
   EFI_TPL             OldTpl;
 
   MediaChange    = FALSE;
-  OldTpl         = gBS->RaiseTPL (TPL_CALLBACK);
+  OldTpl         = gBS->RaiseTPL (TPL_NOTIFY);
   ScsiDiskDevice = SCSI_DISK_DEV_FROM_BLKIO (This);
   Media          = ScsiDiskDevice->BlkIo.Media;
 
@@ -728,7 +728,7 @@ ScsiDiskWriteBlocks (
   EFI_TPL             OldTpl;
 
   MediaChange    = FALSE;
-  OldTpl         = gBS->RaiseTPL (TPL_CALLBACK);
+  OldTpl         = gBS->RaiseTPL (TPL_NOTIFY);
   ScsiDiskDevice = SCSI_DISK_DEV_FROM_BLKIO (This);
   Media          = ScsiDiskDevice->BlkIo.Media;
 
@@ -890,7 +890,7 @@ ScsiDiskResetEx (
   SCSI_DISK_DEV *ScsiDiskDevice;
   EFI_STATUS    Status;
 
-  OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
+  OldTpl = gBS->RaiseTPL (TPL_NOTIFY);
 
   ScsiDiskDevice  = SCSI_DISK_DEV_FROM_BLKIO2 (This);
 
@@ -967,7 +967,7 @@ ScsiDiskReadBlocksEx (
   EFI_TPL             OldTpl;
 
   MediaChange    = FALSE;
-  OldTpl         = gBS->RaiseTPL (TPL_CALLBACK);
+  OldTpl         = gBS->RaiseTPL (TPL_NOTIFY);
   ScsiDiskDevice = SCSI_DISK_DEV_FROM_BLKIO2 (This);
   Media          = ScsiDiskDevice->BlkIo.Media;
 
@@ -1143,7 +1143,7 @@ ScsiDiskWriteBlocksEx (
   EFI_TPL             OldTpl;
 
   MediaChange    = FALSE;
-  OldTpl         = gBS->RaiseTPL (TPL_CALLBACK);
+  OldTpl         = gBS->RaiseTPL (TPL_NOTIFY);
   ScsiDiskDevice = SCSI_DISK_DEV_FROM_BLKIO2 (This);
   Media          = ScsiDiskDevice->BlkIo.Media;
 
@@ -1309,7 +1309,7 @@ ScsiDiskFlushBlocksEx (
   EFI_TPL             OldTpl;
 
   MediaChange    = FALSE;
-  OldTpl         = gBS->RaiseTPL (TPL_CALLBACK);
+  OldTpl         = gBS->RaiseTPL (TPL_NOTIFY);
   ScsiDiskDevice = SCSI_DISK_DEV_FROM_BLKIO2 (This);
   Media          = ScsiDiskDevice->BlkIo.Media;
 
@@ -1700,7 +1700,7 @@ ScsiDiskEraseBlocks (
   EFI_TPL             OldTpl;
 
   MediaChange    = FALSE;
-  OldTpl         = gBS->RaiseTPL (TPL_CALLBACK);
+  OldTpl         = gBS->RaiseTPL (TPL_NOTIFY);
   ScsiDiskDevice = SCSI_DISK_DEV_FROM_ERASEBLK (This);
 
   if (!IS_DEVICE_FIXED(ScsiDiskDevice)) {
@@ -1886,7 +1886,7 @@ ScsiDiskReceiveData (
   AlignedBuffer           = NULL;
   MediaChange             = FALSE;
   AlignedBufferAllocated  = FALSE;
-  OldTpl                  = gBS->RaiseTPL (TPL_CALLBACK);
+  OldTpl                  = gBS->RaiseTPL (TPL_NOTIFY);
   ScsiDiskDevice          = SCSI_DISK_DEV_FROM_STORSEC (This);
   Media                   = ScsiDiskDevice->BlkIo.Media;
 
@@ -2096,7 +2096,7 @@ ScsiDiskSendData (
   AlignedBuffer           = NULL;
   MediaChange             = FALSE;
   AlignedBufferAllocated  = FALSE;
-  OldTpl                  = gBS->RaiseTPL (TPL_CALLBACK);
+  OldTpl                  = gBS->RaiseTPL (TPL_NOTIFY);
   ScsiDiskDevice          = SCSI_DISK_DEV_FROM_STORSEC (This);
   Media                   = ScsiDiskDevice->BlkIo.Media;
 
@@ -2264,7 +2264,7 @@ ScsiDiskDetectMedia (
 
   Status = gBS->CreateEvent (
                   EVT_TIMER,
-                  TPL_CALLBACK,
+                  TPL_NOTIFY,
                   NULL,
                   NULL,
                   &TimeoutEvt
