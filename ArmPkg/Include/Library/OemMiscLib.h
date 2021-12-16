@@ -38,26 +38,28 @@ typedef struct
   UINT16 ThreadCount;   ///< Number of threads per processor
 } OEM_MISC_PROCESSOR_DATA;
 
-typedef enum
-{
-    ProductNameType01,
-    SerialNumType01,
-    UuidType01,
-    SystemManufacturerType01,
-    SkuNumberType01,
-    FamilyType01,
-    AssertTagType02,
-    SerialNumberType02,
-    BoardManufacturerType02,
-    SkuNumberType02,
-    ChassisLocationType02,
-    AssetTagType03,
-    SerialNumberType03,
-    VersionType03,
-    ChassisTypeType03,
-    ManufacturerType03,
-    SkuNumberType03,
-    SmbiosHiiStringFieldMax
+typedef enum {
+  ProductNameType01,
+  SerialNumType01,
+  UuidType01,
+  SystemManufacturerType01,
+  VersionType01,
+  SkuNumberType01,
+  FamilyType01,
+  AssertTagType02,
+  SerialNumberType02,
+  BoardManufacturerType02,
+  ProductNameType02,
+  VersionType02,
+  SkuNumberType02,
+  ChassisLocationType02,
+  AssetTagType03,
+  SerialNumberType03,
+  VersionType03,
+  ChassisTypeType03,
+  ManufacturerType03,
+  SkuNumberType03,
+  SmbiosHiiStringFieldMax
 } OEM_MISC_SMBIOS_HII_STRING_FIELD;
 
 /*
