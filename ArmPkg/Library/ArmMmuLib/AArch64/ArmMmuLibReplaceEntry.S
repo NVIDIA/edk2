@@ -37,8 +37,6 @@
 
   // re-enable the MMU
   msr   sctlr_el\el, x8
-  ic    iallu
-  dsb   sy
   isb
   .endm
 

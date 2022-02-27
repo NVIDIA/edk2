@@ -89,9 +89,7 @@ ASM_FUNC(ArmEnableMmu)
    dsb     nsh
    isb
    msr     sctlr_el3, x0       // Write back
-4: ic      iallu
-   dsb     sy
-   isb
+4: isb
    ret
 
 
