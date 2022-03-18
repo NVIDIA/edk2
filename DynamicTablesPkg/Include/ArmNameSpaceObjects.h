@@ -58,6 +58,9 @@ typedef enum ArmObjectID {
   EArmObjGenericDeviceInfo,                                    ///< 24 - Generic Device Info
   EArmObjGenericInterrupt,                                     ///< 25 - Generic Interrupt
   EArmObjDbg2DeviceInfo,                                       ///< 26 - Generic DBG2 devices
+  EArmObjMscNodeInfo,                                          ///< 27 - Msc Memory System Controller Node Info
+  EArmObjResNodeInfo,                                          ///< 28 - Res Resource Node Info
+  EArmObjFuncDepInfo,                                          ///< 29 - Func Dep Info
   EArmObjMax
 } EARM_OBJECT_ID;
 
@@ -799,6 +802,92 @@ typedef struct CmArmDbg2DeviceInfo {
   */
   CHAR8     ObjectName[AML_NAME_SEG_SIZE + 1];
 } CM_ARM_DBG2_DEVICE_INFO;
+
+/** A structure that describes Memory System Controller Node.
+
+    MPAM Memory System Component Nodes are described by
+    this object.
+
+  ID: EArmObjMscNodeInfo
+*/
+typedef struct CmArmMscNodeInfo {
+  /// An unique token used to identify this object
+  CM_OBJECT_TOKEN    Token;
+
+  /// Identifier
+  UINT32             Identifier;
+  /// MPAM Base Address
+  UINT64             BaseAddress;
+  /// MMIO Size
+  UINT32             MmioSize;
+  /// Overflow Interrupt
+  UINT32             OverflowInterrupt;
+  /// Overflow Interrupt Flags
+  UINT32             OverflowInterruptFlags;
+  /// Overflow Interrupt Affinity
+  UINT32             OverflowInterruptAff;
+  /// Error Interrupt
+  UINT32             ErrorInterrupt;
+  /// Error Interrupt Flags
+  UINT32             ErrorInterruptFlags;
+  /// Error Interrupt Affinity
+  UINT32             ErrorInterruptAff;
+  /// Not Ready Signal time
+  UINT32             MaxNRdyUsec;
+  /// Linked Device HWID
+  UINT64             LinkedDeviceHwId;
+  /// Linked Device Instance ID
+  UINT32             LinkedDeviceInstanceHwId;
+  /// Number of Resource nodes
+  UINT32             NumResourceNodes;
+  /// Reference token for the list of resource nodes
+  // CM_OBJECT_TOKEN    ResourceNodeListToken;
+} CM_ARM_MSC_NODE_INFO;
+
+typedef struct {
+  UINT64    Descriptor1;
+  UINT32    Descriptor2;
+} MPAM_LOCATOR;
+
+/** A structure that describes Resource Node info.
+
+    MPAM Resource Nodes are described by
+    this object.
+
+  ID: EArmObjResNodeInfo
+*/
+typedef struct CmArmResNodeInfo {
+  /// An unique token used to identify this object
+  CM_OBJECT_TOKEN    Token;
+
+  /// Identifier
+  UINT32             Identifier;
+  /// RIS Index
+  UINT8              RisIndex;
+  /// Locator Type
+  UINT8              LocatorType;
+  /// Locator
+  MPAM_LOCATOR       Locator;
+  /// Num functional dependencies
+  UINT32             NumFuncDep;
+  /// Reference token for the list of resource nodes
+  CM_OBJECT_TOKEN    FuncDepListToken;
+} CM_ARM_RESOURCE_NODE_INFO;
+
+/** A structure that describes Functional Dependencies
+    between MPAM MSC nodes.
+
+    MPAM Functional Dependency descriptors are described by
+    this object.
+
+  ID: EArmObjFuncDepInfo
+*/
+typedef struct CmArmFuncDepInfo {
+  /// An unique token used to identify this object
+  CM_OBJECT_TOKEN    Token;
+  /// Producer
+  UINT32             Producer;
+} CM_ARM_FUNC_DEP_INFO;
 
 #pragma pack()
 
