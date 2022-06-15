@@ -93,6 +93,7 @@ typedef enum StdAcpiTableId {
   EStdAcpiTableIdMcfg,                          ///< MCFG Generator
   EStdAcpiTableIdIort,                          ///< IORT Generator
   EStdAcpiTableIdPptt,                          ///< PPTT Generator
+  EStdAcpiTableIdSlit,                          ///< SLIT Generator
   EStdAcpiTableIdSrat,                          ///< SRAT Generator
   EStdAcpiTableIdMpam,                          ///< MPAM Generator
   EStdAcpiTableIdSsdtSerialPort,                ///< SSDT Serial-Port Generator

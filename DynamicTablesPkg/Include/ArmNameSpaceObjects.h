@@ -68,6 +68,7 @@ typedef enum ArmObjectID {
   EArmObjMscNodeInfo,                  ///< 43 - Msc Memory System Controller Node Info
   EArmObjResNodeInfo,                  ///< 44 - Res Resource Node Info
   EArmObjFuncDepInfo,                  ///< 45 - Func Dep Info
+  EArmObjSystemLocalityInfo,           ///< 46 - Relative Distance Info
   EArmObjMax
 } EARM_OBJECT_ID;
 
@@ -1175,6 +1176,17 @@ typedef struct CmArmFuncDepInfo {
   /// Producer
   UINT32             Producer;
 } CM_ARM_FUNC_DEP_INFO;
+
+/** A structure that describes the System Locality Information
+
+  This information is used to optimize the system performance
+
+  ID: EArmObjSystemLocalityInfo
+*/
+typedef struct CmArmSystemLocalityInfo {
+  UINT64    NumSystemLocalities;
+  UINT8     *Distance;
+} CM_ARM_SYSTEM_LOCALITY_INFO;
 
 #pragma pack()
 
