@@ -239,11 +239,19 @@ typedef struct DynamicTableFactoryProtocol {
   EDKII_DYNAMIC_TABLE_FACTORY_DEREGISTER_DT_TABLE_GENERATOR
                                                             DeregisterDtTableGenerator;
 
+  EDKII_DYNAMIC_TABLE_FACTORY_SMBIOS_TABLE_ADD_HANDLE
+                                                            AddSmbiosHandle;
+
+  EDKII_DYNAMIC_TABLE_FACTORY_SMBIOS_TABLE_GET_HANDLE
+                                                            GetSmbiosHandle;
+
   /** Pointer to the data structure that holds the
       list of registered table generators
   */
   EDKII_DYNAMIC_TABLE_FACTORY_INFO                          *TableFactoryInfo;
 } EDKII_DYNAMIC_TABLE_FACTORY_PROTOCOL;
+
+
 
 /** The Dynamic Table Factory Protocol GUID.
 */

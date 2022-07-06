@@ -49,6 +49,11 @@ typedef struct DynamicTableFactoryInfo {
         CustomDtTableGeneratorList[FixedPcdGet16 (
                                  PcdMaxCustomDTGenerators
                                  )];
+
+  /// An array for holding a map of SMBIOS handles and the CM Object
+  /// token used to build the SMBIOS record.
+  SMBIOS_HANDLE_MAP
+        SmbiosHandleMap[MAX_SMBIOS_HANDLES];
 } EDKII_DYNAMIC_TABLE_FACTORY_INFO;
 
 /** Return a pointer to the ACPI table generator.
