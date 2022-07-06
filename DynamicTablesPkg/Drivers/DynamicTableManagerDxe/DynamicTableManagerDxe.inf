@@ -1,7 +1,8 @@
 ## @file
-# Module that drives the table generation and installation process.
+#  Module that drives the table generation and installation process.
 #
 #  Copyright (c) 2017 - 2022, Arm Limited. All rights reserved.
+#  Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
@@ -33,6 +34,7 @@
 [LibraryClasses]
   PrintLib
   TableHelperLib
+  UefiLib
   UefiBootServicesTableLib
   UefiDriverEntryPoint
 
@@ -42,12 +44,12 @@
 [Protocols]
   gEfiAcpiTableProtocolGuid                     # PROTOCOL ALWAYS_CONSUMED
   gEfiAcpiSdtProtocolGuid                       # PROTOCOL ALWAYS_CONSUMED
+  gEfiSmbiosProtocolGuid                        # PROTOCOL ALWAYS_CONSUMED
 
   gEdkiiConfigurationManagerProtocolGuid        # PROTOCOL ALWAYS_CONSUMED
   gEdkiiDynamicTableFactoryProtocolGuid         # PROTOCOL ALWAYS_CONSUMED
 
 [Depex]
-  gEfiAcpiTableProtocolGuid AND
   gEdkiiConfigurationManagerProtocolGuid AND
   gEdkiiDynamicTableFactoryProtocolGuid
 
