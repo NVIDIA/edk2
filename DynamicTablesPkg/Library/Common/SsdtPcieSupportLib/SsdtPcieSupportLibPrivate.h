@@ -1,5 +1,5 @@
 /** @file
-  SSDT Pcie Support Library private data.
+  SSDT PCIe Support Library private data.
 
   Copyright (c) 2021, Arm Limited. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent

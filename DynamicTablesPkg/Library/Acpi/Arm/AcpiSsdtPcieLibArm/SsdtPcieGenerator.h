@@ -36,12 +36,6 @@
 // _SB scope of the AML namespace.
 #define SB_SCOPE  "\\_SB_"
 
-/** C array containing the compiled AML template.
-    This symbol is defined in the auto generated C file
-    containing the AML bytecode array.
-*/
-extern CHAR8  ssdtpcieosctemplate_aml_code[];
-
 #pragma pack(1)
 
 /** A structure holding the Pcie generator and additional private data.

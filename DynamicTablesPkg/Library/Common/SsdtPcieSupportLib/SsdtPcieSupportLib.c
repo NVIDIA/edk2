@@ -1,5 +1,5 @@
 /** @file
-  SSDT Pcie Table Generator.
+  SSDT PCIe Support Library.
 
   Copyright (c) 2021 - 2022, Arm Limited. All rights reserved.<BR>
 
