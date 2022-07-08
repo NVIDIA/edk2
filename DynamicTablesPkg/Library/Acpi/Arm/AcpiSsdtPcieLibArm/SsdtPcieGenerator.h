@@ -44,21 +44,6 @@ extern CHAR8  ssdtpcieosctemplate_aml_code[];
 
 #pragma pack(1)
 
-/** Structure used to map integer to an index.
-*/
-typedef struct MappingTable {
-  /// Mapping table.
-  /// Contains the Index <-> integer mapping
-  UINT32    *Table;
-
-  /// Last used index of the Table.
-  /// Bound by MaxIndex.
-  UINT32    LastIndex;
-
-  /// Number of entries in the Table.
-  UINT32    MaxIndex;
-} MAPPING_TABLE;
-
 /** A structure holding the Pcie generator and additional private data.
 */
 typedef struct AcpiPcieGenerator {
