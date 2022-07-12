@@ -75,6 +75,7 @@ typedef enum ArmObjectID {
   EArmObjResNodeInfo,                                          ///< 50 - Res Resource Node Info
   EArmObjFuncDepInfo,                                          ///< 51 - Func Dep Info
   EArmObjMemoryDeviceInfo,                                     ///< 52 - Memory Device Information
+  EArmObjLocalityLatencyBandwidthInfo,                         ///< 53 - System Locality Latency and Bandwidth Info
   EArmObjMax
 } EARM_OBJECT_ID;
 
@@ -1402,51 +1403,63 @@ typedef struct CmArmMemoryDeviceInfo {
   /** Size of the device.
     Size of the device in bytes.
   */
-  UINT64  Size;
+  UINT64             Size;
 
   /** Device Set */
-  UINT8   DeviceSet;
+  UINT8              DeviceSet;
 
   /** Speed of the device
     Speed of the device in MegaTransfers/second.
   */
-  UINT32  Speed;
+  UINT32             Speed;
 
   /** Serial Number of device  */
-  CHAR8   *SerialNum;
+  CHAR8              *SerialNum;
 
   /** AssetTag identifying the device */
-  CHAR8   *AssetTag;
+  CHAR8              *AssetTag;
 
   /** Device Locator String for the device.
    String that describes the slot or position of the device on the board.
    */
-  CHAR8   *DeviceLocator;
+  CHAR8              *DeviceLocator;
 
   /** Bank locator string for the device.
    String that describes the bank where the device is located.
    */
-  CHAR8   *BankLocator;
+  CHAR8              *BankLocator;
 
   /** Firmware version of the memory device */
-  CHAR8   *FirmwareVersion;
+  CHAR8              *FirmwareVersion;
 
   /** Manufacturer Id.
    2 byte Manufacturer Id as per JEDEC Standard JEP106AV
   */
-  UINT16  ModuleManufacturerId;
+  UINT16             ModuleManufacturerId;
 
   /** Manufacturer Product Id
    2 byte Manufacturer Id as designated by Manufacturer.
   */
-  UINT16  ModuleProductId;
+  UINT16             ModuleProductId;
 
   /** Device Attributes */
-  UINT8   Attributes;
+  UINT8              Attributes;
 
   CM_OBJECT_TOKEN    MemoryDeviceInfoToken;
   CM_OBJECT_TOKEN    PhysicalArrayToken;
 } CM_ARM_MEMORY_DEVICE_INFO;
+
+typedef struct CmArmObjLocalityLatencyBandwidthInfo {
+  EFI_ACPI_6_4_HMAT_STRUCTURE_SYSTEM_LOCALITY_LATENCY_AND_BANDWIDTH_INFO_FLAGS    Flags;
+  UINT8                                                                           DataType;
+  UINT8                                                                           MinTransferSize;
+  UINT64                                                                          EntryBaseUnit;
+  UINT32                                                                          NumInitiatorProximityDomains;
+  UINT32                                                                          NumTargetProximityDomains;
+  UINT32                                                                          *InitiatorProximityDomainList;
+  UINT32                                                                          *TargetProximityDomainList;
+  UINT16                                                                          *LatencyBandwidthEntries;
+} CM_ARM_LOCALITY_LATENCY_BANDWIDTH_INFO;
 
 #pragma pack()
 
