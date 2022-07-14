@@ -2968,6 +2968,11 @@ typedef struct {
 #define EFI_ACPI_6_4_PROCESSOR_PROPERTIES_TOPOLOGY_TABLE_STRUCTURE_SIGNATURE  SIGNATURE_32('P', 'P', 'T', 'T')
 
 ///
+/// "MPAM" Memory System Resource Partitioning And Monitoring Table
+///
+#define EFI_ACPI_6_4_MEMORY_SYSTEM_RESOURCE_PARTITIONING_MONITORING_TABLE_STRUCTURE_SIGNATURE  SIGNATURE_32('M', 'P', 'A', 'M')
+
+///
 /// "PSDT" Persistent System Description Table
 ///
 #define EFI_ACPI_6_4_PERSISTENT_SYSTEM_DESCRIPTION_TABLE_SIGNATURE  SIGNATURE_32('P', 'S', 'D', 'T')
