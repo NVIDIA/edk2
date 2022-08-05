@@ -4,6 +4,7 @@
   Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
   (C) Copyright 2020 Hewlett Packard Enterprise Development LP<BR>
   Copyright (C) 2023 Advanced Micro Devices, Inc. All rights reserved.<BR>
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
@@ -63,8 +64,13 @@ typedef struct {
   ///
   /// Below is defined in Redfish Host Interface spec v1.3
   ///
-  UINT16    Characteristics;               ///< Additional device characteristics.
-  UINT16    CredentialBootstrappingHandle; ///< Credential bootstrapping handle.
+  UINT16    Characteristics;               ///< Additional characteristics for the device.
+                                           ///< Bit 0    : Credential bootstrapping via IPMI command
+                                           ///< is supported
+                                           ///< Bits 1-15: Reserved
+  UINT16    CredentialBootstrappingHandle; ///< Handle of the interface to be used for credential
+                                           ///< bootstrapping via IPMI commands. The value is
+                                           ///< 0xFFFF if not supported.
 } USB_INTERFACE_DEVICE_DESCRIPTOR_V2;
 
 //
