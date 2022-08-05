@@ -52,6 +52,9 @@ RedfishCreateSmbiosTable42 (
   SMBIOS_TABLE_TYPE42                *Type42Record;
   EFI_SMBIOS_PROTOCOL                *Smbios;
   EFI_SMBIOS_HANDLE                  MemArrayMappedAddrSmbiosHandle;
+  CHAR8                              *SerialNumber;
+  UINT8                              SerialNumStrLen;
+  UINT8                              StringCount = 1;
 
   //
   // Get platform Redfish host interface device type descriptor data.
@@ -75,10 +78,22 @@ RedfishCreateSmbiosTable42 (
     return EFI_UNSUPPORTED;
   }
 
+  SerialNumStrLen = 0;
+  SerialNumber    = NULL;
   if (DeviceType == REDFISH_HOST_INTERFACE_DEVICE_TYPE_PCI_PCIE_V2) {
     DeviceDataLength = DeviceDescriptor->DeviceDescriptor.PciPcieDeviceV2.Length;
   } else {
     DeviceDataLength = DeviceDescriptor->DeviceDescriptor.UsbDeviceV2.Length;
+    Status           = RedfishPlatformHostInterfaceUSBSerialNumber (&SerialNumber);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: Fail to get USB virtual serial number, %r.", __FUNCTION__, Status));
+      DeviceDescriptor->DeviceDescriptor.UsbDeviceV2.SerialNumberStr = 0;
+    } else {
+      if (SerialNumber) {
+        SerialNumStrLen                                                = AsciiStrLen (SerialNumber);
+        DeviceDescriptor->DeviceDescriptor.UsbDeviceV2.SerialNumberStr = StringCount++;
+      }
+    }
   }
 
   //
@@ -164,7 +179,8 @@ RedfishCreateSmbiosTable42 (
                                           + DeviceDataLength
                                           + 1  /// For Protocol Record Count
                                           + CurrentProtocolsDataLength
-                                          + 2  /// Double NULL terminator/
+                                          + SerialNumStrLen
+                                          + 2  /// Double NULL terminator after last string
                                           );
   if (Type42Record == NULL) {
     Status = EFI_OUT_OF_RESOURCES;
@@ -176,6 +192,7 @@ RedfishCreateSmbiosTable42 (
                              + DeviceDataLength
                              + 1
                              + CurrentProtocolsDataLength;
+
   Type42Record->Hdr.Handle    = 0;
   Type42Record->InterfaceType = MCHostInterfaceTypeNetworkHostInterface; // Network Host Interface
 
@@ -205,6 +222,11 @@ RedfishCreateSmbiosTable42 (
     CurrentProtocolsDataLength
     );
 
+  // Fill in Serial Number string at the end of SMBIOS table 42
+  if (SerialNumStrLen) {
+    CopyMem (Type42Record->InterfaceTypeSpecificData + DeviceDataLength + 1 + CurrentProtocolsDataLength, SerialNumber, SerialNumStrLen);
+  }
+
   //
   // 5. Add Redfish interface data record to SMBIOS table 42
   //
@@ -228,6 +250,7 @@ RedfishCreateSmbiosTable42 (
   Status = EFI_SUCCESS;
 
 ON_EXIT:
+
   if (DeviceDescriptor != NULL) {
     FreePool (DeviceDescriptor);
   }
@@ -238,6 +261,10 @@ ON_EXIT:
 
   if (Type42Record != NULL) {
     FreePool (Type42Record);
+  }
+
+  if (SerialNumber != NULL) {
+    FreePool (SerialNumber);
   }
 
   return Status;
