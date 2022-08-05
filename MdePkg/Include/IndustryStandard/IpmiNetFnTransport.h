@@ -11,6 +11,8 @@
   and Appendix H, Sub-function Assignments.
 
   Copyright (c) 1999 - 2018, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
@@ -60,6 +62,7 @@ typedef enum {
   IpmiLanReserved3,
   IpmiLanDestinationType,
   IpmiLanDestinationAddress,
+  IpmiLanVlanId,
   IpmiIpv4OrIpv6Support = 0x32,
   IpmiIpv4OrIpv6AddressEnable,
   IpmiIpv6HdrStatTrafficClass,

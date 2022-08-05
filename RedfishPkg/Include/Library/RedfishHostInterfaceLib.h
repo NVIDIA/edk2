@@ -2,6 +2,7 @@
   Definitinos of RedfishHostInterfaceDxe driver.
 
   (C) Copyright 2020 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -50,6 +51,19 @@ EFI_STATUS
 RedfishPlatformHostInterfaceProtocolData (
   IN OUT MC_HOST_INTERFACE_PROTOCOL_RECORD  **ProtocolRecord,
   IN UINT8                                  IndexOfProtocolData
+  );
+
+/**
+  Get USB Virtual Serial Number.
+
+  @param[OUT] SerialNumber      Pointer to retrieve complete serial number.
+
+  @retval EFI_SUCCESS         Serial number is returned.
+  @retval Others              Failed to get the serial number
+**/
+EFI_STATUS
+RedfishPlatformHostInterfaceUSBSerialNumber (
+  OUT CHAR8  **SerialNumber
   );
 
 #endif
