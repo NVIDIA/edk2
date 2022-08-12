@@ -75,6 +75,7 @@ typedef enum ArmObjectID {
   EArmObjMscNodeInfo,                                          ///< 50 - Msc Memory System Controller Node Info
   EArmObjResNodeInfo,                                          ///< 51 - Res Resource Node Info
   EArmObjFuncDepInfo,                                          ///< 52 - Func Dep Info
+  EArmObjMemoryDeviceInfo,                                     ///< 53 - Memory Device Information
   EArmObjMax
 } EARM_OBJECT_ID;
 
@@ -1407,6 +1408,75 @@ typedef struct CmArmFuncDepInfo {
   /// Producer
   UINT32             Producer;
 } CM_ARM_FUNC_DEP_INFO;
+
+/** A structure that describes the System Locality Information
+
+  This information is used to optimize the system performance
+
+  ID: EArmObjSystemLocalityInfo
+*/
+typedef struct CmArmSystemLocalityInfo {
+  UINT64    NumSystemLocalities;
+  UINT8     *Distance;
+} CM_ARM_SYSTEM_LOCALITY_INFO;
+
+/** A structure that describes the physical memory device.
+
+  The physical memory devices on the system are described by this object.
+
+  SMBIOS Specification v3.5.0 Type17
+
+  ID: EArmObjMemoryDeviceInfo,
+*/
+typedef struct CmArmMemoryDeviceInfo {
+  /** Size of the device.
+    Size of the device in bytes.
+  */
+  UINT64  Size;
+
+  /** Device Set */
+  UINT8   DeviceSet;
+
+  /** Speed of the device
+    Speed of the device in MegaTransfers/second.
+  */
+  UINT32  Speed;
+
+  /** Serial Number of device  */
+  CHAR8   *SerialNum;
+
+  /** AssetTag identifying the device */
+  CHAR8   *AssetTag;
+
+  /** Device Locator String for the device.
+   String that describes the slot or position of the device on the board.
+   */
+  CHAR8   *DeviceLocator;
+
+  /** Bank locator string for the device.
+   String that describes the bank where the device is located.
+   */
+  CHAR8   *BankLocator;
+
+  /** Firmware version of the memory device */
+  CHAR8   *FirmwareVersion;
+
+  /** Manufacturer Id.
+   2 byte Manufacturer Id as per JEDEC Standard JEP106AV
+  */
+  UINT16  ModuleManufacturerId;
+
+  /** Manufacturer Product Id
+   2 byte Manufacturer Id as designated by Manufacturer.
+  */
+  UINT16  ModuleProductId;
+
+  /** Device Attributes */
+  UINT8   Attributes;
+
+  CM_OBJECT_TOKEN    MemoryDeviceInfoToken;
+  CM_OBJECT_TOKEN    PhysicalArrayToken;
+} CM_ARM_MEMORY_DEVICE_INFO;
 
 #pragma pack()
 
