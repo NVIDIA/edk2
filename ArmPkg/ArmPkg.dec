@@ -387,3 +387,6 @@
   # the LinuxBoot payload.
   #
   gArmTokenSpaceGuid.PcdLinuxBootFileGuid|{0x0}|VOID*|0x0000005C
+
+  # SMBIOS PCD
+  gArmTokenSpaceGuid.PcdType13CurrentLanguage|"en|US|iso8859-1"|VOID*|0x30000076

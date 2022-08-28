@@ -136,7 +136,7 @@ SMBIOS_MISC_TABLE_FUNCTION (MiscNumberOfInstallableLanguages) {
   // Try to check if current langcode matches with the langcodes in installed languages
   //
   ZeroMem (CurrentLang, SMBIOS_STRING_MAX_LENGTH - 1);
-  (VOID)AsciiStrCpyS (CurrentLang, SMBIOS_STRING_MAX_LENGTH - 1, "en|US|iso8859-1");
+  (VOID)AsciiStrCpyS (CurrentLang, SMBIOS_STRING_MAX_LENGTH - 1, (CHAR8 *)PcdGetPtr (PcdType13CurrentLanguage));
   LangStrLen = AsciiStrLen (CurrentLang);
 
   //
