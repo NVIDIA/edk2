@@ -79,6 +79,8 @@
   gArmTokenSpaceGuid.PcdBaseBoardProductName
   gArmTokenSpaceGuid.PcdBaseBoardVersion
   gArmTokenSpaceGuid.PcdFdBaseAddress
+  gArmTokenSpaceGuid.PcdBiosCharacteristics
+  gArmTokenSpaceGuid.PcdBiosCharacteristicsExtension
 
 [Guids]
   gEfiGenericVariableGuid

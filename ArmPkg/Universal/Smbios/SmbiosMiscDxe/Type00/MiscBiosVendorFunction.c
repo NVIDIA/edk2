@@ -153,21 +153,22 @@ GetBiosVersion (
 
 **/
 SMBIOS_MISC_TABLE_FUNCTION (MiscBiosVendor) {
-  CHAR8               *OptionalStrStart;
-  CHAR8               *StrStart;
-  UINTN               VendorStrLen;
-  UINTN               VerStrLen;
-  UINTN               DateStrLen;
-  UINTN               BiosPhysicalSize;
-  CHAR16              *Vendor;
-  CHAR16              *Version;
-  CHAR16              *ReleaseDate;
-  CHAR16              *Char16String;
-  EFI_STATUS          Status;
-  EFI_STRING_ID       TokenToUpdate;
-  EFI_STRING_ID       TokenToGet;
-  SMBIOS_TABLE_TYPE0  *SmbiosRecord;
-  SMBIOS_TABLE_TYPE0  *InputData;
+  CHAR8                      *OptionalStrStart;
+  CHAR8                      *StrStart;
+  UINTN                      VendorStrLen;
+  UINTN                      VerStrLen;
+  UINTN                      DateStrLen;
+  UINTN                      BiosPhysicalSize;
+  CHAR16                     *Vendor;
+  CHAR16                     *Version;
+  CHAR16                     *ReleaseDate;
+  CHAR16                     *Char16String;
+  EFI_STATUS                 Status;
+  EFI_STRING_ID              TokenToUpdate;
+  EFI_STRING_ID              TokenToGet;
+  SMBIOS_TABLE_TYPE0         *SmbiosRecord;
+  SMBIOS_TABLE_TYPE0         *InputData;
+  MISC_BIOS_CHARACTERISTICS  *BiosChar;
 
   //
   // First check for invalid parameters.
@@ -258,6 +259,11 @@ SMBIOS_MISC_TABLE_FUNCTION (MiscBiosVendor) {
                                                          (PcdGet16 (PcdEmbeddedControllerFirmwareRelease) >> 8);
   SmbiosRecord->EmbeddedControllerFirmwareMinorRelease = (UINT16)
                                                          (PcdGet16 (PcdEmbeddedControllerFirmwareRelease) & 0xFF);
+
+  BiosChar                                           = (MISC_BIOS_CHARACTERISTICS *)(FixedPcdGetPtr (PcdBiosCharacteristics));
+  SmbiosRecord->BiosCharacteristics                  = *(BiosChar);
+  SmbiosRecord->BIOSCharacteristicsExtensionBytes[0] = (UINT8)(PcdGet16 (PcdBiosCharacteristicsExtension) & 0xFF);
+  SmbiosRecord->BIOSCharacteristicsExtensionBytes[1] = (UINT8)(PcdGet16 (PcdBiosCharacteristicsExtension) >> 8);
 
   OptionalStrStart = (CHAR8 *)(SmbiosRecord + 1);
   UnicodeStrToAsciiStrS (Vendor, OptionalStrStart, VendorStrLen + 1);

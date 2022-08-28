@@ -189,7 +189,23 @@
   gArmTokenSpaceGuid.PcdProcessorSerialNumber|L""|VOID*|0x30000073
   gArmTokenSpaceGuid.PcdProcessorAssetTag|L""|VOID*|0x30000074
   gArmTokenSpaceGuid.PcdProcessorPartNumber|L""|VOID*|0x30000075
-
+  ## Enable/Disable the SMBIOS Type00 Bios characteristics. The default
+  #  value is currently enabling the below characteristics.
+  #  PlugAndPlayIsSupported | BiosIsUpgradable | BiosShadowingAllowed |
+  #  BootFromCdIsSupported | SelectableBootIsSupported |
+  #  This Structured PCD is associated with MISC_BIOS_CHARACTERISTICS
+  #  structure that is defined in Include/IndustryStandard/SmBios.h
+  #  @Prompt Enable/Disable Type00 Bios Characteristics.
+  gArmTokenSpaceGuid.PcdBiosCharacteristics|{0x80, 0x9A, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00}|MISC_BIOS_CHARACTERISTICS|0x30000076 {
+    <Packages>
+      ArmPkg/ArmPkg.dec
+    <HeaderFiles>
+      IndustryStandard/SmBios.h
+  }
+  # This PCD is associated with the BIOSCharacteristicsExtensionBytes[2] field
+  # in the SMBIOS Type00 structure defined in Include/IndustryStandard/SmBios.h
+  # This PCD is initialized to the same values as defined in the data.c
+  gArmTokenSpaceGuid.PcdBiosCharacteristicsExtension|0x0C01|UINT16|0x30000077
   #
   # ARM L2x0 PCDs
   #
