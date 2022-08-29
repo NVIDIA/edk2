@@ -61,6 +61,10 @@ typedef enum ArmObjectID {
   EArmObjLpiInfo,                      ///< 37 - Lpi Info
   EArmObjPciAddressMapInfo,            ///< 38 - Pci Address Map Info
   EArmObjPciInterruptMapInfo,          ///< 39 - Pci Interrupt Map Info
+  EArmObjRmr,                          ///< 40 - Reserved Memory Range Node
+  EArmObjMemoryRangeDescriptor,        ///< 41 - Memory Range Descriptor
+  EArmObjMscNodeInfo,                  ///< 40 - Msc Memory System Controller Node Info
+  EArmObjResNodeInfo,                  ///< 41 - Res Resource Node Info
   EArmObjMax
 } EARM_OBJECT_ID;
 
@@ -1005,6 +1009,112 @@ typedef struct CmArmPciInterruptMapInfo {
   */
   CM_ARM_GENERIC_INTERRUPT    IntcInterrupt;
 } CM_ARM_PCI_INTERRUPT_MAP_INFO;
+
+/** A structure that describes the
+    RMR node for the Platform.
+
+    ID: EArmObjRmr
+*/
+typedef struct CmArmRmrNode {
+  /// An unique token used to identify this object
+  CM_OBJECT_TOKEN    Token;
+  /// Number of ID mappings
+  UINT32             IdMappingCount;
+  /// Reference token for the ID mapping array
+  CM_OBJECT_TOKEN    IdMappingToken;
+
+  /// Unique identifier for this node.
+  UINT32             Identifier;
+
+  /// Reserved Memory Range flags.
+  UINT32             Flags;
+
+  /// Memory range descriptor count.
+  UINT32             MemRangeDescCount;
+  /// Reference token for the Memory Range descriptor array
+  CM_OBJECT_TOKEN    MemRangeDescToken;
+} CM_ARM_RMR_NODE;
+
+/** A structure that describes the
+    Memory Range descriptor.
+
+    ID: EArmObjMemoryRangeDescriptor
+*/
+typedef struct CmArmRmrDescriptor {
+  /// Base address of Reserved Memory Range,
+  /// aligned to a page size of 64K.
+  UINT64    BaseAddress;
+
+  /// Length of the Reserved Memory range.
+  /// Must be a multiple of the page size of 64K.
+  UINT64    Length;
+} CM_ARM_MEMORY_RANGE_DESCRIPTOR;
+
+/** A structure that describes Memory System Controller Node.
+
+    MPAM Memory System Component Nodes are described by
+    this object.
+
+  ID: EArmObjMscNodeInfo
+*/
+typedef struct CmArmMscNodeInfo {
+  /// An unique token used to identify this object
+  CM_OBJECT_TOKEN      Token;
+
+  /// MPAM Base Address
+  UINT64               BaseAddress;
+  /// MMIO Size
+  UINT32               MmioSize;
+  /// Overflow Interrupt
+  UINT32               OverflowInterrupt;
+  /// Overflow Interrupt Flags
+  UINT32               OverflowInterruptFlags;
+  /// Overflow Interrupt Affinity
+  UINT32               OverflowInterruptAff;
+  /// Error Interrupt
+  UINT32               ErrorInterrupt;
+  /// Error Interrupt Flags
+  UINT32               ErrorInterruptFlags;
+  /// Error Interrupt Affinity
+  UINT32               ErrorInterruptAff;
+  /// Not Ready Signal time
+  UINT32               MaxNRdyUsec;
+  /// Linked Device HWID
+  UINT64               LinkedDeviceHwId;
+  /// Linked Device Instance ID
+  UINT32               LinkedDeviceInstanceHwId;
+  /// Number of Resource nodes
+  UINT32               NumResourceNodes;
+  /// Reference token for the list of resource nodes
+  //CM_OBJECT_TOKEN    ResourceNodeListToken;
+
+} CM_ARM_MSC_NODE_INFO;
+
+/** A structure that describes Memory System Controller Node.
+
+    MPAM Memory System Component Nodes are described by
+    this object.
+
+  ID: EArmObjResNodeInfo
+*/
+typedef struct CmArmResNodeInfo {
+  /// An unique token used to identify this object
+  CM_OBJECT_TOKEN    Token;
+
+  /// Identifier
+  UINT32             Identifier;
+  /// RIS Index
+  UINT8              RisIndex;
+  /// Locator Type
+  UINT8              LocatorType;
+  /// Locator
+  UINT64             Locator;
+  /// Num functional dependencies
+  UINT32             NumFuncDep;
+  /// Reference token for the list of resource nodes
+  CM_OBJECT_TOKEN    FuncDepListToken;
+
+} CM_ARM_RESOURCE_NODE_INFO;
 
 #pragma pack()
 
