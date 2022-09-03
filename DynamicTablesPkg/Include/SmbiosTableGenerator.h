@@ -168,6 +168,48 @@ typedef EFI_STATUS (*SMBIOS_TABLE_GENERATOR_FREE_TABLE) (
   IN        SMBIOS_STRUCTURE                              **Table
   );
 
+/** This function pointer describes the interface to SMBIOS table build
+    functions provided by the SMBIOS table generator and called by the
+    Table Manager to build an SMBIOS table.
+
+  @param [in]  Generator       Pointer to the SMBIOS table generator.
+  @param [in]  SmbiosTableInfo Pointer to the SMBIOS table information.
+  @param [in]  CfgMgrProtocol  Pointer to the Configuration Manager
+                               Protocol interface.
+  @param [out] Table           Pointer to the generated SMBIOS table.
+
+  @return EFI_SUCCESS  If the table is generated successfully or other
+                        failure codes as returned by the generator.
+**/
+typedef EFI_STATUS (*SMBIOS_TABLE_GENERATOR_BUILD_TABLEEX) (
+  IN  CONST SMBIOS_TABLE_GENERATOR                        *Generator,
+  IN        CM_STD_OBJ_SMBIOS_TABLE_INFO          *CONST  SmbiosTableInfo,
+  IN  CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL  *CONST  CfgMgrProtocol,
+  OUT       SMBIOS_STRUCTURE                              ***Table,
+  OUT       UINTN                                 *CONST  TableCount
+  );
+
+/** This function pointer describes the interface to used by the
+    Table Manager to give the generator an opportunity to free
+    any resources allocated for building the SMBIOS table.
+
+  @param [in]  Generator       Pointer to the SMBIOS table generator.
+  @param [in]  SmbiosTableInfo Pointer to the SMBIOS table information.
+  @param [in]  CfgMgrProtocol  Pointer to the Configuration Manager
+                               Protocol interface.
+  @param [in]  Table           Pointer to the generated SMBIOS table.
+
+  @return  EFI_SUCCESS If freed successfully or other failure codes
+                        as returned by the generator.
+**/
+typedef EFI_STATUS (*SMBIOS_TABLE_GENERATOR_FREE_TABLEEX) (
+  IN  CONST SMBIOS_TABLE_GENERATOR                        *Generator,
+  IN  CONST CM_STD_OBJ_SMBIOS_TABLE_INFO          *CONST  SmbiosTableInfo,
+  IN  CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL  *CONST  CfgMgrProtocol,
+  IN        SMBIOS_STRUCTURE                              ***Table,
+  IN  CONST UINTN                                          TableCount
+  );
+
 /** The SMBIOS_TABLE_GENERATOR structure provides an interface that the
     Table Manager can use to invoke the functions to build SMBIOS tables.
 */
@@ -189,6 +231,14 @@ typedef struct SmbiosTableGenerator {
       allocated for building the SMBIOS table.
   */
   SMBIOS_TABLE_GENERATOR_FREE_TABLE     FreeTableResources;
+
+  /// SMBIOS table extended build function pointer.
+  SMBIOS_TABLE_GENERATOR_BUILD_TABLEEX  BuildSmbiosTableEx;
+
+  /** The function to free any resources
+      allocated for building the SMBIOS table.
+  */
+  SMBIOS_TABLE_GENERATOR_FREE_TABLEEX   FreeTableResourcesEx;
 } SMBIOS_TABLE_GENERATOR;
 
 /** Register SMBIOS table factory generator.
