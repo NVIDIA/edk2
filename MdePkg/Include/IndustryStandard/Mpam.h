@@ -22,12 +22,12 @@
 ///
 /// Interrupt Flags
 ///
-#define EFI_ACPI_MPAM_LEVEL_TRIG_INTERRUPT_MODE      0x0
-#define EFI_ACPI_MPAM_EDGE_TRIG_INTERRUPT_MODE       0x1
-#define EFI_ACPI_MPAM_WIRED_INTERRUPT_TYPE           0x0
-#define EFI_ACPI_MPAM_PROC_INTR_AFF_TYPE             0x0
-#define EFI_ACPI_MPAM_PROC_CONTAINER_INTR_AFF_TYPE   0x8
-#define EFI_ACPI_MPAM_AFFINITY_VALID                 0x10
+#define EFI_ACPI_MPAM_LEVEL_TRIG_INTERRUPT_MODE     0x0
+#define EFI_ACPI_MPAM_EDGE_TRIG_INTERRUPT_MODE      0x1
+#define EFI_ACPI_MPAM_WIRED_INTERRUPT_TYPE          0x0
+#define EFI_ACPI_MPAM_PROC_INTR_AFF_TYPE            0x0
+#define EFI_ACPI_MPAM_PROC_CONTAINER_INTR_AFF_TYPE  0x8
+#define EFI_ACPI_MPAM_AFFINITY_VALID                0x10
 
 #pragma pack(1)
 
@@ -36,9 +36,6 @@
 ///
 typedef struct {
   EFI_ACPI_DESCRIPTION_HEADER    Header;
-  UINT32                         NumNodes;
-  UINT32                         NodeOffset;
-  UINT32                         Reserved;
 } EFI_ACPI_6_4_MEMORY_SYSTEM_RESOURCE_PARTITIONING_MONITORING_TABLE_HEADER;
 
 ///
