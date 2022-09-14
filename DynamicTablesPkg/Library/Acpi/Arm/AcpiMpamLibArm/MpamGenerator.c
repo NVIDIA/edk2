@@ -59,23 +59,57 @@ GET_OBJECT_LIST (
   );
 
 /**
+  This macro expands to a function that retrieves the Functional Dependency List
+  information from the Configuration Manager.
+*/
+GET_OBJECT_LIST (
+  EObjNameSpaceArm,
+  EArmObjFuncDepInfo,
+  CM_ARM_FUNC_DEP_INFO
+  );
+
+/**
   Returns the size of the MPAM Memory System Controller (MSC) Node
 
   @param [in]  Node     Pointer to MSC Node Info CM object
+
+  @param [in]  Node     Pointer to Resource Node Info CM object
+
+  @param [in]  Node     Pointer to Resource Node List indexer
 
   @retval               Size of the MSC Node in bytes.
 **/
 STATIC
 UINT64
 GetMscNodeSize (
-  IN  CONST CM_ARM_MSC_NODE_INFO  *MscNode
+  IN  CONST CM_ARM_MSC_NODE_INFO       *MscNode,
+  IN  CONST CM_ARM_RESOURCE_NODE_INFO  *ResourceNodeList,
+  IN        UINT32                     *ResourceNodeIndexer
   )
 {
+  UINT64  MscNodeSize;
+  UINT8   ResourceNodeCtr;
+
   ASSERT (MscNode != NULL);
 
   // <size of Memory System Controller Node>
-  return (UINT32)(sizeof (EFI_ACPI_6_4_MPAM_MSC_NODE) +
-                  MscNode->NumResourceNodes * sizeof (EFI_ACPI_6_4_MPAM_RESOURCE_NODE));
+  // Size of MSC node is size of header, plus size of all
+  // resource nodes in this MSC node
+  MscNodeSize = sizeof (EFI_ACPI_6_4_MPAM_MSC_NODE);
+
+  if (MscNode->NumResourceNodes > 0) {
+    ASSERT (ResourceNodeList != NULL);
+  }
+
+  // Loop for each Resource node
+  for (ResourceNodeCtr = 0; ResourceNodeCtr < MscNode->NumResourceNodes; ResourceNodeCtr++) {
+    // Add size of Func Dep List if any to the resource node size
+    MscNodeSize += sizeof (EFI_ACPI_6_4_MPAM_RESOURCE_NODE) +
+                   ResourceNodeList[*ResourceNodeIndexer].NumFuncDep * sizeof (EFI_ACPI_6_4_MPAM_FUNC_DEP_NODE);
+    (*ResourceNodeIndexer)++;
+  }
+
+  return MscNodeSize;
 }
 
 /** Returns the total size required for the MSC and
@@ -85,11 +119,14 @@ GetMscNodeSize (
     and also populates the Node Indexer array with offsets for the
     individual nodes.
 
-    @param [in]       NodeStartOffset Offset from the start of the
-                                      MPAM where this node group starts.
-    @param [in]       NodeList        Pointer to MSC Group node list.
-    @param [in]       NodeCount       Count of the MSC Group nodes.
-    @param [in, out]  NodeIndexer     Pointer to the next Node Indexer.
+    @param [in]       NodeStartOffset   Offset from the start of the
+                                        MPAM where this node group starts.
+    @param [in]       MscNodeList       Pointer to MSC Group node list.
+    @param [in]       MscNodeCount      Count of the MSC Group nodes.
+    @param [in]       ResourceNodeList  Pointer to MSC Group node list.
+    @param [in]       ResourceNodeCount Count of the MSC Group nodes.
+    @param [in]       FuncDepList       Pointer to Functional Dependency list.
+    @param [in, out]  NodeIndexer       Pointer to the next Node Indexer.
 
     @retval Total size of the MSC Group Nodes.
 **/
@@ -97,19 +134,27 @@ STATIC
 UINT64
 GetSizeofMscGroupNodes (
   IN      CONST UINT32                         NodeStartOffset,
-  IN      CONST CM_ARM_MSC_NODE_INFO           *NodeList,
-  IN            UINT32                         NodeCount,
+  IN      CONST CM_ARM_MSC_NODE_INFO           *MscNodeList,
+  IN            UINT32                         MscNodeCount,
+  IN      CONST CM_ARM_RESOURCE_NODE_INFO      *ResourceNodeList,
+  IN            UINT32                         ResourceNodeCount,
+  IN      CONST CM_ARM_FUNC_DEP_INFO           *FuncDepList,
   IN OUT        MPAM_NODE_INDEXER     **CONST  NodeIndexer
   )
 {
   UINT64  Size;
+  UINT32  ResourceNodeIndexer;
+  UINT64  MscNodeSize;
 
-  ASSERT (NodeList != NULL);
+  ASSERT (MscNodeList != NULL);
+
+  ResourceNodeIndexer = 0;
+  MscNodeSize         = 0;
 
   Size = 0;
-  while (NodeCount-- != 0) {
-    (*NodeIndexer)->Token  = NodeList->Token;
-    (*NodeIndexer)->Object = (VOID *)NodeList;
+  while (MscNodeCount-- != 0) {
+    (*NodeIndexer)->Token  = MscNodeList->Token;
+    (*NodeIndexer)->Object = (VOID *)MscNodeList;
     (*NodeIndexer)->Offset = (UINT32)(Size + NodeStartOffset);
     DEBUG ((
       DEBUG_INFO,
@@ -120,10 +165,11 @@ GetSizeofMscGroupNodes (
       (*NodeIndexer)->Offset
       ));
 
-    Size += GetMscNodeSize (NodeList);
+    MscNodeSize = GetMscNodeSize (MscNodeList, ResourceNodeList, &ResourceNodeIndexer);
+    Size       += MscNodeSize;
 
     (*NodeIndexer)++;
-    NodeList++;
+    MscNodeList++;
   }
 
   return Size;
@@ -137,13 +183,17 @@ GetSizeofMscGroupNodes (
     @param [in]     Mpam             Pointer to MPAM table structure.
     @param [in]     NodesStartOffset Offset for the start of the Msc Group
                                      Nodes.
-    @param [in]     NodeList         Pointer to an array of Msc Group Node
+    @param [in]     MscNodeList      Pointer to an array of Msc Group Node
                                      Objects.
     @param [in]     NodeCount        Number of Msc Group Node Objects.
 
+    @param [in]     ResourceNodeList Pointer to an array of Resource Nodes
+
+    @param [in]     FuncDepList      Pointer to the Functional Dep list
+
     @retval EFI_SUCCESS           Table generated successfully.
     @retval EFI_INVALID_PARAMETER A parameter is invalid.
-    @retval EFI_NOT_FOUND         The required object was not found.
+
 **/
 STATIC
 EFI_STATUS
@@ -152,39 +202,29 @@ AddMscNodes (
   IN      CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL                                       *CONST  CfgMgrProtocol,
   IN      CONST EFI_ACPI_6_4_MEMORY_SYSTEM_RESOURCE_PARTITIONING_MONITORING_TABLE_HEADER           *Mpam,
   IN      CONST UINT32                                                                             NodesStartOffset,
-  IN      CONST CM_ARM_MSC_NODE_INFO                                                               *NodeList,
-  IN            UINT32                                                                             NodeCount
+  IN      CONST CM_ARM_MSC_NODE_INFO                                                               *MscNodeList,
+  IN            UINT32                                                                             MscNodeCount,
+  IN      CONST CM_ARM_RESOURCE_NODE_INFO                                                          *ResourceNodeList,
+  IN      CONST CM_ARM_FUNC_DEP_INFO                                                               *FuncDepList
   )
 {
   EFI_STATUS                       Status;
   EFI_ACPI_6_4_MPAM_MSC_NODE       *MscNode;
   EFI_ACPI_6_4_MPAM_RESOURCE_NODE  *ResourceNodeArray;
-  CM_ARM_RESOURCE_NODE_INFO        *ResourceNodeList;
-  UINT64                           NodeLength;
-  UINT32                           ResourceNodeCount;
+  EFI_ACPI_6_4_MPAM_FUNC_DEP_NODE  *FuncDepArray;
+
+  UINT64  NodeLength;
+  UINT32  NumResNodesInMsc;
+  UINT32  ResourceNodeIndexer;
+  UINT32  NumFuncDepInRes;
 
   ASSERT (Mpam != NULL);
+  ResourceNodeIndexer = 0;
 
   MscNode = (EFI_ACPI_6_4_MPAM_MSC_NODE *)((UINT8 *)Mpam + NodesStartOffset);
 
-  // Get the Resource Node info to update the MPAM MSC node
-  Status = GetEArmObjResNodeInfo (
-             CfgMgrProtocol,
-             CM_NULL_TOKEN,
-             &ResourceNodeList,
-             &ResourceNodeCount
-             );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((
-      DEBUG_ERROR,
-      "ERROR: MPAM: Failed to add resource nodes info. Status = %r\n",
-      Status
-      ));
-    return Status;
-  }
-
-  while (NodeCount-- != 0) {
-    NodeLength = GetMscNodeSize (NodeList);
+  while (MscNodeCount-- != 0) {
+    NodeLength = GetMscNodeSize (MscNodeList, ResourceNodeList, &ResourceNodeIndexer);
 
     if (NodeLength > MAX_UINT16) {
       Status = EFI_INVALID_PARAMETER;
@@ -200,28 +240,31 @@ AddMscNodes (
     // Populate the node header
     MscNode->Length                   = (UINT16)NodeLength;
     MscNode->Reserved                 = EFI_ACPI_RESERVED_WORD;
-    MscNode->Identifier               = NodeList->Identifier;
-    MscNode->BaseAddress              = NodeList->BaseAddress;
-    MscNode->MmioSize                 = NodeList->MmioSize;
-    MscNode->OverflowInterrupt        = NodeList->OverflowInterrupt;
-    MscNode->OverflowInterruptFlags   = NodeList->OverflowInterruptFlags;
+    MscNode->Identifier               = MscNodeList->Identifier;
+    MscNode->BaseAddress              = MscNodeList->BaseAddress;
+    MscNode->MmioSize                 = MscNodeList->MmioSize;
+    MscNode->OverflowInterrupt        = MscNodeList->OverflowInterrupt;
+    MscNode->OverflowInterruptFlags   = MscNodeList->OverflowInterruptFlags;
     MscNode->Reserved1                = EFI_ACPI_RESERVED_DWORD;
-    MscNode->OverflowInterruptAff     = NodeList->OverflowInterruptAff;
-    MscNode->ErrorInterrupt           = NodeList->ErrorInterrupt;
-    MscNode->ErrorInterruptFlags      = NodeList->ErrorInterruptFlags;
+    MscNode->OverflowInterruptAff     = MscNodeList->OverflowInterruptAff;
+    MscNode->ErrorInterrupt           = MscNodeList->ErrorInterrupt;
+    MscNode->ErrorInterruptFlags      = MscNodeList->ErrorInterruptFlags;
     MscNode->Reserved2                = EFI_ACPI_RESERVED_DWORD;
-    MscNode->ErrorInterruptAff        = NodeList->ErrorInterruptAff;
-    MscNode->MaxNRdyUsec              = NodeList->MaxNRdyUsec;
-    MscNode->LinkedDeviceHwId         = NodeList->LinkedDeviceHwId;
-    MscNode->LinkedDeviceInstanceHwId = NodeList->LinkedDeviceInstanceHwId;
-    MscNode->NumResourceNodes         = NodeList->NumResourceNodes;
+    MscNode->ErrorInterruptAff        = MscNodeList->ErrorInterruptAff;
+    MscNode->MaxNRdyUsec              = MscNodeList->MaxNRdyUsec;
+    MscNode->LinkedDeviceHwId         = MscNodeList->LinkedDeviceHwId;
+    MscNode->LinkedDeviceInstanceHwId = MscNodeList->LinkedDeviceInstanceHwId;
+    MscNode->NumResourceNodes         = MscNodeList->NumResourceNodes;
 
     // ResourceNode List for each MSC
     if (MscNode->NumResourceNodes > 0) {
+      NumResNodesInMsc = MscNode->NumResourceNodes;
+
       // Resource Node array for this Msc node
       ResourceNodeArray = (EFI_ACPI_6_4_MPAM_RESOURCE_NODE *)((UINT8 *)MscNode + sizeof (EFI_ACPI_6_4_MPAM_MSC_NODE));
+
       // Adding Resource Node content
-      while ( MscNode->NumResourceNodes-- != 0 ) {
+      while (NumResNodesInMsc-- != 0) {
         ResourceNodeArray->Identifier  = ResourceNodeList->Identifier;
         ResourceNodeArray->RisIndex    = ResourceNodeList->RisIndex;
         ResourceNodeArray->Reserved1   = EFI_ACPI_RESERVED_WORD;
@@ -230,25 +273,36 @@ AddMscNodes (
         ResourceNodeArray->Locator2    = ResourceNodeList->Locator2;
         ResourceNodeArray->NumFuncDep  = ResourceNodeList->NumFuncDep;
 
-        if (EFI_ERROR (Status)) {
-          DEBUG ((
-            DEBUG_ERROR,
-            "ERROR: MPAM: Failed to add Resource Node List. Status = %r\n",
-            Status
-            ));
-          return Status;
+        if (ResourceNodeArray->NumFuncDep > 0) {
+          ASSERT (FuncDepList != NULL);
         }
 
-        // func dep
+        // Functional Dependencies for each Resource Node
+        NumFuncDepInRes = ResourceNodeArray->NumFuncDep;
+        FuncDepArray    = (EFI_ACPI_6_4_MPAM_FUNC_DEP_NODE *)((UINT8 *)ResourceNodeArray + sizeof (EFI_ACPI_6_4_MPAM_RESOURCE_NODE));
 
+        // Adding the Func Dep List content
+        while (NumFuncDepInRes-- != 0) {
+          FuncDepArray->Producer  = FuncDepList->Producer;
+          FuncDepArray->Reserved1 = EFI_ACPI_RESERVED_DWORD;
+
+          FuncDepList++;
+          FuncDepArray++;
+        }
+
+        // Next Resource Node entry
+        ResourceNodeArray = (EFI_ACPI_6_4_MPAM_RESOURCE_NODE *)((UINT8 *)ResourceNodeArray +
+                                                                sizeof (EFI_ACPI_6_4_MPAM_RESOURCE_NODE) +
+                                                                ResourceNodeArray->NumFuncDep * sizeof (EFI_ACPI_6_4_MPAM_FUNC_DEP_NODE));
         ResourceNodeList++;
-        ResourceNodeArray++;
+        // Reset the ResourceNodeIndexer when ResourceNodeList is advanced
+        ResourceNodeIndexer = 0;
       }
     }
 
     // Next MSC Node
     MscNode = (EFI_ACPI_6_4_MPAM_MSC_NODE *)((UINT8 *)MscNode + MscNode->Length);
-    NodeList++;
+    MscNodeList++;
   } // Msc Node
 
   return EFI_SUCCESS;
@@ -294,10 +348,14 @@ BuildMpamTable (
 
   UINT32  MscNodeCount;
   UINT32  MscNodeOffset;
+  UINT32  ResourceNodeCount;
+  UINT32  FuncDepCount;
 
   EFI_ACPI_6_4_MEMORY_SYSTEM_RESOURCE_PARTITIONING_MONITORING_TABLE_HEADER  *Mpam;
   ACPI_MPAM_GENERATOR                                                       *Generator;
   CM_ARM_MSC_NODE_INFO                                                      *MscNodeList;
+  CM_ARM_RESOURCE_NODE_INFO                                                 *ResourceNodeList;
+  CM_ARM_FUNC_DEP_INFO                                                      *FuncDepList;
   MPAM_NODE_INDEXER                                                         *NodeIndexer;
 
   ASSERT (
@@ -332,8 +390,7 @@ BuildMpamTable (
   Generator = (ACPI_MPAM_GENERATOR *)This;
   *Table    = NULL;
 
-  // Get the Memory System Controller Node info and update the MPAM
-  // structure count with MSC Node count (Type 0)
+  // Get the Memory System Controller Node info to update the MPAM table
   Status = GetEArmObjMscNodeInfo (
              CfgMgrProtocol,
              CM_NULL_TOKEN,
@@ -351,6 +408,38 @@ BuildMpamTable (
 
   MpamNodeCount           = MscNodeCount;
   Generator->MscNodeCount = MscNodeCount;
+
+  // Get the Resource Node info to update the MPAM MSC node
+  Status = GetEArmObjResNodeInfo (
+             CfgMgrProtocol,
+             CM_NULL_TOKEN,
+             &ResourceNodeList,
+             &ResourceNodeCount
+             );
+  if (EFI_ERROR (Status) && (Status != EFI_NOT_FOUND)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "ERROR: MPAM: Failed to get resource nodes info. Status = %r\n",
+      Status
+      ));
+    goto error_handler;
+  }
+
+  // Get the Functional Dependency List info to update the Resource node
+  Status = GetEArmObjFuncDepInfo (
+             CfgMgrProtocol,
+             CM_NULL_TOKEN,
+             &FuncDepList,
+             &FuncDepCount
+             );
+  if (EFI_ERROR (Status) && (Status != EFI_NOT_FOUND)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "ERROR: MPAM: Failed to get functional dependecies info. Status = %r\n",
+      Status
+      ));
+    goto error_handler;
+  }
 
   // Allocate Node Indexer array
   NodeIndexer = (MPAM_NODE_INDEXER *)AllocateZeroPool (
@@ -382,6 +471,9 @@ BuildMpamTable (
                  MscNodeOffset,
                  MscNodeList,
                  Generator->MscNodeCount,
+                 ResourceNodeList,
+                 ResourceNodeCount,
+                 FuncDepList,
                  &NodeIndexer
                  );
     if (NodeSize > MAX_UINT32) {
@@ -466,20 +558,17 @@ BuildMpamTable (
     goto error_handler;
   }
 
-  // Update MPAM table
-  Mpam->NumNodes   = MscNodeCount;
-  Mpam->NodeOffset = sizeof (EFI_ACPI_6_4_MEMORY_SYSTEM_RESOURCE_PARTITIONING_MONITORING_TABLE_HEADER);
-  Mpam->Reserved   = EFI_ACPI_RESERVED_DWORD;
-
   // Add MSC Nodes to the generated table
-  if (Mpam->NumNodes != 0) {
+  if (MscNodeCount != 0) {
     Status = AddMscNodes (
                This,
                CfgMgrProtocol,
                Mpam,
                MscNodeOffset,
                MscNodeList,
-               MscNodeCount
+               MscNodeCount,
+               ResourceNodeList,
+               FuncDepList
                );
     if (EFI_ERROR (Status)) {
       DEBUG ((
@@ -507,7 +596,7 @@ error_handler:
   return Status;
 }
 
-/** Free any resources allocated for constructing the MPAM
+/** Free any resources allocated for constructing the MPAM Table
 
   @param [in]      This           Pointer to the table generator.
   @param [in]      AcpiTableInfo  Pointer to the ACPI Table Info.
