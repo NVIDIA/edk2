@@ -840,8 +840,6 @@ typedef struct CmArmMscNodeInfo {
   UINT32             LinkedDeviceInstanceHwId;
   /// Number of Resource nodes
   UINT32             NumResourceNodes;
-  /// Reference token for the list of resource nodes
-  // CM_OBJECT_TOKEN    ResourceNodeListToken;
 } CM_ARM_MSC_NODE_INFO;
 
 typedef struct {
@@ -870,8 +868,6 @@ typedef struct CmArmResNodeInfo {
   MPAM_LOCATOR       Locator;
   /// Num functional dependencies
   UINT32             NumFuncDep;
-  /// Reference token for the list of resource nodes
-  CM_OBJECT_TOKEN    FuncDepListToken;
 } CM_ARM_RESOURCE_NODE_INFO;
 
 /** A structure that describes Functional Dependencies
