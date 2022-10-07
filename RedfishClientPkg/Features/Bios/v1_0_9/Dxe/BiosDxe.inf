@@ -1,0 +1,52 @@
+## @file
+#
+#  (C) Copyright 2020-2022 Hewlett Packard Enterprise Development LP<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+
+[Defines]
+  INF_VERSION               = 0x00010005
+  BASE_NAME                 = BiosDxe
+  FILE_GUID                 = d6c99bb0-ca18-45aa-8be6-a60c3ba5ecd8
+  MODULE_TYPE               = DXE_DRIVER
+  VERSION_STRING            = 1.0
+  ENTRY_POINT               = RedfishResourceEntryPoint
+  UNLOAD_IMAGE              = RedfishResourceUnload
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  RedfishPkg/RedfishPkg.dec
+  RedfishClientPkg/RedfishClientPkg.dec
+
+[Sources]
+  ../Common/BiosCommon.h
+  ../Common/BiosCommon.c
+  BiosDxe.c
+
+[LibraryClasses]
+  BaseMemoryLib
+  DebugLib
+  EdkIIRedfishResourceConfigLib
+  RedfishLib
+  RedfishFeatureUtilityLib
+  RedfishVersionLib
+  RedfishResourceIdentifyLib
+  UefiLib
+  UefiDriverEntryPoint
+
+[Protocols]
+  gEdkIIRedfishConfigHandlerProtocolGuid          ## PRODUCED
+  gEfiRestJsonStructureProtocolGuid               ## CONSUMED
+  gEdkIIRedfishResourceConfigProtocolGuid         ## PRODUCED
+  gEdkIIRedfishFeatureProtocolGuid                ## CONSUMED
+
+[Pcd]
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdMaxRedfishSchemaStringSize
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdMaxRedfishSchemaVersionSize
+
+[Depex]
+  TRUE

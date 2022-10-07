@@ -1,0 +1,49 @@
+## @file
+#
+#  (C) Copyright 2022 Hewlett Packard Enterprise Development LP<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = EdkIIRedfishResourceConfigLib
+  FILE_GUID                      = B41884F6-693B-4ADE-9558-5C220A24A025
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = EdkIIRedfishResourceConfigLib| DXE_DRIVER
+  CONSTRUCTOR                    = RedfishResourceConfigConstructor
+  DESTRUCTOR                     = RedfishResourceConfigDestructor
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 EBC
+#
+
+[Sources]
+  EdkIIRedfishResourceConfigLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  RedfishPkg/RedfishPkg.dec
+  RedfishClientPkg/RedfishClientPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  UefiBootServicesTableLib
+  BaseMemoryLib
+  PcdLib
+  MemoryAllocationLib
+  RedfishFeatureUtilityLib
+  RedfishPlatformConfigLib
+
+[Protocols]
+  gEdkIIRedfishResourceConfigProtocolGuid   ## CONSUMES ##
+  gEdkIIRedfishFeatureInterchangeDataProtocolGuid ## CONSUMES ##
+
+[Pcd]
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdMaxRedfishSchemaStringSize
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdMaxRedfishSchemaVersionSize
+

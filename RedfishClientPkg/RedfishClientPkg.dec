@@ -1,0 +1,63 @@
+## @file
+# Redfish Client Package
+#
+# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP<BR>
+#
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  DEC_SPECIFICATION = 0x0001001b
+  PACKAGE_NAME      = RedfishClientPkg
+  PACKAGE_GUID      = 61B1638B-1DF9-4052-9468-382FC164AA85
+  PACKAGE_VERSION   = 1.0
+
+[Includes]
+  Include
+
+[Includes.Common.Private]
+  PrivateInclude                # Private header files
+  PrivateInclude/Crt            # Private header files for C RTL.
+
+[LibraryClasses]
+  RedfishFeatureUtilityLib|Include/Library/RedfishFeatureUtilityLib.h
+  RedfishResourceIdentifyLib|Include/Library/RedfishResourceIdentifyLib.h
+  EdkIIRedfishResourceConfigLib|Include/Library/EdkIIRedfishResourceConfigLib.h
+  RedfishEventLib|Include/Library/RedfishEventLib.h
+  RedfishVersionLib|Include/Library/RedfishVersionLib.h
+
+[LibraryClasses.Common.Private]
+  ##  @libraryclass Redfish Helper Library
+  #   Library provides Redfish helper functions.
+  RedfishLib|PrivateInclude/Library/RedfishLib.h
+
+[Protocols]
+  ## Include/Protocol/EdkIIRedfishFeature.h
+  gEdkIIRedfishFeatureProtocolGuid        = { 0x785CC694, 0x4930, 0xEFBF, { 0x2A, 0xCB, 0xA4, 0xB6, 0xA1, 0xCC, 0xAA, 0x34 } }
+  ## Include/Protocol/EdkIIRedfishResourceConfigProtocol.h
+  gEdkIIRedfishResourceConfigProtocolGuid = { 0x6f164c68, 0xfb09, 0x4646, { 0xa8, 0xd3, 0x24, 0x11, 0x5d, 0xab, 0x3e, 0xe7 } }
+  ## Include/Protocol/EdkIIRedfishETagProtocol.h
+  gEdkIIRedfishETagProtocolGuid           = { 0x5706d368, 0xaf66, 0x48f5, { 0x89, 0xfc, 0xa6, 0x61, 0xce, 0xb5, 0xa6, 0xa9 } }
+  ## Include/Protocol/EdkIIRedfishConfigLangMapProtocol.h
+  gEdkIIRedfishConfigLangMapProtocolGuid    = { 0x1d9ba9fe, 0x5d5a, 0x4b66, {0x83, 0x5b, 0xe2, 0x5d, 0x13, 0x93, 0x4a, 0x9c } }
+  ## Include/Protocol/EdkIIRedfishInterchangeData.h
+  gEdkIIRedfishFeatureInterchangeDataProtocolGuid = { 0x4B8FF71C, 0x4A7B, 0x9478, { 0xB7, 0x81, 0x35, 0x9B, 0x0A, 0xF2, 0x00, 0x91 } }
+
+[Guids]
+  ## Include/Guid/RedfishClientPkgTokenSpace.h
+  gEfiRedfishClientPkgTokenSpaceGuid    = { 0x8c444dae, 0x728b, 0x48ee, { 0x9e, 0x19, 0x8f, 0x0a, 0x3d, 0x4e, 0x9c, 0xc8 } }
+
+  ## Include/Guid/RedfishClientEventGroup.h
+  gEfiRedfishClientFeatureReadyToProvisioningGuid = { 0x77E4FC1C, 0x2428, 0x47EE, { 0x9E, 0xEC, 0x8B, 0x77, 0xEF, 0x9D, 0x4E, 0xF0 } }
+  gEfiRedfishClientFeatureAfterProvisioningGuid   = { 0xE547CB6F, 0x306F, 0x4226, { 0xAB, 0x70, 0xA0, 0x6E, 0x26, 0xF1, 0x2E, 0xD0 } }
+
+[PcdsFixedAtBuild]
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdMaxRedfishSchemaStringSize|32|UINT32|0x10000001
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdMaxRedfishSchemaVersionSize|8|UINT32|0x10000002
+  #
+  # gEfiEventReadyToBootGuid is the default event to startup Redfish feature drivers.
+  # { 0x7CE88FB3, 0x4BD7, 0x4679, { 0x87, 0xA8, 0xA8, 0xD8, 0xDE, 0xE5, 0x0D, 0x2B }}
+  #
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdEdkIIRedfishFeatureDriverStartupEventGuid|{0xB3, 0x8F, 0xE8, 0x7C, 0xD7, 0x4B, 0x79, 0x46, 0x87, 0xA8, 0xA8, 0xD8, 0xDE, 0xE5, 0x0D, 0x2B}|VOID*|0x10000003
+  ## Default Redfish version string
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdDefaultRedfishVersion|L"v1"|VOID*|0x10000004

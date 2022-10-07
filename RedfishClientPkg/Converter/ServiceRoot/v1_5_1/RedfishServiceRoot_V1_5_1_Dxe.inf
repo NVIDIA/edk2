@@ -1,0 +1,55 @@
+## @file
+#
+#  INF file of ServiceRoot.v1_5_1 EFI Redfish JSON Structure DXE driver
+#
+#  (C) Copyright 2019-2021 Hewlett Packard Enterprise Development LP<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+#  Auto-generated file by Redfish Schema C Structure Generator.
+#  https://github.com/DMTF/Redfish-Schema-C-Struct-Generator
+#  
+#  Copyright Notice:
+#  Copyright 2019-2021 Distributed Management Task Force, Inc. All rights reserved.
+#  License: BSD 3-Clause License. For full text see link: https://github.com/DMTF/Redfish-JSON-C-Struct-Converter/blob/master/LICENSE.md 
+#
+##
+
+[Defines]
+  INF_VERSION               = 0x00010005
+  BASE_NAME                 = RedfishServiceRoot_V1_5_1_Dxe
+  FILE_GUID                 = cf6e9cc1-9f12-45b7-af51-0491eca623a5
+  MODULE_TYPE               = DXE_DRIVER
+  VERSION_STRING            = 1.0
+  ENTRY_POINT               = RedfishServiceRoot_V1_5_1EntryPoint
+  UNLOAD_IMAGE              = RedfishServiceRoot_V1_5_1Unload
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  RedfishPkg/RedfishPkg.dec
+  RedfishClientPkg/RedfishClientPkg.dec
+
+[Sources]
+  ServiceRoot_V1_5_1_Dxe.c
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib  
+  DebugLib  
+  PrintLib  
+  UefiLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  MemoryAllocationLib
+  
+  ServiceRootV1_5_1Lib
+  
+[Protocols]
+  gEfiRestJsonStructureProtocolGuid ## Consuming
+
+[Depex]
+  gEfiRestJsonStructureProtocolGuid
+
+[BuildOptions]
+  #MSFT:*_*_*_CC_FLAGS = /Od
+
