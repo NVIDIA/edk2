@@ -1,0 +1,51 @@
+#
+#  (C) Copyright 2019-2021 Hewlett Packard Enterprise Development LP<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+# Auto-generated file by Redfish Schema C Structure Generator.
+# https://github.com/DMTF/Redfish-Schema-C-Struct-Generator.
+# Copyright Notice:
+# Copyright 2019-2021 Distributed Management Task Force, Inc. All rights reserved.
+# License: BSD 3-Clause License. For full text see link: https://github.com/DMTF/Redfish-JSON-C-Struct-Converter/blob/master/LICENSE.md
+#
+[Defines]
+INF_VERSION                    = 0x00010006
+BASE_NAME                      = ComputerSystemV1_8_4Lib
+FILE_GUID                      =  30A7C64D-760A-46ED-AEF4-BEFDB942309D
+MODULE_TYPE                    = BASE
+VERSION_STRING                 = 1.0
+LIBRARY_CLASS                  = ComputerSystemV1_8_4Lib | DXE_DRIVER UEFI_APPLICATION UEFI_DRIVER
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64 IPF EBC RISCV64
+#
+
+[Sources]
+  ../../../include/RedfishDataTypeDef.h
+  ../../../src/RedfishCsCommon.c
+  ../../../src/RedfishCsMemory.c
+  ../../../src/ComputerSystem/ComputerSystem.V1_8_4/ComputerSystem.V1_8_4.c
+
+
+[Packages]
+  MdePkg/MdePkg.dec
+  RedfishPkg/RedfishPkg.dec
+  RedfishClientPkg/RedfishClientPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  MemoryAllocationLib
+  JsonLib
+
+[BuildOptions]
+  #
+  # Disables the following Visual Studio compiler warnings
+  # so we do not break the build with /WX option:
+  #   C4706: assignment within conditional expression
+  #
+  MSFT:*_*_*_CC_FLAGS = /wd4706
+
+

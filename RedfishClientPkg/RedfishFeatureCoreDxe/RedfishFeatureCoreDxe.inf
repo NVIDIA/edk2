@@ -1,0 +1,52 @@
+## @file
+#  RedfishFeatureCoreDxe is the DXE driver which provides
+#  EdkIIRedfishFeatureCoreProtocol to EDK2 Redfish Feature
+#  drivers for the registration.
+#
+#  (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x0001000b
+  BASE_NAME                      = RedfishFeatureCoreDxe
+  FILE_GUID                      = 1E01A624-4161-F1F1-25BC-D28E77420D8E
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = RedfishFeatureCoreEntryPoint
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 ARM AARCH64 RISCV64
+#
+
+[Sources]
+  RedfishFeatureCoreDxe.c
+  RedfishFeatureCoreDxe.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  RedfishPkg/RedfishPkg.dec
+  RedfishClientPkg/RedfishClientPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  MemoryAllocationLib
+  PrintLib
+  RedfishEventLib
+  RedfishFeatureUtilityLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  UefiLib
+
+[Protocols]
+  gEdkIIRedfishFeatureProtocolGuid    ## BY_START
+
+[Pcd]
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdEdkIIRedfishFeatureDriverStartupEventGuid
+
+[Depex]
+  TRUE
