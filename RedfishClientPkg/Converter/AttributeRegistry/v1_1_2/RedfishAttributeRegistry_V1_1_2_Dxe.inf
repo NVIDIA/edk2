@@ -1,0 +1,55 @@
+## @file
+#
+#  INF file of AttributeRegistry.v1_1_2 EFI Redfish JSON Structure DXE driver
+#
+#  (C) Copyright 2019-2021 Hewlett Packard Enterprise Development LP<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+#  Auto-generated file by Redfish Schema C Structure Generator.
+#  https://github.com/DMTF/Redfish-Schema-C-Struct-Generator
+#  
+#  Copyright Notice:
+#  Copyright 2019-2021 Distributed Management Task Force, Inc. All rights reserved.
+#  License: BSD 3-Clause License. For full text see link: https://github.com/DMTF/Redfish-JSON-C-Struct-Converter/blob/master/LICENSE.md 
+#
+##
+
+[Defines]
+  INF_VERSION               = 0x00010005
+  BASE_NAME                 = RedfishAttributeRegistry_V1_1_2_Dxe
+  FILE_GUID                 = e2b3b652-38dc-40b5-9a54-5b2ea7b5bcfd
+  MODULE_TYPE               = DXE_DRIVER
+  VERSION_STRING            = 1.0
+  ENTRY_POINT               = RedfishAttributeRegistry_V1_1_2EntryPoint
+  UNLOAD_IMAGE              = RedfishAttributeRegistry_V1_1_2Unload
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  RedfishPkg/RedfishPkg.dec
+  RedfishClientPkg/RedfishClientPkg.dec
+
+[Sources]
+  AttributeRegistry_V1_1_2_Dxe.c
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib  
+  DebugLib  
+  PrintLib  
+  UefiLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  MemoryAllocationLib
+  
+  AttributeRegistryV1_1_2Lib
+  
+[Protocols]
+  gEfiRestJsonStructureProtocolGuid ## Consuming
+
+[Depex]
+  gEfiRestJsonStructureProtocolGuid
+
+[BuildOptions]
+  #MSFT:*_*_*_CC_FLAGS = /Od
+

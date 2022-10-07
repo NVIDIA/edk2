@@ -1,0 +1,45 @@
+## @file
+#
+#  (C) Copyright 2021 Hewlett Packard Enterprise Development LP<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION               = 0x0001000b
+  BASE_NAME                 = RedfishETagDxe
+  FILE_GUID                 = F7BB0BB2-9796-485F-9F00-C0EB47E9F92B
+  MODULE_TYPE               = DXE_DRIVER
+  VERSION_STRING            = 1.0
+  ENTRY_POINT               = RedfishETagDriverEntryPoint
+  UNLOAD_IMAGE              = RedfishETagDriverUnload
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  RedfishPkg/RedfishPkg.dec
+  RedfishClientPkg/RedfishClientPkg.dec
+
+[Sources]
+  RedfishETagDxe.h
+  RedfishETagDxe.c
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  MemoryAllocationLib
+  UefiLib
+  UefiBootServicesTableLib
+  UefiRuntimeServicesTableLib
+  UefiDriverEntryPoint
+
+[Protocols]
+  gEdkIIRedfishETagProtocolGuid           ## PRODUCED ##
+
+[Guids]
+  gEfiEventExitBootServicesGuid           ## CONSUMES ## Event
+
+[Depex]
+  TRUE
