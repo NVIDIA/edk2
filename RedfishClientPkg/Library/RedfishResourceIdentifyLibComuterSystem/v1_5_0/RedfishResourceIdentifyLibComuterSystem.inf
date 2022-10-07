@@ -1,0 +1,39 @@
+## @file
+#
+#  (C) Copyright 2022 Hewlett Packard Enterprise Development LP<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = RedfishResourceIdentifyLibComuterSystem
+  FILE_GUID                      = 2AEE2C80-126A-44A6-877E-642F20510D13
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = RedfishResourceIdentifyLib| DXE_DRIVER
+  CONSTRUCTOR                    = RedfishResourceIdentifyComuterSystemConstructor
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 EBC
+#
+
+[Sources]
+  RedfishResourceIdentifyLibComuterSystem.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  NetworkPkg/NetworkPkg.dec
+  RedfishPkg/RedfishPkg.dec
+  RedfishClientPkg/RedfishClientPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  UefiBootServicesTableLib
+  UefiLib
+
+[Protocols]
+  gEfiRestJsonStructureProtocolGuid   ## CONSUMES

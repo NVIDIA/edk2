@@ -1,0 +1,56 @@
+## @file
+#
+#  Redfish MemoryCollection collection driver.
+#
+#  (C) Copyright 2020-2022 Hewlett Packard Enterprise Development LP<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+
+[Defines]
+  INF_VERSION               = 0x00010005
+  BASE_NAME                 = MemoryCollectionDxe
+  FILE_GUID                 = 22facf8f-a007-462c-9be4-638043a26858
+  MODULE_TYPE               = DXE_DRIVER
+  VERSION_STRING            = 1.0
+  ENTRY_POINT               = RedfishCollectionEntryPoint
+  UNLOAD_IMAGE              = RedfishCollectionUnload
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  RedfishPkg/RedfishPkg.dec
+  RedfishClientPkg/RedfishClientPkg.dec
+
+[Sources]
+  MemoryCollectionDxe.h
+  MemoryCollectionDxe.c
+
+[LibraryClasses]
+  DebugLib
+  BaseMemoryLib
+  ConverterCommonLib
+  MemoryAllocationLib
+  RedfishFeatureUtilityLib
+  RedfishLib
+  UefiLib
+  UefiDriverEntryPoint
+  UefiBootServicesTableLib
+  EdkIIRedfishResourceConfigLib
+  RedfishVersionLib
+
+[Protocols]
+  gEdkIIRedfishConfigHandlerProtocolGuid    ## CONSUMED
+  gEfiRestJsonStructureProtocolGuid         ## CONSUMED
+  gEdkIIRedfishFeatureProtocolGuid          ## CONSUMED
+
+[Guids]
+
+[Pcd]
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdMaxRedfishSchemaStringSize
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdMaxRedfishSchemaVersionSize
+
+[Depex]
+  TRUE
