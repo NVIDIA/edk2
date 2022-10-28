@@ -262,6 +262,7 @@ Tcp6GetSubnetInfo (
 
   Tcp6 = (EFI_TCP6_PROTOCOL *)Instance->NetworkInterfaceProtocolInfo.NetworkProtocolInterface;
 
+  ZeroMem ((VOID *)&IpModedata, sizeof (EFI_IP6_MODE_DATA));
   Status = Tcp6->GetModeData (Tcp6, NULL, NULL, &IpModedata, NULL, NULL);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: Can't get IP mode data information\n"));
@@ -283,12 +284,15 @@ Tcp6GetSubnetInfo (
   }
 
   Instance->SubnetAddrInfoIPv6Number = IpModedata.AddressCount;
-  CopyMem (
-    (VOID *)Instance->SubnetAddrInfoIPv6,
-    (VOID *)&IpModedata.AddressList,
-    IpModedata.AddressCount * sizeof (EFI_IP6_ADDRESS_INFO)
-    );
-  FreePool (IpModedata.AddressList);
+  if ((IpModedata.AddressCount != 0) && (IpModedata.AddressList != NULL)) {
+    CopyMem (
+      (VOID *)Instance->SubnetAddrInfoIPv6,
+      (VOID *)&IpModedata.AddressList,
+      IpModedata.AddressCount * sizeof (EFI_IP6_ADDRESS_INFO)
+      );
+    FreePool (IpModedata.AddressList);
+  }
+
   return EFI_SUCCESS;
 }
 
