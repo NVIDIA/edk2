@@ -541,7 +541,7 @@ GeneratePciCrs (
 
     switch (AddrMapInfo->SpaceCode) {
       case PCI_SS_IO:
-        Status = AmlCodeGenRdDWordIo (
+        Status = AmlCodeGenRdQWordIo (
                    FALSE,
                    TRUE,
                    TRUE,
