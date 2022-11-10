@@ -116,4 +116,23 @@ StringTableFree (
   IN STRING_TABLE *CONST  StrTable
   );
 
+/** STRING_TABLE_ADD_STRING macro is the wrapper over StringTableAddString().
+    It adds a string to the string table, and if the string is NULL or empty,
+    add "Unknown" string instead.
+
+  @param [IN]   StrTable  Pointer to the string table
+  @param [IN]   Str       Pointer to the string
+  @param [OUT]  StrRef    The string field reference of the added string
+**/
+#define STRING_TABLE_ADD_STRING(StrTable, String, StringRef)              \
+  StringRef = 0;                                                          \
+  if ((String != NULL) && (String[0] != '\0')) {                          \
+    Status = StringTableAddString (&StrTable, String, &StringRef);        \
+  } else {                                                                \
+    Status = StringTableAddString (&StrTable, "Unknown", &StringRef);     \
+  }                                                                       \
+  if (EFI_ERROR (Status)) {                                               \
+    DEBUG ((DEBUG_ERROR, "Failed to add "#String" string %r\n", Status)); \
+  }                                                                       \
+
 #endif // SMBIOS_STRING_TABLE_H_
