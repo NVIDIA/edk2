@@ -52,6 +52,7 @@
   DynamicTablesPkg/Library/Common/MetadataObjLib/MetadataObjLib.inf
   DynamicTablesPkg/Library/Common/MetadataHandlerLib/MetadataHandlerLib.inf
   DynamicTablesPkg/Library/Common/Tpm2DeviceTableLib/Tpm2DeviceTableLib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType1Lib/SmbiosType1Lib.inf
   DynamicTablesPkg/Library/Smbios/SmbiosType16Lib/SmbiosType16Lib.inf
   DynamicTablesPkg/Library/Smbios/SmbiosType17Lib/SmbiosType17Lib.inf
   DynamicTablesPkg/Library/Smbios/SmbiosType19Lib/SmbiosType19Lib.inf
