@@ -165,6 +165,41 @@ typedef struct CmSmbiosMemArrayMappedAddress {
   CM_OBJECT_TOKEN         PhysMemArrayToken;
 } CM_SMBIOS_MEMORY_ARRAY_MAPPED_ADDRESS;
 
+/** A structure that describes the system.
+
+  SMBIOS Specification v3.5.0 Type 1
+
+  ID: ESmbiosObjSystemInfo,
+*/
+typedef struct CmSmbiosSystemInfo {
+  /** Manufacturer of the system */
+  CHAR8              *Manufacturer;
+
+  /** Product name of the system */
+  CHAR8              *ProductName;
+
+  /** Version of the system */
+  CHAR8              *Version;
+
+  /** Serial number of the system */
+  CHAR8              *SerialNum;
+
+  /** Universal unique ID of the system */
+  GUID               Uuid;
+
+  /** Identifies the event that caused the system to power up. */
+  UINT8              WakeUpType;
+
+  /** SKU number of the system */
+  CHAR8              *SkuNum;
+
+  /** Family that the system belongs */
+  CHAR8              *Family;
+
+  /** Token of this System information CM Object */
+  CM_OBJECT_TOKEN    SystemInfoToken;
+} CM_SMBIOS_SYSTEM_INFO;
+
 #pragma pack()
 
 #endif // SMBIOS_NAMESPACE_OBJECTS_H_
