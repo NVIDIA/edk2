@@ -1933,15 +1933,19 @@ VerifyTimeBasedPayload (
   //            .... }
   //    The DigestAlgorithmIdentifiers can be used to determine the hash algorithm
   //    in VARIABLE_AUTHENTICATION_2 descriptor.
-  //    This field has the fixed offset (+13) and be calculated based on two bytes of length encoding.
+  //    This field has the fixed offset (+13) or (+32) based on whether the DER-encoded
+  //    ContentInfo structure is present or not, and can be calculated based on two
+  //    bytes of length encoding.
   //
   if ((Attributes & EFI_VARIABLE_TIME_BASED_AUTHENTICATED_WRITE_ACCESS) != 0) {
-    if (SigDataSize >= (13 + sizeof (mSha256OidValue))) {
-      if (((*(SigData + 1) & TWO_BYTE_ENCODE) != TWO_BYTE_ENCODE) ||
-          (CompareMem (SigData + 13, &mSha256OidValue, sizeof (mSha256OidValue)) != 0))
-      {
-        return EFI_SECURITY_VIOLATION;
-      }
+    if (  (  (SigDataSize >= (13 + sizeof (mSha256OidValue)))
+          && (  ((*(SigData + 1) & TWO_BYTE_ENCODE) != TWO_BYTE_ENCODE)
+             || (CompareMem (SigData + 13, &mSha256OidValue, sizeof (mSha256OidValue)) != 0)))
+       && (  (SigDataSize >= (32 + sizeof (mSha256OidValue)))
+          && (  ((*(SigData + 20) & TWO_BYTE_ENCODE) != TWO_BYTE_ENCODE)
+             || (CompareMem (SigData + 32, &mSha256OidValue, sizeof (mSha256OidValue)) != 0))))
+    {
+      return EFI_SECURITY_VIOLATION;
     }
   }
 
