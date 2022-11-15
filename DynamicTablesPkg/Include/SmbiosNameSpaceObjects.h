@@ -421,6 +421,55 @@ typedef struct CmSmbiosPortConnectorInfo {
   CM_OBJECT_TOKEN    CmObjectToken;
 } CM_SMBIOS_PORT_CONNECTOR_INFO;
 
+/** A structure that describes the Bios Vendor Information.
+
+  The Bios information on the system is described by this object.
+
+  SMBIOS Specification v3.5.0 Type00
+
+  ID: ESmbiosObjBiosInfo
+**/
+typedef struct CmSmbiosBiosInfo {
+  /** System BIOS Vendor string */
+  CHAR8                        *BiosVendor;
+
+  /** BIOS Uefi version */
+  CHAR8                        *BiosVersion;
+
+  /** BIOS starting address segment */
+  UINT16                       BiosSegment;
+
+  /** BIOS release date string */
+  CHAR8                        *BiosReleaseDate;
+
+  /** BIOS ROM size */
+  UINT8                        BiosSize;
+
+  /** Defines the functions BIOS supports */
+  MISC_BIOS_CHARACTERISTICS    BiosCharacteristics;
+
+  /** Optional set of functions that BIOS supports */
+  UINT8                        BIOSCharacteristicsExtensionBytes[2];
+
+  /** System BIOS firmware major version */
+  UINT8                        SystemBiosMajorRelease;
+
+  /** System BIOS firmware minor version */
+  UINT8                        SystemBiosMinorRelease;
+
+  /** Identifies the Embedded Controller/BMC firmware major release */
+  UINT8                        ECFirmwareMajorRelease;
+
+  /** Identifies the Embedded Controller/BMC firmware minor release */
+  UINT8                        ECFirmwareMinorRelease;
+
+  /** Extended BIOS ROM size, rounded up if needed */
+  EXTENDED_BIOS_ROM_SIZE       ExtendedBiosSize;
+
+  /** CM Object Token of Bios information */
+  CM_OBJECT_TOKEN              BiosInfoToken;
+} CM_SMBIOS_BIOS_INFO;
+
 #pragma pack()
 
 #endif // SMBIOS_NAMESPACE_OBJECTS_H_
