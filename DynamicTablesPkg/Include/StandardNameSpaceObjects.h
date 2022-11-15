@@ -45,16 +45,17 @@ typedef UINTN CM_OBJECT_TOKEN;
     in the Standard Namespace.
 */
 typedef enum StdObjectID {
-  EStdObjCfgMgrInfo = 0x00000000, ///< 0 - Configuration Manager Info
-  EStdObjAcpiTableList,           ///< 1 - ACPI table Info List
-  EStdObjSmbiosTableList,         ///< 2 - SMBIOS table Info List
-  EStdObjIpmiDeviceInfo,          ///< 3 - IPMI Device Information
-  EStdObjBaseboardInfo,           ///< 4 - Baseboard Information
-  EStdObjSystemSlotInfo,          ///< 5 - System Slot Information
-  EStdObjSystemInfo,              ///< 6 - System Information
-  EStdObjTpmDeviceInfo,           ///< 7 - TPM Device Info
-  EStdObjOemStrings,              ///< 8 - OEM Strings
-  EStdObjPortConnectorInfo,       ///< 9 - Port connector Information
+  EStdObjCfgMgrInfo = 0x00000000, ///< 0  - Configuration Manager Info
+  EStdObjAcpiTableList,           ///< 1  - ACPI table Info List
+  EStdObjSmbiosTableList,         ///< 2  - SMBIOS table Info List
+  EStdObjIpmiDeviceInfo,          ///< 3  - IPMI Device Information
+  EStdObjBaseboardInfo,           ///< 4  - Baseboard Information
+  EStdObjSystemSlotInfo,          ///< 5  - System Slot Information
+  EStdObjSystemInfo,              ///< 6  - System Information
+  EStdObjTpmDeviceInfo,           ///< 7  - TPM Device Info
+  EStdObjOemStrings,              ///< 8  - OEM Strings
+  EStdObjPortConnectorInfo,       ///< 9  - Port connector Information
+  EStdObjBiosInfo,                ///< 10 - Bios Information
   EStdObjMax
 } ESTD_OBJECT_ID;
 
@@ -401,6 +402,55 @@ typedef struct CmStdOemStrings {
   /** CM Object Token of OEM Strings */
   CM_OBJECT_TOKEN    OemStringsToken;
 } CM_STD_OEM_STRINGS;
+
+/** A structure that describes the Bios Vendor Information.
+
+  The Bios information on the system is described by this object.
+
+  SMBIOS Specification v3.5.0 Type00
+
+  ID: EStdObjBiosInfo
+**/
+typedef struct CmStdBiosInfo {
+  /** System BIOS Vendor string */
+  CHAR8                        *BiosVendor;
+
+  /** BIOS Uefi version */
+  CHAR8                        *BiosVersion;
+
+  /** BIOS starting address segment */
+  UINT16                       BiosSegment;
+
+  /** BIOS release date string */
+  CHAR8                        *BiosReleaseDate;
+
+  /** BIOS ROM size */
+  UINT8                        BiosSize;
+
+  /** Defines the functions BIOS supports */
+  MISC_BIOS_CHARACTERISTICS    BiosCharacteristics;
+
+  /** Optional set of functions that BIOS supports */
+  UINT8                        BIOSCharacteristicsExtensionBytes[2];
+
+  /** System BIOS firmware major version */
+  UINT8                        SystemBiosMajorRelease;
+
+  /** System BIOS firmware minor version */
+  UINT8                        SystemBiosMinorRelease;
+
+  /** Identifies the Embedded Controller/BMC firmware major release */
+  UINT8                        ECFirmwareMajorRelease;
+
+  /** Identifies the Embedded Controller/BMC firmware minor release */
+  UINT8                        ECFirmwareMinorRelease;
+
+  /** Extended BIOS ROM size, rounded up if needed */
+  EXTENDED_BIOS_ROM_SIZE       ExtendedBiosSize;
+
+  /** CM Object Token of Bios information */
+  CM_OBJECT_TOKEN              BiosInfoToken;
+} CM_STD_BIOS_INFO;
 
 #pragma pack()
 
