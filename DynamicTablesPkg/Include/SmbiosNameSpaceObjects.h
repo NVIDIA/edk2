@@ -172,7 +172,7 @@ typedef struct CmSmbiosMemArrayMappedAddress {
 
   SMBIOS Specification v3.5.0 Type2
 
-  ID: EStdObjBaseboardInfo,
+  ID: ESmbiosObjBaseboardInfo,
 */
 typedef struct CmSmbiosBaseboardInfo {
   /** CM Object Token of baseboard */
@@ -595,6 +595,56 @@ typedef struct CmSmbiosSystemBootInfo {
   /** Token of this Bios language information CM Object */
   CM_OBJECT_TOKEN    SystemBootInfoToken;
 } CM_SMBIOS_SYSTEM_BOOT_INFO;
+
+/** A structure that describes the system power supply.
+
+  SMBIOS Specification v3.5.0 Type 39
+
+  ID: ESmbiosObjPowerSupplyInfo,
+*/
+typedef struct CmSmbiosPowerSupplyInfo {
+  /** Power Unit Group */
+  UINT8              PowerUnitGroup;
+
+  /** Location */
+  CHAR8              *Location;
+
+  /** Device Name */
+  CHAR8              *DeviceName;
+
+  /** Manufacturer */
+  CHAR8              *Manufacturer;
+
+  /** Serial Number */
+  CHAR8              *SerialNumber;
+
+  /** Asset Tag Number */
+  CHAR8              *AssetTagNumber;
+
+  /** Model Part Number */
+  CHAR8              *ModelPartNumber;
+
+  /** Revision Level */
+  CHAR8              *RevisionLevel;
+
+  /** Max Power Capacity */
+  UINT16             MaxPowerCapacity;
+
+  /** Power Supply Characteristics */
+  UINT16             PowerSupplyCharacteristics;
+
+  /** CM Object Token to locate Input Voltage Probe Handle */
+  CM_OBJECT_TOKEN    InputVoltageProbeCmToken;
+
+  /** CM Object Token to locate Cooling Device Handle */
+  CM_OBJECT_TOKEN    CoolingDeviceCmToken;
+
+  /** CM Object Token to locate Input Current Probe Handle */
+  CM_OBJECT_TOKEN    InputCurrentProbeCmToken;
+
+  /** Token of this Power Supply Info  CM Object */
+  CM_OBJECT_TOKEN    PowerSupplyInfoToken;
+} CM_SMBIOS_POWER_SUPPLY_INFO;
 
 #pragma pack()
 
