@@ -34,6 +34,7 @@ typedef enum SmbiosObjectID {
   ESmbiosObjSystemBootInfo,
   ESmbiosObjPhysicalMemoryArray,
   ESmbiosObjMemoryArrayMappedAddress,
+  ESmbiosObjPowerSupplyInfo,
   ESmbiosObjMax
 } ESMBIOS_OBJECT_ID;
 
@@ -111,7 +112,7 @@ typedef struct {
 
   SMBIOS Specification v3.5.0 Type2
 
-  ID: EStdObjBaseboardInfo,
+  ID: ESmbiosObjBaseboardInfo,
 */
 typedef struct CmSmbiosBaseboardInfo {
   /** CM Object Token of baseboard */
@@ -155,7 +156,7 @@ typedef struct CmSmbiosBaseboardInfo {
 
   SMBIOS Specification v3.5.0 Type 3
 
-  ID: EStdObjEnclosureInfo,
+  ID: ESmbiosObjEnclosureInfo,
 */
 typedef struct CmSmbiosEnclosureInfo {
   /** CM Object Token of Enclosure  */
@@ -208,7 +209,7 @@ typedef struct CmSmbiosEnclosureInfo {
 
   SMBIOS Specification v3.5.0 Type 8
 
-  ID: EStdObjPortConnectorInfo,
+  ID: ESmbiosObjPortConnectorInfo,
 */
 typedef struct CmSmbiosPortConnectorInfo {
   CHAR8              *InternalReferenceDesignator;
@@ -227,7 +228,7 @@ typedef struct CmSmbiosPortConnectorInfo {
 
   SMBIOS Specification v3.5.0 Type9
 
-  ID: EStdObjSystemSlotInfo,
+  ID: ESmbiosObjSystemSlotInfo,
 */
 typedef struct CmSmbiosSystemSlotInfo {
   /** CM Object Token of SystemSlot  */
@@ -292,7 +293,7 @@ typedef struct CmSmbiosSystemSlotInfo {
 
   SMBIOS Specification v3.5.0 Type 1
 
-  ID: EStdObjSystemInfo,
+  ID: ESmbiosObjSystemInfo,
 */
 typedef struct CmSmbiosSystemInfo {
   /** Manufacturer of the system */
@@ -327,7 +328,7 @@ typedef struct CmSmbiosSystemInfo {
 
   SMBIOS Specification v3.5.0 Type 43
 
-  ID: EStdObjTpmDeviceInfo,
+  ID: ESmbiosObjTpmDeviceInfo,
 */
 typedef struct CmSmbiosTpmDeviceInfo {
   /** TPM Vendor ID */
@@ -362,7 +363,7 @@ typedef struct CmSmbiosTpmDeviceInfo {
  *
  *  The OEM strings information is described by this object.
  *
- *  ID: EStdObjOemStrings
+ *  ID: ESmbiosObjOemStrings
 **/
 typedef struct CmSmbiosOemStrings {
   /** Number of strings */
@@ -381,7 +382,7 @@ typedef struct CmSmbiosOemStrings {
 
   SMBIOS Specification v3.5.0 Type00
 
-  ID: EStdObjBiosInfo
+  ID: ESmbiosObjBiosInfo
 **/
 typedef struct CmSmbiosBiosInfo {
   /** System BIOS Vendor string */
@@ -428,7 +429,7 @@ typedef struct CmSmbiosBiosInfo {
 
   SMBIOS Specification v3.5.0 Type 41
 
-  ID: EStdObjPortConnectorInfo,
+  ID: ESmbiosObjPortConnectorInfo,
 */
 typedef struct CmSmbiosOnboardDeviceExtendedInfo {
   CHAR8              *ReferenceDesignation;
@@ -444,7 +445,7 @@ typedef struct CmSmbiosOnboardDeviceExtendedInfo {
 
   The Group Associations information are described by this object.
 
-  ID: CmStdObjGroupAssociations,
+  ID: CmSmbiosObjGroupAssociations,
 */
 typedef struct CmSmbiosObjGroupAssociations {
   /** CM Object Token of Group Associations */
@@ -464,7 +465,7 @@ typedef struct CmSmbiosObjGroupAssociations {
 
   SMBIOS Specification v3.5.0 Type 13
 
-  ID: EStdObjBiosLanguageInfo
+  ID: ESmbiosObjBiosLanguageInfo
 **/
 typedef struct CmSmbiosBiosLanguageInfo {
   /** Number of Installable Languages */
@@ -529,6 +530,56 @@ typedef struct CmSmbiosMemArrayMappedAddress {
   UINT8                   NumMemDevices;
   CM_OBJECT_TOKEN         PhysMemArrayToken;
 } CM_SMBIOS_MEMORY_ARRAY_MAPPED_ADDRESS;
+
+/** A structure that describes the system power supply.
+
+  SMBIOS Specification v3.5.0 Type 39
+
+  ID: ESmbiosObjPowerSupplyInfo,
+*/
+typedef struct CmSmbiosPowerSupplyInfo {
+  /** Power Unit Group */
+  UINT8              PowerUnitGroup;
+
+  /** Location */
+  CHAR8              *Location;
+
+  /** Device Name */
+  CHAR8              *DeviceName;
+
+  /** Manufacturer */
+  CHAR8              *Manufacturer;
+
+  /** Serial Number */
+  CHAR8              *SerialNumber;
+
+  /** Asset Tag Number */
+  CHAR8              *AssetTagNumber;
+
+  /** Model Part Number */
+  CHAR8              *ModelPartNumber;
+
+  /** Revision Level */
+  CHAR8              *RevisionLevel;
+
+  /** Max Power Capacity */
+  UINT16             MaxPowerCapacity;
+
+  /** Power Supply Characteristics */
+  UINT16             PowerSupplyCharacteristics;
+
+  /** CM Object Token to locate Input Voltage Probe Handle */
+  CM_OBJECT_TOKEN    InputVoltageProbeCmToken;
+
+  /** CM Object Token to locate Cooling Device Handle */
+  CM_OBJECT_TOKEN    CoolingDeviceCmToken;
+
+  /** CM Object Token to locate Input Current Probe Handle */
+  CM_OBJECT_TOKEN    InputCurrentProbeCmToken;
+
+  /** Token of this Power Supply Info  CM Object */
+  CM_OBJECT_TOKEN    PowerSupplyInfoToken;
+} CM_SMBIOS_POWER_SUPPLY_INFO;
 
 #pragma pack()
 
