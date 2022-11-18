@@ -1,6 +1,7 @@
 /** @file
   Industry Standard Definitions of SMBIOS Table Specification v3.8.0.
 
+Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.<BR>
 Copyright (c) 2006 - 2024, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2015-2017 Hewlett Packard Enterprise Development LP<BR>
 (C) Copyright 2015 - 2019 Hewlett Packard Enterprise Development LP<BR>
@@ -2611,6 +2612,43 @@ typedef struct {
   UINT16    PowerSupplyType           : 4;
   UINT16    Reserved                  : 2;
 } SYS_POWER_SUPPLY_CHARACTERISTICS;
+
+///
+/// System Power Supply - Power Supply Types.
+///
+typedef enum {
+  PowerSupplyTypeOther     = 0x01,
+  PowerSupplyTypeUnknown   = 0x02,
+  PowerSupplyTypeLinear    = 0x03,
+  PowerSupplyTypeSwitching = 0x04,
+  PowerSupplyTypeBattery   = 0x05,
+  PowerSupplyTypeUPS       = 0x06,
+  PowerSupplyTypeConverter = 0x07,
+  PowerSupplyTypeRegulator = 0x08,
+} SYS_POWER_SUPPLY_TYPE;
+
+///
+/// System Power Supply - Power Supply Status.
+///
+typedef enum {
+  PowerSupplyStatusOther       = 0x01,
+  PowerSupplyStatusUnknown     = 0x02,
+  PowerSupplyStatusOk          = 0x03,
+  PowerSupplyStatusNonCritical = 0x04,
+  PowerSupplyStatusCritical    = 0x05
+} SYS_POWER_SUPPLY_STATUS;
+
+///
+/// System Power Supply - DMTF Input Voltage Range Switching.
+///
+typedef enum {
+  PowerSupplyIvrsOther     = 0x01,
+  PowerSupplyIvrsUnknown   = 0x02,
+  PowerSupplyIvrsManual    = 0x03,
+  PowerSupplyIvrsAuto      = 0x04,
+  PowerSupplyIvrsWideRange = 0x05,
+  PowerSupplyIvrsNA        = 0x06
+} SYS_POWER_SUPPLY_IVRS_TYPE;
 
 ///
 /// System Power Supply (Type 39).
