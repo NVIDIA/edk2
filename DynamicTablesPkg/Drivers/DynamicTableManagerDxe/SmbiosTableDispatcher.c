@@ -1,6 +1,7 @@
 /** @file
   Dynamic Smbios Table Dispatcher
 
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
   Copyright (c) 2022, Arm Limited. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -94,7 +95,7 @@ SMBIOS_TABLE_DISPATCHER  mSmBiosDispatcher[MAX_SMBIOS_TABLES] = {
   SMBIOS_TABLE_DEP (SMBIOS_TYPE_MANAGEMENT_DEVICE_THRESHOLD_DATA,     SMTT_NULL,                                  SMTT_NULL,                                  SMTT_NULL,                                  SMTT_NULL, SMTT_NULL),
   SMBIOS_TABLE_DEP (SMBIOS_TYPE_MEMORY_CHANNEL,                       SMTT_NULL,                                  SMTT_NULL,                                  SMTT_NULL,                                  SMTT_NULL, SMTT_NULL),
   SMBIOS_TABLE_DEP (SMBIOS_TYPE_IPMI_DEVICE_INFORMATION,              SMTT_NULL,                                  SMTT_NULL,                                  SMTT_NULL,                                  SMTT_NULL, SMTT_NULL),
-  SMBIOS_TABLE_DEP (SMBIOS_TYPE_SYSTEM_POWER_SUPPLY,                  SMTT_NULL,                                  SMTT_NULL,                                  SMTT_NULL,                                  SMTT_NULL, SMTT_NULL),
+  SMBIOS_TABLE_DEP (SMBIOS_TYPE_SYSTEM_POWER_SUPPLY,                  SMBIOS_TYPE_VOLTAGE_PROBE,                  SMBIOS_TYPE_COOLING_DEVICE,                 SMBIOS_TYPE_ELECTRICAL_CURRENT_PROBE,       SMTT_NULL, SMTT_NULL),
   SMBIOS_TABLE_DEP (SMBIOS_TYPE_ADDITIONAL_INFORMATION,               SMTT_NULL,                                  SMTT_NULL,                                  SMTT_NULL,                                  SMTT_NULL, SMTT_NULL),
   SMBIOS_TABLE_DEP (SMBIOS_TYPE_ONBOARD_DEVICES_EXTENDED_INFORMATION, SMTT_NULL,                                  SMTT_NULL,                                  SMTT_NULL,                                  SMTT_NULL, SMTT_NULL),
   SMBIOS_TABLE_DEP (SMBIOS_TYPE_MANAGEMENT_CONTROLLER_HOST_INTERFACE, SMTT_NULL,                                  SMTT_NULL,                                  SMTT_NULL,                                  SMTT_NULL, SMTT_NULL),
