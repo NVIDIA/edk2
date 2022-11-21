@@ -1,6 +1,7 @@
 /** @file
 
   (C) Copyright 2022 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -21,7 +22,7 @@ REDFISH_CONFIG_LANG_MAP_PRIVATE_DATA  *mRedfishConfigLangMapPrivate = NULL;
 **/
 EFI_STATUS
 ReleaseConfigLangMapRecord (
-  IN REDFISH_CONFIG_LANG_MAP_RECORD *Record
+  IN REDFISH_CONFIG_LANG_MAP_RECORD  *Record
   )
 {
   if (Record == NULL) {
@@ -57,8 +58,8 @@ NewConfigLangMapRecord (
   IN  EFI_STRING  ConfigLang
   )
 {
-  REDFISH_CONFIG_LANG_MAP_RECORD *NewRecord;
-  UINTN                          Size;
+  REDFISH_CONFIG_LANG_MAP_RECORD  *NewRecord;
+  UINTN                           Size;
 
   if (IS_EMPTY_STRING (Uri) || IS_EMPTY_STRING (ConfigLang)) {
     return NULL;
@@ -69,14 +70,14 @@ NewConfigLangMapRecord (
     return NULL;
   }
 
-  Size = StrSize (Uri);
+  Size           = StrSize (Uri);
   NewRecord->Uri = AllocateCopyPool (Size, Uri);
   if (NewRecord->Uri == NULL) {
     goto ON_ERROR;
   }
 
-  NewRecord->Size = Size;
-  Size = StrSize (ConfigLang);
+  NewRecord->Size       = Size;
+  Size                  = StrSize (ConfigLang);
   NewRecord->ConfigLang = AllocateCopyPool (Size, ConfigLang);
   if (NewRecord->ConfigLang == NULL) {
     goto ON_ERROR;
@@ -107,14 +108,14 @@ ON_ERROR:
 **/
 EFI_STATUS
 AddConfigLangMapRecord (
-  IN  REDFISH_CONFIG_LANG_MAP_LIST *List,
-  IN  EFI_STRING                   Uri,
-  IN  EFI_STRING                   ConfigLang
+  IN  REDFISH_CONFIG_LANG_MAP_LIST  *List,
+  IN  EFI_STRING                    Uri,
+  IN  EFI_STRING                    ConfigLang
   )
 {
-  REDFISH_CONFIG_LANG_MAP_RECORD *NewRecord;
+  REDFISH_CONFIG_LANG_MAP_RECORD  *NewRecord;
 
-  if (List == NULL || IS_EMPTY_STRING (Uri) || IS_EMPTY_STRING (ConfigLang)) {
+  if ((List == NULL) || IS_EMPTY_STRING (Uri) || IS_EMPTY_STRING (ConfigLang)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -142,11 +143,11 @@ AddConfigLangMapRecord (
 **/
 EFI_STATUS
 DeleteConfigLangMapRecord (
-  IN  REDFISH_CONFIG_LANG_MAP_LIST   *List,
-  IN  REDFISH_CONFIG_LANG_MAP_RECORD *Record
+  IN  REDFISH_CONFIG_LANG_MAP_LIST    *List,
+  IN  REDFISH_CONFIG_LANG_MAP_RECORD  *Record
   )
 {
-  if (List == NULL || Record == NULL) {
+  if ((List == NULL) || (Record == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -187,17 +188,17 @@ FindConfigLangMapRecord (
   }
 
   Record = NULL;
-  List = GetFirstNode (ListHeader);
+  List   = GetFirstNode (ListHeader);
   while (!IsNull (ListHeader, List)) {
     Record = REDFISH_CONFIG_LANG_MAP_RECORD_FROM_LIST (List);
 
     if (QueryIsUri) {
       if (StrCmp (Record->Uri, Query) == 0) {
-        return  Record;
+        return Record;
       }
     } else {
       if (StrCmp (Record->ConfigLang, Query) == 0) {
-        return  Record;
+        return Record;
       }
     }
 
@@ -208,6 +209,7 @@ FindConfigLangMapRecord (
 }
 
 #if CONFIG_LANG_MAP_DEBUG_ENABLED
+
 /**
   Debug output the config language map list.
 
@@ -224,8 +226,8 @@ DumpConfigLangMapList (
   IN  EFI_STRING                    Msg
   )
 {
-  LIST_ENTRY          *List;
-  REDFISH_CONFIG_LANG_MAP_RECORD *Record;
+  LIST_ENTRY                      *List;
+  REDFISH_CONFIG_LANG_MAP_RECORD  *Record;
 
   if (ConfigLangMapList == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -242,7 +244,7 @@ DumpConfigLangMapList (
 
   DEBUG ((DEBUG_INFO, "Count: %d Total Size: %d\n", ConfigLangMapList->Count, ConfigLangMapList->TotalSize));
   Record = NULL;
-  List = GetFirstNode (&ConfigLangMapList->Listheader);
+  List   = GetFirstNode (&ConfigLangMapList->Listheader);
   while (!IsNull (&ConfigLangMapList->Listheader, List)) {
     Record = REDFISH_CONFIG_LANG_MAP_RECORD_FROM_LIST (List);
 
@@ -266,18 +268,18 @@ DumpConfigLangMapList (
 **/
 EFI_STATUS
 DumpRawBuffer (
-  IN  UINT8    *Buffer,
-  IN  UINTN     BufferSize
+  IN  UINT8  *Buffer,
+  IN  UINTN  BufferSize
   )
 {
-  UINTN  Index;
-  CHAR16 *Seeker;
+  UINTN   Index;
+  CHAR16  *Seeker;
 
   if (Buffer == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  Index = 0;
+  Index  = 0;
   Seeker = (CHAR16 *)Buffer;
   DEBUG ((DEBUG_ERROR, "Buffer size: %d\n", BufferSize));
   while (Seeker[Index] != '\0') {
@@ -285,10 +287,12 @@ DumpRawBuffer (
 
     ++Index;
   }
+
   DEBUG ((DEBUG_ERROR, "\n"));
 
   return EFI_SUCCESS;
 }
+
 #endif
 
 /**
@@ -302,12 +306,12 @@ DumpRawBuffer (
 **/
 EFI_STATUS
 ReleaseConfigLangMapList (
-  IN  REDFISH_CONFIG_LANG_MAP_LIST   *ConfigLangMapList
+  IN  REDFISH_CONFIG_LANG_MAP_LIST  *ConfigLangMapList
   )
 {
-  LIST_ENTRY          *List;
-  LIST_ENTRY          *Next;
-  REDFISH_CONFIG_LANG_MAP_RECORD *Record;
+  LIST_ENTRY                      *List;
+  LIST_ENTRY                      *Next;
+  REDFISH_CONFIG_LANG_MAP_RECORD  *Record;
 
   if (ConfigLangMapList == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -318,11 +322,11 @@ ReleaseConfigLangMapList (
   }
 
   Record = NULL;
-  Next = NULL;
-  List = GetFirstNode (&ConfigLangMapList->Listheader);
+  Next   = NULL;
+  List   = GetFirstNode (&ConfigLangMapList->Listheader);
   while (!IsNull (&ConfigLangMapList->Listheader, List)) {
     Record = REDFISH_CONFIG_LANG_MAP_RECORD_FROM_LIST (List);
-    Next = GetNextNode (&ConfigLangMapList->Listheader, List);
+    Next   = GetNextNode (&ConfigLangMapList->Listheader, List);
 
     DeleteConfigLangMapRecord (ConfigLangMapList, Record);
 
@@ -357,7 +361,7 @@ SaveConfigLangMapList (
   UINTN                           StringSize;
   EFI_STATUS                      Status;
 
-  if (ConfigLangMapList == NULL || IS_EMPTY_STRING (VariableName)) {
+  if ((ConfigLangMapList == NULL) || IS_EMPTY_STRING (VariableName)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -376,7 +380,7 @@ SaveConfigLangMapList (
 
   Seeker = (EFI_STRING)VarData;
   Record = NULL;
-  List = GetFirstNode (&ConfigLangMapList->Listheader);
+  List   = GetFirstNode (&ConfigLangMapList->Listheader);
   while (!IsNull (&ConfigLangMapList->Listheader, List)) {
     Record = REDFISH_CONFIG_LANG_MAP_RECORD_FROM_LIST (List);
 
@@ -395,14 +399,14 @@ SaveConfigLangMapList (
 
     ++Seeker;
 
-    List = GetNextNode (&ConfigLangMapList->Listheader, List);;
+    List = GetNextNode (&ConfigLangMapList->Listheader, List);
   }
 
   *Seeker = '\0';
 
-#if CONFIG_LANG_MAP_DEBUG_ENABLED
+ #if CONFIG_LANG_MAP_DEBUG_ENABLED
   DumpRawBuffer (VarData, VarSize);
-#endif
+ #endif
 
   ASSERT (((UINTN)Seeker - (UINTN)VarData + sizeof (CHAR16)) == VarSize);
 
@@ -411,17 +415,16 @@ SaveConfigLangMapList (
   //
   Status = GetVariable2 (
              VariableName,
-             &mRedfishVariableGuid,
+             &gEfiRedfishClientVariableGuid,
              (VOID *)&Data,
              NULL
              );
   if (!EFI_ERROR (Status)) {
     FreePool (Data);
-    gRT->SetVariable (VariableName, &mRedfishVariableGuid, VARIABLE_ATTRIBUTE_NV_BS, 0, NULL);
+    gRT->SetVariable (VariableName, &gEfiRedfishClientVariableGuid, VARIABLE_ATTRIBUTE_NV_BS, 0, NULL);
   }
 
-
-  return gRT->SetVariable (VariableName, &mRedfishVariableGuid, VARIABLE_ATTRIBUTE_NV_BS, VarSize, (VOID *)VarData);
+  return gRT->SetVariable (VariableName, &gEfiRedfishClientVariableGuid, VARIABLE_ATTRIBUTE_NV_BS, VarSize, (VOID *)VarData);
 }
 
 /**
@@ -441,14 +444,14 @@ InitialConfigLangMapList (
   IN  EFI_STRING                    VariableName
   )
 {
-  UINT8      *VarData;
-  EFI_STRING UriPointer;
-  EFI_STRING ConfigLangPointer;
-  EFI_STRING Seeker;
-  UINTN      VariableSize;
-  EFI_STATUS Status;
+  UINT8       *VarData;
+  EFI_STRING  UriPointer;
+  EFI_STRING  ConfigLangPointer;
+  EFI_STRING  Seeker;
+  UINTN       VariableSize;
+  EFI_STATUS  Status;
 
-  if (ConfigLangMapList == NULL || IS_EMPTY_STRING (VariableName)) {
+  if ((ConfigLangMapList == NULL) || IS_EMPTY_STRING (VariableName)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -457,7 +460,7 @@ InitialConfigLangMapList (
   //
   Status = GetVariable2 (
              VariableName,
-             &mRedfishVariableGuid,
+             &gEfiRedfishClientVariableGuid,
              (VOID *)&VarData,
              &VariableSize
              );
@@ -465,11 +468,10 @@ InitialConfigLangMapList (
     return EFI_NOT_FOUND;
   }
 
-  Seeker = (EFI_STRING)VarData;
-  UriPointer = (EFI_STRING)VarData;
+  Seeker            = (EFI_STRING)VarData;
+  UriPointer        = (EFI_STRING)VarData;
   ConfigLangPointer = (EFI_STRING)VarData;
   while (*Seeker != '\0') {
-
     //
     // Find URI
     //
@@ -480,7 +482,7 @@ InitialConfigLangMapList (
       goto ON_ERROR;
     }
 
-    *Seeker = '\0';
+    *Seeker           = '\0';
     ConfigLangPointer = ++Seeker;
 
     //
@@ -500,9 +502,9 @@ InitialConfigLangMapList (
     UriPointer = ++Seeker;
   }
 
-#if CONFIG_LANG_MAP_DEBUG_ENABLED
+ #if CONFIG_LANG_MAP_DEBUG_ENABLED
   DumpConfigLangMapList (ConfigLangMapList, L"Initial ConfigLangMap List from Variable");
-#endif
+ #endif
 
   Status = EFI_SUCCESS;
 
@@ -533,11 +535,11 @@ RedfishConfigLangMapGet (
   OUT EFI_STRING                              *ResultString
   )
 {
-  REDFISH_CONFIG_LANG_MAP_RECORD       *Target;
-  REDFISH_CONFIG_LANG_MAP_PRIVATE_DATA *Private;
-  EFI_STRING                           Result;
+  REDFISH_CONFIG_LANG_MAP_RECORD        *Target;
+  REDFISH_CONFIG_LANG_MAP_PRIVATE_DATA  *Private;
+  EFI_STRING                            Result;
 
-  if (This == NULL || IS_EMPTY_STRING (QueryString) || ResultString == NULL || QueryStringType >= RedfishGetTypeMax) {
+  if ((This == NULL) || IS_EMPTY_STRING (QueryString) || (ResultString == NULL) || (QueryStringType >= RedfishGetTypeMax)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -547,13 +549,13 @@ RedfishConfigLangMapGet (
 
   Target = FindConfigLangMapRecord (&Private->ConfigLangList.Listheader, QueryString, (QueryStringType == RedfishGetTypeUri));
   if (Target == NULL) {
-#if CONFIG_LANG_MAP_DEBUG_ENABLED
+ #if CONFIG_LANG_MAP_DEBUG_ENABLED
     DumpConfigLangMapList (&Private->ConfigLangList, L"EFI_NOT_FOUND");
-#endif
+ #endif
     return EFI_NOT_FOUND;
   }
 
-  Result = (QueryStringType == RedfishGetTypeUri ? Target->ConfigLang : Target->Uri);
+  Result        = (QueryStringType == RedfishGetTypeUri ? Target->ConfigLang : Target->Uri);
   *ResultString = AllocateCopyPool (StrSize (Result), Result);
   if (*ResultString == NULL) {
     return EFI_OUT_OF_RESOURCES;
@@ -561,7 +563,6 @@ RedfishConfigLangMapGet (
 
   return EFI_SUCCESS;
 }
-
 
 /**
   Save URI string which maps to given ConfigLang.
@@ -582,11 +583,11 @@ RedfishConfigLangMapSet (
   IN  EFI_STRING                              Uri        OPTIONAL
   )
 {
-  REDFISH_CONFIG_LANG_MAP_RECORD       *Target;
-  REDFISH_CONFIG_LANG_MAP_PRIVATE_DATA *Private;
-  EFI_STATUS                        Status;
+  REDFISH_CONFIG_LANG_MAP_RECORD        *Target;
+  REDFISH_CONFIG_LANG_MAP_PRIVATE_DATA  *Private;
+  EFI_STATUS                            Status;
 
-  if (This == NULL || IS_EMPTY_STRING (ConfigLang)) {
+  if ((This == NULL) || IS_EMPTY_STRING (ConfigLang)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -622,11 +623,11 @@ RedfishConfigLangMapSet (
 **/
 EFI_STATUS
 RedfishConfigLangMapFlush (
-  IN  EDKII_REDFISH_CONFIG_LANG_MAP_PROTOCOL    *This
+  IN  EDKII_REDFISH_CONFIG_LANG_MAP_PROTOCOL  *This
   )
 {
-  REDFISH_CONFIG_LANG_MAP_PRIVATE_DATA *Private;
-  EFI_STATUS                Status;
+  REDFISH_CONFIG_LANG_MAP_PRIVATE_DATA  *Private;
+  EFI_STATUS                            Status;
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -680,11 +681,10 @@ RedfishConfigLangMapDriverUnload (
   EFI_STATUS  Status;
 
   if (mRedfishConfigLangMapPrivate != NULL) {
-
     Status = gBS->UninstallProtocolInterface (
                     mRedfishConfigLangMapPrivate->ImageHandle,
                     &gEdkIIRedfishConfigLangMapProtocolGuid,
-                    (VOID*)&mRedfishConfigLangMapPrivate->Protocol
+                    (VOID *)&mRedfishConfigLangMapPrivate->Protocol
                     );
     if (EFI_ERROR (Status)) {
       DEBUG ((DEBUG_ERROR, "%a, can not uninstall gEdkIIRedfishConfigLangMapProtocolGuid: %r\n", __FUNCTION__, Status));
@@ -715,7 +715,7 @@ RedfishConfigLangMapDriverUnload (
 //
 // EDKII_REDFISH_CONFIG_LANG_MAP_PROTOCOL.
 //
-EDKII_REDFISH_CONFIG_LANG_MAP_PROTOCOL mRedfishConfigLangMapProtocol = {
+EDKII_REDFISH_CONFIG_LANG_MAP_PROTOCOL  mRedfishConfigLangMapProtocol = {
   RedfishConfigLangMapGet,
   RedfishConfigLangMapSet,
   RedfishConfigLangMapFlush
@@ -739,7 +739,7 @@ RedfishConfigLangMapDriverEntryPoint (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EFI_STATUS    Status;
+  EFI_STATUS  Status;
 
   mRedfishConfigLangMapPrivate = AllocateZeroPool (sizeof (REDFISH_CONFIG_LANG_MAP_PRIVATE_DATA));
   if (mRedfishConfigLangMapPrivate == NULL) {
@@ -759,7 +759,7 @@ RedfishConfigLangMapDriverEntryPoint (
                   &ImageHandle,
                   &gEdkIIRedfishConfigLangMapProtocolGuid,
                   EFI_NATIVE_INTERFACE,
-                  (VOID*)&mRedfishConfigLangMapPrivate->Protocol
+                  (VOID *)&mRedfishConfigLangMapPrivate->Protocol
                   );
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a, can not install gEdkIIRedfishConfigLangMapProtocolGuid: %r\n", __FUNCTION__, Status));
