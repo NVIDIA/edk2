@@ -2,6 +2,7 @@
 # Redfish Client Package
 #
 # (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP<BR>
+# Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
@@ -50,6 +51,9 @@
   ## Include/Guid/RedfishClientEventGroup.h
   gEfiRedfishClientFeatureReadyToProvisioningGuid = { 0x77E4FC1C, 0x2428, 0x47EE, { 0x9E, 0xEC, 0x8B, 0x77, 0xEF, 0x9D, 0x4E, 0xF0 } }
   gEfiRedfishClientFeatureAfterProvisioningGuid   = { 0xE547CB6F, 0x306F, 0x4226, { 0xAB, 0x70, 0xA0, 0x6E, 0x26, 0xF1, 0x2E, 0xD0 } }
+
+  ## Include/RedfishBase.h
+  gEfiRedfishClientVariableGuid                   = { 0x91c46a3d, 0xed1a, 0x477b, { 0xa5, 0x33, 0x87, 0x2d, 0xcd, 0xb0, 0xfc, 0xc1 } }
 
 [PcdsFixedAtBuild]
   gEfiRedfishClientPkgTokenSpaceGuid.PcdMaxRedfishSchemaStringSize|32|UINT32|0x10000001
