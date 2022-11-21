@@ -1,6 +1,7 @@
 /** @file
 
   (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -21,7 +22,7 @@ REDFISH_ETAG_PRIVATE_DATA  *mRedfishETagPrivate = NULL;
 **/
 EFI_STATUS
 ReleaseETagRecord (
-  IN REDFISH_ETAG_RECORD *Record
+  IN REDFISH_ETAG_RECORD  *Record
   )
 {
   if (Record == NULL) {
@@ -53,12 +54,12 @@ ReleaseETagRecord (
 **/
 REDFISH_ETAG_RECORD *
 NewETagRecord (
-  IN  CHAR8   *Uri,
-  IN  CHAR8   *ETag
+  IN  CHAR8  *Uri,
+  IN  CHAR8  *ETag
   )
 {
-  REDFISH_ETAG_RECORD *NewRecord;
-  UINTN               Size;
+  REDFISH_ETAG_RECORD  *NewRecord;
+  UINTN                Size;
 
   if (IS_EMPTY_STRING (Uri) || IS_EMPTY_STRING (ETag)) {
     return NULL;
@@ -69,14 +70,14 @@ NewETagRecord (
     return NULL;
   }
 
-  Size = AsciiStrSize (Uri);
+  Size           = AsciiStrSize (Uri);
   NewRecord->Uri = AllocateCopyPool (Size, Uri);
   if (NewRecord->Uri == NULL) {
     goto ON_ERROR;
   }
 
   NewRecord->Size = Size;
-  Size = AsciiStrSize (ETag);
+  Size            = AsciiStrSize (ETag);
   NewRecord->ETag = AllocateCopyPool (Size, ETag);
   if (NewRecord->ETag == NULL) {
     goto ON_ERROR;
@@ -107,14 +108,14 @@ ON_ERROR:
 **/
 EFI_STATUS
 AddETagRecord (
-  IN  REDFISH_ETAG_LIST *List,
-  IN  CHAR8             *Uri,
-  IN  CHAR8             *ETag
+  IN  REDFISH_ETAG_LIST  *List,
+  IN  CHAR8              *Uri,
+  IN  CHAR8              *ETag
   )
 {
-  REDFISH_ETAG_RECORD *NewRecord;
+  REDFISH_ETAG_RECORD  *NewRecord;
 
-  if (List == NULL || IS_EMPTY_STRING (Uri) || IS_EMPTY_STRING (ETag)) {
+  if ((List == NULL) || IS_EMPTY_STRING (Uri) || IS_EMPTY_STRING (ETag)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -142,11 +143,11 @@ AddETagRecord (
 **/
 EFI_STATUS
 DeleteETagRecord (
-  IN  REDFISH_ETAG_LIST   *List,
-  IN  REDFISH_ETAG_RECORD *Record
+  IN  REDFISH_ETAG_LIST    *List,
+  IN  REDFISH_ETAG_RECORD  *Record
   )
 {
-  if (List == NULL || Record == NULL) {
+  if ((List == NULL) || (Record == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -173,20 +174,20 @@ FindETagRecord (
   IN  CHAR8       *Uri
   )
 {
-  LIST_ENTRY          *List;
-  REDFISH_ETAG_RECORD *Record;
+  LIST_ENTRY           *List;
+  REDFISH_ETAG_RECORD  *Record;
 
   if (IsListEmpty (ListHeader)) {
     return NULL;
   }
 
   Record = NULL;
-  List = GetFirstNode (ListHeader);
+  List   = GetFirstNode (ListHeader);
   while (!IsNull (ListHeader, List)) {
     Record = REDFISH_ETAG_RECORD_FROM_LIST (List);
 
     if (AsciiStrCmp (Record->Uri, Uri) == 0) {
-      return  Record;
+      return Record;
     }
 
     List = GetNextNode (ListHeader, List);
@@ -196,6 +197,7 @@ FindETagRecord (
 }
 
 #if ETAG_DEBUG_ENABLED
+
 /**
   Debug output the ETAG list.
 
@@ -208,12 +210,12 @@ FindETagRecord (
 **/
 EFI_STATUS
 DumpETagList (
-  IN  REDFISH_ETAG_LIST   *ETagList,
-  IN  EFI_STRING          Msg
+  IN  REDFISH_ETAG_LIST  *ETagList,
+  IN  EFI_STRING         Msg
   )
 {
-  LIST_ENTRY          *List;
-  REDFISH_ETAG_RECORD *Record;
+  LIST_ENTRY           *List;
+  REDFISH_ETAG_RECORD  *Record;
 
   if (ETagList == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -230,7 +232,7 @@ DumpETagList (
 
   DEBUG ((DEBUG_INFO, "Count: %d Total Size: %d\n", ETagList->Count, ETagList->TotalSize));
   Record = NULL;
-  List = GetFirstNode (&ETagList->Listheader);
+  List   = GetFirstNode (&ETagList->Listheader);
   while (!IsNull (&ETagList->Listheader, List)) {
     Record = REDFISH_ETAG_RECORD_FROM_LIST (List);
 
@@ -254,8 +256,8 @@ DumpETagList (
 **/
 EFI_STATUS
 DumpRawBuffer (
-  IN  CHAR8    *Buffer,
-  IN  UINTN     BufferSize
+  IN  CHAR8  *Buffer,
+  IN  UINTN  BufferSize
   )
 {
   UINTN  Index;
@@ -272,10 +274,12 @@ DumpRawBuffer (
 
     ++Index;
   }
+
   DEBUG ((DEBUG_ERROR, "\n"));
 
   return EFI_SUCCESS;
 }
+
 #endif
 
 /**
@@ -289,12 +293,12 @@ DumpRawBuffer (
 **/
 EFI_STATUS
 ReleaseETagList (
-  IN  REDFISH_ETAG_LIST   *ETagList
+  IN  REDFISH_ETAG_LIST  *ETagList
   )
 {
-  LIST_ENTRY          *List;
-  LIST_ENTRY          *Next;
-  REDFISH_ETAG_RECORD *Record;
+  LIST_ENTRY           *List;
+  LIST_ENTRY           *Next;
+  REDFISH_ETAG_RECORD  *Record;
 
   if (ETagList == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -305,11 +309,11 @@ ReleaseETagList (
   }
 
   Record = NULL;
-  Next = NULL;
-  List = GetFirstNode (&ETagList->Listheader);
+  Next   = NULL;
+  List   = GetFirstNode (&ETagList->Listheader);
   while (!IsNull (&ETagList->Listheader, List)) {
     Record = REDFISH_ETAG_RECORD_FROM_LIST (List);
-    Next = GetNextNode (&ETagList->Listheader, List);
+    Next   = GetNextNode (&ETagList->Listheader, List);
 
     DeleteETagRecord (ETagList, Record);
 
@@ -331,20 +335,20 @@ ReleaseETagList (
 **/
 EFI_STATUS
 SaveETagList (
-  IN  REDFISH_ETAG_LIST   *ETagList,
-  IN  EFI_STRING          VariableName
+  IN  REDFISH_ETAG_LIST  *ETagList,
+  IN  EFI_STRING         VariableName
   )
 {
-  LIST_ENTRY          *List;
-  REDFISH_ETAG_RECORD *Record;
-  CHAR8               *VarData;
-  VOID                *Data;
-  CHAR8               *Seeker;
-  UINTN               VarSize;
-  UINTN               StrSize;
-  EFI_STATUS          Status;
+  LIST_ENTRY           *List;
+  REDFISH_ETAG_RECORD  *Record;
+  CHAR8                *VarData;
+  VOID                 *Data;
+  CHAR8                *Seeker;
+  UINTN                VarSize;
+  UINTN                StrSize;
+  EFI_STATUS           Status;
 
-  if (ETagList == NULL || IS_EMPTY_STRING (VariableName)) {
+  if ((ETagList == NULL) || IS_EMPTY_STRING (VariableName)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -363,7 +367,7 @@ SaveETagList (
 
   Seeker = VarData;
   Record = NULL;
-  List = GetFirstNode (&ETagList->Listheader);
+  List   = GetFirstNode (&ETagList->Listheader);
   while (!IsNull (&ETagList->Listheader, List)) {
     Record = REDFISH_ETAG_RECORD_FROM_LIST (List);
 
@@ -382,14 +386,14 @@ SaveETagList (
 
     ++Seeker;
 
-    List = GetNextNode (&ETagList->Listheader, List);;
+    List = GetNextNode (&ETagList->Listheader, List);
   }
 
   *Seeker = '\0';
 
-#if ETAG_DEBUG_ENABLED
+ #if ETAG_DEBUG_ENABLED
   DumpRawBuffer (VarData, VarSize);
-#endif
+ #endif
 
   ASSERT (((UINTN)Seeker - (UINTN)VarData + 1) == VarSize);
 
@@ -398,17 +402,16 @@ SaveETagList (
   //
   Status = GetVariable2 (
              VariableName,
-             &mRedfishVariableGuid,
+             &gEfiRedfishClientVariableGuid,
              (VOID *)&Data,
              NULL
              );
   if (!EFI_ERROR (Status)) {
     FreePool (Data);
-    gRT->SetVariable (VariableName, &mRedfishVariableGuid, VARIABLE_ATTRIBUTE_NV_BS, 0, NULL);
+    gRT->SetVariable (VariableName, &gEfiRedfishClientVariableGuid, VARIABLE_ATTRIBUTE_NV_BS, 0, NULL);
   }
 
-
-  return gRT->SetVariable (VariableName, &mRedfishVariableGuid, VARIABLE_ATTRIBUTE_NV_BS, VarSize, (VOID *)VarData);
+  return gRT->SetVariable (VariableName, &gEfiRedfishClientVariableGuid, VARIABLE_ATTRIBUTE_NV_BS, VarSize, (VOID *)VarData);
 }
 
 /**
@@ -424,18 +427,18 @@ SaveETagList (
 **/
 EFI_STATUS
 InitialETagList (
-  IN  REDFISH_ETAG_LIST   *ETagList,
-  IN  EFI_STRING          VariableName
+  IN  REDFISH_ETAG_LIST  *ETagList,
+  IN  EFI_STRING         VariableName
   )
 {
-  CHAR8     *VarData;
-  CHAR8     *UriPointer;
-  CHAR8     *ETagPointer;
-  CHAR8     *Seeker;
-  UINTN      VariableSize;
-  EFI_STATUS Status;
+  CHAR8       *VarData;
+  CHAR8       *UriPointer;
+  CHAR8       *ETagPointer;
+  CHAR8       *Seeker;
+  UINTN       VariableSize;
+  EFI_STATUS  Status;
 
-  if (ETagList == NULL || IS_EMPTY_STRING (VariableName)) {
+  if ((ETagList == NULL) || IS_EMPTY_STRING (VariableName)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -444,7 +447,7 @@ InitialETagList (
   //
   Status = GetVariable2 (
              VariableName,
-             &mRedfishVariableGuid,
+             &gEfiRedfishClientVariableGuid,
              (VOID *)&VarData,
              &VariableSize
              );
@@ -452,11 +455,10 @@ InitialETagList (
     return EFI_NOT_FOUND;
   }
 
-  Seeker = VarData;
-  UriPointer = VarData;
+  Seeker      = VarData;
+  UriPointer  = VarData;
   ETagPointer = VarData;
   while (*Seeker != '\0') {
-
     //
     // Find URI
     //
@@ -467,7 +469,7 @@ InitialETagList (
       goto ON_ERROR;
     }
 
-    *Seeker = '\0';
+    *Seeker     = '\0';
     ETagPointer = ++Seeker;
 
     //
@@ -487,9 +489,9 @@ InitialETagList (
     UriPointer = ++Seeker;
   }
 
-#if ETAG_DEBUG_ENABLED
+ #if ETAG_DEBUG_ENABLED
   DumpETagList (ETagList, L"Initial ETag List from Variable");
-#endif
+ #endif
 
   Status = EFI_SUCCESS;
 
@@ -513,15 +515,15 @@ ON_ERROR:
 **/
 EFI_STATUS
 RedfishETagGet (
-  IN  EDKII_REDFISH_ETAG_PROTOCOL *This,
-  IN  CHAR8                     *Uri,
-  OUT CHAR8                     **ETag
+  IN  EDKII_REDFISH_ETAG_PROTOCOL  *This,
+  IN  CHAR8                        *Uri,
+  OUT CHAR8                        **ETag
   )
 {
-  REDFISH_ETAG_RECORD       *Target;
-  REDFISH_ETAG_PRIVATE_DATA *Private;
+  REDFISH_ETAG_RECORD        *Target;
+  REDFISH_ETAG_PRIVATE_DATA  *Private;
 
-  if (This == NULL || IS_EMPTY_STRING (Uri) || ETag == NULL) {
+  if ((This == NULL) || IS_EMPTY_STRING (Uri) || (ETag == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -538,7 +540,6 @@ RedfishETagGet (
 
   return EFI_SUCCESS;
 }
-
 
 /**
   Keep ETag string which maps to given Uri.
@@ -558,11 +559,11 @@ RedfishETagSet (
   IN  CHAR8                        *ETag  OPTIONAL
   )
 {
-  REDFISH_ETAG_RECORD       *Target;
-  REDFISH_ETAG_PRIVATE_DATA *Private;
-  EFI_STATUS                Status;
+  REDFISH_ETAG_RECORD        *Target;
+  REDFISH_ETAG_PRIVATE_DATA  *Private;
+  EFI_STATUS                 Status;
 
-  if (This == NULL || IS_EMPTY_STRING (Uri)) {
+  if ((This == NULL) || IS_EMPTY_STRING (Uri)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -598,11 +599,11 @@ RedfishETagSet (
 **/
 EFI_STATUS
 RedfishETagFlush (
-  IN  EDKII_REDFISH_ETAG_PROTOCOL    *This
+  IN  EDKII_REDFISH_ETAG_PROTOCOL  *This
   )
 {
-  REDFISH_ETAG_PRIVATE_DATA *Private;
-  EFI_STATUS                Status;
+  REDFISH_ETAG_PRIVATE_DATA  *Private;
+  EFI_STATUS                 Status;
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -656,11 +657,10 @@ RedfishETagDriverUnload (
   EFI_STATUS  Status;
 
   if (mRedfishETagPrivate != NULL) {
-
     Status = gBS->UninstallProtocolInterface (
                     mRedfishETagPrivate->ImageHandle,
                     &gEdkIIRedfishETagProtocolGuid,
-                    (VOID*)&mRedfishETagPrivate->Protocol
+                    (VOID *)&mRedfishETagPrivate->Protocol
                     );
     if (EFI_ERROR (Status)) {
       DEBUG ((DEBUG_ERROR, "%a, can not uninstall gEdkIIRedfishETagProtocolGuid: %r\n", __FUNCTION__, Status));
@@ -681,14 +681,13 @@ RedfishETagDriverUnload (
     mRedfishETagPrivate = NULL;
   }
 
-
   return EFI_SUCCESS;
 }
 
 //
 // EDKII_REDFISH_ETAG_PROTOCOL.
 //
-EDKII_REDFISH_ETAG_PROTOCOL mRedfishETagProtocol = {
+EDKII_REDFISH_ETAG_PROTOCOL  mRedfishETagProtocol = {
   RedfishETagGet,
   RedfishETagSet,
   RedfishETagFlush
@@ -712,7 +711,7 @@ RedfishETagDriverEntryPoint (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EFI_STATUS    Status;
+  EFI_STATUS  Status;
 
   mRedfishETagPrivate = AllocateZeroPool (sizeof (REDFISH_ETAG_PRIVATE_DATA));
   if (mRedfishETagPrivate == NULL) {
@@ -732,7 +731,7 @@ RedfishETagDriverEntryPoint (
                   &ImageHandle,
                   &gEdkIIRedfishETagProtocolGuid,
                   EFI_NATIVE_INTERFACE,
-                  (VOID*)&mRedfishETagPrivate->Protocol
+                  (VOID *)&mRedfishETagPrivate->Protocol
                   );
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a, can not install gEdkIIRedfishETagProtocolGuid: %r\n", __FUNCTION__, Status));

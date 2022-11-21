@@ -4,6 +4,7 @@
 
   (C) Copyright 2014-2021 Hewlett Packard Enterprise Development LP<BR>
   Copyright (c) 2020, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
@@ -41,6 +42,10 @@ typedef INTN    intptr_t;
 #endif
 
 #ifdef MDE_CPU_X64
+#define SIZEOF_VOIDP  8
+#endif
+
+#ifdef MDE_CPU_AARCH64
 #define SIZEOF_VOIDP  8
 #endif
 
