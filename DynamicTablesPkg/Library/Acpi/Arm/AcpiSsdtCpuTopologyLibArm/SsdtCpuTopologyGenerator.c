@@ -22,6 +22,7 @@
 #include <Library/AcpiHelperLib.h>
 #include <Library/TableHelperLib.h>
 #include <Library/AmlLib/AmlLib.h>
+#include <Library/PcdLib.h>
 #include <Protocol/ConfigurationManagerProtocol.h>
 
 #include "SsdtCpuTopologyGenerator.h"
@@ -814,7 +815,8 @@ CreateAmlProcessorContainer (
                                       Protocol Interface.
   @param [in] NodeToken               Token of the CM_ARM_PROC_HIERARCHY_INFO
                                       currently handled.
-                                      Cannot be CM_NULL_TOKEN.
+                                      CM_NULL_TOKEN if top level container
+                                      should be created.
   @param [in] ParentNode              Parent node to attach the created
                                       node to.
   @param [in,out] ProcContainerIndex  Pointer to the current processor container
@@ -841,12 +843,12 @@ CreateAmlCpuTopologyTree (
   AML_OBJECT_NODE_HANDLE  ProcContainerNode;
   UINT32                  Uid;
   UINT16                  Name;
+  UINT32                  NodeFlags;
 
   ASSERT (Generator != NULL);
   ASSERT (Generator->ProcNodeList != NULL);
   ASSERT (Generator->ProcNodeCount != 0);
   ASSERT (CfgMgrProtocol != NULL);
-  ASSERT (NodeToken != CM_NULL_TOKEN);
   ASSERT (ParentNode != NULL);
   ASSERT (ProcContainerIndex != NULL);
 
@@ -893,8 +895,14 @@ CreateAmlCpuTopologyTree (
       } else {
         // If this is not a Cpu, then this is a processor container.
 
+        NodeFlags = Generator->ProcNodeList[Index].Flags;
+        // Allow physical property for top level nodes
+        if (NodeToken == CM_NULL_TOKEN) {
+          NodeFlags &= ~EFI_ACPI_6_3_PPTT_PACKAGE_PHYSICAL;
+        }
+
         // Acpi processor Id for clusters is not handled.
-        if ((Generator->ProcNodeList[Index].Flags & PPTT_PROCESSOR_MASK) !=
+        if ((NodeFlags & PPTT_PROCESSOR_MASK) !=
             PPTT_CLUSTER_PROCESSOR_MASK)
         {
           DEBUG ((
@@ -973,10 +981,10 @@ CreateTopologyFromProcHierarchy (
   IN        AML_OBJECT_NODE_HANDLE                        ScopeNode
   )
 {
-  EFI_STATUS  Status;
-  UINT32      Index;
-  UINT32      TopLevelProcNodeIndex;
-  UINT32      ProcContainerIndex;
+  EFI_STATUS       Status;
+  UINT32           Index;
+  CM_OBJECT_TOKEN  TopLevelToken;
+  UINT32           ProcContainerIndex;
 
   ASSERT (Generator != NULL);
   ASSERT (Generator->ProcNodeCount != 0);
@@ -984,8 +992,8 @@ CreateTopologyFromProcHierarchy (
   ASSERT (CfgMgrProtocol != NULL);
   ASSERT (ScopeNode != NULL);
 
-  TopLevelProcNodeIndex = MAX_UINT32;
-  ProcContainerIndex    = 0;
+  TopLevelToken      = CM_NULL_TOKEN;
+  ProcContainerIndex = 0;
 
   Status = TokenTableInitialize (Generator, Generator->ProcNodeCount);
   if (EFI_ERROR (Status)) {
@@ -993,33 +1001,27 @@ CreateTopologyFromProcHierarchy (
     return Status;
   }
 
-  // It is assumed that there is one unique CM_ARM_PROC_HIERARCHY_INFO
-  // structure with no ParentToken and the EFI_ACPI_6_3_PPTT_PACKAGE_PHYSICAL
-  // flag set. All other CM_ARM_PROC_HIERARCHY_INFO are non-physical and
-  // have a ParentToken.
-  for (Index = 0; Index < Generator->ProcNodeCount; Index++) {
-    if ((Generator->ProcNodeList[Index].ParentToken == CM_NULL_TOKEN) &&
-        (Generator->ProcNodeList[Index].Flags &
-         EFI_ACPI_6_3_PPTT_PACKAGE_PHYSICAL))
-    {
-      if (TopLevelProcNodeIndex != MAX_UINT32) {
-        DEBUG ((
-          DEBUG_ERROR,
-          "ERROR: SSDT-CPU-TOPOLOGY: Top level CM_ARM_PROC_HIERARCHY_INFO "
-          "must be unique\n"
-          ));
-        ASSERT (0);
-        goto exit_handler;
-      }
+  if (!PcdGetBool (PcdForceTopLevelProcessorContainer)) {
+    for (Index = 0; Index < Generator->ProcNodeCount; Index++) {
+      if ((Generator->ProcNodeList[Index].ParentToken == CM_NULL_TOKEN) &&
+          (Generator->ProcNodeList[Index].Flags &
+           EFI_ACPI_6_3_PPTT_PACKAGE_PHYSICAL))
+      {
+        // Multi-socket detected, using top level containers
+        if (TopLevelToken != CM_NULL_TOKEN) {
+          TopLevelToken = CM_NULL_TOKEN;
+          break;
+        }
 
-      TopLevelProcNodeIndex = Index;
-    }
-  } // for
+        TopLevelToken = Generator->ProcNodeList[Index].Token;
+      }
+    } // for
+  }
 
   Status = CreateAmlCpuTopologyTree (
              Generator,
              CfgMgrProtocol,
-             Generator->ProcNodeList[TopLevelProcNodeIndex].Token,
+             TopLevelToken,
              ScopeNode,
              &ProcContainerIndex
              );
@@ -1106,7 +1108,7 @@ CreateTopologyFromGicC (
         break;
       }
     }
-  } // for
+  }   // for
 
   return Status;
 }
