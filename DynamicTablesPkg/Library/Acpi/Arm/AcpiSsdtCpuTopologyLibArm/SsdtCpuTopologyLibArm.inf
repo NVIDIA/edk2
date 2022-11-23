@@ -31,3 +31,7 @@
   AcpiHelperLib
   AmlLib
   BaseLib
+  PcdLib
+
+[Pcd]
+  gEdkiiDynamicTablesPkgTokenSpaceGuid.PcdForceTopLevelProcessorContainer
