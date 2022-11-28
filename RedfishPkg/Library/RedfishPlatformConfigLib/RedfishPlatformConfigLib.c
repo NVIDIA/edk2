@@ -2,6 +2,7 @@
   Wrapper function to support Redfish Platform Config protocol.
 
   (C) Copyright 2021 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -41,6 +42,76 @@ RedfishPlatformConfigGetValue (
                                                       Schema,
                                                       Version,
                                                       ConfigureLang,
+                                                      Value
+                                                      );
+}
+
+/**
+  Get Redfish attribute value with the given Schema and Configure Language.
+
+  @param[in]   Schema              The Redfish schema to query.
+  @param[in]   Version             The Redfish version to query.
+  @param[in]   ConfigureLang       The target value which match this configure Language.
+  @param[out]  AttributeValue      The attribute value.
+
+  @retval EFI_SUCCESS              Value is returned successfully.
+  @retval Others                   Some error happened.
+
+**/
+EFI_STATUS
+RedfishPlatformConfigGetAttribute (
+  IN     CHAR8                    *Schema,
+  IN     CHAR8                    *Version,
+  IN     EFI_STRING               ConfigureLang,
+  OUT    EDKII_REDFISH_ATTRIBUTE  *AttributeValue
+  )
+{
+  if (mRedfishPlatformConfigLibPrivate.Protocol == NULL) {
+    return EFI_NOT_READY;
+  }
+
+  return mRedfishPlatformConfigLibPrivate.Protocol->GetAttribute (
+                                                      mRedfishPlatformConfigLibPrivate.Protocol,
+                                                      Schema,
+                                                      Version,
+                                                      ConfigureLang,
+                                                      AttributeValue
+                                                      );
+}
+
+/**
+  Get Redfish default value with the given Schema and Configure Language.
+
+  @param[in]   Schema              The Redfish schema to query.
+  @param[in]   Version             The Redfish version to query.
+  @param[in]   ConfigureLang       The target value which match this configure Language.
+  @param[in]   DefaultClass        The UEFI defined default class.
+                                   Please refer to UEFI spec. 33.2.5.8 "defaults" for details.
+  @param[out]  Value               The returned value.
+
+  @retval EFI_SUCCESS              Value is returned successfully.
+  @retval Others                   Some error happened.
+
+**/
+EFI_STATUS
+RedfishPlatformConfigGetDefaultValue (
+  IN     CHAR8                *Schema,
+  IN     CHAR8                *Version,
+  IN     EFI_STRING           ConfigureLang,
+  IN     UINT16               DefaultClass,
+  OUT    EDKII_REDFISH_VALUE  *Value
+  )
+{
+  if (mRedfishPlatformConfigLibPrivate.Protocol == NULL) {
+    return EFI_NOT_READY;
+  }
+
+  return mRedfishPlatformConfigLibPrivate.Protocol->GetDefaultValue (
+                                                      mRedfishPlatformConfigLibPrivate.Protocol,
+                                                      Schema,
+                                                      Version,
+                                                      ConfigureLang,
+                                                      DefaultClass,
                                                       Value
                                                       );
 }

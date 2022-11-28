@@ -2,6 +2,7 @@
   This file defines the EDKII Redfish Platform Config Protocol interface.
 
   (C) Copyright 2021 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -57,8 +58,20 @@ typedef struct {
   LIST_ENTRY                                PendingList;                // The list to keep updated HII handle.
 } REDFISH_PLATFORM_CONFIG_PRIVATE;
 
+//
+// Definition of REDFISH_STACK.
+//
+typedef struct {
+  VOID     **Pool;
+  UINTN    Size;
+  UINTN    Index;
+} REDFISH_STACK;
+
 #define REDFISH_PLATFORM_CONFIG_PRIVATE_FROM_THIS(a)  BASE_CR (a, REDFISH_PLATFORM_CONFIG_PRIVATE, Protocol)
-#define REGULAR_EXPRESSION_INCLUDE_ALL  L".*"
-#define CONFIGURE_LANGUAGE_PREFIX       "x-uefi-redfish-"
+#define REGULAR_EXPRESSION_INCLUDE_ALL   L".*"
+#define CONFIGURE_LANGUAGE_PREFIX        "x-uefi-redfish-"
+#define REDFISH_PLATFORM_CONFIG_VERSION  0x00010000
+#define REDFISH_PLATFORM_CONFIG_DEBUG    DEBUG_VERBOSE
+#define REDFISH_MENU_PATH_SIZE           8
 
 #endif

@@ -3,6 +3,7 @@
 
   Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
   (C) Copyright 2021 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -185,6 +186,28 @@ PushScope (
 EFI_STATUS
 PopScope (
   OUT UINT8  *Operand
+  );
+
+/**
+  Return the result of the expression list. Check the expression list and
+  return the highest priority express result.
+  Priority: DisableIf > SuppressIf > GrayOutIf > FALSE
+
+  @param[in]  ExpList         The input expression list.
+  @param[in]  Evaluate        Whether need to evaluate the expression first.
+  @param[in]  FormSet         FormSet associated with this expression.
+  @param[in]  Form            Form associated with this expression.
+
+  @retval EXPRESS_RESULT      Return the higher priority express result.
+                              DisableIf > SuppressIf > GrayOutIf > FALSE
+
+**/
+EXPRESS_RESULT
+EvaluateExpressionList (
+  IN HII_EXPRESSION_LIST *ExpList,
+  IN BOOLEAN Evaluate,
+  IN HII_FORMSET *FormSet, OPTIONAL
+  IN HII_FORM    *Form OPTIONAL
   );
 
 #endif

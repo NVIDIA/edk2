@@ -3,6 +3,7 @@
 
   Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
   (C) Copyright 2021 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -5147,6 +5148,622 @@ Done:
   RestoreExpressionEvaluationStackOffset (StackOffset);
   if (!EFI_ERROR (Status)) {
     CopyMem (&Expression->Result, Value, sizeof (EFI_HII_VALUE));
+  }
+
+  return Status;
+}
+
+/**
+  Set value of a data element in an Array by its Index.
+
+  @param[in]  Array       The data array.
+  @param[in]  Type        Type of the data in this array.
+  @param[in]  Index       Zero based index for data in this array.
+  @param[in]  Value       The value to be set.
+
+**/
+VOID
+SetArrayData (
+  IN VOID    *Array,
+  IN UINT8   Type,
+  IN UINTN   Index,
+  IN UINT64  Value
+  )
+{
+  ASSERT (Array != NULL);
+
+  switch (Type) {
+    case EFI_IFR_TYPE_NUM_SIZE_8:
+      *(((UINT8 *)Array) + Index) = (UINT8)Value;
+      break;
+
+    case EFI_IFR_TYPE_NUM_SIZE_16:
+      *(((UINT16 *)Array) + Index) = (UINT16)Value;
+      break;
+
+    case EFI_IFR_TYPE_NUM_SIZE_32:
+      *(((UINT32 *)Array) + Index) = (UINT32)Value;
+      break;
+
+    case EFI_IFR_TYPE_NUM_SIZE_64:
+      *(((UINT64 *)Array) + Index) = (UINT64)Value;
+      break;
+
+    default:
+      break;
+  }
+}
+
+/**
+  Search an Option of a Question by its value.
+
+  @param[in]  Question           The Question
+  @param[in]  OptionValue        Value for Option to be searched.
+
+  @retval Pointer                Pointer to the found Option.
+  @retval NULL                   Option not found.
+
+**/
+HII_QUESTION_OPTION *
+ValueToOption (
+  IN HII_STATEMENT        *Question,
+  IN HII_STATEMENT_VALUE  *OptionValue
+  )
+{
+  LIST_ENTRY           *Link;
+  HII_QUESTION_OPTION  *Option;
+  EFI_HII_VALUE        Data1;
+  EFI_HII_VALUE        Data2;
+  INTN                 Result;
+  EFI_STATUS           Status;
+
+  Result = 0;
+  ZeroMem (&Data1, sizeof (EFI_HII_VALUE));
+  ZeroMem (&Data2, sizeof (EFI_HII_VALUE));
+
+  Status = HiiStatementValueToHiiValue (OptionValue, &Data1);
+  ASSERT_EFI_ERROR (Status);
+
+  Link = GetFirstNode (&Question->OptionListHead);
+  while (!IsNull (&Question->OptionListHead, Link)) {
+    Option = HII_QUESTION_OPTION_FROM_LINK (Link);
+
+    Status = HiiStatementValueToHiiValue (&Option->Value, &Data2);
+    ASSERT_EFI_ERROR (Status);
+
+    if ((CompareHiiValue (&Data1, &Data2, &Result, NULL) == EFI_SUCCESS) && (Result == 0)) {
+      //
+      // Check the suppressif condition, only a valid option can be return.
+      //
+      if ((Option->SuppressExpression == NULL) ||
+          ((EvaluateExpressionList (Option->SuppressExpression, FALSE, NULL, NULL) == ExpressFalse)))
+      {
+        return Option;
+      }
+    }
+
+    Link = GetNextNode (&Question->OptionListHead, Link);
+  }
+
+  return NULL;
+}
+
+/**
+  Find the point in the ConfigResp string for this question.
+
+  @param[in]  Question         The question.
+  @param[in]  ConfigResp       Get ConfigResp string.
+
+  @retval  point to the offset where is for this question.
+
+**/
+CHAR16 *
+GetOffsetFromConfigResp (
+  IN HII_STATEMENT  *Question,
+  IN CHAR16         *ConfigResp
+  )
+{
+  CHAR16  *RequestElement;
+  CHAR16  *BlockData;
+
+  //
+  // Type is EFI_HII_VARSTORE_NAME_VALUE.
+  //
+  if (Question->Storage->Type == EFI_HII_VARSTORE_NAME_VALUE) {
+    RequestElement = StrStr (ConfigResp, Question->VariableName);
+    if (RequestElement != NULL) {
+      //
+      // Skip the "VariableName=" field.
+      //
+      RequestElement += StrLen (Question->VariableName) + 1;
+    }
+
+    return RequestElement;
+  }
+
+  //
+  // Type is EFI_HII_VARSTORE_EFI_VARIABLE or EFI_HII_VARSTORE_EFI_VARIABLE_BUFFER
+  //
+
+  //
+  // Convert all hex digits in ConfigResp to lower case before searching.
+  //
+  HiiToLower (ConfigResp);
+
+  //
+  // 1. Directly use Question->BlockName to find.
+  //
+  RequestElement = StrStr (ConfigResp, Question->BlockName);
+  if (RequestElement != NULL) {
+    //
+    // Skip the "Question->BlockName&VALUE=" field.
+    //
+    RequestElement += StrLen (Question->BlockName) + StrLen (L"&VALUE=");
+    return RequestElement;
+  }
+
+  //
+  // 2. Change all hex digits in Question->BlockName to lower and compare again.
+  //
+  BlockData = AllocateCopyPool (StrSize (Question->BlockName), Question->BlockName);
+  ASSERT (BlockData != NULL);
+  HiiToLower (BlockData);
+  RequestElement = StrStr (ConfigResp, BlockData);
+  FreePool (BlockData);
+
+  if (RequestElement != NULL) {
+    //
+    // Skip the "Question->BlockName&VALUE=" field.
+    //
+    RequestElement += StrLen (Question->BlockName) + StrLen (L"&VALUE=");
+  }
+
+  return RequestElement;
+}
+
+/**
+  Get Question default value from AltCfg string.
+
+  @param[in]  FormSet            The form set.
+  @param[in]  Form               The form
+  @param[in]  Question           The question.
+  @param[out] DefaultValue       Default value.
+
+  @retval EFI_SUCCESS            Question is reset to default value.
+
+**/
+EFI_STATUS
+GetDefaultValueFromAltCfg (
+  IN     HII_FORMSET          *FormSet,
+  IN     HII_FORM             *Form,
+  IN     HII_STATEMENT        *Question,
+  OUT    HII_STATEMENT_VALUE  *DefaultValue
+  )
+{
+  HII_FORMSET_STORAGE      *Storage;
+  CHAR16                   *ConfigResp;
+  CHAR16                   *Value;
+  LIST_ENTRY               *Link;
+  HII_FORM_CONFIG_REQUEST  *ConfigInfo;
+
+  Storage = Question->Storage;
+  if ((Storage == NULL) || (Storage->Type == EFI_HII_VARSTORE_EFI_VARIABLE)) {
+    return EFI_NOT_FOUND;
+  }
+
+  //
+  // Try to get AltCfg string from form. If not found it, then
+  // try to get it from formset.
+  //
+  ConfigResp = NULL;
+  Link       = GetFirstNode (&Form->ConfigRequestHead);
+  while (!IsNull (&Form->ConfigRequestHead, Link)) {
+    ConfigInfo = HII_FORM_CONFIG_REQUEST_FROM_LINK (Link);
+    Link       = GetNextNode (&Form->ConfigRequestHead, Link);
+
+    if (Storage == ConfigInfo->Storage) {
+      ConfigResp = ConfigInfo->ConfigAltResp;
+      break;
+    }
+  }
+
+  if (ConfigResp == NULL) {
+    return EFI_NOT_FOUND;
+  }
+
+  Value = GetOffsetFromConfigResp (Question, ConfigResp);
+  if (Value == NULL) {
+    return EFI_NOT_FOUND;
+  }
+
+  return BufferToValue (Question, Value, DefaultValue);
+}
+
+/**
+  Get default Id value used for browser.
+
+  @param[in]  DefaultId     The default id value used by hii.
+
+  @retval Browser used default value.
+
+**/
+INTN
+GetDefaultIdForCallBack (
+  IN UINTN  DefaultId
+  )
+{
+  if (DefaultId == EFI_HII_DEFAULT_CLASS_STANDARD) {
+    return EFI_BROWSER_ACTION_DEFAULT_STANDARD;
+  } else if (DefaultId == EFI_HII_DEFAULT_CLASS_MANUFACTURING) {
+    return EFI_BROWSER_ACTION_DEFAULT_MANUFACTURING;
+  } else if (DefaultId == EFI_HII_DEFAULT_CLASS_SAFE) {
+    return EFI_BROWSER_ACTION_DEFAULT_SAFE;
+  } else if ((DefaultId >= EFI_HII_DEFAULT_CLASS_PLATFORM_BEGIN) && (DefaultId < EFI_HII_DEFAULT_CLASS_PLATFORM_BEGIN + 0x1000)) {
+    return EFI_BROWSER_ACTION_DEFAULT_PLATFORM + DefaultId - EFI_HII_DEFAULT_CLASS_PLATFORM_BEGIN;
+  } else if ((DefaultId >= EFI_HII_DEFAULT_CLASS_HARDWARE_BEGIN) && (DefaultId < EFI_HII_DEFAULT_CLASS_HARDWARE_BEGIN + 0x1000)) {
+    return EFI_BROWSER_ACTION_DEFAULT_HARDWARE + DefaultId - EFI_HII_DEFAULT_CLASS_HARDWARE_BEGIN;
+  } else if ((DefaultId >= EFI_HII_DEFAULT_CLASS_FIRMWARE_BEGIN) && (DefaultId < EFI_HII_DEFAULT_CLASS_FIRMWARE_BEGIN + 0x1000)) {
+    return EFI_BROWSER_ACTION_DEFAULT_FIRMWARE + DefaultId - EFI_HII_DEFAULT_CLASS_FIRMWARE_BEGIN;
+  } else {
+    return -1;
+  }
+}
+
+/**
+  Get default value of question.
+
+  @param[in]  FormSet            The form set.
+  @param[in]  Form               The form.
+  @param[in]  Question           The question.
+  @param[in]  DefaultId          The Class of the default.
+  @param[out] DefaultValue       The default value of given question.
+
+  @retval EFI_SUCCESS            Question is reset to default value.
+
+**/
+EFI_STATUS
+GetQuestionDefault (
+  IN HII_FORMSET           *FormSet,
+  IN HII_FORM              *Form,
+  IN HII_STATEMENT         *Question,
+  IN UINT16                DefaultId,
+  OUT HII_STATEMENT_VALUE  *DefaultValue
+  )
+{
+  EFI_STATUS                      Status;
+  LIST_ENTRY                      *Link;
+  HII_QUESTION_DEFAULT            *Default;
+  HII_QUESTION_OPTION             *Option;
+  HII_STATEMENT_VALUE             *HiiValue;
+  UINT8                           Index;
+  EFI_STRING                      StrValue;
+  EFI_HII_CONFIG_ACCESS_PROTOCOL  *ConfigAccess;
+  EFI_BROWSER_ACTION_REQUEST      ActionRequest;
+  INTN                            Action;
+  EFI_IFR_TYPE_VALUE              *TypeValue;
+  UINT16                          OriginalDefaultId;
+  HII_FORMSET_DEFAULTSTORE        *DefaultStore;
+  LIST_ENTRY                      *DefaultLink;
+
+  if ((FormSet == NULL) || (Form == NULL) || (Question == NULL) || (DefaultValue == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Status            = EFI_NOT_FOUND;
+  StrValue          = NULL;
+  OriginalDefaultId = DefaultId;
+  DefaultLink       = GetFirstNode (&FormSet->DefaultStoreListHead);
+
+  //
+  // Statement don't have storage, skip them
+  //
+  if (Question->QuestionId == 0) {
+    DEBUG ((DEBUG_ERROR, "%a, Question has no storage, skip it\n", __FUNCTION__));
+    return Status;
+  }
+
+  //
+  // There are Five ways to specify default value for a Question:
+  //  1, use call back function (highest priority)
+  //  2, use ExtractConfig function
+  //  3, use nested EFI_IFR_DEFAULT
+  //  4, set flags of EFI_ONE_OF_OPTION (provide Standard and Manufacturing default)
+  //  5, set flags of EFI_IFR_CHECKBOX (provide Standard and Manufacturing default) (lowest priority)
+  //
+  CopyMem (DefaultValue, &Question->Value, sizeof (HII_STATEMENT_VALUE));
+ReGetDefault:
+  HiiValue  = DefaultValue;
+  TypeValue = &HiiValue->Value;
+  if (HiiValue->Type == EFI_IFR_TYPE_BUFFER) {
+    //
+    // For orderedlist, need to pass the BufferValue to Callback function.
+    //
+    DefaultValue->BufferLen = Question->Value.BufferLen;
+    DefaultValue->Buffer    = AllocateZeroPool (DefaultValue->BufferLen);
+    ASSERT (DefaultValue->Buffer != NULL);
+    if (DefaultValue->Buffer == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    TypeValue = (EFI_IFR_TYPE_VALUE *)DefaultValue->Buffer;
+  }
+
+  //
+  // Get Question defaut value from call back function.
+  // The string type of question cause HII driver to set string to its default value.
+  // So, we don't do this otherwise it will actually set question to default value.
+  // We only want to get default value of question.
+  //
+  if (HiiValue->Type != EFI_IFR_TYPE_STRING) {
+    ConfigAccess = FormSet->ConfigAccess;
+    Action       = GetDefaultIdForCallBack (DefaultId);
+    if ((Action > 0) && ((Question->QuestionFlags & EFI_IFR_FLAG_CALLBACK) != 0) && (ConfigAccess != NULL)) {
+      ActionRequest = EFI_BROWSER_ACTION_REQUEST_NONE;
+      Status        = ConfigAccess->Callback (
+                                      ConfigAccess,
+                                      Action,
+                                      Question->QuestionId,
+                                      HiiValue->Type,
+                                      TypeValue,
+                                      &ActionRequest
+                                      );
+      if (!EFI_ERROR (Status)) {
+        return Status;
+      }
+    }
+  }
+
+  //
+  // Get default value from altcfg string.
+  //
+  if (ConfigAccess != NULL) {
+    Status = GetDefaultValueFromAltCfg (FormSet, Form, Question, DefaultValue);
+    if (!EFI_ERROR (Status)) {
+      return Status;
+    }
+  }
+
+  //
+  // EFI_IFR_DEFAULT has highest priority
+  //
+  if (!IsListEmpty (&Question->DefaultListHead)) {
+    Link = GetFirstNode (&Question->DefaultListHead);
+    while (!IsNull (&Question->DefaultListHead, Link)) {
+      Default = HII_QUESTION_DEFAULT_FROM_LINK (Link);
+
+      if (Default->DefaultId == DefaultId) {
+        if (Default->ValueExpression != NULL) {
+          //
+          // Default is provided by an Expression, evaluate it
+          //
+          Status = EvaluateHiiExpression (FormSet, Form, Default->ValueExpression);
+          if (EFI_ERROR (Status)) {
+            return Status;
+          }
+
+          if (Default->ValueExpression->Result.Type == EFI_IFR_TYPE_BUFFER) {
+            ASSERT (HiiValue->Type == EFI_IFR_TYPE_BUFFER && DefaultValue->Buffer != NULL);
+            if (DefaultValue->BufferLen > Default->ValueExpression->Result.BufferLen) {
+              CopyMem (DefaultValue->Buffer, Default->ValueExpression->Result.Buffer, Default->ValueExpression->Result.BufferLen);
+              DefaultValue->BufferLen = Default->ValueExpression->Result.BufferLen;
+            } else {
+              CopyMem (DefaultValue->Buffer, Default->ValueExpression->Result.Buffer, DefaultValue->BufferLen);
+            }
+
+            FreePool (Default->ValueExpression->Result.Buffer);
+          }
+
+          HiiValue->Type = Default->ValueExpression->Result.Type;
+          CopyMem (&HiiValue->Value, &Default->ValueExpression->Result.Value, sizeof (EFI_IFR_TYPE_VALUE));
+        } else {
+          //
+          // Default value is embedded in EFI_IFR_DEFAULT
+          //
+          if (Default->Value.Type == EFI_IFR_TYPE_BUFFER) {
+            ASSERT (HiiValue->Buffer != NULL);
+            CopyMem (HiiValue->Buffer, Default->Value.Buffer, Default->Value.BufferLen);
+          } else {
+            CopyMem (HiiValue, &Default->Value, sizeof (EFI_HII_VALUE));
+          }
+        }
+
+        if (HiiValue->Type == EFI_IFR_TYPE_STRING) {
+          StrValue = HiiGetString (FormSet->HiiHandle, HiiValue->Value.string, NULL);
+          if (StrValue == NULL) {
+            return EFI_NOT_FOUND;
+          }
+
+          if (DefaultValue->BufferLen > StrSize (StrValue)) {
+            ZeroMem (DefaultValue->Buffer, DefaultValue->BufferLen);
+            CopyMem (DefaultValue->Buffer, StrValue, StrSize (StrValue));
+          } else {
+            CopyMem (DefaultValue->Buffer, StrValue, DefaultValue->BufferLen);
+          }
+        }
+
+        return EFI_SUCCESS;
+      }
+
+      Link = GetNextNode (&Question->DefaultListHead, Link);
+    }
+  }
+
+  //
+  // EFI_ONE_OF_OPTION
+  //
+  if ((Question->Operand == EFI_IFR_ONE_OF_OP) && !IsListEmpty (&Question->OptionListHead)) {
+    if (DefaultId <= EFI_HII_DEFAULT_CLASS_MANUFACTURING) {
+      //
+      // OneOfOption could only provide Standard and Manufacturing default
+      //
+      Link = GetFirstNode (&Question->OptionListHead);
+      while (!IsNull (&Question->OptionListHead, Link)) {
+        Option = HII_QUESTION_OPTION_FROM_LINK (Link);
+        Link   = GetNextNode (&Question->OptionListHead, Link);
+
+        if ((Option->SuppressExpression != NULL) &&
+            (EvaluateExpressionList (Option->SuppressExpression, FALSE, NULL, NULL) != ExpressFalse))
+        {
+          continue;
+        }
+
+        if (((DefaultId == EFI_HII_DEFAULT_CLASS_STANDARD) && ((Option->Flags & EFI_IFR_OPTION_DEFAULT) != 0)) ||
+            ((DefaultId == EFI_HII_DEFAULT_CLASS_MANUFACTURING) && ((Option->Flags & EFI_IFR_OPTION_DEFAULT_MFG) != 0))
+            )
+        {
+          CopyMem (HiiValue, &Option->Value, sizeof (EFI_HII_VALUE));
+
+          return EFI_SUCCESS;
+        }
+      }
+    }
+  }
+
+  //
+  // EFI_IFR_CHECKBOX - lowest priority
+  //
+  if (Question->Operand == EFI_IFR_CHECKBOX_OP) {
+    if (DefaultId <= EFI_HII_DEFAULT_CLASS_MANUFACTURING) {
+      //
+      // Checkbox could only provide Standard and Manufacturing default
+      //
+      if (((DefaultId == EFI_HII_DEFAULT_CLASS_STANDARD) && ((Question->ExtraData.Flags & EFI_IFR_CHECKBOX_DEFAULT) != 0)) ||
+          ((DefaultId == EFI_HII_DEFAULT_CLASS_MANUFACTURING) && ((Question->ExtraData.Flags & EFI_IFR_CHECKBOX_DEFAULT_MFG) != 0))
+          )
+      {
+        HiiValue->Value.b = TRUE;
+      }
+
+      return EFI_SUCCESS;
+    }
+  }
+
+  //
+  // For question without default value for current default Id, we try to re-get the default value form other default id in the DefaultStoreList.
+  // If get, will exit the function, if not, will choose next default id in the DefaultStoreList.
+  // The default id in DefaultStoreList are in ascending order to make sure choose the smallest default id every time.
+  //
+  while (!IsNull (&FormSet->DefaultStoreListHead, DefaultLink)) {
+    DefaultStore = HII_FORMSET_DEFAULTSTORE_FROM_LINK (DefaultLink);
+    DefaultLink  = GetNextNode (&FormSet->DefaultStoreListHead, DefaultLink);
+    DefaultId    = DefaultStore->DefaultId;
+    if (DefaultId == OriginalDefaultId) {
+      continue;
+    }
+
+    goto ReGetDefault;
+  }
+
+  //
+  // For Questions without default value for all the default id in the DefaultStoreList.
+  //
+  Status = EFI_NOT_FOUND;
+  switch (Question->Operand) {
+    case EFI_IFR_CHECKBOX_OP:
+      HiiValue->Value.b = FALSE;
+      Status            = EFI_SUCCESS;
+      break;
+
+    case EFI_IFR_NUMERIC_OP:
+      //
+      // Take minimum value as numeric default value
+      //
+      if ((Question->ExtraData.NumData.Flags & EFI_IFR_DISPLAY) == 0) {
+        //
+        // In EFI_IFR_DISPLAY_INT_DEC type, should check value with int* type.
+        //
+        switch (Question->ExtraData.NumData.Flags & EFI_IFR_NUMERIC_SIZE) {
+          case EFI_IFR_NUMERIC_SIZE_1:
+            if (((INT8)HiiValue->Value.u8 < (INT8)Question->ExtraData.NumData.Minimum) || ((INT8)HiiValue->Value.u8 > (INT8)Question->ExtraData.NumData.Maximum)) {
+              HiiValue->Value.u8 = (UINT8)Question->ExtraData.NumData.Minimum;
+              Status             = EFI_SUCCESS;
+            }
+
+            break;
+          case EFI_IFR_NUMERIC_SIZE_2:
+            if (((INT16)HiiValue->Value.u16 < (INT16)Question->ExtraData.NumData.Minimum) || ((INT16)HiiValue->Value.u16 > (INT16)Question->ExtraData.NumData.Maximum)) {
+              HiiValue->Value.u16 = (UINT16)Question->ExtraData.NumData.Minimum;
+              Status              = EFI_SUCCESS;
+            }
+
+            break;
+          case EFI_IFR_NUMERIC_SIZE_4:
+            if (((INT32)HiiValue->Value.u32 < (INT32)Question->ExtraData.NumData.Minimum) || ((INT32)HiiValue->Value.u32 > (INT32)Question->ExtraData.NumData.Maximum)) {
+              HiiValue->Value.u32 = (UINT32)Question->ExtraData.NumData.Minimum;
+              Status              = EFI_SUCCESS;
+            }
+
+            break;
+          case EFI_IFR_NUMERIC_SIZE_8:
+            if (((INT64)HiiValue->Value.u64 < (INT64)Question->ExtraData.NumData.Minimum) || ((INT64)HiiValue->Value.u64 > (INT64)Question->ExtraData.NumData.Maximum)) {
+              HiiValue->Value.u64 = Question->ExtraData.NumData.Minimum;
+              Status              = EFI_SUCCESS;
+            }
+
+            break;
+          default:
+            break;
+        }
+      } else {
+        if ((HiiValue->Value.u64 < Question->ExtraData.NumData.Minimum) || (HiiValue->Value.u64 > Question->ExtraData.NumData.Maximum)) {
+          HiiValue->Value.u64 = Question->ExtraData.NumData.Minimum;
+          Status              = EFI_SUCCESS;
+        }
+      }
+
+      break;
+
+    case EFI_IFR_ONE_OF_OP:
+      //
+      // Take first oneof option as oneof's default value
+      //
+      Link = GetFirstNode (&Question->OptionListHead);
+      while (!IsNull (&Question->OptionListHead, Link)) {
+        Option = HII_QUESTION_OPTION_FROM_LINK (Link);
+        Link   = GetNextNode (&Question->OptionListHead, Link);
+
+        if ((Option->SuppressExpression != NULL) &&
+            (EvaluateExpressionList (Option->SuppressExpression, FALSE, NULL, NULL) != ExpressFalse))
+        {
+          continue;
+        }
+
+        CopyMem (HiiValue, &Option->Value, sizeof (EFI_HII_VALUE));
+        Status = EFI_SUCCESS;
+        break;
+      }
+
+      break;
+
+    case EFI_IFR_ORDERED_LIST_OP:
+      //
+      // Take option sequence in IFR as ordered list's default value
+      //
+      Index = 0;
+      Link  = GetFirstNode (&Question->OptionListHead);
+      while (!IsNull (&Question->OptionListHead, Link)) {
+        Status = EFI_SUCCESS;
+        Option = HII_QUESTION_OPTION_FROM_LINK (Link);
+        Link   = GetNextNode (&Question->OptionListHead, Link);
+
+        if ((Option->SuppressExpression != NULL) &&
+            (EvaluateExpressionList (Option->SuppressExpression, FALSE, NULL, NULL) != ExpressFalse))
+        {
+          continue;
+        }
+
+        SetArrayData (DefaultValue->Buffer, Question->Value.Type, Index, Option->Value.Value.u64);
+
+        Index++;
+        if (Index >= Question->ExtraData.OrderListData.MaxContainers) {
+          break;
+        }
+      }
+
+      break;
+
+    default:
+      break;
   }
 
   return Status;
