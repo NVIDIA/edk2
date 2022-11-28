@@ -2,7 +2,7 @@
 # Redfish Client Package
 #
 # (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP<BR>
-# Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# Copyright (c) 2022-2023 , NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
@@ -43,6 +43,8 @@
   gEdkIIRedfishConfigLangMapProtocolGuid    = { 0x1d9ba9fe, 0x5d5a, 0x4b66, {0x83, 0x5b, 0xe2, 0x5d, 0x13, 0x93, 0x4a, 0x9c } }
   ## Include/Protocol/EdkIIRedfishInterchangeData.h
   gEdkIIRedfishFeatureInterchangeDataProtocolGuid = { 0x4B8FF71C, 0x4A7B, 0x9478, { 0xB7, 0x81, 0x35, 0x9B, 0x0A, 0xF2, 0x00, 0x91 } }
+  ## Include/Protocol/EdkIIRedfishResourceAddendumProtocol.h
+  gEdkIIRedfishResourceAddendumProtocolGuid = { 0xda36b12b, 0xaad4, 0x4e90, { 0xba, 0xcb, 0xe3, 0xb5, 0x3b, 0x08, 0xbc, 0x54 } }
 
 [Guids]
   ## Include/Guid/RedfishClientPkgTokenSpace.h
