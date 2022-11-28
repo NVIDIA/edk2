@@ -2,6 +2,7 @@
   Redfish feature driver implementation - common functions
 
   (C) Copyright 2020-2022 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -9,9 +10,9 @@
 
 #include "BiosCommon.h"
 
-CHAR8 BiosEmptyJson[] = "{\"@odata.id\": \"\", \"@odata.type\": \"#Bios.v1_0_9.Bios\", \"Id\": \"\", \"Name\": \"\", \"Attributes\":{}}";
+CHAR8  BiosEmptyJson[] = "{\"@odata.id\": \"\", \"@odata.type\": \"#Bios.v1_0_9.Bios\", \"Id\": \"\", \"Name\": \"\", \"Attributes\":{}}";
 
-REDFISH_RESOURCE_COMMON_PRIVATE *mRedfishResourcePrivate = NULL;
+REDFISH_RESOURCE_COMMON_PRIVATE  *mRedfishResourcePrivate = NULL;
 
 /**
   Consume resource from given URI.
@@ -26,24 +27,23 @@ REDFISH_RESOURCE_COMMON_PRIVATE *mRedfishResourcePrivate = NULL;
 **/
 EFI_STATUS
 RedfishConsumeResourceCommon (
-  IN  REDFISH_RESOURCE_COMMON_PRIVATE *Private,
-  IN  CHAR8                           *Json,
-  IN  CHAR8                           *HeaderEtag OPTIONAL
+  IN  REDFISH_RESOURCE_COMMON_PRIVATE  *Private,
+  IN  CHAR8                            *Json,
+  IN  CHAR8                            *HeaderEtag OPTIONAL
   )
 {
-  EFI_STATUS                   Status;
-  EFI_REDFISH_BIOS_V1_0_9     *Bios;
-  EFI_REDFISH_BIOS_V1_0_9_CS  *BiosCs;
-  EFI_STRING                   ConfigureLang;
-  RedfishCS_Type_EmptyProp_CS_Data   *EmptyPropCs;
+  EFI_STATUS                        Status;
+  EFI_REDFISH_BIOS_V1_0_9           *Bios;
+  EFI_REDFISH_BIOS_V1_0_9_CS        *BiosCs;
+  EFI_STRING                        ConfigureLang;
+  RedfishCS_Type_EmptyProp_CS_Data  *EmptyPropCs;
 
-
-  if (Private == NULL || IS_EMPTY_STRING (Json)) {
+  if ((Private == NULL) || IS_EMPTY_STRING (Json)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  Bios = NULL;
-  BiosCs = NULL;
+  Bios          = NULL;
+  BiosCs        = NULL;
   ConfigureLang = NULL;
 
   Status = Private->JsonStructProtocol->ToStructure (
@@ -109,11 +109,13 @@ RedfishConsumeResourceCommon (
     if (BiosCs->Attributes->Prop.ForwardLink == &BiosCs->Attributes->Prop) {
       goto ON_RELEASE;
     }
+
     EmptyPropCs = (RedfishCS_Type_EmptyProp_CS_Data *)BiosCs->Attributes->Prop.ForwardLink;
     if (EmptyPropCs->Header.ResourceType == RedfishCS_Type_JSON) {
       DEBUG ((DEBUG_ERROR, "%a, Empty property with RedfishCS_Type_JSON type resource is not supported yet. (%s)\n", __FUNCTION__, Private->Uri));
       goto ON_RELEASE;
     }
+
     //
     // Find corresponding configure language for collection resource.
     //
@@ -130,7 +132,6 @@ RedfishConsumeResourceCommon (
     }
   }
 
-
 ON_RELEASE:
 
   //
@@ -146,34 +147,32 @@ ON_RELEASE:
 
 EFI_STATUS
 ProvisioningBiosProperties (
-  IN  EFI_REST_JSON_STRUCTURE_PROTOCOL  *JsonStructProtocol,
-  IN  CHAR8                             *InputJson,
-  IN  CHAR8                             *ResourceId,  OPTIONAL
+  IN  EFI_REST_JSON_STRUCTURE_PROTOCOL *JsonStructProtocol,
+  IN  CHAR8 *InputJson,
+  IN  CHAR8 *ResourceId, OPTIONAL
   IN  EFI_STRING                        ConfigureLang,
   IN  BOOLEAN                           ProvisionMode,
   OUT CHAR8                             **ResultJson
   )
 {
-  EFI_REDFISH_BIOS_V1_0_9     *Bios;
-  EFI_REDFISH_BIOS_V1_0_9_CS  *BiosCs;
+  EFI_REDFISH_BIOS_V1_0_9       *Bios;
+  EFI_REDFISH_BIOS_V1_0_9_CS    *BiosCs;
   EFI_STATUS                    Status;
   BOOLEAN                       PropertyChanged;
   CHAR8                         *AsciiStringValue;
   RedfishCS_EmptyProp_KeyValue  *PropertyVagueValues;
   UINT32                        VagueValueNumber;
 
-
-
-  if (JsonStructProtocol == NULL || ResultJson == NULL || IS_EMPTY_STRING (InputJson) || IS_EMPTY_STRING (ConfigureLang)) {
+  if ((JsonStructProtocol == NULL) || (ResultJson == NULL) || IS_EMPTY_STRING (InputJson) || IS_EMPTY_STRING (ConfigureLang)) {
     return EFI_INVALID_PARAMETER;
   }
 
   DEBUG ((REDFISH_DEBUG_TRACE, "%a provision for %s with: %s\n", __FUNCTION__, ConfigureLang, (ProvisionMode ? L"Provision resource" : L"Update resource")));
 
-  *ResultJson = NULL;
+  *ResultJson     = NULL;
   PropertyChanged = FALSE;
 
-  Bios = NULL;
+  Bios   = NULL;
   Status = JsonStructProtocol->ToStructure (
                                  JsonStructProtocol,
                                  NULL,
@@ -190,7 +189,7 @@ ProvisioningBiosProperties (
   //
   // ID
   //
-  if (BiosCs->Id == NULL && !IS_EMPTY_STRING (ResourceId)) {
+  if ((BiosCs->Id == NULL) && !IS_EMPTY_STRING (ResourceId)) {
     BiosCs->Id = AllocateCopyPool (AsciiStrSize (ResourceId), ResourceId);
   }
 
@@ -200,12 +199,13 @@ ProvisioningBiosProperties (
   if (PropertyChecker (BiosCs->AttributeRegistry, ProvisionMode)) {
     AsciiStringValue = GetPropertyStringValue (RESOURCE_SCHEMA, RESOURCE_SCHEMA_VERSION, L"AttributeRegistry", ConfigureLang);
     if (AsciiStringValue != NULL) {
-      if (ProvisionMode || AsciiStrCmp (BiosCs->AttributeRegistry, AsciiStringValue) != 0) {
+      if (ProvisionMode || (AsciiStrCmp (BiosCs->AttributeRegistry, AsciiStringValue) != 0)) {
         BiosCs->AttributeRegistry = AsciiStringValue;
-        PropertyChanged = TRUE;
+        PropertyChanged           = TRUE;
       }
     }
   }
+
   //
   // Handle ATTRIBUTES
   //
@@ -217,21 +217,22 @@ ProvisioningBiosProperties (
       PropertyVagueValues = GetPropertyVagueValue (RESOURCE_SCHEMA, RESOURCE_SCHEMA_VERSION, L"Attributes", ConfigureLang, &VagueValueNumber);
       if (PropertyVagueValues != NULL) {
         if (ProvisionMode || !CompareRedfishPropertyVagueValues (
-                               ((RedfishCS_Type_EmptyProp_CS_Data *)BiosCs->Attributes->Prop.ForwardLink)->KeyValuePtr,
-                               ((RedfishCS_Type_EmptyProp_CS_Data *)BiosCs->Attributes->Prop.ForwardLink)->NunmOfProperties,
-                               PropertyVagueValues,
-                               VagueValueNumber)) {
+                                ((RedfishCS_Type_EmptyProp_CS_Data *)BiosCs->Attributes->Prop.ForwardLink)->KeyValuePtr,
+                                ((RedfishCS_Type_EmptyProp_CS_Data *)BiosCs->Attributes->Prop.ForwardLink)->NunmOfProperties,
+                                PropertyVagueValues,
+                                VagueValueNumber
+                                ))
+        {
           //
           // Use the properties on system to replace the one on Redfish service.
           //
-          ((RedfishCS_Type_EmptyProp_CS_Data *)BiosCs->Attributes->Prop.ForwardLink)->KeyValuePtr = PropertyVagueValues;
+          ((RedfishCS_Type_EmptyProp_CS_Data *)BiosCs->Attributes->Prop.ForwardLink)->KeyValuePtr      = PropertyVagueValues;
           ((RedfishCS_Type_EmptyProp_CS_Data *)BiosCs->Attributes->Prop.ForwardLink)->NunmOfProperties = VagueValueNumber;
-          PropertyChanged = TRUE;
+          PropertyChanged                                                                              = TRUE;
         }
       }
     }
   }
-
 
   //
   // Convert C structure back to JSON text.
@@ -259,18 +260,19 @@ ProvisioningBiosProperties (
 
 EFI_STATUS
 ProvisioningBiosResource (
-  IN  REDFISH_RESOURCE_COMMON_PRIVATE   *Private,
-  IN  UINTN                             Index,
-  IN  EFI_STRING                        ConfigureLang
+  IN  REDFISH_RESOURCE_COMMON_PRIVATE  *Private,
+  IN  UINTN                            Index,
+  IN  EFI_STRING                       ConfigureLang
   )
 {
   CHAR8       *Json;
+  CHAR8       *JsonWithAddendum;
   EFI_STATUS  Status;
   EFI_STRING  NewResourceLocation;
   CHAR8       *EtagStr;
   CHAR8       ResourceId[16];
 
-  if (IS_EMPTY_STRING (ConfigureLang) || Private == NULL) {
+  if (IS_EMPTY_STRING (ConfigureLang) || (Private == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -288,6 +290,38 @@ ProvisioningBiosResource (
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a, provisioning resource for %s failed: %r\n", __FUNCTION__, ConfigureLang, Status));
     return Status;
+  }
+
+  //
+  // Check and see if platform has OEM data or not
+  //
+  Status = RedfishGetOemData (
+             Private->Uri,
+             RESOURCE_SCHEMA,
+             RESOURCE_SCHEMA_VERSION,
+             Json,
+             &JsonWithAddendum
+             );
+  if (!EFI_ERROR (Status) && (JsonWithAddendum != NULL)) {
+    FreePool (Json);
+    Json             = JsonWithAddendum;
+    JsonWithAddendum = NULL;
+  }
+
+  //
+  // Check and see if platform has addendum data or not
+  //
+  Status = RedfishGetAddendumData (
+             Private->Uri,
+             RESOURCE_SCHEMA,
+             RESOURCE_SCHEMA_VERSION,
+             Json,
+             &JsonWithAddendum
+             );
+  if (!EFI_ERROR (Status) && (JsonWithAddendum != NULL)) {
+    FreePool (Json);
+    Json             = JsonWithAddendum;
+    JsonWithAddendum = NULL;
   }
 
   Status = CreatePayloadToPostResource (Private->RedfishService, Private->Payload, Json, &NewResourceLocation, &EtagStr);
@@ -340,10 +374,11 @@ ProvisioningBiosResources (
   }
 
   Status = RedfishFeatureGetUnifiedArrayTypeConfigureLang (RESOURCE_SCHEMA, RESOURCE_SCHEMA_VERSION, REDPATH_ARRAY_PATTERN, &UnifiedConfigureLangList);
-  if (EFI_ERROR (Status) || UnifiedConfigureLangList.Count == 0) {
+  if (EFI_ERROR (Status) || (UnifiedConfigureLangList.Count == 0)) {
     DEBUG ((DEBUG_ERROR, "%a, No HII question found with configure language: %s: %r\n", __FUNCTION__, REDPATH_ARRAY_PATTERN, Status));
     return EFI_NOT_FOUND;
   }
+
   //
   // Set the configuration language in the RESOURCE_INFORMATION_EXCHANGE.
   // This information is sent back to the parent resource (e.g. the collection driver).
@@ -359,23 +394,23 @@ ProvisioningBiosResources (
   return EFI_SUCCESS;
 }
 
-
 EFI_STATUS
 ProvisioningBiosExistResource (
   IN  REDFISH_RESOURCE_COMMON_PRIVATE  *Private
   )
 {
-  EFI_STATUS Status;
-  EFI_STRING ConfigureLang;
-  CHAR8      *EtagStr;
-  CHAR8      *Json;
+  EFI_STATUS  Status;
+  EFI_STRING  ConfigureLang;
+  CHAR8       *EtagStr;
+  CHAR8       *Json;
+  CHAR8       *JsonWithAddendum;
 
   if (Private == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  EtagStr = NULL;
-  Json = NULL;
+  EtagStr       = NULL;
+  Json          = NULL;
   ConfigureLang = NULL;
 
   ConfigureLang = RedfishGetConfigLanguage (Private->Uri);
@@ -397,7 +432,40 @@ ProvisioningBiosExistResource (
     } else {
       DEBUG ((DEBUG_ERROR, "%a, provisioning existing resource for %s failed: %r\n", __FUNCTION__, ConfigureLang, Status));
     }
+
     goto ON_RELEASE;
+  }
+
+  //
+  // Check and see if platform has OEM data or not
+  //
+  Status = RedfishGetOemData (
+             Private->Uri,
+             RESOURCE_SCHEMA,
+             RESOURCE_SCHEMA_VERSION,
+             Json,
+             &JsonWithAddendum
+             );
+  if (!EFI_ERROR (Status) && (JsonWithAddendum != NULL)) {
+    FreePool (Json);
+    Json             = JsonWithAddendum;
+    JsonWithAddendum = NULL;
+  }
+
+  //
+  // Check and see if platform has addendum data or not
+  //
+  Status = RedfishGetAddendumData (
+             Private->Uri,
+             RESOURCE_SCHEMA,
+             RESOURCE_SCHEMA_VERSION,
+             Json,
+             &JsonWithAddendum
+             );
+  if (!EFI_ERROR (Status) && (JsonWithAddendum != NULL)) {
+    FreePool (Json);
+    Json             = JsonWithAddendum;
+    JsonWithAddendum = NULL;
   }
 
   DEBUG ((REDFISH_DEBUG_TRACE, "%a, provisioning existing resource for %s\n", __FUNCTION__, ConfigureLang));
@@ -470,13 +538,13 @@ RedfishCheckResourceCommon (
   IN     CHAR8                            *Json
   )
 {
-  UINTN      Index;
-  EFI_STATUS Status;
-  EFI_STRING *ConfigureLangList;
-  UINTN      Count;
-  EFI_STRING Property;
+  UINTN       Index;
+  EFI_STATUS  Status;
+  EFI_STRING  *ConfigureLangList;
+  UINTN       Count;
+  EFI_STRING  Property;
 
-  if (Private == NULL || IS_EMPTY_STRING (Json)) {
+  if ((Private == NULL) || IS_EMPTY_STRING (Json)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -492,7 +560,6 @@ RedfishCheckResourceCommon (
 
   Status = EFI_SUCCESS;
   for (Index = 0; Index < Count; Index++) {
-
     Property = GetPropertyFromConfigureLang (Private->Uri, ConfigureLangList[Index]);
     if (Property == NULL) {
       continue;
@@ -526,17 +593,18 @@ RedfishUpdateResourceCommon (
   IN     CHAR8                            *InputJson
   )
 {
-  EFI_STATUS Status;
-  CHAR8      *Json;
-  EFI_STRING ConfigureLang;
-  CHAR8      *EtagStr;
+  EFI_STATUS  Status;
+  CHAR8       *Json;
+  CHAR8       *JsonWithAddendum;
+  EFI_STRING  ConfigureLang;
+  CHAR8       *EtagStr;
 
-  if (Private == NULL || IS_EMPTY_STRING (InputJson)) {
+  if ((Private == NULL) || IS_EMPTY_STRING (InputJson)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  EtagStr = NULL;
-  Json = NULL;
+  EtagStr       = NULL;
+  Json          = NULL;
   ConfigureLang = NULL;
 
   ConfigureLang = RedfishGetConfigLanguage (Private->Uri);
@@ -558,7 +626,40 @@ RedfishUpdateResourceCommon (
     } else {
       DEBUG ((DEBUG_ERROR, "%a, update resource for %s failed: %r\n", __FUNCTION__, ConfigureLang, Status));
     }
+
     goto ON_RELEASE;
+  }
+
+  //
+  // Check and see if platform has OEM data or not
+  //
+  Status = RedfishGetOemData (
+             Private->Uri,
+             RESOURCE_SCHEMA,
+             RESOURCE_SCHEMA_VERSION,
+             Json,
+             &JsonWithAddendum
+             );
+  if (!EFI_ERROR (Status) && (JsonWithAddendum != NULL)) {
+    FreePool (Json);
+    Json             = JsonWithAddendum;
+    JsonWithAddendum = NULL;
+  }
+
+  //
+  // Check and see if platform has addendum data or not
+  //
+  Status = RedfishGetAddendumData (
+             Private->Uri,
+             RESOURCE_SCHEMA,
+             RESOURCE_SCHEMA_VERSION,
+             Json,
+             &JsonWithAddendum
+             );
+  if (!EFI_ERROR (Status) && (JsonWithAddendum != NULL)) {
+    FreePool (Json);
+    Json             = JsonWithAddendum;
+    JsonWithAddendum = NULL;
   }
 
   DEBUG ((REDFISH_DEBUG_TRACE, "%a, update resource for %s\n", __FUNCTION__, ConfigureLang));
@@ -607,10 +708,10 @@ RedfishIdentifyResourceCommon (
   IN     CHAR8                            *Json
   )
 {
-  BOOLEAN     Supported;
-  EFI_STATUS  Status;
-  EFI_STRING  EndOfChar;
-  REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG_LIST ConfigLangList;
+  BOOLEAN                                      Supported;
+  EFI_STATUS                                   Status;
+  EFI_STRING                                   EndOfChar;
+  REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG_LIST  ConfigLangList;
 
   Supported = RedfishIdentifyResource (Private->Uri, Private->Json);
   if (Supported) {
@@ -624,18 +725,20 @@ RedfishIdentifyResourceCommon (
       return EFI_SUCCESS;
     }
 
-    //EndOfChar = StrStr (ConfigLangList.List[0].ConfigureLang, L"}");
+    // EndOfChar = StrStr (ConfigLangList.List[0].ConfigureLang, L"}");
     Status = IsRedpathArray (ConfigLangList.List[0].ConfigureLang, NULL, &EndOfChar);
-    if (EFI_ERROR (Status) && Status != EFI_NOT_FOUND) {
+    if (EFI_ERROR (Status) && (Status != EFI_NOT_FOUND)) {
       ASSERT (FALSE);
       return EFI_DEVICE_ERROR;
     }
+
     if (Status != EFI_SUCCESS) {
       //
       // This is not the collection redpath.
       //
       GetRedpathNodeByIndex (ConfigLangList.List[0].ConfigureLang, 0, &EndOfChar);
     }
+
     *(++EndOfChar) = '\0';
     //
     // Keep URI and ConfigLang mapping
@@ -655,15 +758,15 @@ RedfishIdentifyResourceCommon (
 
 EFI_STATUS
 HandleResource (
-  IN  REDFISH_RESOURCE_COMMON_PRIVATE *Private,
-  IN  EFI_STRING                      Uri
+  IN  REDFISH_RESOURCE_COMMON_PRIVATE  *Private,
+  IN  EFI_STRING                       Uri
   )
 {
-  EFI_STATUS                              Status;
-  REDFISH_SCHEMA_INFO                     SchemaInfo;
-  EFI_STRING                              ConfigLang;
+  EFI_STATUS           Status;
+  REDFISH_SCHEMA_INFO  SchemaInfo;
+  EFI_STRING           ConfigLang;
 
-  if (Private == NULL || IS_EMPTY_STRING (Uri)) {
+  if ((Private == NULL) || IS_EMPTY_STRING (Uri)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -678,6 +781,7 @@ HandleResource (
     DEBUG ((DEBUG_ERROR, "%a, failed to get schema information from: %s %r\n", __FUNCTION__, Uri, Status));
     return Status;
   }
+
   //
   // Check and see if this is target resource that we want to handle.
   // Some resource is handled by other provider so we have to make sure this first.
