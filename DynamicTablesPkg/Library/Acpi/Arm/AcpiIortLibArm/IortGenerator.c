@@ -1554,8 +1554,13 @@ AddSmmuV3Nodes (
     {
       SmmuV3Node->Node.Revision   = 2;
       SmmuV3Node->Node.Identifier = EFI_ACPI_RESERVED_DWORD;
-    } else {
+    } else if (AcpiTableInfo->AcpiTableRevision <
+               EFI_ACPI_IO_REMAPPING_TABLE_REVISION_06)
+    {
       SmmuV3Node->Node.Revision   = 4;
+      SmmuV3Node->Node.Identifier = NodeList->Identifier;
+    } else {
+      SmmuV3Node->Node.Revision   = 5;
       SmmuV3Node->Node.Identifier = NodeList->Identifier;
     }
 
@@ -1577,12 +1582,27 @@ AddSmmuV3Nodes (
       SmmuV3Node->ProximityDomain = 0;
     }
 
-    if ((SmmuV3Node->Event != 0) && (SmmuV3Node->Pri != 0) &&
-        (SmmuV3Node->Gerr != 0) && (SmmuV3Node->Sync != 0))
-    {
-      // If all the SMMU control interrupts are GSIV based,
-      // the DeviceID mapping index field is ignored.
-      SmmuV3Node->DeviceIdMappingIndex = 0;
+    /* DeviceID mapping valid flag was introduced in IORT rev E.e
+     * for SMMUV3 nodes rev. > 5.
+     * For older revisions, if all the SMMU control interrupts are GSIV
+     * based, DeviceID mapping index field is ignored.
+     * If the DeviceID mapping index valid flag is set to 0,
+     * DeviceID mapping index field must be ignored.
+     * Where the SMMU uses message signaled interrupts for
+     * its control interrupts, DeviceId Mapping Index contains an
+     * index into the array of ID mapping.
+     */
+
+    if ((SmmuV3Node->Node.Revision < 5) || (!(SmmuV3Node->Flags & EFI_ACPI_IORT_SMMUv3_FLAG_DEVICEID_VALID))) {
+      if ((SmmuV3Node->Event != 0) && (SmmuV3Node->Pri != 0) &&
+          (SmmuV3Node->Gerr != 0) && (SmmuV3Node->Sync != 0))
+      {
+        // If all the SMMU control interrupts are GSIV based,
+        // the DeviceID mapping index field is ignored.
+        SmmuV3Node->DeviceIdMappingIndex = 0;
+      } else {
+        SmmuV3Node->DeviceIdMappingIndex = NodeList->DeviceIdMappingIndex;
+      }
     } else {
       SmmuV3Node->DeviceIdMappingIndex = NodeList->DeviceIdMappingIndex;
     }
@@ -2819,7 +2839,7 @@ ACPI_IORT_GENERATOR  IortGenerator = {
     // ACPI Table Signature
     EFI_ACPI_6_4_IO_REMAPPING_TABLE_SIGNATURE,
     // ACPI Table Revision supported by this Generator
-    EFI_ACPI_IO_REMAPPING_TABLE_REVISION_05,
+    EFI_ACPI_IO_REMAPPING_TABLE_REVISION_06,
     // Minimum supported ACPI Table Revision
     EFI_ACPI_IO_REMAPPING_TABLE_REVISION_00,
     // Creator ID
