@@ -2,6 +2,7 @@
   Redfish feature driver common header file.
 
   (C) Copyright 2020-2022 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -10,7 +11,7 @@
 #ifndef EFI_REDFISH_RESOURCE_COMMON_H_
 #define EFI_REDFISH_RESOURCE_COMMON_H_
 
-#define MAX_RED_PATH_LEN      128
+#define MAX_RED_PATH_LEN  128
 
 #include <RedfishBase.h>
 
@@ -30,6 +31,7 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/RedfishResourceIdentifyLib.h>
 #include <Library/EdkIIRedfishResourceConfigLib.h>
+#include <Library/RedfishAddendumLib.h>
 
 //
 // Protocols
@@ -40,22 +42,21 @@
 #include <Protocol/RestJsonStructure.h>
 #include <Protocol/RestEx.h>
 
-
 typedef struct _REDFISH_RESOURCE_COMMON_PRIVATE {
-  REDFISH_SERVICE                         RedfishService;
-  EFI_REST_JSON_STRUCTURE_PROTOCOL        *JsonStructProtocol;
-  EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL  RedfishResourceConfig;
-  EDKII_REDFISH_CONFIG_HANDLER_PROTOCOL   ConfigHandler;
-  EFI_EVENT                               Event;
-  EFI_STRING                              Uri;
-  CHAR8                                   *Json;
-  REDFISH_PAYLOAD                         Payload;
+  REDFISH_SERVICE                           RedfishService;
+  EFI_REST_JSON_STRUCTURE_PROTOCOL          *JsonStructProtocol;
+  EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL    RedfishResourceConfig;
+  EDKII_REDFISH_CONFIG_HANDLER_PROTOCOL     ConfigHandler;
+  EFI_EVENT                                 Event;
+  EFI_STRING                                Uri;
+  CHAR8                                     *Json;
+  REDFISH_PAYLOAD                           Payload;
   //
   //  Below are used for the external resource.
   //
-  EDKII_REDFISH_FEATURE_PROTOCOL          *FeatureProtocol;
-  RESOURCE_INFORMATION_EXCHANGE           *InformationExchange;
-  EFI_STRING                              RedfishVersion;
+  EDKII_REDFISH_FEATURE_PROTOCOL            *FeatureProtocol;
+  RESOURCE_INFORMATION_EXCHANGE             *InformationExchange;
+  EFI_STRING                                RedfishVersion;
 } REDFISH_RESOURCE_COMMON_PRIVATE;
 
 #define REDFISH_RESOURCE_COMMON_PRIVATE_DATA_FROM_CONFIG_PROTOCOL(This) \
@@ -63,7 +64,6 @@ typedef struct _REDFISH_RESOURCE_COMMON_PRIVATE {
 
 #define REDFISH_RESOURCE_COMMON_PRIVATE_DATA_FROM_RESOURCE_PROTOCOL(This) \
           BASE_CR ((This), REDFISH_RESOURCE_COMMON_PRIVATE, RedfishResourceConfig)
-
 
 /**
   Consume resource from given URI.

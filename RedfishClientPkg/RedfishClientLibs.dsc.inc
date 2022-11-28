@@ -6,6 +6,7 @@
 # of EDKII network library classes.
 #
 # (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP<BR>
+# Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 #    SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -37,3 +38,4 @@
   EdkIIRedfishResourceConfigLib|RedfishClientPkg/Library/EdkIIRedfishResourceConfigLib/EdkIIRedfishResourceConfigLib.inf
   RedfishEventLib|RedfishClientPkg/Library/RedfishEventLib/RedfishEventLib.inf
   RedfishVersionLib|RedfishClientPkg/Library/RedfishVersionLib/RedfishVersionLib.inf
+  RedfishAddendumLib|RedfishClientPkg/Library/RedfishAddendumLib/RedfishAddendumLib.inf
