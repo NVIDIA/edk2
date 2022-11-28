@@ -475,12 +475,13 @@ AllocateType4AndSetProcessorInformationStrings (
   )
 {
   EFI_STATUS     Status;
+  EFI_STRING_ID  SocketDesignation;
   EFI_STRING_ID  ProcessorManu;
   EFI_STRING_ID  ProcessorVersion;
   EFI_STRING_ID  SerialNumber;
   EFI_STRING_ID  AssetTag;
   EFI_STRING_ID  PartNumber;
-  EFI_STRING     ProcessorStr;
+  EFI_STRING     SocketDesignationStr;
   EFI_STRING     ProcessorManuStr;
   EFI_STRING     ProcessorVersionStr;
   EFI_STRING     SerialNumberStr;
@@ -488,28 +489,29 @@ AllocateType4AndSetProcessorInformationStrings (
   EFI_STRING     PartNumberStr;
   CHAR8          *OptionalStrStart;
   CHAR8          *StrStart;
-  UINTN          ProcessorStrLen;
+  UINTN          SocketDesignationStrLen;
   UINTN          ProcessorManuStrLen;
   UINTN          ProcessorVersionStrLen;
   UINTN          SerialNumberStrLen;
   UINTN          AssetTagStrLen;
   UINTN          PartNumberStrLen;
   UINTN          TotalSize;
-  UINTN          StringBufferSize;
 
   Status = EFI_SUCCESS;
 
-  ProcessorManuStr    = NULL;
-  ProcessorVersionStr = NULL;
-  SerialNumberStr     = NULL;
-  AssetTagStr         = NULL;
-  PartNumberStr       = NULL;
+  SocketDesignationStr = NULL;
+  ProcessorManuStr     = NULL;
+  ProcessorVersionStr  = NULL;
+  SerialNumberStr      = NULL;
+  AssetTagStr          = NULL;
+  PartNumberStr        = NULL;
 
-  ProcessorManu    = STRING_TOKEN (STR_PROCESSOR_MANUFACTURE);
-  ProcessorVersion = STRING_TOKEN (STR_PROCESSOR_VERSION);
-  SerialNumber     = STRING_TOKEN (STR_PROCESSOR_SERIAL_NUMBER);
-  AssetTag         = STRING_TOKEN (STR_PROCESSOR_ASSET_TAG);
-  PartNumber       = STRING_TOKEN (STR_PROCESSOR_PART_NUMBER);
+  SocketDesignation = STRING_TOKEN (STR_PROCESSOR_SOCKET_DESIGNATION);
+  ProcessorManu     = STRING_TOKEN (STR_PROCESSOR_MANUFACTURE);
+  ProcessorVersion  = STRING_TOKEN (STR_PROCESSOR_VERSION);
+  SerialNumber      = STRING_TOKEN (STR_PROCESSOR_SERIAL_NUMBER);
+  AssetTag          = STRING_TOKEN (STR_PROCESSOR_ASSET_TAG);
+  PartNumber        = STRING_TOKEN (STR_PROCESSOR_PART_NUMBER);
 
   SET_HII_STRING_IF_PCD_NOT_EMPTY (PcdProcessorManufacturer, ProcessorManu);
   SET_HII_STRING_IF_PCD_NOT_EMPTY (PcdProcessorVersion, ProcessorVersion);
@@ -527,19 +529,13 @@ AllocateType4AndSetProcessorInformationStrings (
     OemUpdateSmbiosInfo (mHiiHandle, PartNumber, ProcessorPartNumType04);
   }
 
-  // Processor Designation
-  StringBufferSize = sizeof (CHAR16) * SMBIOS_STRING_MAX_LENGTH;
-  ProcessorStr     = AllocateZeroPool (StringBufferSize);
-  if (ProcessorStr == NULL) {
-    return EFI_OUT_OF_RESOURCES;
-  }
+  // Check ProcessorIndex is smaller than the defined max(16) socket number.
+  ASSERT (SD_INDEX_TO_FIELD (ProcessorIndex) <= ProcessorSocketDesType04_15);
+  OemUpdateSmbiosInfo (mHiiHandle, SocketDesignation, SD_INDEX_TO_FIELD (ProcessorIndex));
 
-  ProcessorStrLen = UnicodeSPrint (
-                      ProcessorStr,
-                      StringBufferSize,
-                      L"CPU%02d",
-                      ProcessorIndex + 1
-                      );
+  // Socket Designation
+  SocketDesignationStr    = HiiGetPackageString (&gEfiCallerIdGuid, SocketDesignation, NULL);
+  SocketDesignationStrLen = StrLen (SocketDesignationStr);
 
   // Processor Manufacture
   ProcessorManuStr    = HiiGetPackageString (&gEfiCallerIdGuid, ProcessorManu, NULL);
@@ -562,12 +558,12 @@ AllocateType4AndSetProcessorInformationStrings (
   PartNumberStrLen = StrLen (PartNumberStr);
 
   TotalSize = sizeof (SMBIOS_TABLE_TYPE4) +
-              ProcessorStrLen        + 1 +
-              ProcessorManuStrLen    + 1 +
-              ProcessorVersionStrLen + 1 +
-              SerialNumberStrLen     + 1 +
-              AssetTagStrLen         + 1 +
-              PartNumberStrLen       + 1 + 1;
+              SocketDesignationStrLen + 1 +
+              ProcessorManuStrLen     + 1 +
+              ProcessorVersionStrLen  + 1 +
+              SerialNumberStrLen      + 1 +
+              AssetTagStrLen          + 1 +
+              PartNumberStrLen        + 1 + 1;
 
   *Type4Record = AllocateZeroPool (TotalSize);
   if (*Type4Record == NULL) {
@@ -579,12 +575,12 @@ AllocateType4AndSetProcessorInformationStrings (
 
   OptionalStrStart = (CHAR8 *)(*Type4Record + 1);
   UnicodeStrToAsciiStrS (
-    ProcessorStr,
+    SocketDesignationStr,
     OptionalStrStart,
-    ProcessorStrLen + 1
+    SocketDesignationStrLen + 1
     );
 
-  StrStart = OptionalStrStart + ProcessorStrLen + 1;
+  StrStart = OptionalStrStart + SocketDesignationStrLen + 1;
   UnicodeStrToAsciiStrS (
     ProcessorManuStr,
     StrStart,
@@ -620,7 +616,7 @@ AllocateType4AndSetProcessorInformationStrings (
     );
 
 Exit:
-  FreePool (ProcessorStr);
+  FreePool (SocketDesignationStr);
   FreePool (ProcessorManuStr);
   FreePool (ProcessorVersionStr);
   FreePool (SerialNumberStr);
