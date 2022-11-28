@@ -2,6 +2,7 @@
   This file defines the EDKII Redfish Platform Config Protocol interface.
 
   (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -70,20 +71,37 @@ typedef struct {
   REDFISH_PLATFORM_CONFIG_FORM_SET_PRIVATE    *ParentFormset;
   HII_FORM                                    *HiiForm;      // Pointer to HII form data.
   LIST_ENTRY                                  StatementList; // Statement list that keep statement under this form.
+  BOOLEAN                                     Suppressed;    // Form is suppressed
 } REDFISH_PLATFORM_CONFIG_FORM_PRIVATE;
 
 #define REDFISH_PLATFORM_CONFIG_FORM_FROM_LINK(a)  BASE_CR (a, REDFISH_PLATFORM_CONFIG_FORM_PRIVATE, Link)
 
 //
+// Definition of REDFISH_PLATFORM_CONFIG_STATEMENT_DATA
+//
+typedef struct {
+  UINT64    NumMinimum;
+  UINT64    NumMaximum;
+  UINT64    NumStep;
+  UINT8     StrMinSize;
+  UINT8     StrMaxSize;
+} REDFISH_PLATFORM_CONFIG_STATEMENT_DATA;
+
+//
 // Definition of REDFISH_PLATFORM_CONFIG_STATEMENT_PRIVATE
 //
 typedef struct {
-  LIST_ENTRY                              Link;
-  REDFISH_PLATFORM_CONFIG_FORM_PRIVATE    *ParentForm;
-  HII_STATEMENT                           *HiiStatement;  // Pointer to HII statement data.
-  EFI_QUESTION_ID                         QuestionId;     // Question ID of this statement.
-  EFI_STRING_ID                           Description;    // String token of this question.
-  EFI_STRING                              DesStringCache; // The string cache for search function.
+  LIST_ENTRY                                Link;
+  REDFISH_PLATFORM_CONFIG_FORM_PRIVATE      *ParentForm;
+  HII_STATEMENT                             *HiiStatement;  // Pointer to HII statement data.
+  EFI_QUESTION_ID                           QuestionId;     // Question ID of this statement.
+  EFI_STRING_ID                             Description;    // String token of this question.
+  EFI_STRING_ID                             Help;           // String token of help message.
+  EFI_STRING                                DesStringCache; // The string cache for search function.
+  UINT8                                     Flags;          // The statement flag.
+  REDFISH_PLATFORM_CONFIG_STATEMENT_DATA    StatementData;  // The max/min for statement value.
+  BOOLEAN                                   Suppressed;     // Statement is suppressed.
+  BOOLEAN                                   Grayout;        // Statement is grayout.
 } REDFISH_PLATFORM_CONFIG_STATEMENT_PRIVATE;
 
 #define REDFISH_PLATFORM_CONFIG_STATEMENT_FROM_LINK(a)  BASE_CR (a, REDFISH_PLATFORM_CONFIG_STATEMENT_PRIVATE, Link)
@@ -277,6 +295,25 @@ CHAR8 *
 HiiGetRedfishAsciiString (
   IN EFI_HII_HANDLE  HiiHandle,
   IN CHAR8           *Language,
+  IN EFI_STRING_ID   StringId
+  );
+
+/**
+  Get ASCII string from HII database in English language. The returned string is allocated
+  using AllocatePool(). The caller is responsible for freeing the allocated buffer using
+  FreePool().
+
+  @param[in]  HiiHandle         A handle that was previously registered in the HII Database.
+  @param[in]  StringId          The identifier of the string to retrieved from the string
+                                package associated with HiiHandle.
+
+  @retval NULL   The string specified by StringId is not present in the string package.
+  @retval Other  The string was returned.
+
+**/
+CHAR8 *
+HiiGetEnglishAsciiString (
+  IN EFI_HII_HANDLE  HiiHandle,
   IN EFI_STRING_ID   StringId
   );
 

@@ -3,6 +3,7 @@
 
   Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
   (C) Copyright 2021 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -1361,4 +1362,80 @@ GetHiiExpressionDependency (
 
 Done:
   return Status;
+}
+
+/**
+  Return the result of the expression list. Check the expression list and
+  return the highest priority express result.
+  Priority: DisableIf > SuppressIf > GrayOutIf > FALSE
+
+  @param[in]  ExpList         The input expression list.
+  @param[in]  Evaluate        Whether need to evaluate the expression first.
+  @param[in]  FormSet         FormSet associated with this expression.
+  @param[in]  Form            Form associated with this expression.
+
+  @retval EXPRESS_RESULT      Return the higher priority express result.
+                              DisableIf > SuppressIf > GrayOutIf > FALSE
+
+**/
+EXPRESS_RESULT
+EvaluateExpressionList (
+  IN HII_EXPRESSION_LIST *ExpList,
+  IN BOOLEAN Evaluate,
+  IN HII_FORMSET *FormSet, OPTIONAL
+  IN HII_FORM    *Form OPTIONAL
+  )
+{
+  UINTN           Index;
+  EXPRESS_RESULT  ReturnVal;
+  EXPRESS_RESULT  CompareOne;
+  EFI_STATUS      Status;
+
+  if (ExpList == NULL) {
+    return ExpressFalse;
+  }
+
+  ASSERT (ExpList->Signature == HII_EXPRESSION_LIST_SIGNATURE);
+  Index = 0;
+
+  //
+  // Check whether need to evaluate the expression first.
+  //
+  if (Evaluate) {
+    while (ExpList->Count > Index) {
+      Status = EvaluateHiiExpression (FormSet, Form, ExpList->Expression[Index++]);
+      if (EFI_ERROR (Status)) {
+        return ExpressFalse;
+      }
+    }
+  }
+
+  //
+  // Run the list of expressions.
+  //
+  ReturnVal = ExpressFalse;
+  for (Index = 0; Index < ExpList->Count; Index++) {
+    if (IsTrue (&ExpList->Expression[Index]->Result)) {
+      switch (ExpList->Expression[Index]->Type) {
+        case EFI_HII_EXPRESSION_SUPPRESS_IF:
+          CompareOne = ExpressSuppress;
+          break;
+
+        case EFI_HII_EXPRESSION_GRAY_OUT_IF:
+          CompareOne = ExpressGrayOut;
+          break;
+
+        case EFI_HII_EXPRESSION_DISABLE_IF:
+          CompareOne = ExpressDisable;
+          break;
+
+        default:
+          return ExpressFalse;
+      }
+
+      ReturnVal = ReturnVal < CompareOne ? CompareOne : ReturnVal;
+    }
+  }
+
+  return ReturnVal;
 }

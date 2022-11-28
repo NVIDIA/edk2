@@ -2,6 +2,7 @@
   This file defines the EDKII_REDFISH_PLATFORM_CONFIG_PROTOCOL interface.
 
   (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -39,6 +40,18 @@ typedef enum {
 } EDKII_REDFISH_VALUE_TYPES;
 
 /**
+  Definition of EDKII_REDFISH_ATTRIBUTE_TYPES
+ **/
+typedef enum {
+  REDFISH_ATTRIBUTE_TYPE_UNKNOWN = 0,
+  REDFISH_ATTRIBUTE_TYPE_ENUMERATION,
+  REDFISH_ATTRIBUTE_TYPE_STRING,
+  REDFISH_ATTRIBUTE_TYPE_INTEGER,
+  REDFISH_ATTRIBUTE_TYPE_BOOLEAN,
+  REDFISH_ATTRIBUTE_TYPE_PASSWORD
+} EDKII_REDFISH_ATTRIBUTE_TYPES;
+
+/**
   Definition of EDKII_REDFISH_VALUE
  **/
 typedef struct {
@@ -46,6 +59,43 @@ typedef struct {
   EDKII_REDFISH_TYPE_VALUE     Value;
   UINTN                        ArrayCount;
 } EDKII_REDFISH_VALUE;
+
+/**
+  Definition of EDKII_REDFISH_ATTRIBUTE_VALUE
+ **/
+typedef struct {
+  CHAR8    *ValueName;
+  CHAR8    *ValueDisplayName;
+} EDKII_REDFISH_ATTRIBUTE_VALUE;
+
+/**
+  Definition of EDKII_REDFISH_POSSIBLE_VALUES
+ **/
+typedef struct {
+  UINTN                            ValueCount;
+  EDKII_REDFISH_ATTRIBUTE_VALUE    *ValueArray;
+} EDKII_REDFISH_POSSIBLE_VALUES;
+
+/**
+  Definition of EDKII_REDFISH_ATTRIBUTE
+ **/
+typedef struct {
+  CHAR8                            *AttributeName;
+  CHAR8                            *DisplayName;
+  CHAR8                            *HelpText;
+  CHAR8                            *MenuPath;
+  EDKII_REDFISH_ATTRIBUTE_TYPES    Type;
+  BOOLEAN                          ResetRequired;
+  BOOLEAN                          ReadOnly;
+  BOOLEAN                          Grayout;
+  BOOLEAN                          Suppress;
+  UINT64                           NumMaximum;
+  UINT64                           NumMinimum;
+  UINT64                           NumStep;
+  UINT8                            StrMaxSize;
+  UINT8                            StrMinSize;
+  EDKII_REDFISH_POSSIBLE_VALUES    Values;
+} EDKII_REDFISH_ATTRIBUTE;
 
 /**
   Get Redfish value with the given Schema and Configure Language.
@@ -70,6 +120,37 @@ EFI_STATUS
   OUT    EDKII_REDFISH_VALUE                    *Value
   );
 
+//
+// Default class standard
+//
+#define EDKII_REDFISH_DEFAULT_CLASS_STANDARD  EFI_HII_DEFAULT_CLASS_STANDARD
+
+/**
+  Get Redfish default value with the given Schema and Configure Language.
+
+  @param[in]   This                Pointer to EDKII_REDFISH_PLATFORM_CONFIG_PROTOCOL instance.
+  @param[in]   Schema              The Redfish schema to query.
+  @param[in]   Version             The Redfish version to query.
+  @param[in]   ConfigureLang       The target value which match this configure Language.
+  @param[in]   DefaultClass        The UEFI defined default class.
+                                   Please refer to UEFI spec. 33.2.5.8 "defaults" for details.
+  @param[out]  Value               The returned value.
+
+  @retval EFI_SUCCESS              Value is returned successfully.
+  @retval Others                   Some error happened.
+
+**/
+typedef
+EFI_STATUS
+(EFIAPI *EDKII_REDFISH_PLATFORM_CONFIG_GET_DEFAULT_VALUE)(
+  IN     EDKII_REDFISH_PLATFORM_CONFIG_PROTOCOL *This,
+  IN     CHAR8                                  *Schema,
+  IN     CHAR8                                  *Version,
+  IN     EFI_STRING                             ConfigureLang,
+  IN     UINT16                                 DefaultClass,
+  OUT    EDKII_REDFISH_VALUE                    *Value
+  );
+
 /**
   Set Redfish value with the given Schema and Configure Language.
 
@@ -91,6 +172,29 @@ EFI_STATUS
   IN     CHAR8                                  *Version,
   IN     EFI_STRING                             ConfigureLang,
   IN     EDKII_REDFISH_VALUE                    Value
+  );
+
+/**
+  Get Redfish attribute value with the given Schema and Configure Language.
+
+  @param[in]   This                Pointer to EDKII_REDFISH_PLATFORM_CONFIG_PROTOCOL instance.
+  @param[in]   Schema              The Redfish schema to query.
+  @param[in]   Version             The Redfish version to query.
+  @param[in]   ConfigureLang       The target value which match this configure Language.
+  @param[out]  AttributeValue      The attribute value.
+
+  @retval EFI_SUCCESS              Value is returned successfully.
+  @retval Others                   Some error happened.
+
+**/
+typedef
+EFI_STATUS
+(EFIAPI *EDKII_REDFISH_PLATFORM_CONFIG_GET_ATTRIBUTE)(
+  IN     EDKII_REDFISH_PLATFORM_CONFIG_PROTOCOL *This,
+  IN     CHAR8                                  *Schema,
+  IN     CHAR8                                  *Version,
+  IN     EFI_STRING                             ConfigureLang,
+  OUT    EDKII_REDFISH_ATTRIBUTE                *AttributeValue
   );
 
 /**
@@ -142,8 +246,11 @@ EFI_STATUS
   );
 
 struct _EDKII_REDFISH_PLATFORM_CONFIG_PROTOCOL {
+  UINT64                                                Revision;
   EDKII_REDFISH_PLATFORM_CONFIG_GET_VALUE               GetValue;
   EDKII_REDFISH_PLATFORM_CONFIG_SET_VALUE               SetValue;
+  EDKII_REDFISH_PLATFORM_CONFIG_GET_DEFAULT_VALUE       GetDefaultValue;
+  EDKII_REDFISH_PLATFORM_CONFIG_GET_ATTRIBUTE           GetAttribute;
   EDKII_REDFISH_PLATFORM_CONFIG_GET_CONFIG_LANG         GetConfigureLang;
   EDKII_REDFISH_PLATFORM_CONFIG_GET_SUPPORTED_SCHEMA    GetSupportedSchema;
 };

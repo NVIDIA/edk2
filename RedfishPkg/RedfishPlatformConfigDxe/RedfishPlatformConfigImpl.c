@@ -3,7 +3,7 @@
   The implementation of EDKII Redfish Platform Config Protocol.
 
   (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP<BR>
-  Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+  Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -32,7 +32,7 @@ DumpHiiString (
   EFI_STRING  String;
 
   if ((HiiHandle == NULL) || (StringId == 0)) {
-    DEBUG ((DEBUG_INFO, "???"));
+    DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "???"));
     return EFI_INVALID_PARAMETER;
   }
 
@@ -41,7 +41,7 @@ DumpHiiString (
     return EFI_NOT_FOUND;
   }
 
-  DEBUG ((DEBUG_INFO, "%s", String));
+  DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%s", String));
   FreePool (String);
 
   return EFI_SUCCESS;
@@ -79,18 +79,18 @@ DumpFormset (
     HiiFormPrivate  = REDFISH_PLATFORM_CONFIG_FORM_FROM_LINK (HiiFormLink);
     HiiNextFormLink = GetNextNode (&FormsetPrivate->HiiFormList, HiiFormLink);
 
-    DEBUG ((DEBUG_INFO, "  [%d] form: %d title: ", ++Index, HiiFormPrivate->Id));
+    DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "  [%d] form: %d title: ", ++Index, HiiFormPrivate->Id));
     DumpHiiString (FormsetPrivate->HiiHandle, HiiFormPrivate->Title);
-    DEBUG ((DEBUG_INFO, "\n"));
+    DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "\n"));
 
     HiiStatementLink = GetFirstNode (&HiiFormPrivate->StatementList);
     while (!IsNull (&HiiFormPrivate->StatementList, HiiStatementLink)) {
       HiiStatementPrivate  = REDFISH_PLATFORM_CONFIG_STATEMENT_FROM_LINK (HiiStatementLink);
       HiiNextStatementLink = GetNextNode (&HiiFormPrivate->StatementList, HiiStatementLink);
 
-      DEBUG ((DEBUG_INFO, "    QID: 0x%x Prompt: ", HiiStatementPrivate->QuestionId));
+      DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "    QID: 0x%x Prompt: ", HiiStatementPrivate->QuestionId));
       DumpHiiString (FormsetPrivate->HiiHandle, HiiStatementPrivate->Description);
-      DEBUG ((DEBUG_INFO, "\n"));
+      DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "\n"));
 
       HiiStatementLink = HiiNextStatementLink;
     }
@@ -125,7 +125,7 @@ DumpFormsetList (
   }
 
   if (IsListEmpty (FormsetList)) {
-    DEBUG ((DEBUG_INFO, "%a, Empty formset list\n", __FUNCTION__));
+    DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a, Empty formset list\n", __FUNCTION__));
     return EFI_SUCCESS;
   }
 
@@ -135,7 +135,7 @@ DumpFormsetList (
     HiiFormsetNextLink = GetNextNode (FormsetList, HiiFormsetLink);
     HiiFormsetPrivate  = REDFISH_PLATFORM_CONFIG_FORMSET_FROM_LINK (HiiFormsetLink);
 
-    DEBUG ((DEBUG_INFO, "[%d] HII Handle: 0x%x formset: %g at %s\n", ++Index, HiiFormsetPrivate->HiiHandle, &HiiFormsetPrivate->Guid, HiiFormsetPrivate->DevicePathStr));
+    DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "[%d] HII Handle: 0x%x formset: %g at %s\n", ++Index, HiiFormsetPrivate->HiiHandle, &HiiFormsetPrivate->Guid, HiiFormsetPrivate->DevicePathStr));
     DumpFormset (HiiFormsetPrivate);
 
     HiiFormsetLink = HiiFormsetNextLink;
@@ -282,7 +282,9 @@ HiiGetRedfishAsciiString (
 }
 
 /**
-  Get string from HII database in English language.
+  Get string from HII database in English language. The returned string is allocated
+  using AllocatePool(). The caller is responsible for freeing the allocated buffer using
+  FreePool().
 
   @param[in]  HiiHandle         A handle that was previously registered in the HII Database.
   @param[in]  StringId          The identifier of the string to retrieved from the string
@@ -299,6 +301,47 @@ HiiGetEnglishString (
   )
 {
   return HiiGetRedfishString (HiiHandle, ENGLISH_LANGUAGE_CODE, StringId);
+}
+
+/**
+  Get ASCII string from HII database in English language. The returned string is allocated
+  using AllocatePool(). The caller is responsible for freeing the allocated buffer using
+  FreePool().
+
+  @param[in]  HiiHandle         A handle that was previously registered in the HII Database.
+  @param[in]  StringId          The identifier of the string to retrieved from the string
+                                package associated with HiiHandle.
+
+  @retval NULL   The string specified by StringId is not present in the string package.
+  @retval Other  The string was returned.
+
+**/
+CHAR8 *
+HiiGetEnglishAsciiString (
+  IN EFI_HII_HANDLE  HiiHandle,
+  IN EFI_STRING_ID   StringId
+  )
+{
+  EFI_STRING  HiiString;
+  UINTN       StringSize;
+  CHAR8       *AsciiString;
+
+  HiiString = HiiGetRedfishString (HiiHandle, ENGLISH_LANGUAGE_CODE, StringId);
+  if (HiiString == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a, Can not find string ID: 0x%x with %a\n", __FUNCTION__, StringId, ENGLISH_LANGUAGE_CODE));
+    return NULL;
+  }
+
+  StringSize  = (StrLen (HiiString) + 1) * sizeof (CHAR8);
+  AsciiString = AllocatePool (StringSize);
+  if (AsciiString == NULL) {
+    return NULL;
+  }
+
+  UnicodeStrToAsciiStrS (HiiString, AsciiString, StringSize);
+
+  FreePool (HiiString);
+  return AsciiString;
 }
 
 /**
@@ -505,7 +548,7 @@ GetStatementPrivateByConfigureLangRegex (
         HiiNextStatementLink = GetNextNode (&HiiFormPrivate->StatementList, HiiStatementLink);
         HiiStatementPrivate  = REDFISH_PLATFORM_CONFIG_STATEMENT_FROM_LINK (HiiStatementLink);
 
-        if (HiiStatementPrivate->Description != 0) {
+        if ((HiiStatementPrivate->Description != 0) && !HiiStatementPrivate->Suppressed) {
           TmpString = HiiGetRedfishString (HiiFormsetPrivate->HiiHandle, Schema, HiiStatementPrivate->Description);
           if (TmpString != NULL) {
             Status = RegularExpressionProtocol->MatchString (
@@ -615,7 +658,7 @@ GetStatementPrivateByConfigureLang (
 
         DEBUG_CODE (
           STATIC UINTN Index = 0;
-          DEBUG ((DEBUG_INFO, "%a, [%d] search %s in QID: 0x%x form: 0x%x formset: %g\n", __FUNCTION__, ++Index, ConfigureLang, HiiStatementPrivate->QuestionId, HiiFormPrivate->Id, &HiiFormsetPrivate->Guid));
+          DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a, [%d] search %s in QID: 0x%x form: 0x%x formset: %g\n", __FUNCTION__, ++Index, ConfigureLang, HiiStatementPrivate->QuestionId, HiiFormPrivate->Id, &HiiFormsetPrivate->Guid));
           );
 
         if (HiiStatementPrivate->Description != 0) {
@@ -817,6 +860,7 @@ LoadFormset (
   LIST_ENTRY                                 *HiiStatementLink;
   REDFISH_PLATFORM_CONFIG_STATEMENT_PRIVATE  *HiiStatementPrivate;
   EFI_GUID                                   ZeroGuid;
+  EXPRESS_RESULT                             ExpressionResult;
 
   if ((HiiHandle == NULL) || (FormsetPrivate == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -871,7 +915,14 @@ LoadFormset (
     HiiFormPrivate->Id            = HiiForm->FormId;
     HiiFormPrivate->Title         = HiiForm->FormTitle;
     HiiFormPrivate->ParentFormset = FormsetPrivate;
+    HiiFormPrivate->Suppressed    = FALSE;
     InitializeListHead (&HiiFormPrivate->StatementList);
+
+    if ((HiiForm->SuppressExpression != NULL) &&
+        (EvaluateExpressionList (HiiForm->SuppressExpression, TRUE, HiiFormSet, HiiForm) == ExpressSuppress))
+    {
+      HiiFormPrivate->Suppressed = TRUE;
+    }
 
     HiiStatementLink = GetFirstNode (&HiiForm->StatementListHead);
     while (!IsNull (&HiiForm->StatementListHead, HiiStatementLink)) {
@@ -886,10 +937,35 @@ LoadFormset (
       //
       // Initialize statement private data.
       //
-      HiiStatementPrivate->HiiStatement = HiiStatement;
-      HiiStatementPrivate->QuestionId   = HiiStatement->QuestionId;
-      HiiStatementPrivate->Description  = HiiStatement->Prompt;
-      HiiStatementPrivate->ParentForm   = HiiFormPrivate;
+      HiiStatementPrivate->HiiStatement             = HiiStatement;
+      HiiStatementPrivate->QuestionId               = HiiStatement->QuestionId;
+      HiiStatementPrivate->Description              = HiiStatement->Prompt;
+      HiiStatementPrivate->Help                     = HiiStatement->Help;
+      HiiStatementPrivate->ParentForm               = HiiFormPrivate;
+      HiiStatementPrivate->Flags                    = HiiStatement->QuestionFlags;
+      HiiStatementPrivate->StatementData.NumMaximum = HiiStatement->ExtraData.NumData.Maximum;
+      HiiStatementPrivate->StatementData.NumMinimum = HiiStatement->ExtraData.NumData.Minimum;
+      HiiStatementPrivate->StatementData.NumStep    = HiiStatement->ExtraData.NumData.Step;
+      HiiStatementPrivate->StatementData.StrMaxSize = HiiStatement->ExtraData.StrData.MaxSize;
+      HiiStatementPrivate->StatementData.StrMinSize = HiiStatement->ExtraData.StrData.MinSize;
+      HiiStatementPrivate->Suppressed               = FALSE;
+      HiiStatementPrivate->Grayout                  = FALSE;
+
+      //
+      // Expression
+      //
+      if (HiiFormPrivate->Suppressed) {
+        HiiStatementPrivate->Suppressed = TRUE;
+      } else {
+        if (HiiStatement->ExpressionList != NULL) {
+          ExpressionResult =  EvaluateExpressionList (HiiStatement->ExpressionList, TRUE, HiiFormSet, HiiForm);
+          if (ExpressionResult == ExpressGrayOut) {
+            HiiStatementPrivate->Grayout = TRUE;
+          } else if (ExpressionResult == ExpressSuppress) {
+            HiiStatementPrivate->Suppressed = TRUE;
+          }
+        }
+      }
 
       //
       // Attach to statement list.
@@ -1093,7 +1169,7 @@ NotifyFormsetUpdate (
   if (TargetPendingList != NULL) {
     TargetPendingList->IsDeleted = FALSE;
     DEBUG_CODE (
-      DEBUG ((DEBUG_INFO, "%a, HII handle: 0x%x is updated\n", __FUNCTION__, HiiHandle));
+      DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a, HII handle: 0x%x is updated\n", __FUNCTION__, HiiHandle));
       );
     return EFI_SUCCESS;
   }
@@ -1109,7 +1185,7 @@ NotifyFormsetUpdate (
   InsertTailList (PendingList, &TargetPendingList->Link);
 
   DEBUG_CODE (
-    DEBUG ((DEBUG_INFO, "%a, HII handle: 0x%x is created\n", __FUNCTION__, HiiHandle));
+    DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a, HII handle: 0x%x is created\n", __FUNCTION__, HiiHandle));
     );
 
   return EFI_SUCCESS;
@@ -1146,7 +1222,7 @@ NotifyFormsetDeleted (
   if (TargetPendingList != NULL) {
     TargetPendingList->IsDeleted = TRUE;
     DEBUG_CODE (
-      DEBUG ((DEBUG_INFO, "%a, HII handle: 0x%x is updated and deleted\n", __FUNCTION__, HiiHandle));
+      DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a, HII handle: 0x%x is updated and deleted\n", __FUNCTION__, HiiHandle));
       );
     return EFI_SUCCESS;
   }
@@ -1162,7 +1238,7 @@ NotifyFormsetDeleted (
   InsertTailList (PendingList, &TargetPendingList->Link);
 
   DEBUG_CODE (
-    DEBUG ((DEBUG_INFO, "%a, HII handle: 0x%x is deleted\n", __FUNCTION__, HiiHandle));
+    DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a, HII handle: 0x%x is deleted\n", __FUNCTION__, HiiHandle));
     );
 
   return EFI_SUCCESS;
@@ -1211,7 +1287,7 @@ ProcessPendingList (
       //
       FormsetPrivate = GetFormsetPrivateByHiiHandle (Target->HiiHandle, FormsetList);
       if (FormsetPrivate != NULL) {
-        DEBUG ((DEBUG_INFO, "%a, formset: %g is removed because driver release HII resource it already\n", __FUNCTION__, FormsetPrivate->Guid));
+        DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a, formset: %g is removed because driver release HII resource it already\n", __FUNCTION__, FormsetPrivate->Guid));
         RemoveEntryList (&FormsetPrivate->Link);
         ReleaseFormset (FormsetPrivate);
         FreePool (FormsetPrivate);
@@ -1227,7 +1303,7 @@ ProcessPendingList (
         //
         // HII formset already exist, release it and query again.
         //
-        DEBUG ((DEBUG_INFO, "%a, formset: %g is updated. Release current formset\n", __FUNCTION__, &FormsetPrivate->Guid));
+        DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a, formset: %g is updated. Release current formset\n", __FUNCTION__, &FormsetPrivate->Guid));
         RemoveEntryList (&FormsetPrivate->Link);
         ReleaseFormset (FormsetPrivate);
         FreePool (FormsetPrivate);
