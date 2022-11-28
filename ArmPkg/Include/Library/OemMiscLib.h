@@ -61,8 +61,43 @@ typedef enum {
   ProcessorPartNumType04,
   ProcessorSerialNumType04,
   ProcessorVersionType04,
+  ProcessorSocketDesType04_0,
+  ProcessorSocketDesType04_1,
+  ProcessorSocketDesType04_2,
+  ProcessorSocketDesType04_3,
+  ProcessorSocketDesType04_4,
+  ProcessorSocketDesType04_5,
+  ProcessorSocketDesType04_6,
+  ProcessorSocketDesType04_7,
+  ProcessorSocketDesType04_8,
+  ProcessorSocketDesType04_9,
+  ProcessorSocketDesType04_10,
+  ProcessorSocketDesType04_11,
+  ProcessorSocketDesType04_12,
+  ProcessorSocketDesType04_13,
+  ProcessorSocketDesType04_14,
+  ProcessorSocketDesType04_15,
   SmbiosHiiStringFieldMax
 } OEM_MISC_SMBIOS_HII_STRING_FIELD;
+
+#define SD_INDEX_TO_FIELD(n)  ((n) + ProcessorSocketDesType04_0)
+#define SD_FIELD_TO_INDEX(n)  ((n) - ProcessorSocketDesType04_0)
+
+STATIC_ASSERT ((ProcessorSocketDesType04_1 - ProcessorSocketDesType04_0) == 1, "Incorrect order for ProcessorSocketDesType04_1");
+STATIC_ASSERT ((ProcessorSocketDesType04_2 - ProcessorSocketDesType04_0) == 2, "Incorrect order for ProcessorSocketDesType04_2");
+STATIC_ASSERT ((ProcessorSocketDesType04_3 - ProcessorSocketDesType04_0) == 3, "Incorrect order for ProcessorSocketDesType04_3");
+STATIC_ASSERT ((ProcessorSocketDesType04_4 - ProcessorSocketDesType04_0) == 4, "Incorrect order for ProcessorSocketDesType04_4");
+STATIC_ASSERT ((ProcessorSocketDesType04_5 - ProcessorSocketDesType04_0) == 5, "Incorrect order for ProcessorSocketDesType04_5");
+STATIC_ASSERT ((ProcessorSocketDesType04_6 - ProcessorSocketDesType04_0) == 6, "Incorrect order for ProcessorSocketDesType04_6");
+STATIC_ASSERT ((ProcessorSocketDesType04_7 - ProcessorSocketDesType04_0) == 7, "Incorrect order for ProcessorSocketDesType04_7");
+STATIC_ASSERT ((ProcessorSocketDesType04_8 - ProcessorSocketDesType04_0) == 8, "Incorrect order for ProcessorSocketDesType04_8");
+STATIC_ASSERT ((ProcessorSocketDesType04_9 - ProcessorSocketDesType04_0) == 9, "Incorrect order for ProcessorSocketDesType04_9");
+STATIC_ASSERT ((ProcessorSocketDesType04_10 - ProcessorSocketDesType04_0) == 10, "Incorrect order for ProcessorSocketDesType04_10");
+STATIC_ASSERT ((ProcessorSocketDesType04_11 - ProcessorSocketDesType04_0) == 11, "Incorrect order for ProcessorSocketDesType04_11");
+STATIC_ASSERT ((ProcessorSocketDesType04_12 - ProcessorSocketDesType04_0) == 12, "Incorrect order for ProcessorSocketDesType04_12");
+STATIC_ASSERT ((ProcessorSocketDesType04_13 - ProcessorSocketDesType04_0) == 13, "Incorrect order for ProcessorSocketDesType04_13");
+STATIC_ASSERT ((ProcessorSocketDesType04_14 - ProcessorSocketDesType04_0) == 14, "Incorrect order for ProcessorSocketDesType04_14");
+STATIC_ASSERT ((ProcessorSocketDesType04_15 - ProcessorSocketDesType04_0) == 15, "Incorrect order for ProcessorSocketDesType04_15");
 
 /*
  * The following are functions that the each platform needs to
