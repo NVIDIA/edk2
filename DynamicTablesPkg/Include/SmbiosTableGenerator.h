@@ -71,8 +71,9 @@ typedef enum StdSmbiosTableGeneratorId {
   EStdSmbiosTableIdType40,
   EStdSmbiosTableIdType41,
   EStdSmbiosTableIdType42,
+  EStdSmbiosTableIdType43,
 
-  // IDs 43 - 125 are reserved
+  // IDs 44 - 125 are reserved
 
   EStdSmbiosTableIdType126 = (EStdSmbiosTableIdType00 + 126),
   EStdSmbiosTableIdType127,
@@ -121,7 +122,7 @@ typedef enum StdSmbiosTableGeneratorId {
             ETableGeneratorNameSpaceStd,        \
             TableId                             \
             )
-#define MAX_SMBIOS_HANDLES               (255)
+#define MAX_SMBIOS_HANDLES  (255)
 
 /** Forward declarations.
 */
@@ -129,12 +130,12 @@ typedef struct ConfigurationManagerProtocol EDKII_CONFIGURATION_MANAGER_PROTOCOL
 typedef struct CmStdObjSmbiosTableInfo      CM_STD_OBJ_SMBIOS_TABLE_INFO;
 typedef struct SmbiosTableGenerator         SMBIOS_TABLE_GENERATOR;
 typedef struct DynamicTableFactoryProtocol  EDKII_DYNAMIC_TABLE_FACTORY_PROTOCOL;
-typedef UINTN CM_OBJECT_TOKEN;
+typedef UINTN                               CM_OBJECT_TOKEN;
 
 typedef struct SmbiosHandleCmObjMap {
-  ESTD_SMBIOS_TABLE_ID  SmbiosTableId;
-  SMBIOS_HANDLE         SmbiosTblHandle;
-  CM_OBJECT_TOKEN       SmbiosCmToken;
+  ESTD_SMBIOS_TABLE_ID    SmbiosTableId;
+  SMBIOS_HANDLE           SmbiosTblHandle;
+  CM_OBJECT_TOKEN         SmbiosCmToken;
 } SMBIOS_HANDLE_MAP;
 
 /** This function pointer describes the interface to SMBIOS table build
@@ -194,13 +195,13 @@ typedef EFI_STATUS (*SMBIOS_TABLE_GENERATOR_FREE_TABLE) (
                         failure codes as returned by the generator.
 **/
 typedef EFI_STATUS (*SMBIOS_TABLE_GENERATOR_BUILD_TABLEEX) (
-  IN  CONST SMBIOS_TABLE_GENERATOR                        *Generator,
+  IN  CONST SMBIOS_TABLE_GENERATOR                         *Generator,
   IN  CONST EDKII_DYNAMIC_TABLE_FACTORY_PROTOCOL   *CONST  TableFactoryProtocol,
-  IN        CM_STD_OBJ_SMBIOS_TABLE_INFO          *CONST  SmbiosTableInfo,
-  IN  CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL  *CONST  CfgMgrProtocol,
-  OUT       SMBIOS_STRUCTURE                              ***Table,
-  OUT       CM_OBJECT_TOKEN                               **CmObjectToken,
-  OUT       UINTN                                 *CONST  TableCount
+  IN        CM_STD_OBJ_SMBIOS_TABLE_INFO          *CONST   SmbiosTableInfo,
+  IN  CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL  *CONST   CfgMgrProtocol,
+  OUT       SMBIOS_STRUCTURE                               ***Table,
+  OUT       CM_OBJECT_TOKEN                                **CmObjectToken,
+  OUT       UINTN                                 *CONST   TableCount
   );
 
 /** This function pointer describes the interface to used by the
@@ -223,7 +224,7 @@ typedef EFI_STATUS (*SMBIOS_TABLE_GENERATOR_FREE_TABLEEX) (
   IN  CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL  *CONST  CfgMgrProtocol,
   IN        SMBIOS_STRUCTURE                              ***Table,
   IN        CM_OBJECT_TOKEN                               **CmObjectToken,
-  IN  CONST UINTN                                          TableCount
+  IN  CONST UINTN                                         TableCount
   );
 
 /** This function pointer describes the interface to used by the
@@ -270,7 +271,7 @@ typedef EFI_STATUS (*EDKII_DYNAMIC_TABLE_FACTORY_SMBIOS_TABLE_ADD_HANDLE) (
                                 in the list of registered generators.
 **/
 typedef SMBIOS_HANDLE_MAP * (*EDKII_DYNAMIC_TABLE_FACTORY_SMBIOS_TABLE_GET_HANDLE) (
-  IN  CM_OBJECT_TOKEN      CmObjectToken
+  IN  CM_OBJECT_TOKEN  CmObjectToken
   );
 
 /** The SMBIOS_TABLE_GENERATOR structure provides an interface that the
@@ -278,30 +279,30 @@ typedef SMBIOS_HANDLE_MAP * (*EDKII_DYNAMIC_TABLE_FACTORY_SMBIOS_TABLE_GET_HANDL
 */
 typedef struct SmbiosTableGenerator {
   /// The SMBIOS table generator ID.
-  SMBIOS_TABLE_GENERATOR_ID             GeneratorID;
+  SMBIOS_TABLE_GENERATOR_ID               GeneratorID;
 
   /// String describing the DT table
   /// generator.
-  CONST CHAR16                          *Description;
+  CONST CHAR16                            *Description;
 
   /// The SMBIOS table type.
-  SMBIOS_TYPE                           Type;
+  SMBIOS_TYPE                             Type;
 
   /// SMBIOS table build function pointer.
-  SMBIOS_TABLE_GENERATOR_BUILD_TABLE    BuildSmbiosTable;
+  SMBIOS_TABLE_GENERATOR_BUILD_TABLE      BuildSmbiosTable;
 
   /** The function to free any resources
       allocated for building the SMBIOS table.
   */
-  SMBIOS_TABLE_GENERATOR_FREE_TABLE     FreeTableResources;
+  SMBIOS_TABLE_GENERATOR_FREE_TABLE       FreeTableResources;
 
   /// SMBIOS table extended build function pointer.
-  SMBIOS_TABLE_GENERATOR_BUILD_TABLEEX  BuildSmbiosTableEx;
+  SMBIOS_TABLE_GENERATOR_BUILD_TABLEEX    BuildSmbiosTableEx;
 
   /** The function to free any resources
       allocated for building the SMBIOS table.
   */
-  SMBIOS_TABLE_GENERATOR_FREE_TABLEEX   FreeTableResourcesEx;
+  SMBIOS_TABLE_GENERATOR_FREE_TABLEEX     FreeTableResourcesEx;
 } SMBIOS_TABLE_GENERATOR;
 
 /** Register SMBIOS table factory generator.
@@ -387,7 +388,7 @@ AddSmbiosHandle (
 SMBIOS_HANDLE_MAP *
 EFIAPI
 FindSmbiosHandle (
-  IN CM_OBJECT_TOKEN CmObjectToken
+  IN CM_OBJECT_TOKEN  CmObjectToken
   );
 
 #pragma pack()
