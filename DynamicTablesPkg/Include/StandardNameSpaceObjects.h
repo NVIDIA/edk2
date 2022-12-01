@@ -52,6 +52,7 @@ typedef enum StdObjectID {
   EStdObjBaseboardInfo,           ///< 4 - Baseboard Information
   EStdObjSystemSlotInfo,          ///< 5 - System Slot Information
   EStdObjSystemInfo,              ///< 6 - System Information
+  EStdObjTpmDeviceInfo,           ///< 7 - TPM Device Info
   EStdObjMax
 } ESTD_OBJECT_ID;
 
@@ -331,6 +332,41 @@ typedef struct CmStdSystemInfo {
   /** Token of this System information CM Object */
   CM_OBJECT_TOKEN    SystemInfoToken;
 } CM_STD_SYSTEM_INFO;
+
+/** A structure that describes the TPM device.
+
+  SMBIOS Specification v3.5.0 Type 43
+
+  ID: EStdObjTpmDeviceInfo,
+*/
+typedef struct CmStdTpmDeviceInfo {
+  /** TPM Vendor ID */
+  UINT8              VendorID[4];
+
+  /** TPM Major Spec Version */
+  UINT8              MajorSpecVersion;
+
+  /** TPM Minor Spec Version */
+  UINT8              MinorSpecVersion;
+
+  /** TPM Firmware Version 1 */
+  UINT32             FirmwareVersion1;
+
+  /** TPM Firmware Version 2 */
+  UINT32             FirmwareVersion2;
+
+  /** TPM Description */
+  CHAR8              *Description;
+
+  /** TPM Characteristics */
+  UINT64             Characteristics;
+
+  /** TPM OEM defined */
+  UINT32             OemDefined;
+
+  /** Token of this TPM device information CM Object */
+  CM_OBJECT_TOKEN    TpmDeviceInfoToken;
+} CM_STD_TPM_DEVICE_INFO;
 
 #pragma pack()
 
