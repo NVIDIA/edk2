@@ -1,0 +1,32 @@
+## @file
+#  SMBIOS Type 43 Table Generator
+#
+#  Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#  Copyright (c) 2019 - 2021, Arm Limited. All rights reserved.<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x0001001B
+  BASE_NAME      = SmbiosType43Lib
+  FILE_GUID      = c802df52-7198-11ed-8f21-eb4c0d03d11f
+  VERSION_STRING = 1.0
+  MODULE_TYPE    = DXE_DRIVER
+  LIBRARY_CLASS  = NULL|DXE_DRIVER
+  CONSTRUCTOR    = SmbiosType43LibConstructor
+  DESTRUCTOR     = SmbiosType43LibDestructor
+
+[Sources]
+  SmbiosType43Generator.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  EmbeddedPkg/EmbeddedPkg.dec
+  DynamicTablesPkg/DynamicTablesPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  SmbiosStringTableLib
