@@ -406,6 +406,21 @@ typedef struct CmSmbiosOemStrings {
   CM_OBJECT_TOKEN    OemStringsToken;
 } CM_SMBIOS_OEM_STRINGS;
 
+/** A structure that describes port connector.
+
+  SMBIOS Specification v3.5.0 Type 8
+
+  ID: ESmbiosObjPortConnectorInfo,
+*/
+typedef struct CmSmbiosPortConnectorInfo {
+  CHAR8              *InternalReferenceDesignator;
+  UINT8              InternalConnectorType;                 ///< The enumeration value from MISC_PORT_CONNECTOR_TYPE.
+  CHAR8              *ExternalReferenceDesignator;
+  UINT8              ExternalConnectorType;                 ///< The enumeration value from MISC_PORT_CONNECTOR_TYPE.
+  UINT8              PortType;                              ///< The enumeration value from MISC_PORT_TYPE.
+  CM_OBJECT_TOKEN    CmObjectToken;
+} CM_SMBIOS_PORT_CONNECTOR_INFO;
+
 #pragma pack()
 
 #endif // SMBIOS_NAMESPACE_OBJECTS_H_
