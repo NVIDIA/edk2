@@ -50,6 +50,7 @@
   DynamicTablesPkg/Library/Common/SmbiosStringTableLib/SmbiosStringTableLib.inf
   DynamicTablesPkg/Library/Smbios/SmbiosType1Lib/SmbiosType1Lib.inf
   DynamicTablesPkg/Library/Smbios/SmbiosType2Lib/SmbiosType2Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType8Lib/SmbiosType8Lib.inf
   DynamicTablesPkg/Library/Smbios/SmbiosType9Lib/SmbiosType9Lib.inf
   DynamicTablesPkg/Library/Smbios/SmbiosType11Lib/SmbiosType11Lib.inf
   DynamicTablesPkg/Library/Smbios/SmbiosType16Lib/SmbiosType16Lib.inf
