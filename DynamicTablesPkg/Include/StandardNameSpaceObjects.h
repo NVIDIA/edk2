@@ -1,7 +1,7 @@
 /** @file
 
   Copyright (c) 2017 - 2022, Arm Limited. All rights reserved.
-  Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+  Copyright (c) 2022 - 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -54,6 +54,7 @@ typedef enum StdObjectID {
   EStdObjSystemInfo,              ///< 6 - System Information
   EStdObjTpmDeviceInfo,           ///< 7 - TPM Device Info
   EStdObjOemStrings,              ///< 8 - OEM Strings
+  EStdObjPortConnectorInfo,       ///< 9 - Port connector Information
   EStdObjMax
 } ESTD_OBJECT_ID;
 
@@ -229,6 +230,21 @@ typedef struct CmStdBaseboardInfo {
   /** Contained Object Handles */
   CONTAINED_CM_OBJECTS    ContainedCmObjects[1];
 } CM_STD_BASEBOARD_INFO;
+
+/** A structure that describes port connector.
+
+  SMBIOS Specification v3.5.0 Type 8
+
+  ID: EStdObjPortConnectorInfo,
+*/
+typedef struct CmStdPortConnectorInfo {
+  CHAR8              *InternalReferenceDesignator;
+  UINT8              InternalConnectorType;                 ///< The enumeration value from MISC_PORT_CONNECTOR_TYPE.
+  CHAR8              *ExternalReferenceDesignator;
+  UINT8              ExternalConnectorType;                 ///< The enumeration value from MISC_PORT_CONNECTOR_TYPE.
+  UINT8              PortType;                              ///< The enumeration value from MISC_PORT_TYPE.
+  CM_OBJECT_TOKEN    CmObjectToken;
+} CM_STD_PORT_CONNECTOR_INFO;
 
 #define MAX_SLOT_PEER_GROUP  0x05
 
