@@ -59,6 +59,7 @@ typedef enum StdObjectID {
   EStdObjOnboardDeviceExInfo,     ///< 11 - Onboard Device Ex Information
   EStdObjGroupAssociations,       ///< 12 - Group Associations
   EStdObjBiosLanguageInfo,        ///< 13 - BIOS Language Information
+  EStdObjEnclosureInfo,           ///< 14 - Enclosure Information
   EStdObjMax
 } ESTD_OBJECT_ID;
 
@@ -234,6 +235,59 @@ typedef struct CmStdBaseboardInfo {
   /** Contained Object Handles */
   CONTAINED_CM_OBJECTS    ContainedCmObjects[1];
 } CM_STD_BASEBOARD_INFO;
+
+/** A structure that describes the enclosure.
+
+  SMBIOS Specification v3.5.0 Type 3
+
+  ID: EStdObjEnclosureInfo,
+*/
+typedef struct CmStdEnclosureInfo {
+  /** CM Object Token of Enclosure  */
+  CM_OBJECT_TOKEN      EnclosureInfoToken;
+  /** Enclosure Manufacturer Name */
+  CHAR8                *Manufacturer;
+  /** Enclosure type */
+  UINT8                Type;
+  /** Enclosure version */
+  CHAR8                *Version;
+  /** Enclosure Serial Number */
+  CHAR8                *SerialNum;
+  /** Enclosure Asset Tag */
+  CHAR8                *AssetTag;
+  /** Enclosure Bootup State */
+  UINT8                BootupState;
+  /** Enclosure Power Supply State */
+  UINT8                PowerSupplyState;
+  /** Enclosure Thermal State */
+  UINT8                ThermalState;
+  /** Enclosure Security Status */
+  UINT8                SecurityStatus;
+  /** Reserved  for Oem defined */
+  UINT8                OemDefined[4];
+  /** Enclosure Height */
+  UINT8                Height;
+  /** Enclosure Number of Power Cords */
+  UINT8                NumberofPowerCords;
+  /** Enclosure Contained Element Count */
+  UINT8                ContainedElementCount;
+
+  /** Enclosure Contained Element Record Length
+    If no Contained Elements are included, this
+    field is set to 0. For version 2.3.2 and later of
+    this specification, this field is set to at least 03h
+    when Contained Elements are specified.
+  */
+  UINT8                ContainedElementRecordLength;
+
+  /** Enclosure contained elements
+    Can have 0 to (ContainedElementCount *
+    ContainedElementRecordLength)
+  */
+  CONTAINED_ELEMENT    *ContainedElements;
+  /** Enclosure SKU number */
+  CHAR8                *SkuNum;
+} CM_STD_ENCLOSURE_INFO;
 
 /** A structure that describes port connector.
 
