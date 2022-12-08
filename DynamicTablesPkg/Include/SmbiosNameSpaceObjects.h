@@ -36,6 +36,7 @@ typedef enum SmbiosObjectID {
   ESmbiosObjMemoryArrayMappedAddress,  ///< 15 - Memory Mapped Address
   ESmbiosObjPowerSupplyInfo,           ///< 16 - Power Supply Info
   ESmbiosObjFirmwareInventoryInfo,     ///< 17 - Firmware Inventory Info
+  ESmbiosObjIpmiDeviceInfo,            ///< 18 - IPMI Device Information
   ESmbiosObjMax
 } ESMBIOS_OBJECT_ID;
 
@@ -199,6 +200,44 @@ typedef struct CmSmbiosSystemInfo {
   /** Token of this System information CM Object */
   CM_OBJECT_TOKEN    SystemInfoToken;
 } CM_SMBIOS_SYSTEM_INFO;
+
+/** A structure that describes the IPMI Device Information.
+ *
+ *  The IPMI device information on the system is described by this object.
+ *
+ *  SMBIOS Specification v3.5.0 Type38
+ *  IPMI Specification v2.0 r1.1 SPMI Description Table
+ *
+ *  ID: EArmObjIpmiDeviceInfo
+**/
+typedef struct CmSmbiosIpmiDeviceInfo {
+  /** IPMI Interface Type */
+  UINT8              IpmiIntfType;
+
+  /** IPMI Specification Revision */
+  UINT8              IpmiSpecRevision;
+
+  /** IPMI I2C Slave Address */
+  UINT8              IpmiI2CSlaveAddress;
+
+  /** IPMI NV Storage Device Address */
+  UINT8              IpmiNVStorageDevAddress;
+
+  /** IPMI Base Address */
+  UINT64             IpmiBaseAddress;
+
+  /** IPMI Base Address Modifier Interrupt Information */
+  UINT8              IpmiBaseAddModIntInfo;
+
+  /** IPMI Interrupt Number */
+  UINT8              IpmiInterruptNum;
+
+  /** IPMI Device's ACPI _UID */
+  UINT32             IpmiUid;
+
+  /** CM Object Token of Ipmi Device information */
+  CM_OBJECT_TOKEN    IpmiDeviceInfoToken;
+} CM_SMBIOS_IPMI_DEVICE_INFO;
 
 #pragma pack()
 
