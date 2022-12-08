@@ -1,6 +1,7 @@
 /** @file
 
   Copyright (c) 2017 - 2022, Arm Limited. All rights reserved.
+  Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -47,6 +48,7 @@ typedef enum StdObjectID {
   EStdObjCfgMgrInfo = 0x00000000, ///< 0 - Configuration Manager Info
   EStdObjAcpiTableList,           ///< 1 - ACPI table Info List
   EStdObjSmbiosTableList,         ///< 2 - SMBIOS table Info List
+  EStdObjIpmiDeviceInfo,          ///< 3 - IPMI Device Information
   EStdObjMax
 } ESTD_OBJECT_ID;
 
@@ -133,6 +135,40 @@ typedef struct CmStdObjSmbiosTableInfo {
   /// Optional pointer to the SMBIOS table data
   SMBIOS_STRUCTURE             *SmbiosTableData;
 } CM_STD_OBJ_SMBIOS_TABLE_INFO;
+
+/** A structure that describes the IPMI Device Information.
+ *
+ *  The IPMI device information on the system is described by this object.
+ *
+ *  SMBIOS Specification v3.5.0 Type38
+ *
+ *  ID: EArmObjIpmiDeviceInfo
+**/
+typedef struct CmStdIpmiDeviceInfo {
+  /** IPMI Interface Type */
+  UINT8              IpmiIntfType;
+
+  /** IPMI Specification Revision */
+  UINT8              IpmiSpecRevision;
+
+  /** IPMI I2C Slave Address */
+  UINT8              IpmiI2CSlaveAddress;
+
+  /** IPMI NV Storage Device Address */
+  UINT8              IpmiNVStorageDevAddress;
+
+  /** IPMI Base Address */
+  UINT64             IpmiBaseAddress;
+
+  /** IPMI Base Address Modifier Interrupt Information */
+  UINT8              IpmiBaseAddModIntInfo;
+
+  /** IPMI Interrupt Number */
+  UINT8              IpmiInterruptNum;
+
+  /** CM Object Token of Ipmi Device information */
+  CM_OBJECT_TOKEN    IpmiDeviceInfoToken;
+} CM_STD_IPMI_DEVICE_INFO;
 
 #pragma pack()
 
