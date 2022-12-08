@@ -470,6 +470,22 @@ typedef struct CmSmbiosBiosInfo {
   CM_OBJECT_TOKEN              BiosInfoToken;
 } CM_SMBIOS_BIOS_INFO;
 
+/** A structure that describes port connector.
+
+  SMBIOS Specification v3.5.0 Type 41
+
+  ID: ESmbiosObjPortConnectorInfo,
+*/
+typedef struct CmSmbiosOnboardDeviceExtendedInfo {
+  CHAR8              *ReferenceDesignation;
+  UINT8              DeviceType;                            ///< The enumeration value from ONBOARD_DEVICE_EXTENDED_INFO_TYPE
+  UINT8              DeviceTypeInstance;
+  UINT16             SegmentGroupNum;
+  UINT8              BusNum;
+  UINT8              DevFuncNum;
+  CM_OBJECT_TOKEN    CmObjectToken;
+} CM_SMBIOS_ONBOARD_DEVICE_EXTENDED_INFO;
+
 #pragma pack()
 
 #endif // SMBIOS_NAMESPACE_OBJECTS_H_
