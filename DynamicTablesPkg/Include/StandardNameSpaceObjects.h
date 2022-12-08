@@ -56,6 +56,7 @@ typedef enum StdObjectID {
   EStdObjOemStrings,              ///< 8  - OEM Strings
   EStdObjPortConnectorInfo,       ///< 9  - Port connector Information
   EStdObjBiosInfo,                ///< 10 - Bios Information
+  EStdObjOnboardDeviceExInfo,     ///< 11 - Onboard Device Ex Information
   EStdObjMax
 } ESTD_OBJECT_ID;
 
@@ -451,6 +452,22 @@ typedef struct CmStdBiosInfo {
   /** CM Object Token of Bios information */
   CM_OBJECT_TOKEN              BiosInfoToken;
 } CM_STD_BIOS_INFO;
+
+/** A structure that describes port connector.
+
+  SMBIOS Specification v3.5.0 Type 41
+
+  ID: EStdObjPortConnectorInfo,
+*/
+typedef struct CmStdOnboardDeviceExtendedInfo {
+  CHAR8              *ReferenceDesignation;
+  UINT8              DeviceType;                            ///< The enumeration value from ONBOARD_DEVICE_EXTENDED_INFO_TYPE
+  UINT8              DeviceTypeInstance;
+  UINT16             SegmentGroupNum;
+  UINT8              BusNum;
+  UINT8              DevFuncNum;
+  CM_OBJECT_TOKEN    CmObjectToken;
+} CM_STD_ONBOARD_DEVICE_EXTENDED_INFO;
 
 #pragma pack()
 
