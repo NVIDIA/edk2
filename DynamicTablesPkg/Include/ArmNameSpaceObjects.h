@@ -75,7 +75,6 @@ typedef enum ArmObjectID {
   EArmObjResNodeInfo,                                          ///< 50 - Res Resource Node Info
   EArmObjFuncDepInfo,                                          ///< 51 - Func Dep Info
   EArmObjMemoryDeviceInfo,                                     ///< 52 - Memory Device Information
-  EArmObjSystemInfo,                                           ///< 54 - System Information
   EArmObjMax
 } EARM_OBJECT_ID;
 
