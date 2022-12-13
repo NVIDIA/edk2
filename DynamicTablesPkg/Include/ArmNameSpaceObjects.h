@@ -76,7 +76,6 @@ typedef enum ArmObjectID {
   EArmObjFuncDepInfo,                                          ///< 51 - Func Dep Info
   EArmObjMemoryDeviceInfo,                                     ///< 52 - Memory Device Information
   EArmObjLocalityLatencyBandwidthInfo,                         ///< 53 - System Locality Latency and Bandwidth Info
-  EArmObjSystemInfo,                                           ///< 54 - System Information
   EArmObjMax
 } EARM_OBJECT_ID;
 

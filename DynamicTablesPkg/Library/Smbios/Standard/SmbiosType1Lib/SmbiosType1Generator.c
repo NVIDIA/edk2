@@ -10,9 +10,7 @@
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
-#include <Library/PrintLib.h>
 #include <Library/MemoryAllocationLib.h>
-#include <Library/UefiBootServicesTableLib.h>
 #include <Library/SmbiosStringTableLib.h>
 
 // Module specific include files.
@@ -27,9 +25,9 @@
     information from the Configuration Manager.
 */
 GET_OBJECT_LIST (
-  EObjNameSpaceArm,
-  EArmObjSystemInfo,
-  CM_ARM_SYSTEM_INFO
+  EObjNameSpaceStandard,
+  EStdObjSystemInfo,
+  CM_STD_SYSTEM_INFO
   )
 
 /** This function pointer describes the interface to used by the
@@ -90,7 +88,7 @@ BuildSmbiosType1Table (
   )
 {
   EFI_STATUS          Status;
-  CM_ARM_SYSTEM_INFO  *SystemInfo;
+  CM_STD_SYSTEM_INFO  *SystemInfo;
   UINT8               ManufacturerRef;
   UINT8               ProductNameRef;
   UINT8               VersionRef;
@@ -112,7 +110,7 @@ BuildSmbiosType1Table (
   // Retrieve system info from CM object
   //
   *Table = NULL;
-  Status = GetEArmObjSystemInfo (
+  Status = GetEStdObjSystemInfo (
              CfgMgrProtocol,
              CM_NULL_TOKEN,
              &SystemInfo,
@@ -130,7 +128,11 @@ BuildSmbiosType1Table (
   //
   // Copy strings to SMBIOS table
   //
-  StringTableInitialize (&StrTable, 6);
+  Status = StringTableInitialize (&StrTable, 6);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: Failed to initialize string table %r\n", __FUNCTION__, Status));
+    return Status;
+  }
 
   STRING_TABLE_ADD_STRING (StrTable, SystemInfo->Manufacturer, ManufacturerRef);
   STRING_TABLE_ADD_STRING (StrTable, SystemInfo->ProductName, ProductNameRef);
@@ -175,7 +177,8 @@ BuildSmbiosType1Table (
   SmbiosRecord->Hdr.Length = sizeof (SMBIOS_TABLE_TYPE1);
 
   *Table      = (SMBIOS_STRUCTURE *)SmbiosRecord;
-  *CmObjToken = (CM_OBJECT_TOKEN)SystemInfo;
+  *CmObjToken = SystemInfo->SystemInfoToken;
+  Status      = EFI_SUCCESS;
 
 ErrorExit:
   // free string table
