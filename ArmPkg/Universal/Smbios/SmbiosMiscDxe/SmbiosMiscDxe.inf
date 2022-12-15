@@ -79,6 +79,7 @@
   gArmTokenSpaceGuid.PcdBaseBoardProductName
   gArmTokenSpaceGuid.PcdBaseBoardVersion
   gArmTokenSpaceGuid.PcdFdBaseAddress
+  gArmTokenSpaceGuid.PcdSmbiosMiscDxeGenMask
 
 [Guids]
   gEfiGenericVariableGuid
