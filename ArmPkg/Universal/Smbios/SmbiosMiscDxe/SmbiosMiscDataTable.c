@@ -46,35 +46,47 @@ SMBIOS_MISC_TABLE_EXTERNS (
 
 SMBIOS_MISC_DATA_TABLE mSmbiosMiscDataTable[] = {
   // Type0
+ #if ((FixedPcdGet64 (PcdSmbiosMiscDxeGenMask) & BIT0) != 0)
   SMBIOS_MISC_TABLE_ENTRY_DATA_AND_FUNCTION (
     MiscBiosVendor,
     MiscBiosVendor
     ),
+ #endif
   // Type1
+ #if ((FixedPcdGet64 (PcdSmbiosMiscDxeGenMask) & BIT1) != 0)
   SMBIOS_MISC_TABLE_ENTRY_DATA_AND_FUNCTION (
     MiscSystemManufacturer,
     MiscSystemManufacturer
     ),
+ #endif
   // Type3
+ #if ((FixedPcdGet64 (PcdSmbiosMiscDxeGenMask) & BIT3) != 0)
   SMBIOS_MISC_TABLE_ENTRY_DATA_AND_FUNCTION (
     MiscChassisManufacturer,
     MiscChassisManufacturer
     ),
+ #endif
   // Type2
+ #if ((FixedPcdGet64 (PcdSmbiosMiscDxeGenMask) & BIT2) != 0)
   SMBIOS_MISC_TABLE_ENTRY_DATA_AND_FUNCTION (
     MiscBaseBoardManufacturer,
     MiscBaseBoardManufacturer
     ),
+ #endif
   // Type13
+ #if ((FixedPcdGet64 (PcdSmbiosMiscDxeGenMask) & BIT13) != 0)
   SMBIOS_MISC_TABLE_ENTRY_DATA_AND_FUNCTION (
     MiscNumberOfInstallableLanguages,
     MiscNumberOfInstallableLanguages
     ),
+ #endif
   // Type32
+ #if ((FixedPcdGet64 (PcdSmbiosMiscDxeGenMask) & BIT32) != 0)
   SMBIOS_MISC_TABLE_ENTRY_DATA_AND_FUNCTION (
     MiscBootInformation,
     MiscBootInformation
     ),
+ #endif
 };
 
 //
