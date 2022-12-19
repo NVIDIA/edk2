@@ -19,6 +19,25 @@
 #pragma pack(1)
 
 ///
+/// SPMI Revision (as defined in IPMI v2.0 r1.1)
+///
+#define EFI_ACPI_SERVICE_PROCESSOR_MANAGEMENT_INTERFACE_TABLE_REVISION  0x05
+
+//
+// IPMI interface types
+//
+#define EFI_ACPI_IPMI_INTERFACE_TYPE_RESERVED  0x00
+#define EFI_ACPI_IPMI_INTERFACE_TYPE_KCS       0x01
+#define EFI_ACPI_IPMI_INTERFACE_TYPE_SMIC      0x02
+#define EFI_ACPI_IPMI_INTERFACE_TYPE_BT        0x03
+#define EFI_ACPI_IPMI_INTERFACE_TYPE_SSIF      0x04
+
+//
+// IPMI specification revision (v2.0)
+//
+#define EFI_ACPI_IPMI_SPECIFICATION_REVISION  0x0200
+
+///
 /// Definition for the device identification information used by the Service
 /// Processor Management Interface Description Table
 ///
@@ -79,9 +98,9 @@ typedef struct {
   UINT32                                                             GlobalSystemInterrupt;
   ///
   /// The base address of the interface register set described using the
-  /// Generic Address Structure (GAS, See [ACPI 2.0] for the definition).
+  /// Generic Address Structure (GAS, See [ACPI 3.0] for the definition).
   ///
-  EFI_ACPI_2_0_GENERIC_ADDRESS_STRUCTURE                             BaseAddress;
+  EFI_ACPI_3_0_GENERIC_ADDRESS_STRUCTURE                             BaseAddress;
   ///
   /// Device identification information.
   ///
