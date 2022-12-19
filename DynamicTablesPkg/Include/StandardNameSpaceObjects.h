@@ -143,6 +143,7 @@ typedef struct CmStdObjSmbiosTableInfo {
  *  The IPMI device information on the system is described by this object.
  *
  *  SMBIOS Specification v3.5.0 Type38
+ *  IPMI Specification v2.0 r1.1 SPMI Description Table
  *
  *  ID: EArmObjIpmiDeviceInfo
 **/
@@ -167,6 +168,9 @@ typedef struct CmStdIpmiDeviceInfo {
 
   /** IPMI Interrupt Number */
   UINT8              IpmiInterruptNum;
+
+  /** IPMI Device's ACPI _UID */
+  UINT32             IpmiUid;
 
   /** CM Object Token of Ipmi Device information */
   CM_OBJECT_TOKEN    IpmiDeviceInfoToken;
