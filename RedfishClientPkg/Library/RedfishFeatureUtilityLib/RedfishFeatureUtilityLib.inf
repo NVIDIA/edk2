@@ -29,8 +29,8 @@
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
   NetworkPkg/NetworkPkg.dec
-  RedfishPkg/RedfishPkg.dec
   RedfishClientPkg/RedfishClientPkg.dec
+  RedfishPkg/RedfishPkg.dec
 
 [LibraryClasses]
   BaseLib
@@ -44,6 +44,7 @@
   UefiRuntimeServicesTableLib
   PrintLib
   HttpLib
+  RedfishClientDebugLib
 
 [Protocols]
   gEdkIIRedfishETagProtocolGuid           ## CONSUMED ##

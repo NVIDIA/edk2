@@ -133,7 +133,7 @@ SetEtagWithUri (
 
   Status = RedfishLocateProtocol ((VOID **)&mEtagProtocol, &gEdkIIRedfishETagProtocolGuid);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, fail to locate gEdkIIRedfishETagProtocolGuid: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: fail to locate gEdkIIRedfishETagProtocolGuid: %r\n", __FUNCTION__, Status));
     return Status;
   }
 
@@ -175,7 +175,7 @@ GetEtagWithUri (
 
   Status = RedfishLocateProtocol ((VOID **)&mEtagProtocol, &gEdkIIRedfishETagProtocolGuid);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, fail to locate gEdkIIRedfishETagProtocolGuid: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: fail to locate gEdkIIRedfishETagProtocolGuid: %r\n", __FUNCTION__, Status));
     return NULL;
   }
 
@@ -306,10 +306,10 @@ ApplyFeatureSettingsStringType (
   //
   Status = RedfishPlatformConfigGetValue (Schema, Version, ConfigureLang, &RedfishValue);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
   } else {
     if (RedfishValue.Type != REDFISH_VALUE_TYPE_STRING) {
-      DEBUG ((DEBUG_ERROR, "%a, %a.%a %s value is not string type\n", __FUNCTION__, Schema, Version, ConfigureLang));
+      DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not string type\n", __FUNCTION__, Schema, Version, ConfigureLang));
       return EFI_DEVICE_ERROR;
     }
 
@@ -317,7 +317,7 @@ ApplyFeatureSettingsStringType (
       //
       // Apply settings from redfish
       //
-      DEBUG ((DEBUG_INFO, "%a, %a.%a apply %s from %a to %a\n", __FUNCTION__, Schema, Version, ConfigureLang, RedfishValue.Value.Buffer, FeatureValue));
+      DEBUG ((DEBUG_INFO, "%a: %a.%a apply %s from %a to %a\n", __FUNCTION__, Schema, Version, ConfigureLang, RedfishValue.Value.Buffer, FeatureValue));
 
       FreePool (RedfishValue.Value.Buffer);
       RedfishValue.Value.Buffer = FeatureValue;
@@ -329,10 +329,10 @@ ApplyFeatureSettingsStringType (
         //
         REDFISH_ENABLE_SYSTEM_REBOOT ();
       } else {
-        DEBUG ((DEBUG_ERROR, "%a, apply %s to %s failed: %r\n", __FUNCTION__, ConfigureLang, FeatureValue, Status));
+        DEBUG ((DEBUG_ERROR, "%a: apply %s to %s failed: %r\n", __FUNCTION__, ConfigureLang, FeatureValue, Status));
       }
     } else {
-      DEBUG ((DEBUG_ERROR, "%a, %a.%a %s value is: %s\n", __FUNCTION__, Schema, Version, ConfigureLang, RedfishValue.Value.Buffer, Status));
+      DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is: %s\n", __FUNCTION__, Schema, Version, ConfigureLang, RedfishValue.Value.Buffer, Status));
     }
   }
 
@@ -372,10 +372,10 @@ ApplyFeatureSettingsNumericType (
   //
   Status = RedfishPlatformConfigGetValue (Schema, Version, ConfigureLang, &RedfishValue);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
   } else {
     if (RedfishValue.Type != REDFISH_VALUE_TYPE_INTEGER) {
-      DEBUG ((DEBUG_ERROR, "%a, %a.%a %s value is not numeric type\n", __FUNCTION__, Schema, Version, ConfigureLang));
+      DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not numeric type\n", __FUNCTION__, Schema, Version, ConfigureLang));
       return EFI_DEVICE_ERROR;
     }
 
@@ -383,7 +383,7 @@ ApplyFeatureSettingsNumericType (
       //
       // Apply settings from redfish
       //
-      DEBUG ((DEBUG_INFO, "%a, %a.%a apply %s from 0x%x to 0x%x\n", __FUNCTION__, Schema, Version, ConfigureLang, RedfishValue.Value.Integer, FeatureValue));
+      DEBUG ((DEBUG_INFO, "%a: %a.%a apply %s from 0x%x to 0x%x\n", __FUNCTION__, Schema, Version, ConfigureLang, RedfishValue.Value.Integer, FeatureValue));
 
       RedfishValue.Value.Integer = (INT64)FeatureValue;
 
@@ -394,10 +394,10 @@ ApplyFeatureSettingsNumericType (
         //
         REDFISH_ENABLE_SYSTEM_REBOOT ();
       } else {
-        DEBUG ((DEBUG_ERROR, "%a, apply %s to 0x%x failed: %r\n", __FUNCTION__, ConfigureLang, FeatureValue, Status));
+        DEBUG ((DEBUG_ERROR, "%a: apply %s to 0x%x failed: %r\n", __FUNCTION__, ConfigureLang, FeatureValue, Status));
       }
     } else {
-      DEBUG ((DEBUG_ERROR, "%a, %a.%a %s value is: 0x%x\n", __FUNCTION__, Schema, Version, ConfigureLang, RedfishValue.Value.Integer, Status));
+      DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is: 0x%x\n", __FUNCTION__, Schema, Version, ConfigureLang, RedfishValue.Value.Integer, Status));
     }
   }
 
@@ -437,10 +437,10 @@ ApplyFeatureSettingsBooleanType (
   //
   Status = RedfishPlatformConfigGetValue (Schema, Version, ConfigureLang, &RedfishValue);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
   } else {
     if (RedfishValue.Type != REDFISH_VALUE_TYPE_BOOLEAN) {
-      DEBUG ((DEBUG_ERROR, "%a, %a.%a %s value is not boolean type\n", __FUNCTION__, Schema, Version, ConfigureLang));
+      DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not boolean type\n", __FUNCTION__, Schema, Version, ConfigureLang));
       return EFI_DEVICE_ERROR;
     }
 
@@ -448,7 +448,7 @@ ApplyFeatureSettingsBooleanType (
       //
       // Apply settings from redfish
       //
-      DEBUG ((DEBUG_INFO, "%a, %a.%a apply %s from %a to %a\n", __FUNCTION__, Schema, Version, ConfigureLang, (RedfishValue.Value.Boolean ? "True" : "False"), (FeatureValue ? "True" : "False")));
+      DEBUG ((DEBUG_INFO, "%a: %a.%a apply %s from %a to %a\n", __FUNCTION__, Schema, Version, ConfigureLang, (RedfishValue.Value.Boolean ? "True" : "False"), (FeatureValue ? "True" : "False")));
 
       RedfishValue.Value.Boolean = FeatureValue;
 
@@ -459,10 +459,10 @@ ApplyFeatureSettingsBooleanType (
         //
         REDFISH_ENABLE_SYSTEM_REBOOT ();
       } else {
-        DEBUG ((DEBUG_ERROR, "%a, apply %s to %a failed: %r\n", __FUNCTION__, ConfigureLang, (FeatureValue ? "True" : "False"), Status));
+        DEBUG ((DEBUG_ERROR, "%a: apply %s to %a failed: %r\n", __FUNCTION__, ConfigureLang, (FeatureValue ? "True" : "False"), Status));
       }
     } else {
-      DEBUG ((DEBUG_ERROR, "%a, %a.%a %s value is: %a\n", __FUNCTION__, Schema, Version, ConfigureLang, (RedfishValue.Value.Boolean ? "True" : "False"), Status));
+      DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is: %a\n", __FUNCTION__, Schema, Version, ConfigureLang, (RedfishValue.Value.Boolean ? "True" : "False"), Status));
     }
   }
 
@@ -508,13 +508,13 @@ ApplyFeatureSettingsVagueType (
   ConfigureLangAscii = AllocatePool (StrLen (ConfigureLang) + 1);
   if (ConfigureLangAscii == NULL) {
     Status = EFI_OUT_OF_RESOURCES;
-    DEBUG ((DEBUG_ERROR, "%a, Allocate memory for generate ConfigureLang of vague key of %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
+    DEBUG ((DEBUG_ERROR, "%a: Allocate memory for generate ConfigureLang of vague key of %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
     return Status;
   }
 
   Status = UnicodeStrToAsciiStrS (ConfigureLang, ConfigureLangAscii, StrLen (ConfigureLang) + 1);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, Convert the configureLang of vague key of %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
+    DEBUG ((DEBUG_ERROR, "%a: Convert the configureLang of vague key of %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
     return Status;
   }
 
@@ -528,7 +528,7 @@ ApplyFeatureSettingsVagueType (
     ConfigureLangKeyAscii = AllocateZeroPool (StrSize);
     ConfigureKeyLang      = AllocateZeroPool (StrSize * sizeof (CHAR16));
     if ((ConfigureLangKeyAscii == NULL) || (ConfigureKeyLang == NULL)) {
-      DEBUG ((DEBUG_ERROR, "%a, Generate ConfigureLang of vague key of %a.%a %s %a failed!\n", __FUNCTION__, Schema, Version, ConfigureLang, CurrentVagueValuePtr->KeyNamePtr));
+      DEBUG ((DEBUG_ERROR, "%a: Generate ConfigureLang of vague key of %a.%a %s %a failed!\n", __FUNCTION__, Schema, Version, ConfigureLang, CurrentVagueValuePtr->KeyNamePtr));
       goto ErrorContinue;
     }
 
@@ -548,7 +548,7 @@ ApplyFeatureSettingsVagueType (
     } else if (CurrentVagueValuePtr->Value->DataType == RedfishCS_Vague_DataType_Int64) {
       PropertyDatatype = REDFISH_VALUE_TYPE_INTEGER;
     } else {
-      DEBUG ((DEBUG_ERROR, "%a, %a.%a %s Unsupported Redfish property data type\n", __FUNCTION__, Schema, Version, ConfigureLang));
+      DEBUG ((DEBUG_ERROR, "%a: %a.%a %s Unsupported Redfish property data type\n", __FUNCTION__, Schema, Version, ConfigureLang));
       goto ErrorContinue;
     }
 
@@ -557,10 +557,10 @@ ApplyFeatureSettingsVagueType (
     //
     Status = RedfishPlatformConfigGetValue (Schema, Version, ConfigureKeyLang, &RedfishValue);
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a, %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, Status));
+      DEBUG ((DEBUG_ERROR, "%a: %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, Status));
     } else {
       if (RedfishValue.Type != PropertyDatatype) {
-        DEBUG ((DEBUG_ERROR, "%a, %a.%a %s mismatched data type\n", __FUNCTION__, Schema, Version, ConfigureKeyLang));
+        DEBUG ((DEBUG_ERROR, "%a: %a.%a %s mismatched data type\n", __FUNCTION__, Schema, Version, ConfigureKeyLang));
         goto ErrorContinue;
       }
 
@@ -572,7 +572,7 @@ ApplyFeatureSettingsVagueType (
           //
           // Apply settings from redfish
           //
-          DEBUG ((DEBUG_INFO, "%a, %a.%a apply %s from %a to %a\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, RedfishValue.Value.Buffer, CurrentVagueValuePtr->Value->DataValue.CharPtr));
+          DEBUG ((DEBUG_INFO, "%a: %a.%a apply %s from %a to %a\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, RedfishValue.Value.Buffer, CurrentVagueValuePtr->Value->DataValue.CharPtr));
           FreePool (RedfishValue.Value.Buffer);
           RedfishValue.Value.Buffer = CurrentVagueValuePtr->Value->DataValue.CharPtr;
           Status                    = RedfishPlatformConfigSetValue (Schema, Version, ConfigureKeyLang, RedfishValue);
@@ -582,10 +582,10 @@ ApplyFeatureSettingsVagueType (
             //
             REDFISH_ENABLE_SYSTEM_REBOOT ();
           } else {
-            DEBUG ((DEBUG_ERROR, "%a, apply %a to %a failed: %r\n", __FUNCTION__, ConfigureKeyLang, CurrentVagueValuePtr->Value->DataValue.CharPtr, Status));
+            DEBUG ((DEBUG_ERROR, "%a: apply %a to %a failed: %r\n", __FUNCTION__, ConfigureKeyLang, CurrentVagueValuePtr->Value->DataValue.CharPtr, Status));
           }
         } else {
-          DEBUG ((DEBUG_INFO, "%a, %a.%a %s value is: %a\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, RedfishValue.Value.Buffer, Status));
+          DEBUG ((DEBUG_INFO, "%a: %a.%a %s value is: %a\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, RedfishValue.Value.Buffer, Status));
         }
       } else if (PropertyDatatype == REDFISH_VALUE_TYPE_BOOLEAN) {
         //
@@ -597,7 +597,7 @@ ApplyFeatureSettingsVagueType (
           //
           DEBUG ((
             DEBUG_INFO,
-            "%a, %a.%a apply %s from %a to %a\n",
+            "%a: %a.%a apply %s from %a to %a\n",
             __FUNCTION__,
             Schema,
             Version,
@@ -614,10 +614,10 @@ ApplyFeatureSettingsVagueType (
             //
             REDFISH_ENABLE_SYSTEM_REBOOT ();
           } else {
-            DEBUG ((DEBUG_ERROR, "%a, apply %s to %a failed: %r\n", __FUNCTION__, ConfigureKeyLang, (*CurrentVagueValuePtr->Value->DataValue.BoolPtr ? "True" : "False"), Status));
+            DEBUG ((DEBUG_ERROR, "%a: apply %s to %a failed: %r\n", __FUNCTION__, ConfigureKeyLang, (*CurrentVagueValuePtr->Value->DataValue.BoolPtr ? "True" : "False"), Status));
           }
         } else {
-          DEBUG ((DEBUG_INFO, "%a, %a.%a %s value is: %a\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, (RedfishValue.Value.Boolean ? "True" : "False"), Status));
+          DEBUG ((DEBUG_INFO, "%a: %a.%a %s value is: %a\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, (RedfishValue.Value.Boolean ? "True" : "False"), Status));
         }
       } else if (PropertyDatatype == REDFISH_VALUE_TYPE_INTEGER) {
         //
@@ -627,7 +627,7 @@ ApplyFeatureSettingsVagueType (
           //
           // Apply settings from redfish
           //
-          DEBUG ((DEBUG_INFO, "%a, %a.%a apply %s from 0x%x to 0x%x\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, RedfishValue.Value.Integer, *CurrentVagueValuePtr->Value->DataValue.Int64Ptr));
+          DEBUG ((DEBUG_INFO, "%a: %a.%a apply %s from 0x%x to 0x%x\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, RedfishValue.Value.Integer, *CurrentVagueValuePtr->Value->DataValue.Int64Ptr));
 
           RedfishValue.Value.Integer = (INT64)*CurrentVagueValuePtr->Value->DataValue.Int64Ptr;
           Status                     = RedfishPlatformConfigSetValue (Schema, Version, ConfigureKeyLang, RedfishValue);
@@ -637,13 +637,13 @@ ApplyFeatureSettingsVagueType (
             //
             REDFISH_ENABLE_SYSTEM_REBOOT ();
           } else {
-            DEBUG ((DEBUG_ERROR, "%a, apply %s to 0x%x failed: %r\n", __FUNCTION__, ConfigureKeyLang, *CurrentVagueValuePtr->Value->DataValue.Int64Ptr, Status));
+            DEBUG ((DEBUG_ERROR, "%a: apply %s to 0x%x failed: %r\n", __FUNCTION__, ConfigureKeyLang, *CurrentVagueValuePtr->Value->DataValue.Int64Ptr, Status));
           }
         } else {
-          DEBUG ((DEBUG_INFO, "%a, %a.%a %s value is: 0x%x\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, RedfishValue.Value.Integer, Status));
+          DEBUG ((DEBUG_INFO, "%a: %a.%a %s value is: 0x%x\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, RedfishValue.Value.Integer, Status));
         }
       } else {
-        DEBUG ((DEBUG_ERROR, "%a, %a.%a %s Unsupported Redfish property data type\n", __FUNCTION__, Schema, Version, ConfigureLang));
+        DEBUG ((DEBUG_ERROR, "%a: %a.%a %s Unsupported Redfish property data type\n", __FUNCTION__, Schema, Version, ConfigureLang));
         goto ErrorContinue;
       }
     }
@@ -761,10 +761,10 @@ ApplyFeatureSettingsStringArrayType (
   //
   Status = RedfishPlatformConfigGetValue (Schema, Version, ConfigureLang, &RedfishValue);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
   } else {
     if (RedfishValue.Type != REDFISH_VALUE_TYPE_STRING_ARRAY) {
-      DEBUG ((DEBUG_ERROR, "%a, %a.%a %s value is not string array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
+      DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not string array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
       return EFI_DEVICE_ERROR;
     }
 
@@ -775,7 +775,7 @@ ApplyFeatureSettingsStringArrayType (
       //
       // Apply settings from redfish
       //
-      DEBUG ((DEBUG_INFO, "%a, %a.%a apply %s for array\n", __FUNCTION__, Schema, Version, ConfigureLang));
+      DEBUG ((DEBUG_INFO, "%a: %a.%a apply %s for array\n", __FUNCTION__, Schema, Version, ConfigureLang));
       FreeArrayTypeRedfishValue (&RedfishValue);
 
       //
@@ -819,10 +819,10 @@ ApplyFeatureSettingsStringArrayType (
         //
         REDFISH_ENABLE_SYSTEM_REBOOT ();
       } else {
-        DEBUG ((DEBUG_ERROR, "%a, apply %s array failed: %r\n", __FUNCTION__, ConfigureLang, Status));
+        DEBUG ((DEBUG_ERROR, "%a: apply %s array failed: %r\n", __FUNCTION__, ConfigureLang, Status));
       }
     } else {
-      DEBUG ((DEBUG_ERROR, "%a, %a.%a %s array value has no change\n", __FUNCTION__, Schema, Version, ConfigureLang));
+      DEBUG ((DEBUG_ERROR, "%a: %a.%a %s array value has no change\n", __FUNCTION__, Schema, Version, ConfigureLang));
     }
   }
 
@@ -864,10 +864,10 @@ ApplyFeatureSettingsNumericArrayType (
   //
   Status = RedfishPlatformConfigGetValue (Schema, Version, ConfigureLang, &RedfishValue);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
   } else {
     if (RedfishValue.Type != REDFISH_VALUE_TYPE_INTEGER_ARRAY) {
-      DEBUG ((DEBUG_ERROR, "%a, %a.%a %s value is not string array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
+      DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not string array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
       return EFI_DEVICE_ERROR;
     }
 
@@ -878,7 +878,7 @@ ApplyFeatureSettingsNumericArrayType (
       //
       // Apply settings from redfish
       //
-      DEBUG ((DEBUG_INFO, "%a, %a.%a apply %s for array\n", __FUNCTION__, Schema, Version, ConfigureLang));
+      DEBUG ((DEBUG_INFO, "%a: %a.%a apply %s for array\n", __FUNCTION__, Schema, Version, ConfigureLang));
       FreeArrayTypeRedfishValue (&RedfishValue);
 
       //
@@ -917,10 +917,10 @@ ApplyFeatureSettingsNumericArrayType (
         //
         REDFISH_ENABLE_SYSTEM_REBOOT ();
       } else {
-        DEBUG ((DEBUG_ERROR, "%a, apply %s array failed: %r\n", __FUNCTION__, ConfigureLang, Status));
+        DEBUG ((DEBUG_ERROR, "%a: apply %s array failed: %r\n", __FUNCTION__, ConfigureLang, Status));
       }
     } else {
-      DEBUG ((DEBUG_ERROR, "%a, %a.%a %s array value has no change\n", __FUNCTION__, Schema, Version, ConfigureLang));
+      DEBUG ((DEBUG_ERROR, "%a: %a.%a %s array value has no change\n", __FUNCTION__, Schema, Version, ConfigureLang));
     }
   }
 
@@ -962,10 +962,10 @@ ApplyFeatureSettingsBooleanArrayType (
   //
   Status = RedfishPlatformConfigGetValue (Schema, Version, ConfigureLang, &RedfishValue);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
   } else {
     if (RedfishValue.Type != REDFISH_VALUE_TYPE_BOOLEAN_ARRAY) {
-      DEBUG ((DEBUG_ERROR, "%a, %a.%a %s value is not string array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
+      DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not string array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
       return EFI_DEVICE_ERROR;
     }
 
@@ -976,7 +976,7 @@ ApplyFeatureSettingsBooleanArrayType (
       //
       // Apply settings from redfish
       //
-      DEBUG ((DEBUG_INFO, "%a, %a.%a apply %s for array\n", __FUNCTION__, Schema, Version, ConfigureLang));
+      DEBUG ((DEBUG_INFO, "%a: %a.%a apply %s for array\n", __FUNCTION__, Schema, Version, ConfigureLang));
       FreeArrayTypeRedfishValue (&RedfishValue);
 
       //
@@ -1015,10 +1015,10 @@ ApplyFeatureSettingsBooleanArrayType (
         //
         REDFISH_ENABLE_SYSTEM_REBOOT ();
       } else {
-        DEBUG ((DEBUG_ERROR, "%a, apply %s array failed: %r\n", __FUNCTION__, ConfigureLang, Status));
+        DEBUG ((DEBUG_ERROR, "%a: apply %s array failed: %r\n", __FUNCTION__, ConfigureLang, Status));
       }
     } else {
-      DEBUG ((DEBUG_ERROR, "%a, %a.%a %s array value has no change\n", __FUNCTION__, Schema, Version, ConfigureLang));
+      DEBUG ((DEBUG_ERROR, "%a: %a.%a %s array value has no change\n", __FUNCTION__, Schema, Version, ConfigureLang));
     }
   }
 
@@ -1065,7 +1065,7 @@ GetResourceByUri (
              Response
              );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, RedfishGetByUri to %a failed: %r\n", __FUNCTION__, AsciiResourceUri, Status));
+    DEBUG ((DEBUG_ERROR, "%a: RedfishGetByUri to %a failed: %r\n", __FUNCTION__, AsciiResourceUri, Status));
     if (Response->Payload != NULL) {
       RedfishDumpPayload (Response->Payload);
       RedfishFreeResponse (
@@ -1344,7 +1344,7 @@ CopyConfiglanguageList (
   DestConfigureLangList->List  =
     (REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG *)AllocateZeroPool (sizeof (REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG) * DestConfigureLangList->Count);
   if (DestConfigureLangList->List == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, Fail to allocate memory for REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: Fail to allocate memory for REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG.\n", __FUNCTION__));
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -1503,7 +1503,7 @@ SetResourceConfigLangMemberInstance (
   if (MaxtLengthConfigLang < MaxStrLength) {
     NewConfigLang = (EFI_STRING)AllocateZeroPool (MaxStrLength);
     if (NewConfigLang == NULL) {
-      DEBUG ((DEBUG_ERROR, "%a, Fail to allocate memory for NewConfigLang.\n", __FUNCTION__));
+      DEBUG ((DEBUG_ERROR, "%a: Fail to allocate memory for NewConfigLang.\n", __FUNCTION__));
       return EFI_OUT_OF_RESOURCES;
     }
   }
@@ -1586,7 +1586,7 @@ RedfishFeatureGetUnifiedArrayTypeConfigureLang (
 
   Status = RedfishPlatformConfigGetConfigureLang (Schema, Version, Pattern, &ConfigureLangList, &Count);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, RedfishFeatureGetConfigureLangRegex failed: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: RedfishFeatureGetConfigureLangRegex failed: %r\n", __FUNCTION__, Status));
     return Status;
   }
 
@@ -1760,7 +1760,85 @@ GetEtagAndLocation (
 
 /**
 
-  Create HTTP payload and send them to redfish service with PATCH method.
+  Create HTTP payload and send them to redfish service with PUT method.
+
+  @param[in]  Service         Redfish service.
+  @param[in]  TargetPayload   Target payload
+  @param[in]  Json            Data in JSON format.
+  @param[out] Etag            Returned ETAG string from Redfish service.
+
+  @retval     EFI_SUCCESS     Data is sent to redfish service successfully.
+  @retval     Others          Errors occur.
+
+**/
+EFI_STATUS
+CreatePayloadToPutResource (
+  IN  REDFISH_SERVICE  *Service,
+  IN  REDFISH_PAYLOAD  *TargetPayload,
+  IN  CHAR8            *Json,
+  OUT CHAR8            **Etag
+  )
+{
+  REDFISH_PAYLOAD   Payload;
+  EDKII_JSON_VALUE  ResourceJsonValue;
+  REDFISH_RESPONSE  PostResponse;
+  EFI_STATUS        Status;
+
+  if ((Service == NULL) || (TargetPayload == NULL) || IS_EMPTY_STRING (Json) || (Etag == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  ResourceJsonValue = JsonLoadString (Json, 0, NULL);
+  Payload           = RedfishCreatePayload (ResourceJsonValue, Service);
+  if (Payload == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a:%d Failed to create JSON payload from JSON value!\n", __FUNCTION__, __LINE__));
+    Status =  EFI_DEVICE_ERROR;
+    goto EXIT_FREE_JSON_VALUE;
+  }
+
+  ZeroMem (&PostResponse, sizeof (REDFISH_RESPONSE));
+  Status = RedfishPutToPayload (TargetPayload, Payload, &PostResponse);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a:%d Failed to PUT payload to Redfish service.\n", __FUNCTION__, __LINE__));
+
+    DEBUG_CODE_BEGIN ();
+    DEBUG ((DEBUG_ERROR, "%a: Request:\n", __FUNCTION__));
+    DumpRedfishPayload (DEBUG_ERROR, Payload);
+    DEBUG ((DEBUG_ERROR, "%a: Response:\n", __FUNCTION__));
+    DumpRedfishResponse (__FUNCTION__, DEBUG_ERROR, &PostResponse);
+    DEBUG_CODE_END ();
+
+    goto EXIT_FREE_JSON_VALUE;
+  }
+
+  //
+  // Find ETag
+  //
+  Status = GetEtagAndLocation (&PostResponse, Etag, NULL);
+  if (EFI_ERROR (Status)) {
+    Status = EFI_DEVICE_ERROR;
+  }
+
+  RedfishFreeResponse (
+    PostResponse.StatusCode,
+    PostResponse.HeaderCount,
+    PostResponse.Headers,
+    PostResponse.Payload
+    );
+
+EXIT_FREE_JSON_VALUE:
+  if (Payload != NULL) {
+    RedfishCleanupPayload (Payload);
+  }
+
+  JsonValueFree (ResourceJsonValue);
+
+  return Status;
+}
+
+/**
+
+  Create HTTP payload and send them to redfish service with PUT method.
 
   @param[in]  Service         Redfish service.
   @param[in]  TargetPayload   Target payload
@@ -1800,6 +1878,14 @@ CreatePayloadToPatchResource (
   Status = RedfishPatchToPayload (TargetPayload, Payload, &PostResponse);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a:%d Failed to PATCH payload to Redfish service.\n", __FUNCTION__, __LINE__));
+
+    DEBUG_CODE_BEGIN ();
+    DEBUG ((DEBUG_ERROR, "%a: Request:\n", __FUNCTION__));
+    DumpRedfishPayload (DEBUG_ERROR, Payload);
+    DEBUG ((DEBUG_ERROR, "%a: Response:\n", __FUNCTION__));
+    DumpRedfishResponse (__FUNCTION__, DEBUG_ERROR, &PostResponse);
+    DEBUG_CODE_END ();
+
     goto EXIT_FREE_JSON_VALUE;
   }
 
@@ -1871,7 +1957,15 @@ CreatePayloadToPostResource (
   ZeroMem (&PostResponse, sizeof (REDFISH_RESPONSE));
   Status = RedfishPostToPayload (TargetPayload, Payload, &PostResponse);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a:%d Failed to POST Attribute Registry to Redfish service.\n", __FUNCTION__, __LINE__));
+    DEBUG ((DEBUG_ERROR, "%a:%d Failed to POST payload to Redfish service.\n", __FUNCTION__, __LINE__));
+
+    DEBUG_CODE_BEGIN ();
+    DEBUG ((DEBUG_ERROR, "%a: Request:\n", __FUNCTION__));
+    DumpRedfishPayload (DEBUG_ERROR, Payload);
+    DEBUG ((DEBUG_ERROR, "%a: Response:\n", __FUNCTION__));
+    DumpRedfishResponse (__FUNCTION__, DEBUG_ERROR, &PostResponse);
+    DEBUG_CODE_END ();
+
     goto EXIT_FREE_JSON_VALUE;
   }
 
@@ -1926,11 +2020,11 @@ RedfishGetUri (
 
   Status = RedfishLocateProtocol ((VOID **)&mConfigLangMapProtocol, &gEdkIIRedfishConfigLangMapProtocolGuid);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, fail to locate gEdkIIRedfishConfigLangMapProtocolGuid: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: fail to locate gEdkIIRedfishConfigLangMapProtocolGuid: %r\n", __FUNCTION__, Status));
     return NULL;
   }
 
-  DEBUG ((REDFISH_DEBUG_TRACE, "%a, Get: %s\n", __FUNCTION__, ConfigLang));
+  DEBUG ((REDFISH_DEBUG_TRACE, "%a: Get: %s\n", __FUNCTION__, ConfigLang));
 
   CloseBracket = StrStr (ConfigLang, L"{");
   if (CloseBracket == NULL) {
@@ -1971,7 +2065,7 @@ RedfishGetUri (
     // Invalid format. No '}' found
     //
     if (*Target == '\0') {
-      DEBUG ((DEBUG_ERROR, "%a, invalid format: %s\n", __FUNCTION__, ConfigLang));
+      DEBUG ((DEBUG_ERROR, "%a: invalid format: %s\n", __FUNCTION__, ConfigLang));
       return NULL;
     }
 
@@ -1995,11 +2089,11 @@ RedfishGetUri (
                                        &Found
                                        );
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a, Can not find: %s\n", __FUNCTION__, TempStr));
+      DEBUG ((DEBUG_ERROR, "%a: Can not find: %s\n", __FUNCTION__, TempStr));
       return NULL;
     }
 
-    DEBUG ((REDFISH_DEBUG_TRACE, "%a, Found: %s\n", __FUNCTION__, Found));
+    DEBUG ((REDFISH_DEBUG_TRACE, "%a: Found: %s\n", __FUNCTION__, Found));
 
     //
     // Keep result in final string pool
@@ -2021,7 +2115,7 @@ RedfishGetUri (
     StrCatS (ResultStr, MAX_REDFISH_URL_LEN, Head);
   }
 
-  DEBUG ((REDFISH_DEBUG_TRACE, "%a, return: %s\n", __FUNCTION__, ResultStr));
+  DEBUG ((REDFISH_DEBUG_TRACE, "%a: return: %s\n", __FUNCTION__, ResultStr));
 
   return ResultStr;
 }
@@ -2048,11 +2142,11 @@ RedfishGetConfigLanguage (
     return NULL;
   }
 
-  DEBUG ((REDFISH_DEBUG_TRACE, "%a, search config lang for URI: %s\n", __FUNCTION__, Uri));
+  DEBUG ((REDFISH_DEBUG_TRACE, "%a: search config lang for URI: %s\n", __FUNCTION__, Uri));
 
   Status = RedfishLocateProtocol ((VOID **)&mConfigLangMapProtocol, &gEdkIIRedfishConfigLangMapProtocolGuid);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, fail to locate gEdkIIRedfishConfigLangMapProtocolGuid: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: fail to locate gEdkIIRedfishConfigLangMapProtocolGuid: %r\n", __FUNCTION__, Status));
     return NULL;
   }
 
@@ -2089,6 +2183,7 @@ GetConfigureLang (
   EFI_STRING  ResultStr;
   EFI_STRING  UnicodeUri;
   EFI_STATUS  Status;
+  EFI_STRING  StrFound;
 
   if (IS_EMPTY_STRING (Uri)) {
     return NULL;
@@ -2107,7 +2202,20 @@ GetConfigureLang (
 
   ConfigLang = RedfishGetConfigLanguage (UnicodeUri);
   if (ConfigLang == NULL) {
-    return NULL;
+    //
+    // @Redfish.Settings share the same schema as its parent.
+    // Remove "Settings" and try again.
+    //
+    StrFound = StrStr (UnicodeUri, L"/Settings");
+    if (StrFound != NULL) {
+      StrFound[0] = L'\0';
+      DEBUG ((REDFISH_DEBUG_TRACE, "%a: \"Settings\" found in URI, try: %s\n", __FUNCTION__, UnicodeUri));
+      ConfigLang = RedfishGetConfigLanguage (UnicodeUri);
+    }
+
+    if (ConfigLang == NULL) {
+      return NULL;
+    }
   }
 
   if (IS_EMPTY_STRING (PropertyName)) {
@@ -2150,11 +2258,11 @@ RedfisSetRedfishUri (
 
   Status = RedfishLocateProtocol ((VOID **)&mConfigLangMapProtocol, &gEdkIIRedfishConfigLangMapProtocolGuid);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, fail to locate gEdkIIRedfishConfigLangMapProtocolGuid: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: fail to locate gEdkIIRedfishConfigLangMapProtocolGuid: %r\n", __FUNCTION__, Status));
     return Status;
   }
 
-  DEBUG ((REDFISH_DEBUG_TRACE, "%a, Saved: %s -> %s\n", __FUNCTION__, ConfigLang, Uri));
+  DEBUG ((REDFISH_DEBUG_TRACE, "%a: Saved: %s -> %s\n", __FUNCTION__, ConfigLang, Uri));
 
   return mConfigLangMapProtocol->Set (mConfigLangMapProtocol, ConfigLang, Uri);
 }
@@ -2295,12 +2403,12 @@ GetPropertyStringValue (
   UnicodeSPrint (ConfigureLangBuffer, BufferSize, L"%s/%s", ConfigureLang, PropertyName);
   Status = RedfishPlatformConfigGetValue (Schema, Version, ConfigureLangBuffer, &RedfishValue);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, %a.%a query current setting for %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLangBuffer, Status));
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a query current setting for %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLangBuffer, Status));
     return NULL;
   }
 
   if (RedfishValue.Type != REDFISH_VALUE_TYPE_STRING) {
-    DEBUG ((DEBUG_ERROR, "%a, %a.%a %s value is not string type\n", __FUNCTION__, Schema, Version, ConfigureLang));
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not string type\n", __FUNCTION__, Schema, Version, ConfigureLang));
     return NULL;
   }
 
@@ -2353,12 +2461,12 @@ GetPropertyNumericValue (
   UnicodeSPrint (ConfigureLangBuffer, BufferSize, L"%s/%s", ConfigureLang, PropertyName);
   Status = RedfishPlatformConfigGetValue (Schema, Version, ConfigureLangBuffer, &RedfishValue);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, %a.%a query current setting for %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLangBuffer, Status));
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a query current setting for %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLangBuffer, Status));
     return NULL;
   }
 
   if (RedfishValue.Type != REDFISH_VALUE_TYPE_INTEGER) {
-    DEBUG ((DEBUG_ERROR, "%a, %a.%a %s value is not numeric type\n", __FUNCTION__, Schema, Version, ConfigureLang));
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not numeric type\n", __FUNCTION__, Schema, Version, ConfigureLang));
     return NULL;
   }
 
@@ -2415,12 +2523,12 @@ GetPropertyBooleanValue (
   UnicodeSPrint (ConfigureLangBuffer, BufferSize, L"%s/%s", ConfigureLang, PropertyName);
   Status = RedfishPlatformConfigGetValue (Schema, Version, ConfigureLangBuffer, &RedfishValue);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, %a.%a query current setting for %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLangBuffer, Status));
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a query current setting for %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLangBuffer, Status));
     return NULL;
   }
 
   if (RedfishValue.Type != REDFISH_VALUE_TYPE_BOOLEAN) {
-    DEBUG ((DEBUG_ERROR, "%a, %a.%a %s value is not boolean type\n", __FUNCTION__, Schema, Version, ConfigureLang));
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not boolean type\n", __FUNCTION__, Schema, Version, ConfigureLang));
     return NULL;
   }
 
@@ -2509,25 +2617,25 @@ GetPropertyStringArrayValue (
   BufferSize          = sizeof (CHAR16) * MAX_CONF_LANG_LEN;
   ConfigureLangBuffer = AllocatePool (BufferSize);
   if (ConfigureLangBuffer == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, out of resource\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: out of resource\n", __FUNCTION__));
     return NULL;
   }
 
   UnicodeSPrint (ConfigureLangBuffer, BufferSize, L"%s/%s", ConfigureLang, PropertyName);
   Status = RedfishPlatformConfigGetValue (Schema, Version, ConfigureLangBuffer, &RedfishValue);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, %a.%a query current setting for %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLangBuffer, Status));
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a query current setting for %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLangBuffer, Status));
     return NULL;
   }
 
   if (RedfishValue.Type != REDFISH_VALUE_TYPE_STRING_ARRAY) {
-    DEBUG ((DEBUG_ERROR, "%a, %a.%a %s value is not string array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not string array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
     return NULL;
   }
 
   StringArray = AllocatePool (sizeof (CHAR8 *) * RedfishValue.ArrayCount);
   if (StringArray == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, out of resource\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: out of resource\n", __FUNCTION__));
     return NULL;
   }
 
@@ -2580,25 +2688,25 @@ GetPropertyNumericArrayValue (
   BufferSize          = sizeof (CHAR16) * MAX_CONF_LANG_LEN;
   ConfigureLangBuffer = AllocatePool (BufferSize);
   if (ConfigureLangBuffer == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, out of resource\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: out of resource\n", __FUNCTION__));
     return NULL;
   }
 
   UnicodeSPrint (ConfigureLangBuffer, BufferSize, L"%s/%s", ConfigureLang, PropertyName);
   Status = RedfishPlatformConfigGetValue (Schema, Version, ConfigureLangBuffer, &RedfishValue);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, %a.%a query current setting for %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLangBuffer, Status));
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a query current setting for %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLangBuffer, Status));
     return NULL;
   }
 
   if (RedfishValue.Type != REDFISH_VALUE_TYPE_INTEGER_ARRAY) {
-    DEBUG ((DEBUG_ERROR, "%a, %a.%a %s value is not string array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not string array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
     return NULL;
   }
 
   IntegerArray = AllocatePool (sizeof (INT64) * RedfishValue.ArrayCount);
   if (IntegerArray == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, out of resource\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: out of resource\n", __FUNCTION__));
     return NULL;
   }
 
@@ -2651,25 +2759,25 @@ GetPropertyBooleanArrayValue (
   BufferSize          = sizeof (CHAR16) * MAX_CONF_LANG_LEN;
   ConfigureLangBuffer = AllocatePool (BufferSize);
   if (ConfigureLangBuffer == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, out of resource\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: out of resource\n", __FUNCTION__));
     return NULL;
   }
 
   UnicodeSPrint (ConfigureLangBuffer, BufferSize, L"%s/%s", ConfigureLang, PropertyName);
   Status = RedfishPlatformConfigGetValue (Schema, Version, ConfigureLangBuffer, &RedfishValue);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, %a.%a query current setting for %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLangBuffer, Status));
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a query current setting for %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLangBuffer, Status));
     return NULL;
   }
 
   if (RedfishValue.Type != REDFISH_VALUE_TYPE_BOOLEAN_ARRAY) {
-    DEBUG ((DEBUG_ERROR, "%a, %a.%a %s value is not string array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not string array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
     return NULL;
   }
 
   BooleanArray = AllocatePool (sizeof (INT64) * RedfishValue.ArrayCount);
   if (BooleanArray == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, out of resource\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: out of resource\n", __FUNCTION__));
     return NULL;
   }
 
@@ -2740,19 +2848,19 @@ NewEmptyPropKeyValueFromRedfishValue (
 
   KeyNameChar = StrUnicodeToAscii (KeyName);
   if (KeyNameChar == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, Failed to convert unicode to ASCII.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: Failed to convert unicode to ASCII.\n", __FUNCTION__));
     return NULL;
   }
 
   EmptyPropKeyValue = (RedfishCS_EmptyProp_KeyValue *)AllocateZeroPool (sizeof (RedfishCS_EmptyProp_KeyValue));
   if (EmptyPropKeyValue == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, Failed to allocate memory for EmptyPropKeyValue\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: Failed to allocate memory for EmptyPropKeyValue\n", __FUNCTION__));
     return NULL;
   }
 
   VagueValue = (RedfishCS_Vague *)AllocateZeroPool (sizeof (RedfishCS_Vague));
   if (VagueValue == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, Failed to allocate memory for VagueValue\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: Failed to allocate memory for VagueValue\n", __FUNCTION__));
     FreePool (EmptyPropKeyValue);
     return NULL;
   }
@@ -2775,7 +2883,7 @@ NewEmptyPropKeyValueFromRedfishValue (
     DataSize             = AsciiStrSize (RedfishValue->Value.Buffer);
     Data                 = (VOID *)RedfishValue->Value.Buffer;
   } else {
-    DEBUG ((DEBUG_ERROR, "%a, wrong type of RedfishValue: %x\n", __FUNCTION__, RedfishValue->Type));
+    DEBUG ((DEBUG_ERROR, "%a: wrong type of RedfishValue: %x\n", __FUNCTION__, RedfishValue->Type));
     FreePool (VagueValue);
     FreePool (EmptyPropKeyValue);
     return NULL;
@@ -2822,18 +2930,21 @@ GetPropertyVagueValue (
   UINTN                         BufferSize;
   UINTN                         ConfigListCount;
   UINTN                         ConfigListCountIndex;
+  UINTN                         ListCount;
 
   if (IS_EMPTY_STRING (Schema) || IS_EMPTY_STRING (Version) || IS_EMPTY_STRING (ConfigureLang) || IS_EMPTY_STRING (PropertyName)) {
     return NULL;
   }
 
+  ListCount                  = 0;
+  FirstEmptyPropKeyValueList = 0;
   //
   // Configure Language buffer.
   //
   BufferSize          = sizeof (CHAR16) * MAX_CONF_LANG_LEN;
   ConfigureLangBuffer = AllocatePool (BufferSize);
   if (ConfigureLangBuffer == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, Failed to allocate memory for ConfigureLangBuffer\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: Failed to allocate memory for ConfigureLangBuffer\n", __FUNCTION__));
     return NULL;
   }
 
@@ -2845,7 +2956,7 @@ GetPropertyVagueValue (
   BufferSize    = (StrLen (ConfigureLangBuffer) + StrLen (L"/.*") + 1) * sizeof (CHAR16); // Increase one for the NULL terminator.
   SearchPattern = AllocatePool (BufferSize);
   if (SearchPattern == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, Failed to allocate memory for SearchPattern\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: Failed to allocate memory for SearchPattern\n", __FUNCTION__));
     FreePool (ConfigureLangBuffer);
     return NULL;
   }
@@ -2855,21 +2966,23 @@ GetPropertyVagueValue (
   StrCatS (SearchPattern, BufferSize, L"/.*");
   Status = RedfishPlatformConfigGetConfigureLang (Schema, Version, SearchPattern, &ConfigureLangList, &ConfigListCount);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, %a.%a Get configure language of vague type values of %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLangBuffer, Status));
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a Get configure language of vague type values of %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLangBuffer, Status));
     goto ErrorLeave;
   }
 
   //
   // Build up the list of RedfishCS_EmptyProp_KeyValue.
   //
+  ListCount                  = 0;
   ConfigListCountIndex       = 0;
   PreEmptyPropKeyValueList   = NULL;
   FirstEmptyPropKeyValueList = NULL;
   while (ConfigListCountIndex < ConfigListCount) {
     Status = RedfishPlatformConfigGetValue (Schema, Version, ConfigureLangList[ConfigListCountIndex], &RedfishValue);
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a, %a.%a query current setting for %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLangList[ConfigListCountIndex], Status));
-      goto ErrorLeave;
+      DEBUG ((DEBUG_ERROR, "%a: %a.%a query current setting for %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLangList[ConfigListCountIndex], Status));
+      ConfigListCountIndex++;
+      continue;
     }
 
     //
@@ -2881,7 +2994,7 @@ GetPropertyVagueValue (
     //
     EmptyPropKeyValueList = NewEmptyPropKeyValueFromRedfishValue (KeyName, &RedfishValue);
     if (EmptyPropKeyValueList == NULL) {
-      DEBUG ((DEBUG_ERROR, "%a, Failed to create an entry of EmptyPropKeyValueList\n", __FUNCTION__));
+      DEBUG ((DEBUG_ERROR, "%a: Failed to create an entry of EmptyPropKeyValueList\n", __FUNCTION__));
       ConfigListCountIndex++;
       continue;
     }
@@ -2897,6 +3010,7 @@ GetPropertyVagueValue (
 
     PreEmptyPropKeyValueList = EmptyPropKeyValueList;
     ConfigListCountIndex++;
+    ListCount++;
   }
 
   goto LeaveFunction;
@@ -2919,7 +3033,7 @@ LeaveFunction:
 
   FreePool (ConfigureLangList);
 
-  *NumberOfValues = (UINT32)ConfigListCount;
+  *NumberOfValues = (UINT32)ListCount;
   return FirstEmptyPropKeyValueList;
 }
 
@@ -2986,7 +3100,7 @@ CheckEtag (
   EtagInDb = NULL;
   EtagInDb = GetEtagWithUri (Uri);
   if (EtagInDb == NULL) {
-    DEBUG ((REDFISH_DEBUG_TRACE, "%a, no ETAG record cound be found for: %s\n", __FUNCTION__, Uri));
+    DEBUG ((REDFISH_DEBUG_TRACE, "%a: no ETAG record cound be found for: %s\n", __FUNCTION__, Uri));
     return FALSE;
   }
 
@@ -3126,12 +3240,6 @@ MatchPropertyWithJsonContext (
         break;
       case EdkiiJsonTypeArray:
         if (JsonArrayCount (MatchObj) == 0) {
-          MatchObj = NULL;
-        }
-
-        break;
-      case EdkiiJsonTypeString:
-        if (IS_EMPTY_STRING (JsonValueGetString (MatchObj))) {
           MatchObj = NULL;
         }
 
