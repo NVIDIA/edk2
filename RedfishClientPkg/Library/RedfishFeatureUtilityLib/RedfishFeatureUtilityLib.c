@@ -505,6 +505,8 @@ ApplyFeatureSettingsVagueType (
     return EFI_INVALID_PARAMETER;
   }
 
+  DEBUG ((REDFISH_DEBUG_TRACE, "%a: schema: %a %a config lang: %s NumberOfVagueValues: %d\n", __FUNCTION__, Schema, Version, ConfigureLang, NumberOfVagueValues));
+
   ConfigureLangAscii = AllocatePool (StrLen (ConfigureLang) + 1);
   if (ConfigureLangAscii == NULL) {
     Status = EFI_OUT_OF_RESOURCES;
@@ -2225,10 +2227,12 @@ GetConfigureLang (
   StringSize = StrSize (ConfigLang) + ((AsciiStrLen (PropertyName) + 1) * sizeof (CHAR16));
   ResultStr  = AllocatePool (StringSize);
   if (ResultStr == NULL) {
+    FreePool (ConfigLang);
     return NULL;
   }
 
   UnicodeSPrint (ResultStr, StringSize, L"%s/%a", ConfigLang, PropertyName);
+  FreePool (ConfigLang);
 
   return ResultStr;
 }
@@ -3558,6 +3562,72 @@ CompareRedfishBooleanArrayValues (
   }
 
   return TRUE;
+}
+
+/**
+
+  Check and see if "@Redfish.Settings" exist in given Payload. If found, return the
+  payload and URI to pending settings. Caller has to release "SettingPayload" and
+  "SettingUri".
+
+  @param[in]  Payload         Payload that may contain "@Redfish.Settings"
+  @param[out] SettingPayload  Payload keeps pending settings.
+  @param[out] SettingUri      URI to pending settings.
+
+  @retval     EFI_SUCCESS     Pending settings is found and returned.
+  @retval     Others          Error happens
+
+**/
+EFI_STATUS
+GetPendingSettings (
+  IN  REDFISH_SERVICE   RedfishService,
+  IN  REDFISH_PAYLOAD   Payload,
+  OUT REDFISH_RESPONSE  *SettingResponse,
+  OUT EFI_STRING        *SettingUri
+  )
+{
+  CONST CHAR8       *RedfishSettingsUriKeys[] = { "@Redfish.Settings", "SettingsObject", "@odata.id" };
+  EDKII_JSON_VALUE  JsonValue;
+  UINTN             Index;
+  EFI_STATUS        Status;
+
+  if ((RedfishService == NULL) || (Payload == NULL) || (SettingResponse == NULL) || (SettingUri == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  *SettingUri = NULL;
+  JsonValue   = RedfishJsonInPayload (Payload);
+
+  //
+  // Seeking RedfishSettings URI link.
+  //
+  for (Index = 0; Index < ARRAY_SIZE (RedfishSettingsUriKeys); Index++) {
+    if (JsonValue == NULL) {
+      break;
+    }
+
+    JsonValue = JsonObjectGetValue (JsonValueGetObject (JsonValue), RedfishSettingsUriKeys[Index]);
+  }
+
+  if (JsonValue != NULL) {
+    //
+    // Verify RedfishSettings URI link is valid to retrieve resource or not.
+    //
+    *SettingUri = JsonValueGetUnicodeString (JsonValue);
+    if (*SettingUri == NULL) {
+      return EFI_NOT_FOUND;
+    }
+
+    Status = GetResourceByUri (RedfishService, *SettingUri, SettingResponse);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: @Redfish.Settings exists, get resource from: %s failed: %r\n", __FUNCTION__, *SettingUri, Status));
+      return Status;
+    }
+
+    return EFI_SUCCESS;
+  }
+
+  return EFI_NOT_FOUND;
 }
 
 /**
