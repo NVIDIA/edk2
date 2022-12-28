@@ -431,6 +431,27 @@ CreatePayloadToPatchResource (
 
 /**
 
+  Create HTTP payload and send them to redfish service with PUT method.
+
+  @param[in]  Service         Redfish service.
+  @param[in]  TargetPayload   Target payload
+  @param[in]  Json            Data in JSON format.
+  @param[out] Etag            Returned ETAG string from Redfish service.
+
+  @retval     EFI_SUCCESS     Data is sent to redfish service successfully.
+  @retval     Others          Errors occur.
+
+**/
+EFI_STATUS
+CreatePayloadToPutResource (
+  IN  REDFISH_SERVICE  *Service,
+  IN  REDFISH_PAYLOAD  *TargetPayload,
+  IN  CHAR8            *Json,
+  OUT CHAR8            **Etag
+  );
+
+/**
+
   Save Redfish URI in database for further use.
 
   @param[in]    ConfigLang        ConfigLang to save

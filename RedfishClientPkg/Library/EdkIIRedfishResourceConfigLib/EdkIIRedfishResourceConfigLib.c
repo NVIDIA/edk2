@@ -2,7 +2,7 @@
   Redfish resource config library implementation
 
   (C) Copyright 2022 Hewlett Packard Enterprise Development LP<BR>
-  Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -58,7 +58,7 @@ GetRedfishSchemaInfo (
 
   Status = GetResourceByUri (RedfishService, Uri, &Response);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, failed to get resource from %s: %r", __FUNCTION__, Uri, Status));
+    DEBUG ((DEBUG_ERROR, "%a: failed to get resource from %s: %r", __FUNCTION__, Uri, Status));
     return Status;
   }
 
@@ -78,7 +78,7 @@ GetRedfishSchemaInfo (
                                  &Header
                                  );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, ToStructure() failed: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: ToStructure() failed: %r\n", __FUNCTION__, Status));
     return Status;
   }
 
@@ -385,7 +385,7 @@ EdkIIRedfishResourceSetConfigureLang (
                   (VOID **)&Interface
                   );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, EDKII_REDFISH_FEATURE_INTERCHANGE_DATA_PROTOCOL is not installed %r", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: EDKII_REDFISH_FEATURE_INTERCHANGE_DATA_PROTOCOL is not installed on %p: %r\n", __FUNCTION__, mCachedHandle, Status));
     return Status;
   }
 
@@ -394,7 +394,7 @@ EdkIIRedfishResourceSetConfigureLang (
   Interface->ResourceInformationExchage->ReturnedInformation.ConfigureLanguageList.List  =
     AllocateZeroPool (sizeof (REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG) * ConfigLangList->Count);
   if (Interface->ResourceInformationExchage->ReturnedInformation.ConfigureLanguageList.List == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, Fail to allocate memory for REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: Fail to allocate memory for REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG.\n", __FUNCTION__));
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -402,6 +402,61 @@ EdkIIRedfishResourceSetConfigureLang (
     Interface->ResourceInformationExchage->ReturnedInformation.ConfigureLanguageList.List[Index].Index         = ConfigLangList->List[Index].Index;
     Interface->ResourceInformationExchage->ReturnedInformation.ConfigureLanguageList.List[Index].ConfigureLang =
       (EFI_STRING)AllocateCopyPool (StrSize (ConfigLangList->List[Index].ConfigureLang), (VOID *)ConfigLangList->List[Index].ConfigureLang);
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Set Configure language of this resource in the
+  RESOURCE_INFORMATION_EXCHANGE structure.
+
+  @param[in]   ConfigLangString    Configure language string.
+  @param[in]   Index               Index value of configure language string.
+
+  @retval EFI_SUCCESS              Configure language is set.
+  @retval EFI_UNSUPPORTED          EdkIIRedfishFeatureInterchangeDataProtocol is not found.
+  @retval Others                   Some error happened.
+
+**/
+EFI_STATUS
+EdkIIRedfishResourceSetConfigureLangString (
+  IN EFI_STRING  ConfigLangString,
+  IN UINTN       Index
+  )
+{
+  EFI_STATUS                                       Status;
+  EDKII_REDFISH_FEATURE_INTERCHANGE_DATA_PROTOCOL  *Interface;
+  REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG           *ConfigLang;
+
+  if (IS_EMPTY_STRING (ConfigLangString)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Status = gBS->HandleProtocol (
+                  mCachedHandle,
+                  &gEdkIIRedfishFeatureInterchangeDataProtocolGuid,
+                  (VOID **)&Interface
+                  );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: EDKII_REDFISH_FEATURE_INTERCHANGE_DATA_PROTOCOL is not installed on %p: %r\n", __FUNCTION__, mCachedHandle, Status));
+    return Status;
+  }
+
+  ConfigLang = AllocateZeroPool (sizeof (REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG));
+  if (ConfigLang == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a: Fail to allocate memory for REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG.\n", __FUNCTION__));
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  Interface->ResourceInformationExchage->ReturnedInformation.Type                                        = InformationTypeCollectionMemberConfigLanguage;
+  Interface->ResourceInformationExchage->ReturnedInformation.ConfigureLanguageList.Count                 = 1;
+  Interface->ResourceInformationExchage->ReturnedInformation.ConfigureLanguageList.List                  = ConfigLang;
+  Interface->ResourceInformationExchage->ReturnedInformation.ConfigureLanguageList.List[0].Index         = Index;
+  Interface->ResourceInformationExchage->ReturnedInformation.ConfigureLanguageList.List[0].ConfigureLang = (EFI_STRING)AllocateCopyPool (StrSize (ConfigLangString), (VOID *)ConfigLangString);
+  if (Interface->ResourceInformationExchage->ReturnedInformation.ConfigureLanguageList.List[0].ConfigureLang == NULL) {
+    FreePool (ConfigLang);
+    return EFI_OUT_OF_RESOURCES;
   }
 
   return EFI_SUCCESS;
