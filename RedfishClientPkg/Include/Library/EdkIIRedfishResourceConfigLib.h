@@ -2,6 +2,7 @@
   This file defines the EDKII resource config Library interface.
 
   (C) Copyright 2022 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -16,6 +17,7 @@
 #include <Protocol/RestJsonStructure.h>
 #include <Protocol/EdkIIRedfishResourceConfigProtocol.h>
 #include <Protocol/EdkIIRedfishInterchangeData.h>
+
 /**
   Provising redfish resource by given URI.
 
@@ -32,10 +34,10 @@
 **/
 EFI_STATUS
 EdkIIRedfishResourceConfigProvisionging (
-  IN     REDFISH_SCHEMA_INFO             *Schema,
-  IN     EFI_STRING                      Uri,
-  IN     RESOURCE_INFORMATION_EXCHANGE   *InformationExchange,
-  IN     BOOLEAN                         HttpPostMode
+  IN     REDFISH_SCHEMA_INFO            *Schema,
+  IN     EFI_STRING                     Uri,
+  IN     RESOURCE_INFORMATION_EXCHANGE  *InformationExchange,
+  IN     BOOLEAN                        HttpPostMode
   );
 
 /**
@@ -54,7 +56,6 @@ EdkIIRedfishResourceConfigConsume (
   IN     EFI_STRING           Uri
   );
 
-
 /**
   Update resource to given URI.
 
@@ -70,7 +71,6 @@ EdkIIRedfishResourceConfigUpdate (
   IN     REDFISH_SCHEMA_INFO  *Schema,
   IN     EFI_STRING           Uri
   );
-
 
 /**
   Check resource on given URI.
@@ -101,9 +101,9 @@ EdkIIRedfishResourceConfigCheck (
 **/
 EFI_STATUS
 EdkIIRedfishResourceConfigIdentify (
-  IN     REDFISH_SCHEMA_INFO  *Schema,
-  IN     EFI_STRING           Uri,
-  IN     RESOURCE_INFORMATION_EXCHANGE   *InformationExchangeUri
+  IN     REDFISH_SCHEMA_INFO            *Schema,
+  IN     EFI_STRING                     Uri,
+  IN     RESOURCE_INFORMATION_EXCHANGE  *InformationExchangeUri
   );
 
 /**
@@ -119,7 +119,25 @@ EdkIIRedfishResourceConfigIdentify (
 **/
 EFI_STATUS
 EdkIIRedfishResourceSetConfigureLang (
-  REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG_LIST *ConfigLangList
+  REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG_LIST  *ConfigLangList
+  );
+
+/**
+  Set Configure language of this resource in the
+  RESOURCE_INFORMATION_EXCHANGE structure.
+
+  @param[in]   ConfigLangString    Configure language string.
+  @param[in]   Index               Index value of configure language string.
+
+  @retval EFI_SUCCESS              Configure language is set.
+  @retval EFI_UNSUPPORTED          EdkIIRedfishFeatureInterchangeDataProtocol is not found.
+  @retval Others                   Some error happened.
+
+**/
+EFI_STATUS
+EdkIIRedfishResourceSetConfigureLangString (
+  IN EFI_STRING  ConfigLangString,
+  IN UINTN       Index
   );
 
 /**

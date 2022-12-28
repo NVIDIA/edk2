@@ -1,7 +1,7 @@
 /** @file
 
   (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP<BR>
-  Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+  Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -721,6 +721,7 @@ RedfishETagDriverEntryPoint (
   InitializeListHead (&mRedfishETagPrivate->ETagList.Listheader);
   mRedfishETagPrivate->VariableName = AllocateCopyPool (StrSize (ETAG_VARIABLE_NAME), ETAG_VARIABLE_NAME);
   if (mRedfishETagPrivate->VariableName == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
     goto ON_ERROR;
   }
 

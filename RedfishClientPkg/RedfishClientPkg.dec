@@ -26,6 +26,7 @@
   EdkIIRedfishResourceConfigLib|Include/Library/EdkIIRedfishResourceConfigLib.h
   RedfishEventLib|Include/Library/RedfishEventLib.h
   RedfishVersionLib|Include/Library/RedfishVersionLib.h
+  RedfishClientDebugLib|Include/Library/RedfishClientDebugLib.h
 
 [LibraryClasses.Common.Private]
   ##  @libraryclass Redfish Helper Library

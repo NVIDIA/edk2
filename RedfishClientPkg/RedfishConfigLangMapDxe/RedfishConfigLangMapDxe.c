@@ -1,7 +1,7 @@
 /** @file
 
   (C) Copyright 2022 Hewlett Packard Enterprise Development LP<BR>
-  Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+  Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -749,6 +749,7 @@ RedfishConfigLangMapDriverEntryPoint (
   InitializeListHead (&mRedfishConfigLangMapPrivate->ConfigLangList.Listheader);
   mRedfishConfigLangMapPrivate->VariableName = AllocateCopyPool (StrSize (CONFIG_LANG_MAP_VARIABLE_NAME), CONFIG_LANG_MAP_VARIABLE_NAME);
   if (mRedfishConfigLangMapPrivate->VariableName == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
     goto ON_ERROR;
   }
 
