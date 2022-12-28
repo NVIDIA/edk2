@@ -985,4 +985,26 @@ GetEtagAndLocation (
   OUT EFI_STRING        *Location    OPTIONAL
   );
 
+/**
+
+  Check and see if "@Redfish.Settings" exist in given Payload. If found, return the
+  payload and URI to pending settings. Caller has to release "SettingPayload" and
+  "SettingUri".
+
+  @param[in]  Payload         Payload that may contain "@Redfish.Settings"
+  @param[out] SettingPayload  Payload keeps pending settings.
+  @param[out] SettingUri      URI to pending settings.
+
+  @retval     EFI_SUCCESS     Pending settings is found and returned.
+  @retval     Others          Error happens
+
+**/
+EFI_STATUS
+GetPendingSettings (
+  IN  REDFISH_SERVICE   RedfishService,
+  IN  REDFISH_PAYLOAD   Payload,
+  OUT REDFISH_RESPONSE  *SettingResponse,
+  OUT EFI_STRING        *SettingUri
+  );
+
 #endif
