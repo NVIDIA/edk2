@@ -1582,12 +1582,18 @@ AddSmmuV3Nodes (
       SmmuV3Node->ProximityDomain = 0;
     }
 
-    /*
-     * Until IORT E.e (node rev. 5), the ID mapping index was
-     * defined to be valid unless all interrupts are GSIV-based.
+    /* DeviceID mapping valid flag was introduced in IORT rev E.e
+     * for SMMUV3 nodes rev. > 5.
+     * For older revisions, if all the SMMU control interrupts are GSIV
+     * based, DeviceID mapping index field is ignored.
+     * If the DeviceID mapping index valid flag is set to 0,
+     * DeviceID mapping index field must be ignored.
+     * Where the SMMU uses message signaled interrupts for
+     * its control interrupts, DeviceId Mapping Index contains an
+     * index into the array of ID mapping.
      */
 
-    if (SmmuV3Node->Node.Revision < 5) {
+    if ((SmmuV3Node->Node.Revision < 5) || (!(SmmuV3Node->Flags & EFI_ACPI_IORT_SMMUv3_FLAG_DEVICEID_VALID))) {
       if ((SmmuV3Node->Event != 0) && (SmmuV3Node->Pri != 0) &&
           (SmmuV3Node->Gerr != 0) && (SmmuV3Node->Sync != 0))
       {
@@ -1598,13 +1604,7 @@ AddSmmuV3Nodes (
         SmmuV3Node->DeviceIdMappingIndex = NodeList->DeviceIdMappingIndex;
       }
     } else {
-      if (!(SmmuV3Node->Flags & EFI_ACPI_IORT_SMMUv3_FLAG_DEVICEID_VALID)) {
-        // If the DeviceID mapping index valid flag is set to
-        // 0, the DeviceID mapping index field is ignored.
-        SmmuV3Node->DeviceIdMappingIndex = 0;
-      } else {
-        SmmuV3Node->DeviceIdMappingIndex = NodeList->DeviceIdMappingIndex;
-      }
+      SmmuV3Node->DeviceIdMappingIndex = NodeList->DeviceIdMappingIndex;
     }
 
     if (NodeList->IdMappingCount > 0) {
