@@ -389,6 +389,23 @@ typedef struct CmSmbiosTpmDeviceInfo {
   CM_OBJECT_TOKEN    TpmDeviceInfoToken;
 } CM_SMBIOS_TPM_DEVICE_INFO;
 
+/** A structure that describes the OEM Strings
+ *
+ *  The OEM strings information is described by this object.
+ *
+ *  ID: ESmbiosObjOemStrings
+**/
+typedef struct CmSmbiosOemStrings {
+  /** Number of strings */
+  UINT8              StringCount;
+
+  /** String Table */
+  CHAR8              **StringTable;
+
+  /** CM Object Token of OEM Strings */
+  CM_OBJECT_TOKEN    OemStringsToken;
+} CM_SMBIOS_OEM_STRINGS;
+
 #pragma pack()
 
 #endif // SMBIOS_NAMESPACE_OBJECTS_H_
