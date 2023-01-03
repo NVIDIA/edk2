@@ -1382,9 +1382,8 @@ DynamicTableManagerDxeInitialize (
   IN  EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EFI_STATUS  Status;
-  EFI_EVENT   AcpiEvent;
-  EFI_EVENT   SmbiosEvent;
+  EFI_EVENT  AcpiEvent;
+  EFI_EVENT  SmbiosEvent;
 
   AcpiEvent = EfiCreateProtocolNotifyEvent (
                 &gEfiAcpiTableProtocolGuid,
@@ -1411,5 +1410,5 @@ DynamicTableManagerDxeInitialize (
     return EFI_OUT_OF_RESOURCES;
   }
 
-  return Status;
+  return EFI_SUCCESS;
 }
