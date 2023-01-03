@@ -2,6 +2,7 @@
   Dynamic Table Manager Dxe
 
   Copyright (c) 2017 - 2019, ARM Limited. All rights reserved.
+  Copyright (c) 2022 - 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -97,7 +98,7 @@ GET_OBJECT_LIST (
   )
 
 STATIC VOID *AcpiTableProtocolRegistration;
-STATIC VOID *SmbiosProtocolRegistration;
+STATIC VOID  *SmbiosProtocolRegistration;
 
 /** A helper function to build and install a single ACPI table.
 
@@ -632,14 +633,16 @@ BuildAndInstallSingleSmbiosTable (
     // Free any allocated resources.
     goto exit_handler;
   }
+
   // If a new handle was generated then add it to the handle map.
   if (HandleMap == NULL) {
-    TableFactoryProtocol->AddSmbiosHandle (SmbiosProtocol,
-                                           &TableHandle,
-                                           CmObjToken,
-                                           SmbiosTableInfo->TableGeneratorId);
+    TableFactoryProtocol->AddSmbiosHandle (
+                            SmbiosProtocol,
+                            &TableHandle,
+                            CmObjToken,
+                            SmbiosTableInfo->TableGeneratorId
+                            );
   }
-
 
   DEBUG ((
     DEBUG_INFO,
@@ -758,6 +761,7 @@ BuildAndInstallMultipleSmbiosTables (
     } else {
       TableHandle = HandleMap->SmbiosTblHandle;
     }
+
     // Install SMBIOS table
     Status = SmbiosProtocol->Add (
                                SmbiosProtocol,
@@ -774,12 +778,15 @@ BuildAndInstallMultipleSmbiosTables (
       // Free any allocated resources.
       goto exit_handler;
     }
+
     // If a new handle was generated then add it to the handle map.
     if (HandleMap == NULL) {
-      TableFactoryProtocol->AddSmbiosHandle (SmbiosProtocol,
-                                             &TableHandle,
-                                             CmObjToken[Index],
-                                             SmbiosTableInfo->TableGeneratorId);
+      TableFactoryProtocol->AddSmbiosHandle (
+                              SmbiosProtocol,
+                              &TableHandle,
+                              CmObjToken[Index],
+                              SmbiosTableInfo->TableGeneratorId
+                              );
     }
 
     DEBUG ((
@@ -941,7 +948,6 @@ BuildAndInstallSmbiosTable (
   DEBUG ((DEBUG_ERROR, "%a: Returning %r\n", __FUNCTION__, Status));
   return Status;
 }
-
 
 /** Generate and install SMBIOS tables.
 
@@ -1381,24 +1387,24 @@ DynamicTableManagerDxeInitialize (
   EFI_EVENT   SmbiosEvent;
 
   AcpiEvent = EfiCreateProtocolNotifyEvent (
-            &gEfiAcpiTableProtocolGuid,
-            TPL_CALLBACK,
-            AcpiTableProtocolReady,
-            NULL,
-            &AcpiTableProtocolRegistration
-            );
+                &gEfiAcpiTableProtocolGuid,
+                TPL_CALLBACK,
+                AcpiTableProtocolReady,
+                NULL,
+                &AcpiTableProtocolRegistration
+                );
   if (AcpiEvent == NULL) {
     DEBUG ((DEBUG_ERROR, "%a: Failed to ACPI create protocol event\r\n", __FUNCTION__));
     return EFI_OUT_OF_RESOURCES;
   }
 
   SmbiosEvent = EfiCreateProtocolNotifyEvent (
-            &gEfiSmbiosProtocolGuid,
-            TPL_CALLBACK,
-            SmbiosProtocolReady,
-            NULL,
-            &SmbiosProtocolRegistration
-            );
+                  &gEfiSmbiosProtocolGuid,
+                  TPL_CALLBACK,
+                  SmbiosProtocolReady,
+                  NULL,
+                  &SmbiosProtocolRegistration
+                  );
   if (SmbiosEvent == NULL) {
     DEBUG ((DEBUG_ERROR, "%a: Failed to SMBIOS create protocol event\r\n", __FUNCTION__));
     gBS->CloseEvent (AcpiEvent);
