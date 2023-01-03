@@ -53,6 +53,7 @@ typedef enum StdObjectID {
   EStdObjSystemSlotInfo,          ///< 5 - System Slot Information
   EStdObjSystemInfo,              ///< 6 - System Information
   EStdObjTpmDeviceInfo,           ///< 7 - TPM Device Info
+  EStdObjOemStrings,              ///< 8 - OEM Strings
   EStdObjMax
 } ESTD_OBJECT_ID;
 
@@ -367,6 +368,23 @@ typedef struct CmStdTpmDeviceInfo {
   /** Token of this TPM device information CM Object */
   CM_OBJECT_TOKEN    TpmDeviceInfoToken;
 } CM_STD_TPM_DEVICE_INFO;
+
+/** A structure that describes the OEM Strings
+ *
+ *  The OEM strings information is described by this object.
+ *
+ *  ID: EStdObjOemStrings
+**/
+typedef struct CmStdOemStrings {
+  /** Number of strings */
+  UINT8              StringCount;
+
+  /** String Table */
+  CHAR8              **StringTable;
+
+  /** CM Object Token of OEM Strings */
+  CM_OBJECT_TOKEN    OemStringsToken;
+} CM_STD_OEM_STRINGS;
 
 #pragma pack()
 
