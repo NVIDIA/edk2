@@ -2,6 +2,7 @@
 #  Implementation of EFI HTTP protocol interfaces.
 #
 #  Copyright (c) 2015 - 2021, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -77,6 +78,7 @@
   gEfiNetworkPkgTokenSpaceGuid.PcdHttpIoTimeout              ## CONSUMES
   gEfiNetworkPkgTokenSpaceGuid.PcdHttpDnsRetryInterval       ## CONSUMES
   gEfiNetworkPkgTokenSpaceGuid.PcdHttpDnsRetryCount          ## CONSUMES
+  gEfiNetworkPkgTokenSpaceGuid.PcdHttpTlsHostVerifyDisabled  ## CONSUMES
 
 [UserExtensions.TianoCore."ExtraFiles"]
   HttpDxeExtra.uni

@@ -5,6 +5,7 @@
 #
 # Copyright (c) 2009 - 2021, Intel Corporation. All rights reserved.<BR>
 # (C) Copyright 2015-2020 Hewlett Packard Enterprise Development LP<BR>
+# Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -174,6 +175,12 @@
   ## The Retry Count of HTTP DNS if no DNS response received after Retry Interval.
   # @Prompt The value of Retry Count,  Default value is 0.
   gEfiNetworkPkgTokenSpaceGuid.PcdHttpDnsRetryCount|0|UINT32|0x00000011
+
+[PcdsDynamicEx]
+  ## HTTP TLS Host Verify
+  # FALSE - Will do TLS host verify
+  # TRUE  - Skip TLS host verify
+  gEfiNetworkPkgTokenSpaceGuid.PcdHttpTlsHostVerifyDisabled|FALSE|BOOLEAN|0x00000012
 
 [UserExtensions.TianoCore."ExtraFiles"]
   NetworkPkgExtra.uni
