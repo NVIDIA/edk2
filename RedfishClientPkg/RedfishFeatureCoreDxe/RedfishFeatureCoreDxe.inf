@@ -29,6 +29,7 @@
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
+  NetworkPkg/NetworkPkg.dec
   RedfishPkg/RedfishPkg.dec
   RedfishClientPkg/RedfishClientPkg.dec
 
@@ -50,6 +51,7 @@
 
 [Pcd]
   gEfiRedfishClientPkgTokenSpaceGuid.PcdEdkIIRedfishFeatureDriverStartupEventGuid
+  gEfiNetworkPkgTokenSpaceGuid.PcdHttpTlsHostVerifyDisabled
   gEfiRedfishClientPkgTokenSpaceGuid.PcdSystemRebootRequired
   gEfiRedfishClientPkgTokenSpaceGuid.PcdSystemRebootTimeout
 
