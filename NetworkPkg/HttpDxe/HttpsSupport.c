@@ -3,6 +3,8 @@
 
 Copyright (c) 2016 - 2018, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
+Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -666,24 +668,26 @@ TlsConfigureSession (
     return Status;
   }
 
-  Status = HttpInstance->Tls->SetSessionData (
-                                HttpInstance->Tls,
-                                EfiTlsVerifyMethod,
-                                &HttpInstance->TlsConfigData.VerifyMethod,
-                                sizeof (EFI_TLS_VERIFY)
-                                );
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
+  if (!PcdGetBool (PcdHttpTlsHostVerifyDisabled)) {
+    Status = HttpInstance->Tls->SetSessionData (
+                                  HttpInstance->Tls,
+                                  EfiTlsVerifyMethod,
+                                  &HttpInstance->TlsConfigData.VerifyMethod,
+                                  sizeof (EFI_TLS_VERIFY)
+                                  );
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
 
-  Status = HttpInstance->Tls->SetSessionData (
-                                HttpInstance->Tls,
-                                EfiTlsVerifyHost,
-                                &HttpInstance->TlsConfigData.VerifyHost,
-                                sizeof (EFI_TLS_VERIFY_HOST)
-                                );
-  if (EFI_ERROR (Status)) {
-    return Status;
+    Status = HttpInstance->Tls->SetSessionData (
+                                  HttpInstance->Tls,
+                                  EfiTlsVerifyHost,
+                                  &HttpInstance->TlsConfigData.VerifyHost,
+                                  sizeof (EFI_TLS_VERIFY_HOST)
+                                  );
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
   }
 
   Status = HttpInstance->Tls->SetSessionData (
@@ -705,13 +709,15 @@ TlsConfigureSession (
     return Status;
   }
 
-  //
-  // Tls Config Certificate
-  //
-  Status = TlsConfigCertificate (HttpInstance);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "TLS Certificate Config Error!\n"));
-    return Status;
+  if (!PcdGetBool (PcdHttpTlsHostVerifyDisabled)) {
+    //
+    // Tls Config Certificate
+    //
+    Status = TlsConfigCertificate (HttpInstance);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "TLS Certificate Config Error!\n"));
+      return Status;
+    }
   }
 
   //

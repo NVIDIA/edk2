@@ -4,6 +4,8 @@
   This file contains common TLS 1.0/1.1/1.2 definitions from RFC 2246/4346/5246
 
   Copyright (c) 2016 - 2018, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
@@ -55,6 +57,10 @@
 #define TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256  {0xC0, 0x2B}
 #define TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384  {0xC0, 0x2C}
 #define TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384    {0xC0, 0x30}
+#define TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256  {0xC0, 0x23}
+#define TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384  {0xC0, 0x24}
+#define TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256  {0xC0, 0x2B}
+#define TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384  {0xC0, 0x2C}
 
 ///
 /// TLS Version, refers to A.1 of rfc-2246, rfc-4346 and rfc-5246.
