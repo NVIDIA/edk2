@@ -276,9 +276,21 @@ RedfishFeatureDriverStartup (
   SignalReadyToProvisioningEvent ();
 
   //
+  // Workaround: disable TLS Host Verify.
+  // Solution is under discussion with EDK2 owner.
+  //
+  PcdSetBoolS (PcdHttpTlsHostVerifyDisabled, TRUE);
+
+  //
   // Invoke the callback by the hierarchy level
   //
   StartUpFeatureDriver (ResourceUriNodeList, NULL, StartupContext);
+
+  //
+  // Workaround: disable TLS Host Verify.
+  // Solution is under discussion with EDK2 owner.
+  //
+  PcdSetBoolS (PcdHttpTlsHostVerifyDisabled, FALSE);
 
   //
   // Signal event after provisioning finished
