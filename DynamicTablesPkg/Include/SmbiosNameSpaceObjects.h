@@ -486,6 +486,26 @@ typedef struct CmSmbiosOnboardDeviceExtendedInfo {
   CM_OBJECT_TOKEN    CmObjectToken;
 } CM_SMBIOS_ONBOARD_DEVICE_EXTENDED_INFO;
 
+/** A structure that describes the Group Associations.
+
+  The Group Associations information are described by this object.
+
+  ID: CmSmbiosObjGroupAssociations,
+*/
+typedef struct CmSmbiosObjGroupAssociations {
+  /** CM Object Token of Group Associations */
+  CM_OBJECT_TOKEN         GroupAssociationsToken;
+
+  /** Group Name  */
+  CHAR8                   *GroupName;
+
+  /** Number Of Items  */
+  UINT8                   NumberOfItems;
+
+  /** Contained Object Handles */
+  CONTAINED_CM_OBJECTS    *ContainedCmObjects;
+} CM_SMBIOS_GROUP_ASSOCIATIONS;
+
 #pragma pack()
 
 #endif // SMBIOS_NAMESPACE_OBJECTS_H_
