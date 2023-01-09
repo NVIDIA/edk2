@@ -57,6 +57,7 @@ typedef enum StdObjectID {
   EStdObjPortConnectorInfo,       ///< 9  - Port connector Information
   EStdObjBiosInfo,                ///< 10 - Bios Information
   EStdObjOnboardDeviceExInfo,     ///< 11 - Onboard Device Ex Information
+  EStdObjGroupAssociations,       ///< 12 - Group Associations
   EStdObjMax
 } ESTD_OBJECT_ID;
 
@@ -468,6 +469,26 @@ typedef struct CmStdOnboardDeviceExtendedInfo {
   UINT8              DevFuncNum;
   CM_OBJECT_TOKEN    CmObjectToken;
 } CM_STD_ONBOARD_DEVICE_EXTENDED_INFO;
+
+/** A structure that describes the Group Associations.
+
+  The Group Associations information are described by this object.
+
+  ID: CmStdObjGroupAssociations,
+*/
+typedef struct CmStdObjGroupAssociations {
+  /** CM Object Token of Group Associations */
+  CM_OBJECT_TOKEN         GroupAssociationsToken;
+
+  /** Group Name  */
+  CHAR8                   *GroupName;
+
+  /** Number Of Items  */
+  UINT8                   NumberOfItems;
+
+  /** Contained Object Handles */
+  CONTAINED_CM_OBJECTS    *ContainedCmObjects;
+} CM_STD_GROUP_ASSOCIATIONS;
 
 #pragma pack()
 
