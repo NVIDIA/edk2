@@ -76,6 +76,7 @@ typedef enum ArmObjectID {
   EArmObjMscNodeInfo,                                          ///< 51 - Msc Memory System Controller Node Info
   EArmObjResNodeInfo,                                          ///< 52 - Res Resource Node Info
   EArmObjFuncDepInfo,                                          ///< 53 - Func Dep Info
+  EArmObjTpm2InterfaceInfo,                                    ///< 54 - TPM Interface Info
   EArmObjMax
 } EARM_OBJECT_ID;
 
@@ -1425,6 +1426,38 @@ typedef struct CmArmFuncDepInfo {
   /// Producer
   UINT32             Producer;
 } CM_ARM_FUNC_DEP_INFO;
+
+/** A structure that describes TPM interface and access method.
+
+  TCG ACPI Specification 2.0
+
+  ID: EArmObjTpm2InterfaceInfo,
+*/
+typedef struct CmArmTpm2InterfaceInfo {
+  /** Platform Class
+        0: Client platform
+        1: Server platform
+  */
+  UINT16    PlatformClass;
+
+  /** Physical address of the Control Area */
+  UINT64    AddressOfControlArea;
+
+  /** The Start Method selector determines which mechanism the
+      device driver uses to notify the TPM 2.0 device that a
+      command is available for processing.
+  */
+  UINT32    StartMethod;
+
+  /** Start method specific parameters */
+  UINT8     StartMethodParameters[12];
+
+  /** Log Area Minimum Length */
+  UINT32    Laml;
+
+  /** Log Area Start Address */
+  UINT64    Lasa;
+} CM_ARM_TPM2_INTERFACE_INFO;
 
 #pragma pack()
 
