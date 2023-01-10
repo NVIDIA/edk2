@@ -97,6 +97,7 @@ typedef enum StdAcpiTableId {
   EStdAcpiTableIdMpam,                          ///< MPAM Generator
   EStdAcpiTableIdHmat,                          ///< HMAT Generator
   EStdAcpiTableIdSpmi,                          ///< SPMI Generator
+  EStdAcpiTableIdTpm2,                          ///< TPM2 Generator
   EStdAcpiTableIdSsdtSerialPort,                ///< SSDT Serial-Port Generator
   EStdAcpiTableIdSsdtCmn600,                    ///< SSDT Cmn-600 Generator
   EStdAcpiTableIdSsdtCpuTopology,               ///< SSDT Cpu Topology
