@@ -1088,6 +1088,13 @@
   # @Prompt Enable UEFI Stack Guard.
   gEfiMdeModulePkgTokenSpaceGuid.PcdCpuStackGuard|FALSE|BOOLEAN|0x30001055
 
+  ## Indicates whether PlatformBootManagerLib code can set BootNext for the current boot.
+  #  If enabled, setting BootNext in PlatformBootManagerLib controls the current boot.<BR><BR>
+  #   TRUE  - BootNext value from PlatformBootManagerLib will affect the current boot.<BR>
+  #   FALSE - BootNext value from PlatformBootManagerLib will affect the subsequent boot (or be ignored if already set).<BR>
+  # @Prompt Allow PlatformBootManagerLib to set BootNext for the current boot.
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAllowBootNextFromPlatformBootManagerLib|FALSE|BOOLEAN|0x30001056
+
 [PcdsFixedAtBuild, PcdsPatchableInModule]
   ## Dynamic type PCD can be registered callback function for Pcd setting action.
   #  PcdMaxPeiPcdCallBackNumberPerPcdEntry indicates the maximum number of callback function
