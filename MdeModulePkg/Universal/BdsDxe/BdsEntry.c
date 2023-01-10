@@ -787,15 +787,19 @@ BdsEntry (
 
   //
   // Cache the "BootNext" NV variable before calling any PlatformBootManagerLib APIs
-  // This could avoid the "BootNext" set by PlatformBootManagerLib be consumed in this boot.
+  // if the Platform isn't allowed to override BootNext.
+  // If "BootNext" was already set, a "BootNext" value set in PlatformBootManagerLib APIs
+  // will be ignored; otherwise it will not take effect until the next boot.
   //
-  GetEfiGlobalVariable2 (EFI_BOOT_NEXT_VARIABLE_NAME, (VOID **)&BootNext, &DataSize);
-  if (DataSize != sizeof (UINT16)) {
-    if (BootNext != NULL) {
-      FreePool (BootNext);
-    }
+  if (!PcdGetBool (PcdAllowBootNextFromPlatformBootManagerLib)) {
+    GetEfiGlobalVariable2 (EFI_BOOT_NEXT_VARIABLE_NAME, (VOID **)&BootNext, &DataSize);
+    if (DataSize != sizeof (UINT16)) {
+      if (BootNext != NULL) {
+        FreePool (BootNext);
+      }
 
-    BootNext = NULL;
+      BootNext = NULL;
+    }
   }
 
   //
@@ -1047,6 +1051,20 @@ BdsEntry (
     BdsReadKeys ();
 
     EfiBootManagerHotkeyBoot ();
+
+    //
+    // If PlatformBootManagerLib APIs are allowed to override BootNext, read it just before use
+    //
+    if (PcdGetBool (PcdAllowBootNextFromPlatformBootManagerLib)) {
+      GetEfiGlobalVariable2 (EFI_BOOT_NEXT_VARIABLE_NAME, (VOID **)&BootNext, &DataSize);
+      if (DataSize != sizeof (UINT16)) {
+        if (BootNext != NULL) {
+          FreePool (BootNext);
+        }
+
+        BootNext = NULL;
+      }
+    }
 
     if (BootNext != NULL) {
       //

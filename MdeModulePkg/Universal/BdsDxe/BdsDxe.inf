@@ -85,19 +85,20 @@
   gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultLangDeprecate    ## CONSUMES
 
 [Pcd]
-  gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultLangCodes            ## CONSUMES
-  gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultLang                 ## SOMETIMES_CONSUMES
-  gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultPlatformLangCodes    ## CONSUMES
-  gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultPlatformLang         ## CONSUMES
-  gEfiMdePkgTokenSpaceGuid.PcdHardwareErrorRecordLevel                ## CONSUMES
-  gEfiMdePkgTokenSpaceGuid.PcdPlatformBootTimeOut                     ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor                    ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareRevision                  ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdConInConnectOnDemand              ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdErrorCodeSetVariable              ## SOMETIMES_CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdTestKeyUsed                       ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleOnDiskSupport              ## CONSUMES
-  gEfiMdeModulePkgTokenSpaceGuid.PcdPlatformRecoverySupport           ## CONSUMES
+  gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultLangCodes                  ## CONSUMES
+  gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultLang                       ## SOMETIMES_CONSUMES
+  gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultPlatformLangCodes          ## CONSUMES
+  gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultPlatformLang               ## CONSUMES
+  gEfiMdePkgTokenSpaceGuid.PcdHardwareErrorRecordLevel                      ## CONSUMES
+  gEfiMdePkgTokenSpaceGuid.PcdPlatformBootTimeOut                           ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareVendor                          ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdFirmwareRevision                        ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdConInConnectOnDemand                    ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdErrorCodeSetVariable                    ## SOMETIMES_CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdTestKeyUsed                             ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdCapsuleOnDiskSupport                    ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPlatformRecoverySupport                 ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAllowBootNextFromPlatformBootManagerLib ## CONSUMES
 
 [Depex]
   TRUE
