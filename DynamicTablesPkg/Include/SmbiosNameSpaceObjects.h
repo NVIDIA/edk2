@@ -506,6 +506,29 @@ typedef struct CmSmbiosObjGroupAssociations {
   CONTAINED_CM_OBJECTS    *ContainedCmObjects;
 } CM_SMBIOS_GROUP_ASSOCIATIONS;
 
+/** A structure that describes the BIOS language information.
+
+  SMBIOS Specification v3.5.0 Type 13
+
+  ID: ESmbiosObjBiosLanguageInfo
+**/
+typedef struct CmSmbiosBiosLanguageInfo {
+  /** Number of Installable Languages */
+  UINT8              InstallableLanguages;
+
+  /** Flags to indicate if abbreviated or long formatted Language string is provided */
+  UINT8              Flags;
+
+  /** Current Bios Language index(1 based) in the list of installable languages */
+  UINT8              CurrentLanguage;
+
+  /** Installable Languages supported by the platform */
+  CHAR8              **SupportedLanguages;
+
+  /** Token of this Bios language information CM Object */
+  CM_OBJECT_TOKEN    BiosLanguageInfoToken;
+} CM_SMBIOS_BIOS_LANGUAGE_INFO;
+
 #pragma pack()
 
 #endif // SMBIOS_NAMESPACE_OBJECTS_H_
