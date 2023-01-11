@@ -58,6 +58,7 @@ typedef enum StdObjectID {
   EStdObjBiosInfo,                ///< 10 - Bios Information
   EStdObjOnboardDeviceExInfo,     ///< 11 - Onboard Device Ex Information
   EStdObjGroupAssociations,       ///< 12 - Group Associations
+  EStdObjBiosLanguageInfo,        ///< 13 - BIOS Language Information
   EStdObjMax
 } ESTD_OBJECT_ID;
 
@@ -489,6 +490,29 @@ typedef struct CmStdObjGroupAssociations {
   /** Contained Object Handles */
   CONTAINED_CM_OBJECTS    *ContainedCmObjects;
 } CM_STD_GROUP_ASSOCIATIONS;
+
+/** A structure that describes the BIOS language information.
+
+  SMBIOS Specification v3.5.0 Type 13
+
+  ID: EStdObjBiosLanguageInfo
+**/
+typedef struct CmStdBiosLanguageInfo {
+  /** Number of Installable Languages */
+  UINT8              InstallableLanguages;
+
+  /** Flags to indicate if abbreviated or long formatted Language string is provided */
+  UINT8              Flags;
+
+  /** Current Bios Language index(1 based) in the list of installable languages */
+  UINT8              CurrentLanguage;
+
+  /** Installable Languages supported by the platform */
+  CHAR8              **SupportedLanguages;
+
+  /** Token of this Bios language information CM Object */
+  CM_OBJECT_TOKEN    BiosLanguageInfoToken;
+} CM_STD_BIOS_LANGUAGE_INFO;
 
 #pragma pack()
 
