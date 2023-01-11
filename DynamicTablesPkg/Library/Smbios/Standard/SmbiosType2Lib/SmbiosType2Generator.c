@@ -1,6 +1,6 @@
 /** @file
   SMBIOS Type2 Table Generator.
-  Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+  Copyright (c) 2022 - 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
   Copyright (c) 2020 - 2021, Arm Limited. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
@@ -109,7 +109,8 @@ AddReferenceHandle (
       }
     }
   } else {
-    *ReferenceHandle = HandleMap->SmbiosTableId;
+    *ReferenceHandle = HandleMap->SmbiosTblHandle;
+    Status           = EFI_SUCCESS;
     DEBUG ((DEBUG_INFO, "%a: Re-using Handle %u\n", __FUNCTION__, *ReferenceHandle));
   }
 

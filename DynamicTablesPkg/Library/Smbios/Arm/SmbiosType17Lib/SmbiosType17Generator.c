@@ -1,7 +1,7 @@
 /** @file
   SMBIOS Type17 Table Generator.
 
-  Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+  Copyright (c) 2022 - 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
   Copyright (c) 2020 - 2021, Arm Limited. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -41,17 +41,17 @@ STATIC
 EFI_STATUS
 EFIAPI
 FreeSmbiosType17TableEx (
-  IN      CONST SMBIOS_TABLE_GENERATOR                   *CONST    This,
+  IN      CONST SMBIOS_TABLE_GENERATOR                   *CONST  This,
   IN      CONST EDKII_DYNAMIC_TABLE_FACTORY_PROTOCOL     *CONST  TableFactoryProtocol,
-  IN      CONST CM_STD_OBJ_SMBIOS_TABLE_INFO             *CONST    SmbiosTableInfo,
-  IN      CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL     *CONST    CfgMgrProtocol,
-  IN      SMBIOS_STRUCTURE                             ***CONST    Table,
-  IN      CM_OBJECT_TOKEN                                          **CmObjectToken,
-  IN      CONST UINTN                                              TableCount
+  IN      CONST CM_STD_OBJ_SMBIOS_TABLE_INFO             *CONST  SmbiosTableInfo,
+  IN      CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL     *CONST  CfgMgrProtocol,
+  IN      SMBIOS_STRUCTURE                             ***CONST  Table,
+  IN      CM_OBJECT_TOKEN                                        **CmObjectToken,
+  IN      CONST UINTN                                            TableCount
   )
 {
-  UINTN Index;
-  SMBIOS_STRUCTURE           **TableList;
+  UINTN             Index;
+  SMBIOS_STRUCTURE  **TableList;
 
   TableList = *Table;
   for (Index = 0; Index < TableCount; Index++) {
@@ -59,9 +59,11 @@ FreeSmbiosType17TableEx (
       FreePool (TableList[Index]);
     }
   }
+
   if (*CmObjectToken != NULL) {
     FreePool (*CmObjectToken);
   }
+
   if (TableList != NULL) {
     FreePool (TableList);
   }
@@ -77,11 +79,11 @@ AddPhysArrHandle (
   OUT SMBIOS_TABLE_TYPE17                                  *SmbiosRecord
   )
 {
-  EFI_STATUS                       Status;
-  EFI_SMBIOS_PROTOCOL              *SmbiosProtocol;
-  SMBIOS_HANDLE                    PhysMemArrHandle;
-  SMBIOS_HANDLE_MAP                *HandleMap;
-  CONST SMBIOS_TABLE_GENERATOR     *Generator;
+  EFI_STATUS                    Status;
+  EFI_SMBIOS_PROTOCOL           *SmbiosProtocol;
+  SMBIOS_HANDLE                 PhysMemArrHandle;
+  SMBIOS_HANDLE_MAP             *HandleMap;
+  CONST SMBIOS_TABLE_GENERATOR  *Generator;
 
   PhysMemArrHandle = 0;
   // Check if there is an existing handle.
@@ -92,8 +94,12 @@ AddPhysArrHandle (
     // If there isn't a generator for the required Table, then proceed
     // without it.
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a: Type16 Generator not Found %r\n",
-                           __FUNCTION__, Status));
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: Type16 Generator not Found %r\n",
+        __FUNCTION__,
+        Status
+        ));
       Status = EFI_SUCCESS;
     } else {
       // If there is a generator for Type16 then create an SmbiosHandle for it.
@@ -102,16 +108,18 @@ AddPhysArrHandle (
         DEBUG ((DEBUG_ERROR, "Could not locate SMBIOS protocol.  %r\n", Status));
         return Status;
       }
+
       PhysMemArrHandle = SMBIOS_HANDLE_PI_RESERVED;
-      Status = TableFactoryProtocol->AddSmbiosHandle (SmbiosProtocol, &PhysMemArrHandle, CmObjToken, EStdSmbiosTableIdType16);
+      Status           = TableFactoryProtocol->AddSmbiosHandle (SmbiosProtocol, &PhysMemArrHandle, CmObjToken, EStdSmbiosTableIdType16);
       if (EFI_ERROR (Status)) {
         DEBUG ((DEBUG_ERROR, "%a: Failed to add Smbios Handle %r\n", __FUNCTION__, Status));
         return Status;
       }
     }
   } else {
-    PhysMemArrHandle = HandleMap->SmbiosTableId;
-    DEBUG ((DEBUG_INFO, "%a: Re-using Handle %u\n" , __FUNCTION__, PhysMemArrHandle));
+    PhysMemArrHandle = HandleMap->SmbiosTblHandle;
+    Status           = EFI_SUCCESS;
+    DEBUG ((DEBUG_INFO, "%a: Re-using Handle %u\n", __FUNCTION__, PhysMemArrHandle));
   }
 
   SmbiosRecord->MemoryArrayHandle = PhysMemArrHandle;
@@ -121,15 +129,15 @@ AddPhysArrHandle (
 STATIC
 VOID
 UpdateSmbiosType17Size (
-  IN  UINT64                Size,
-  OUT SMBIOS_TABLE_TYPE17   *SmbiosRecord
+  IN  UINT64               Size,
+  OUT SMBIOS_TABLE_TYPE17  *SmbiosRecord
   )
 {
   if (Size < SIZE_GRANULARITY_THRESHOLD) {
-    SmbiosRecord->Size = Size / 1024;
+    SmbiosRecord->Size  = Size / 1024;
     SmbiosRecord->Size |= SIZE_GRANULARITY_BITMASK;
   } else if (Size >= EXTENDED_SIZE_THRESHOLD) {
-    SmbiosRecord->Size = 0x7FFF;
+    SmbiosRecord->Size         = 0x7FFF;
     SmbiosRecord->ExtendedSize = (Size / 1024 / 1024);
   } else {
     SmbiosRecord->Size = (Size / 1024 / 1024);
@@ -139,12 +147,12 @@ UpdateSmbiosType17Size (
 STATIC
 VOID
 UpdateSmbiosType17Speed (
-  IN  UINT32                Speed,
-  OUT SMBIOS_TABLE_TYPE17   *SmbiosRecord
+  IN  UINT32               Speed,
+  OUT SMBIOS_TABLE_TYPE17  *SmbiosRecord
   )
 {
-  if (Speed >- EXTENDED_SPEED_THRESHOLD) {
-    SmbiosRecord->Speed = EXTENDED_SPEED_THRESHOLD;
+  if (Speed > -EXTENDED_SPEED_THRESHOLD) {
+    SmbiosRecord->Speed         = EXTENDED_SPEED_THRESHOLD;
     SmbiosRecord->ExtendedSpeed = Speed;
   } else {
     SmbiosRecord->Speed = Speed;
@@ -240,59 +248,69 @@ BuildSmbiosType17TableEx (
   for (Index = 0; Index < NumMemDevices; Index++) {
     StringTableInitialize (&StrTable, 7);
 
-    SerialNumRef = 0;
-    AssetTagRef = 0;
-    DeviceLocatorRef = 0;
-    BankLocatorRef = 0;
+    SerialNumRef       = 0;
+    AssetTagRef        = 0;
+    DeviceLocatorRef   = 0;
+    BankLocatorRef     = 0;
     FirmwareVersionRef = 0;
 
     if (MemoryDevicesInfo[Index].DeviceLocator != NULL) {
-      Status = StringTableAddString (&StrTable,
-                                  MemoryDevicesInfo[Index].DeviceLocator,
-                                  &DeviceLocatorRef);
+      Status = StringTableAddString (
+                 &StrTable,
+                 MemoryDevicesInfo[Index].DeviceLocator,
+                 &DeviceLocatorRef
+                 );
       if (EFI_ERROR (Status)) {
         DEBUG ((DEBUG_ERROR, "Failed to add DeviceLocator String %r \n", Status));
       }
     }
+
     if (MemoryDevicesInfo[Index].BankLocator != NULL) {
-      Status = StringTableAddString (&StrTable,
-                                  MemoryDevicesInfo[Index].BankLocator,
-                                  &BankLocatorRef);
+      Status = StringTableAddString (
+                 &StrTable,
+                 MemoryDevicesInfo[Index].BankLocator,
+                 &BankLocatorRef
+                 );
       if (EFI_ERROR (Status)) {
         DEBUG ((DEBUG_ERROR, "Failed to BankLocator String %r \n", Status));
       }
     }
 
     if (MemoryDevicesInfo[Index].SerialNum != NULL) {
-      Status = StringTableAddString (&StrTable,
-                                  MemoryDevicesInfo[Index].SerialNum,
-                                  &SerialNumRef);
+      Status = StringTableAddString (
+                 &StrTable,
+                 MemoryDevicesInfo[Index].SerialNum,
+                 &SerialNumRef
+                 );
       if (EFI_ERROR (Status)) {
         DEBUG ((DEBUG_ERROR, "Failed to add SerialNum String %r \n", Status));
       }
     }
 
     if (MemoryDevicesInfo[Index].AssetTag != NULL) {
-      Status = StringTableAddString (&StrTable,
-                                  MemoryDevicesInfo[Index].AssetTag,
-                                  &AssetTagRef);
+      Status = StringTableAddString (
+                 &StrTable,
+                 MemoryDevicesInfo[Index].AssetTag,
+                 &AssetTagRef
+                 );
       if (EFI_ERROR (Status)) {
         DEBUG ((DEBUG_ERROR, "Failed to add Asset Tag String %r \n", Status));
       }
     }
 
     if (MemoryDevicesInfo[Index].FirmwareVersion != NULL) {
-      Status = StringTableAddString (&StrTable,
-                                  MemoryDevicesInfo[Index].FirmwareVersion,
-                                  &FirmwareVersionRef);
+      Status = StringTableAddString (
+                 &StrTable,
+                 MemoryDevicesInfo[Index].FirmwareVersion,
+                 &FirmwareVersionRef
+                 );
       if (EFI_ERROR (Status)) {
         DEBUG ((DEBUG_ERROR, "Failed to add Asset Tag String %r \n", Status));
       }
     }
 
-
     SmbiosRecordSize = sizeof (SMBIOS_TABLE_TYPE17) +
-                       StringTableGetStringSetSize(&StrTable);
+                       StringTableGetStringSetSize (&StrTable);
     SmbiosRecord = (SMBIOS_TABLE_TYPE17 *)AllocateZeroPool (SmbiosRecordSize);
     if (SmbiosRecord == NULL) {
       Status = EFI_OUT_OF_RESOURCES;
@@ -312,9 +330,11 @@ BuildSmbiosType17TableEx (
     SmbiosRecord->ExtendedSpeed = MemoryDevicesInfo[Index].Speed;
     // Is there a reference to a Physical Array Device.
     if (MemoryDevicesInfo[Index].PhysicalArrayToken != CM_NULL_TOKEN) {
-      Status = AddPhysArrHandle (TableFactoryProtocol,
-                                 MemoryDevicesInfo[Index].PhysicalArrayToken,
-                                 SmbiosRecord);
+      Status = AddPhysArrHandle (
+                 TableFactoryProtocol,
+                 MemoryDevicesInfo[Index].PhysicalArrayToken,
+                 SmbiosRecord
+                 );
       if (EFI_ERROR (Status)) {
         DEBUG ((DEBUG_ERROR, "%a: Failed to add Type16 Handle %r\n", __FUNCTION__, Status));
         return Status;
@@ -326,24 +346,24 @@ BuildSmbiosType17TableEx (
     SmbiosRecord->AssetTag        = AssetTagRef;
     SmbiosRecord->SerialNumber    = SerialNumRef;
     SmbiosRecord->FirmwareVersion = FirmwareVersionRef;
-    OptionalStrings             = (CHAR8 *)(SmbiosRecord + 1);
+    OptionalStrings               = (CHAR8 *)(SmbiosRecord + 1);
     // publish the string set
     StringTablePublishStringSet (
       &StrTable,
       OptionalStrings,
-      (SmbiosRecordSize - sizeof(SMBIOS_TABLE_TYPE17))
-    );
+      (SmbiosRecordSize - sizeof (SMBIOS_TABLE_TYPE17))
+      );
 
     // setup the header
     SmbiosRecord->Hdr.Type   = EFI_SMBIOS_TYPE_MEMORY_DEVICE;
     SmbiosRecord->Hdr.Length = sizeof (SMBIOS_TABLE_TYPE17);
-    TableList[Index] = (SMBIOS_STRUCTURE *)SmbiosRecord;
-    CmObjectList[Index] = MemoryDevicesInfo[Index].MemoryDeviceInfoToken;
+    TableList[Index]         = (SMBIOS_STRUCTURE *)SmbiosRecord;
+    CmObjectList[Index]      = MemoryDevicesInfo[Index].MemoryDeviceInfoToken;
   }
 
-  *Table      = TableList;
+  *Table         = TableList;
   *CmObjectToken = CmObjectList;
-  *TableCount = NumMemDevices;
+  *TableCount    = NumMemDevices;
 
 exit:
   // free string table
