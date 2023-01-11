@@ -4,6 +4,7 @@
 
   (C) Copyright 2021 Hewlett Packard Enterprise Development LP<BR>
   Copyright (c) 2022, AMD Incorporated. All rights reserved.
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -270,10 +271,13 @@ Tcp6GetSubnetInfo (
 
   if (IpModedata.AddressCount == 0) {
     DEBUG ((DEBUG_INFO, "%a: No IPv6 address configured.\n", __FUNCTION__));
+    Instance->SubnetAddrInfoIPv6Number = 0;
+    return EFI_SUCCESS;
   }
 
   if (Instance->SubnetAddrInfoIPv6 != NULL) {
     FreePool (Instance->SubnetAddrInfoIPv6);
+    Instance->SubnetAddrInfoIPv6 = NULL;
   }
 
   Instance->SubnetAddrInfoIPv6 = AllocateZeroPool (IpModedata.AddressCount * sizeof (EFI_IP6_ADDRESS_INFO));
@@ -519,8 +523,27 @@ DiscoverRedfishHostInterface (
       return EFI_UNSUPPORTED;
     }
 
+    Instance->HostAddrFormat = Data->HostIpAddressFormat;
+    if (Data->HostIpAddressFormat == 1) {
+      IP4_COPY_ADDRESS ((VOID *)&Instance->HostIpAddress.v4, (VOID *)Data->HostIpAddress);
+      IP4_COPY_ADDRESS ((VOID *)&Instance->HostSubnetMask.v4, (VOID *)Data->HostIpMask);
+
+      if (EFI_IP4_EQUAL (&Instance->HostIpAddress.v4, &mZeroIp4Addr)) {
+        DEBUG ((DEBUG_ERROR, "%a: invalid host IP address: zero address\n", __FUNCTION__));
+      }
+
+      if (!IP4_IS_VALID_NETMASK (EFI_IP4 (Instance->HostSubnetMask.v4))) {
+        DEBUG ((DEBUG_ERROR, "%a: invalid subnet mask address\n", __FUNCTION__));
+      }
+    } else if (Data->HostIpAddressFormat == 2) {
+      IP6_COPY_ADDRESS ((VOID *)&Instance->HostIpAddress.v6, (VOID *)Data->HostIpAddress);
+    }
+
     if (Data->RedfishServiceIpAddressFormat == 1) {
       IP4_COPY_ADDRESS ((VOID *)&Instance->TargetIpAddress.v4, (VOID *)Data->RedfishServiceIpAddress);
+      if (EFI_IP4_EQUAL (&Instance->TargetIpAddress.v4, &mZeroIp4Addr)) {
+        DEBUG ((DEBUG_ERROR, "%a: invalid service IP address: zero address\n", __FUNCTION__));
+      }
     } else {
       IP6_COPY_ADDRESS ((VOID *)&Instance->TargetIpAddress.v6, (VOID *)Data->RedfishServiceIpAddress);
     }
@@ -849,6 +872,10 @@ AddAndSignalNewRedfishService (
           Status = EFI_OUT_OF_RESOURCES;
           goto EXIT_FREE_CONFIG_DATA;
         }
+
+        if (Instance->HostAddrFormat == 2) {
+          IP6_COPY_ADDRESS (&RestExHttpConfigData->HttpConfigData.AccessPoint.IPv6Node->LocalAddress, &Instance->HostIpAddress.v6);
+        }
       } else {
         RestExHttpConfigData->HttpConfigData.AccessPoint.IPv4Node = AllocateZeroPool (sizeof (EFI_HTTPv4_ACCESS_POINT));
         if (RestExHttpConfigData->HttpConfigData.AccessPoint.IPv4Node == NULL) {
@@ -856,7 +883,13 @@ AddAndSignalNewRedfishService (
           goto EXIT_FREE_CONFIG_DATA;
         }
 
-        RestExHttpConfigData->HttpConfigData.AccessPoint.IPv4Node->UseDefaultAddress = TRUE;
+        if (Instance->HostAddrFormat == 1) {
+          RestExHttpConfigData->HttpConfigData.AccessPoint.IPv4Node->UseDefaultAddress = FALSE;
+          IP4_COPY_ADDRESS (&RestExHttpConfigData->HttpConfigData.AccessPoint.IPv4Node->LocalAddress, &Instance->HostIpAddress.v4);
+          IP4_COPY_ADDRESS (&RestExHttpConfigData->HttpConfigData.AccessPoint.IPv4Node->LocalSubnet, &Instance->HostSubnetMask.v4);
+        } else {
+          RestExHttpConfigData->HttpConfigData.AccessPoint.IPv4Node->UseDefaultAddress = TRUE;
+        }
       }
 
       Status = RestEx->Configure (
@@ -1467,11 +1500,13 @@ TestForRequiredProtocols (
   IN EFI_HANDLE                   ControllerHandle
   )
 {
-  UINT32      Id;
+  UINT32      *Id;
   UINTN       Index;
   EFI_STATUS  Status;
+  UINTN       ListCount;
 
-  for (Index = 0; Index < (sizeof (gRequiredProtocol) / sizeof (REDFISH_DISCOVER_REQUIRED_PROTOCOL)); Index++) {
+  ListCount = (sizeof (gRequiredProtocol) / sizeof (REDFISH_DISCOVER_REQUIRED_PROTOCOL));
+  for (Index = 0; Index < ListCount; Index++) {
     Status = gBS->OpenProtocol (
                     ControllerHandle,
                     gRequiredProtocol[Index].RequiredServiceBindingProtocolGuid,
@@ -1490,8 +1525,10 @@ TestForRequiredProtocols (
                       EFI_OPEN_PROTOCOL_GET_PROTOCOL
                       );
       if (EFI_ERROR (Status)) {
-        DEBUG ((DEBUG_ERROR, "%a: %s is found on this controller handle.\n", __FUNCTION__, gRequiredProtocol[Index].ProtocolName));
-        return EFI_SUCCESS;
+        if (Index == ListCount - 1) {
+          DEBUG ((DEBUG_ERROR, "%a: all required protocols are found on this controller handle: %p.\n", __FUNCTION__, ControllerHandle));
+          return EFI_SUCCESS;
+        }
       }
     }
   }
@@ -1517,7 +1554,7 @@ BuildupNetworkInterface (
   IN EFI_HANDLE                   ControllerHandle
   )
 {
-  UINT32                                           Id;
+  UINT32                                           *Id;
   UINT32                                           Index;
   EFI_REDFISH_DISCOVER_NETWORK_INTERFACE_INTERNAL  *NetworkInterface;
   BOOLEAN                                          IsNew;
@@ -1578,13 +1615,11 @@ BuildupNetworkInterface (
         return Status;
       }
 
-      NetworkInterface->NetworkProtocolType                       = gRequiredProtocol[Index].ProtocolType;
-      NetworkInterface->OpenDriverAgentHandle                     = This->DriverBindingHandle;
-      NetworkInterface->OpenDriverControllerHandle                = ControllerHandle;
-      NetworkInterface->NetworkInterfaceProtocolInfo.ProtocolGuid = \
-        *gRequiredProtocol[Index].RequiredProtocolGuid;
-      NetworkInterface->NetworkInterfaceProtocolInfo.ProtocolServiceGuid = \
-        *gRequiredProtocol[Index].RequiredServiceBindingProtocolGuid;
+      NetworkInterface->NetworkProtocolType        = gRequiredProtocol[Index].ProtocolType;
+      NetworkInterface->OpenDriverAgentHandle      = This->DriverBindingHandle;
+      NetworkInterface->OpenDriverControllerHandle = ControllerHandle;
+      CopyGuid (&NetworkInterface->NetworkInterfaceProtocolInfo.ProtocolGuid, gRequiredProtocol[Index].RequiredProtocolGuid);
+      CopyGuid (&NetworkInterface->NetworkInterfaceProtocolInfo.ProtocolServiceGuid, gRequiredProtocol[Index].RequiredServiceBindingProtocolGuid);
       ProtocolDiscoverIdPtr        = &NetworkInterface->NetworkInterfaceProtocolInfo.ProtocolDiscoverId;
       OpenDriverAgentHandle        = NetworkInterface->OpenDriverAgentHandle;
       OpenDriverControllerHandle   = NetworkInterface->OpenDriverControllerHandle;
@@ -1678,6 +1713,14 @@ BuildupNetworkInterface (
           if (EFI_ERROR (Status)) {
             DEBUG ((DEBUG_ERROR, "%a: Fail to install EFI_REDFISH_DISCOVER_PROTOCOL\n", __FUNCTION__));
           }
+        } else {
+          DEBUG ((DEBUG_INFO, "%a: Not REST EX, continue with next\n", __FUNCTION__));
+          Index++;
+          if (Index == (sizeof (gRequiredProtocol) / sizeof (REDFISH_DISCOVER_REQUIRED_PROTOCOL))) {
+            break;
+          }
+
+          continue;
         }
       }
 

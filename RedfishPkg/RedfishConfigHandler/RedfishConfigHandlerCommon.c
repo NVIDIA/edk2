@@ -2,6 +2,7 @@
   The common code of EDKII Redfish Configuration Handler driver.
 
   (C) Copyright 2021 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -225,7 +226,7 @@ RedfishConfigHandlerInitialization (
   UINTN                                  NumberOfHandles;
   EDKII_REDFISH_CONFIG_HANDLER_PROTOCOL  *ConfigHandler;
   UINTN                                  Index;
-  UINT32                                 Id;
+  UINT32                                 *Id;
 
   Status = gBS->LocateHandleBuffer (
                   ByProtocol,
@@ -257,6 +258,7 @@ RedfishConfigHandlerInitialization (
     Status = ConfigHandler->Init (ConfigHandler, &gRedfishConfigData.RedfishServiceInfo);
     if (EFI_ERROR (Status) && (Status != EFI_ALREADY_STARTED)) {
       DEBUG ((DEBUG_ERROR, "ERROR: Failed to init Redfish config handler %p.\n", ConfigHandler));
+      continue;
     }
 
     //

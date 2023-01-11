@@ -1186,6 +1186,7 @@ HiiValueToRedfishValue (
 
   StringIdArray = NULL;
   Count         = 0;
+  Status        = EFI_SUCCESS;
 
   switch (HiiStatement->Operand) {
     case EFI_IFR_ONE_OF_OP:
@@ -1793,6 +1794,7 @@ RedfishPlatformConfigProtocolGetConfigureLang (
   *Count                       = 0;
   *ConfigureLangList           = NULL;
   FullSchema                   = NULL;
+  TmpConfigureLangList         = NULL;
   RedfishPlatformConfigPrivate = REDFISH_PLATFORM_CONFIG_PRIVATE_FROM_THIS (This);
 
   Status = ProcessPendingList (&RedfishPlatformConfigPrivate->FormsetList, &RedfishPlatformConfigPrivate->PendingList);

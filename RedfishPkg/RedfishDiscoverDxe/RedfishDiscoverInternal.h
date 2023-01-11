@@ -3,6 +3,7 @@
 
   (C) Copyright 2021 Hewlett Packard Enterprise Development LP<BR>
   Copyright (c) 2022, AMD Incorporated. All rights reserved.
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -182,6 +183,9 @@ typedef struct {
   //
   BOOLEAN                                            HostIntfValidation; ///< Indicates whether to validate Redfish Host interface.
   EFI_IP_ADDRESS                                     TargetIpAddress;    ///< Target IP address reported in Redfish Host interface.
+  UINT8                                              HostAddrFormat;     ///< Unknown=00h, Ipv4=01h, Ipv6=02h.
+  EFI_IP_ADDRESS                                     HostIpAddress;      ///< Host IP address reported in Redfish Host interface.
+  EFI_IP_ADDRESS                                     HostSubnetMask;     ///< Host subnet mask address reported in Redfish Host interface.
 } EFI_REDFISH_DISCOVERED_INTERNAL_INSTANCE;
 
 /**

@@ -4,6 +4,7 @@
    Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
   (C) Copyright 2020 Hewlett Packard Enterprise Development LP<BR>
   Copyright (c) 2023, American Megatrends International LLC.
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -311,8 +312,12 @@ ReSendRequest:;
     if (EFI_ERROR (Status)) {
       goto ON_EXIT;
     }
+  } else if (ResponseData->Response.StatusCode == HTTP_STATUS_500_INTERNAL_SERVER_ERROR) {
+    DEBUG ((DEBUG_ERROR, "Status Code: HTTP_STATUS_500_INTERNAL_SERVER_ERROR\n"));
+    Status = EFI_UNSUPPORTED;
+    goto ON_EXIT;
   } else {
-    DEBUG ((DEBUG_ERROR, "This HTTP Status is not handled!\n"));
+    DEBUG ((DEBUG_ERROR, "This HTTP Status is not handled!: 0x%x\n", ResponseData->Response.StatusCode));
     Status = EFI_UNSUPPORTED;
     goto ON_EXIT;
   }
