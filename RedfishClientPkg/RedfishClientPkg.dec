@@ -67,3 +67,9 @@
   gEfiRedfishClientPkgTokenSpaceGuid.PcdEdkIIRedfishFeatureDriverStartupEventGuid|{0xB3, 0x8F, 0xE8, 0x7C, 0xD7, 0x4B, 0x79, 0x46, 0x87, 0xA8, 0xA8, 0xD8, 0xDE, 0xE5, 0x0D, 0x2B}|VOID*|0x10000003
   ## Default Redfish version string
   gEfiRedfishClientPkgTokenSpaceGuid.PcdDefaultRedfishVersion|L"v1"|VOID*|0x10000004
+  ## The number of seconds that the firmware will wait before system reboot
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdSystemRebootTimeout|5|UINT16|0x20000002
+
+[PcdsDynamicEx]
+  ## The flag used to indicate that system reboot is required due to system configuration change
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdSystemRebootRequired|FALSE|BOOLEAN|0x20000001

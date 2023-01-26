@@ -2,6 +2,7 @@
   This file defines the Redfish Feature Utility Library interface.
 
   (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -14,20 +15,22 @@
 #include <Protocol/EdkIIRedfishPlatformConfig.h>
 #include <RedfishJsonStructure/RedfishCsCommon.h>
 
+#define REDFISH_ENABLE_SYSTEM_REBOOT()  PcdSetBoolS(PcdSystemRebootRequired, TRUE)
+
 //
 // Definition of REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG
 //
 typedef struct {
-  UINTN       Index;
-  EFI_STRING  ConfigureLang;
+  UINTN         Index;
+  EFI_STRING    ConfigureLang;
 } REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG;
 
 //
 // Definition of REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG_LIST
 //
 typedef struct {
-  UINTN                                   Count;
-  REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG  *List;
+  UINTN                                     Count;
+  REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG    *List;
 } REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG_LIST;
 
 /**
@@ -44,9 +47,9 @@ typedef struct {
 **/
 EFI_STATUS
 GetResourceByUri (
-  IN  REDFISH_SERVICE           *Service,
-  IN  EFI_STRING                ResourceUri,
-  OUT REDFISH_RESPONSE          *Response
+  IN  REDFISH_SERVICE   *Service,
+  IN  EFI_STRING        ResourceUri,
+  OUT REDFISH_RESPONSE  *Response
   );
 
 /**
@@ -66,9 +69,9 @@ GetResourceByUri (
 **/
 EFI_STATUS
 IsRedpathArray (
-  IN EFI_STRING ConfigureLang,
-  OUT EFI_STRING *ArraySignatureOpen,
-  OUT EFI_STRING *ArraySignatureClose
+  IN EFI_STRING   ConfigureLang,
+  OUT EFI_STRING  *ArraySignatureOpen,
+  OUT EFI_STRING  *ArraySignatureClose
   );
 
 /**
@@ -106,8 +109,8 @@ RedfishFeatureGetUnifiedArrayTypeConfigureLang (
 **/
 EFI_STATUS
 CopyConfiglanguageList (
-  IN   REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG_LIST *SourceConfigureLangList,
-  OUT  REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG_LIST *DestConfigureLangList
+  IN   REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG_LIST  *SourceConfigureLangList,
+  OUT  REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG_LIST  *DestConfigureLangList
   );
 
 /**
@@ -121,7 +124,7 @@ CopyConfiglanguageList (
 **/
 UINTN
 GetNumberOfRedpathNodes (
-  IN EFI_STRING NodeString
+  IN EFI_STRING  NodeString
   );
 
 /**
@@ -138,9 +141,9 @@ GetNumberOfRedpathNodes (
 **/
 EFI_STRING
 GetRedpathNodeByIndex (
-  IN  EFI_STRING   NodeString,
-  IN  UINTN        Index,
-  OUT EFI_STRING   *EndOfNodePtr OPTIONAL
+  IN  EFI_STRING  NodeString,
+  IN  UINTN       Index,
+  OUT EFI_STRING  *EndOfNodePtr OPTIONAL
   );
 
 /**
@@ -159,9 +162,9 @@ GetRedpathNodeByIndex (
 **/
 EFI_STATUS
 GetArrayIndexFromArrayTypeConfigureLang (
-  IN  CHAR16 *ConfigureLang,
-  OUT CHAR16 **UnifiedConfigureLang,
-  OUT UINTN  *Index
+  IN  CHAR16  *ConfigureLang,
+  OUT CHAR16  **UnifiedConfigureLang,
+  OUT UINTN   *Index
   );
 
 /**
@@ -175,7 +178,7 @@ GetArrayIndexFromArrayTypeConfigureLang (
 **/
 UINTN
 ConfiglanguageGetInstanceIndex (
-  IN EFI_STRING ConfigureLang
+  IN EFI_STRING  ConfigureLang
   );
 
 /**
@@ -191,7 +194,7 @@ ConfiglanguageGetInstanceIndex (
 **/
 EFI_STATUS
 DestroyConfiglanguageList (
-  IN   REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG_LIST *ConfigureLangList
+  IN   REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG_LIST  *ConfigureLangList
   );
 
 /**
@@ -211,9 +214,9 @@ DestroyConfiglanguageList (
 **/
 EFI_STATUS
 SetResourceConfigLangMemberInstance (
-  IN EFI_STRING                               *DestConfigLang,
-  IN UINTN                                    MaxtLengthConfigLang,
-  IN REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG   *ConfigLangInstance
+  IN EFI_STRING                              *DestConfigLang,
+  IN UINTN                                   MaxtLengthConfigLang,
+  IN REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG  *ConfigLangInstance
   );
 
 /**
@@ -229,8 +232,8 @@ SetResourceConfigLangMemberInstance (
 **/
 EFI_STATUS
 GetArraykeyFromUri (
-  IN  CHAR8   *Uri,
-  OUT CHAR8   **ArrayKey
+  IN  CHAR8  *Uri,
+  OUT CHAR8  **ArrayKey
   );
 
 /**
@@ -248,10 +251,10 @@ GetArraykeyFromUri (
 **/
 EFI_STATUS
 ApplyFeatureSettingsStringType (
-  IN  CHAR8      *Schema,
-  IN  CHAR8      *Version,
-  IN  EFI_STRING ConfigureLang,
-  IN  CHAR8      *FeatureValue
+  IN  CHAR8       *Schema,
+  IN  CHAR8       *Version,
+  IN  EFI_STRING  ConfigureLang,
+  IN  CHAR8       *FeatureValue
   );
 
 /**
@@ -269,10 +272,10 @@ ApplyFeatureSettingsStringType (
 **/
 EFI_STATUS
 ApplyFeatureSettingsNumericType (
-  IN  CHAR8      *Schema,
-  IN  CHAR8      *Version,
-  IN  EFI_STRING ConfigureLang,
-  IN  INTN       FeatureValue
+  IN  CHAR8       *Schema,
+  IN  CHAR8       *Version,
+  IN  EFI_STRING  ConfigureLang,
+  IN  INTN        FeatureValue
   );
 
 /**
@@ -290,10 +293,10 @@ ApplyFeatureSettingsNumericType (
 **/
 EFI_STATUS
 ApplyFeatureSettingsBooleanType (
-  IN  CHAR8      *Schema,
-  IN  CHAR8      *Version,
-  IN  EFI_STRING ConfigureLang,
-  IN  BOOLEAN    FeatureValue
+  IN  CHAR8       *Schema,
+  IN  CHAR8       *Version,
+  IN  EFI_STRING  ConfigureLang,
+  IN  BOOLEAN     FeatureValue
   );
 
 /**
@@ -312,11 +315,11 @@ ApplyFeatureSettingsBooleanType (
 **/
 EFI_STATUS
 ApplyFeatureSettingsVagueType (
-  IN  CHAR8                             *Schema,
-  IN  CHAR8                             *Version,
-  IN  EFI_STRING                        ConfigureLang,
-  IN  RedfishCS_EmptyProp_KeyValue      *VagueValuePtr,
-  IN  UINT32                            NumberOfVagueValues
+  IN  CHAR8                         *Schema,
+  IN  CHAR8                         *Version,
+  IN  EFI_STRING                    ConfigureLang,
+  IN  RedfishCS_EmptyProp_KeyValue  *VagueValuePtr,
+  IN  UINT32                        NumberOfVagueValues
   );
 
 /**
@@ -355,9 +358,9 @@ ApplyFeatureSettingsStringArrayType (
 **/
 EFI_STATUS
 ApplyFeatureSettingsNumericArrayType (
-  IN  CHAR8                 *Schema,
-  IN  CHAR8                 *Version,
-  IN  EFI_STRING            ConfigureLang,
+  IN  CHAR8                  *Schema,
+  IN  CHAR8                  *Version,
+  IN  EFI_STRING             ConfigureLang,
   IN  RedfishCS_int64_Array  *ArrayHead
   );
 
@@ -398,11 +401,11 @@ ApplyFeatureSettingsBooleanArrayType (
 **/
 EFI_STATUS
 CreatePayloadToPostResource (
-  IN  REDFISH_SERVICE *Service,
-  IN  REDFISH_PAYLOAD *TargetPayload,
-  IN  CHAR8           *Json,
-  OUT EFI_STRING      *Location,
-  OUT CHAR8           **Etag
+  IN  REDFISH_SERVICE  *Service,
+  IN  REDFISH_PAYLOAD  *TargetPayload,
+  IN  CHAR8            *Json,
+  OUT EFI_STRING       *Location,
+  OUT CHAR8            **Etag
   );
 
 /**
@@ -420,10 +423,10 @@ CreatePayloadToPostResource (
 **/
 EFI_STATUS
 CreatePayloadToPatchResource (
-  IN  REDFISH_SERVICE *Service,
-  IN  REDFISH_PAYLOAD *TargetPayload,
-  IN  CHAR8           *Json,
-  OUT CHAR8           **Etag
+  IN  REDFISH_SERVICE  *Service,
+  IN  REDFISH_PAYLOAD  *TargetPayload,
+  IN  CHAR8            *Json,
+  OUT CHAR8            **Etag
   );
 
 /**
@@ -456,8 +459,8 @@ RedfisSetRedfishUri (
 **/
 EFI_STRING
 GetPropertyFromConfigureLang (
-  IN EFI_STRING ResourceUri,
-  IN EFI_STRING ConfigureLang
+  IN EFI_STRING  ResourceUri,
+  IN EFI_STRING  ConfigureLang
   );
 
 /**
@@ -475,10 +478,10 @@ GetPropertyFromConfigureLang (
 **/
 CHAR8 *
 GetPropertyStringValue (
-  IN CHAR8      *Schema,
-  IN CHAR8      *Version,
-  IN EFI_STRING PropertyName,
-  IN EFI_STRING ConfigureLang
+  IN CHAR8       *Schema,
+  IN CHAR8       *Version,
+  IN EFI_STRING  PropertyName,
+  IN EFI_STRING  ConfigureLang
   );
 
 /**
@@ -496,10 +499,10 @@ GetPropertyStringValue (
 **/
 INT64 *
 GetPropertyNumericValue (
-  IN CHAR8      *Schema,
-  IN CHAR8      *Version,
-  IN EFI_STRING PropertyName,
-  IN EFI_STRING ConfigureLang
+  IN CHAR8       *Schema,
+  IN CHAR8       *Version,
+  IN EFI_STRING  PropertyName,
+  IN EFI_STRING  ConfigureLang
   );
 
 /**
@@ -516,10 +519,10 @@ GetPropertyNumericValue (
 **/
 BOOLEAN *
 GetPropertyBooleanValue (
-  IN CHAR8      *Schema,
-  IN CHAR8      *Version,
-  IN EFI_STRING PropertyName,
-  IN EFI_STRING ConfigureLang
+  IN CHAR8       *Schema,
+  IN CHAR8       *Version,
+  IN EFI_STRING  PropertyName,
+  IN EFI_STRING  ConfigureLang
   );
 
 /**
@@ -535,8 +538,8 @@ GetPropertyBooleanValue (
 **/
 BOOLEAN
 PropertyChecker (
-  IN VOID         *PropertyBuffer,
-  IN BOOLEAN      ProvisionMode
+  IN VOID     *PropertyBuffer,
+  IN BOOLEAN  ProvisionMode
   );
 
 /**
@@ -583,7 +586,7 @@ GetEtagWithUri (
 **/
 EFI_STRING
 GetOdataId (
-  IN  REDFISH_PAYLOAD *Payload
+  IN  REDFISH_PAYLOAD  *Payload
   );
 
 /**
@@ -599,8 +602,8 @@ GetOdataId (
 **/
 EFI_STRING
 GetConfigureLang (
-  IN  CHAR8 *Uri,
-  IN  CHAR8 *PropertyName   OPTIONAL
+  IN  CHAR8  *Uri,
+  IN  CHAR8  *PropertyName   OPTIONAL
   );
 
 /**
@@ -615,7 +618,7 @@ GetConfigureLang (
 **/
 EFI_STRING
 RedfishGetUri (
-  IN  EFI_STRING ConfigLang
+  IN  EFI_STRING  ConfigLang
   );
 
 /**
@@ -630,7 +633,7 @@ RedfishGetUri (
 **/
 EFI_STRING
 RedfishGetConfigLanguage (
-  IN  EFI_STRING Uri
+  IN  EFI_STRING  Uri
   );
 
 /**
@@ -645,7 +648,7 @@ RedfishGetConfigLanguage (
 **/
 CHAR8 *
 StrUnicodeToAscii (
-  IN EFI_STRING   UnicodeStr
+  IN EFI_STRING  UnicodeStr
   );
 
 /**
@@ -677,9 +680,9 @@ StrAsciiToUnicode (
 **/
 BOOLEAN
 CheckEtag (
-  IN EFI_STRING Uri,
-  IN CHAR8      *EtagInHeader,
-  IN CHAR8      *EtagInJson
+  IN EFI_STRING  Uri,
+  IN CHAR8       *EtagInHeader,
+  IN CHAR8       *EtagInJson
   );
 
 /**
@@ -697,11 +700,11 @@ CheckEtag (
 **/
 CHAR8 **
 GetPropertyStringArrayValue (
-  IN  CHAR8               *Schema,
-  IN  CHAR8               *Version,
-  IN  EFI_STRING          PropertyName,
-  IN  EFI_STRING          ConfigureLang,
-  OUT UINTN               *ArraySize
+  IN  CHAR8       *Schema,
+  IN  CHAR8       *Version,
+  IN  EFI_STRING  PropertyName,
+  IN  EFI_STRING  ConfigureLang,
+  OUT UINTN       *ArraySize
   );
 
 /**
@@ -719,11 +722,11 @@ GetPropertyStringArrayValue (
 **/
 INT64 *
 GetPropertyNumericArrayValue (
-  IN  CHAR8               *Schema,
-  IN  CHAR8               *Version,
-  IN  EFI_STRING          PropertyName,
-  IN  EFI_STRING          ConfigureLang,
-  OUT UINTN               *ArraySize
+  IN  CHAR8       *Schema,
+  IN  CHAR8       *Version,
+  IN  EFI_STRING  PropertyName,
+  IN  EFI_STRING  ConfigureLang,
+  OUT UINTN       *ArraySize
   );
 
 /**
@@ -741,11 +744,11 @@ GetPropertyNumericArrayValue (
 **/
 BOOLEAN *
 GetPropertyBooleanArrayValue (
-  IN  CHAR8               *Schema,
-  IN  CHAR8               *Version,
-  IN  EFI_STRING          PropertyName,
-  IN  EFI_STRING          ConfigureLang,
-  OUT UINTN               *ArraySize
+  IN  CHAR8       *Schema,
+  IN  CHAR8       *Version,
+  IN  EFI_STRING  PropertyName,
+  IN  EFI_STRING  ConfigureLang,
+  OUT UINTN       *ArraySize
   );
 
 /**
@@ -764,11 +767,11 @@ GetPropertyBooleanArrayValue (
 **/
 RedfishCS_EmptyProp_KeyValue *
 GetPropertyVagueValue (
-  IN CHAR8      *Schema,
-  IN CHAR8      *Version,
-  IN EFI_STRING PropertyName,
-  IN EFI_STRING ConfigureLang,
-  OUT UINT32    *NumberOfValues
+  IN CHAR8       *Schema,
+  IN CHAR8       *Version,
+  IN EFI_STRING  PropertyName,
+  IN EFI_STRING  ConfigureLang,
+  OUT UINT32     *NumberOfValues
   );
 
 /**
@@ -780,7 +783,7 @@ GetPropertyVagueValue (
 **/
 VOID
 FreeEmptyPropKeyValueList (
-  RedfishCS_EmptyProp_KeyValue *EmptyPropKeyValueListHead
+  RedfishCS_EmptyProp_KeyValue  *EmptyPropKeyValueListHead
   );
 
 /**
@@ -798,7 +801,7 @@ BOOLEAN
 MatchPropertyWithJsonContext (
   IN  EFI_STRING  Property,
   IN  CHAR8       *Json
-);
+  );
 
 /**
 
@@ -814,7 +817,7 @@ MatchPropertyWithJsonContext (
 **/
 EFI_STATUS
 AddRedfishCharArray (
-  IN OUT  RedfishCS_char_Array **Head,
+  IN OUT  RedfishCS_char_Array  **Head,
   IN      CHAR8                 **StringArray,
   IN      UINTN                 ArraySize
   );
@@ -833,9 +836,9 @@ AddRedfishCharArray (
 **/
 EFI_STATUS
 AddRedfishNumericArray (
-  IN OUT  RedfishCS_int64_Array **Head,
-  IN      INT64                 *NumericArray,
-  IN      UINTN                 ArraySize
+  IN OUT  RedfishCS_int64_Array  **Head,
+  IN      INT64                  *NumericArray,
+  IN      UINTN                  ArraySize
   );
 
 /**
@@ -856,6 +859,7 @@ AddRedfishBooleanArray (
   IN      BOOLEAN               *BooleanArray,
   IN      UINTN                 ArraySize
   );
+
 /**
 
   Check and see if value in Redfish string array are all the same as the one
@@ -872,9 +876,9 @@ AddRedfishBooleanArray (
 **/
 BOOLEAN
 CompareRedfishStringArrayValues (
-  IN RedfishCS_char_Array *Head,
-  IN CHAR8                **StringArray,
-  IN UINTN                ArraySize
+  IN RedfishCS_char_Array  *Head,
+  IN CHAR8                 **StringArray,
+  IN UINTN                 ArraySize
   );
 
 /**
@@ -893,9 +897,9 @@ CompareRedfishStringArrayValues (
 **/
 BOOLEAN
 CompareRedfishNumericArrayValues (
-  IN RedfishCS_int64_Array *Head,
-  IN INT64                 *NumericArray,
-  IN UINTN                 ArraySize
+  IN RedfishCS_int64_Array  *Head,
+  IN INT64                  *NumericArray,
+  IN UINTN                  ArraySize
   );
 
 /**
@@ -935,10 +939,10 @@ CompareRedfishBooleanArrayValues (
 **/
 BOOLEAN
 CompareRedfishPropertyVagueValues (
-  IN RedfishCS_EmptyProp_KeyValue *RedfishVagueKeyValuePtr,
-  IN UINT32                       RedfishVagueKeyValueNumber,
-  IN RedfishCS_EmptyProp_KeyValue *ConfigVagueKeyValuePtr,
-  IN UINT32                       ConfigVagueKeyValueNumber
+  IN RedfishCS_EmptyProp_KeyValue  *RedfishVagueKeyValuePtr,
+  IN UINT32                        RedfishVagueKeyValueNumber,
+  IN RedfishCS_EmptyProp_KeyValue  *ConfigVagueKeyValuePtr,
+  IN UINT32                        ConfigVagueKeyValueNumber
   );
 
 /**
@@ -955,8 +959,8 @@ CompareRedfishPropertyVagueValues (
 **/
 EFI_STATUS
 GetEtagAndLocation (
-  IN  REDFISH_RESPONSE  *Response,
-  OUT CHAR8             **Etag,       OPTIONAL
+  IN  REDFISH_RESPONSE *Response,
+  OUT CHAR8 **Etag, OPTIONAL
   OUT EFI_STRING        *Location    OPTIONAL
   );
 
