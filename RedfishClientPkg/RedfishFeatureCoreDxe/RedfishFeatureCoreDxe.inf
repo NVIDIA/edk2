@@ -4,6 +4,8 @@
 #  drivers for the registration.
 #
 #  (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP<BR>
+#  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -39,6 +41,7 @@
   RedfishEventLib
   RedfishFeatureUtilityLib
   UefiBootServicesTableLib
+  UefiRuntimeServicesTableLib
   UefiDriverEntryPoint
   UefiLib
 
@@ -47,6 +50,8 @@
 
 [Pcd]
   gEfiRedfishClientPkgTokenSpaceGuid.PcdEdkIIRedfishFeatureDriverStartupEventGuid
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdSystemRebootRequired
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdSystemRebootTimeout
 
 [Depex]
   TRUE

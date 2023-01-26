@@ -2,7 +2,7 @@
   Redfish feature utility library implementation
 
   (C) Copyright 2020-2022 Hewlett Packard Enterprise Development LP<BR>
-  Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+  Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -323,7 +323,12 @@ ApplyFeatureSettingsStringType (
       RedfishValue.Value.Buffer = FeatureValue;
 
       Status = RedfishPlatformConfigSetValue (Schema, Version, ConfigureLang, RedfishValue);
-      if (EFI_ERROR (Status)) {
+      if (!EFI_ERROR (Status)) {
+        //
+        // Configuration changed. Enable system reboot flag.
+        //
+        REDFISH_ENABLE_SYSTEM_REBOOT ();
+      } else {
         DEBUG ((DEBUG_ERROR, "%a, apply %s to %s failed: %r\n", __FUNCTION__, ConfigureLang, FeatureValue, Status));
       }
     } else {
@@ -383,7 +388,12 @@ ApplyFeatureSettingsNumericType (
       RedfishValue.Value.Integer = (INT64)FeatureValue;
 
       Status = RedfishPlatformConfigSetValue (Schema, Version, ConfigureLang, RedfishValue);
-      if (EFI_ERROR (Status)) {
+      if (!EFI_ERROR (Status)) {
+        //
+        // Configuration changed. Enable system reboot flag.
+        //
+        REDFISH_ENABLE_SYSTEM_REBOOT ();
+      } else {
         DEBUG ((DEBUG_ERROR, "%a, apply %s to 0x%x failed: %r\n", __FUNCTION__, ConfigureLang, FeatureValue, Status));
       }
     } else {
@@ -443,7 +453,12 @@ ApplyFeatureSettingsBooleanType (
       RedfishValue.Value.Boolean = FeatureValue;
 
       Status = RedfishPlatformConfigSetValue (Schema, Version, ConfigureLang, RedfishValue);
-      if (EFI_ERROR (Status)) {
+      if (!EFI_ERROR (Status)) {
+        //
+        // Configuration changed. Enable system reboot flag.
+        //
+        REDFISH_ENABLE_SYSTEM_REBOOT ();
+      } else {
         DEBUG ((DEBUG_ERROR, "%a, apply %s to %a failed: %r\n", __FUNCTION__, ConfigureLang, (FeatureValue ? "True" : "False"), Status));
       }
     } else {
@@ -561,7 +576,12 @@ ApplyFeatureSettingsVagueType (
           FreePool (RedfishValue.Value.Buffer);
           RedfishValue.Value.Buffer = CurrentVagueValuePtr->Value->DataValue.CharPtr;
           Status                    = RedfishPlatformConfigSetValue (Schema, Version, ConfigureKeyLang, RedfishValue);
-          if (EFI_ERROR (Status)) {
+          if (!EFI_ERROR (Status)) {
+            //
+            // Configuration changed. Enable system reboot flag.
+            //
+            REDFISH_ENABLE_SYSTEM_REBOOT ();
+          } else {
             DEBUG ((DEBUG_ERROR, "%a, apply %a to %a failed: %r\n", __FUNCTION__, ConfigureKeyLang, CurrentVagueValuePtr->Value->DataValue.CharPtr, Status));
           }
         } else {
@@ -588,7 +608,12 @@ ApplyFeatureSettingsVagueType (
 
           RedfishValue.Value.Boolean = (BOOLEAN)*CurrentVagueValuePtr->Value->DataValue.BoolPtr;
           Status                     = RedfishPlatformConfigSetValue (Schema, Version, ConfigureKeyLang, RedfishValue);
-          if (EFI_ERROR (Status)) {
+          if (!EFI_ERROR (Status)) {
+            //
+            // Configuration changed. Enable system reboot flag.
+            //
+            REDFISH_ENABLE_SYSTEM_REBOOT ();
+          } else {
             DEBUG ((DEBUG_ERROR, "%a, apply %s to %a failed: %r\n", __FUNCTION__, ConfigureKeyLang, (*CurrentVagueValuePtr->Value->DataValue.BoolPtr ? "True" : "False"), Status));
           }
         } else {
@@ -606,7 +631,12 @@ ApplyFeatureSettingsVagueType (
 
           RedfishValue.Value.Integer = (INT64)*CurrentVagueValuePtr->Value->DataValue.Int64Ptr;
           Status                     = RedfishPlatformConfigSetValue (Schema, Version, ConfigureKeyLang, RedfishValue);
-          if (EFI_ERROR (Status)) {
+          if (!EFI_ERROR (Status)) {
+            //
+            // Configuration changed. Enable system reboot flag.
+            //
+            REDFISH_ENABLE_SYSTEM_REBOOT ();
+          } else {
             DEBUG ((DEBUG_ERROR, "%a, apply %s to 0x%x failed: %r\n", __FUNCTION__, ConfigureKeyLang, *CurrentVagueValuePtr->Value->DataValue.Int64Ptr, Status));
           }
         } else {
@@ -783,7 +813,12 @@ ApplyFeatureSettingsStringArrayType (
       ASSERT (Index <= RedfishValue.ArrayCount);
 
       Status = RedfishPlatformConfigSetValue (Schema, Version, ConfigureLang, RedfishValue);
-      if (EFI_ERROR (Status)) {
+      if (!EFI_ERROR (Status)) {
+        //
+        // Configuration changed. Enable system reboot flag.
+        //
+        REDFISH_ENABLE_SYSTEM_REBOOT ();
+      } else {
         DEBUG ((DEBUG_ERROR, "%a, apply %s array failed: %r\n", __FUNCTION__, ConfigureLang, Status));
       }
     } else {
@@ -876,7 +911,12 @@ ApplyFeatureSettingsNumericArrayType (
       ASSERT (Index <= RedfishValue.ArrayCount);
 
       Status = RedfishPlatformConfigSetValue (Schema, Version, ConfigureLang, RedfishValue);
-      if (EFI_ERROR (Status)) {
+      if (!EFI_ERROR (Status)) {
+        //
+        // Configuration changed. Enable system reboot flag.
+        //
+        REDFISH_ENABLE_SYSTEM_REBOOT ();
+      } else {
         DEBUG ((DEBUG_ERROR, "%a, apply %s array failed: %r\n", __FUNCTION__, ConfigureLang, Status));
       }
     } else {
@@ -969,7 +1009,12 @@ ApplyFeatureSettingsBooleanArrayType (
       ASSERT (Index <= RedfishValue.ArrayCount);
 
       Status = RedfishPlatformConfigSetValue (Schema, Version, ConfigureLang, RedfishValue);
-      if (EFI_ERROR (Status)) {
+      if (!EFI_ERROR (Status)) {
+        //
+        // Configuration changed. Enable system reboot flag.
+        //
+        REDFISH_ENABLE_SYSTEM_REBOOT ();
+      } else {
         DEBUG ((DEBUG_ERROR, "%a, apply %s array failed: %r\n", __FUNCTION__, ConfigureLang, Status));
       }
     } else {
