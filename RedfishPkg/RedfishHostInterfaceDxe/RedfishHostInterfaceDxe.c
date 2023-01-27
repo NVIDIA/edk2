@@ -287,6 +287,13 @@ PlatformHostInterfaceInformationReady (
   DEBUG ((DEBUG_INFO, "%a: Platform Redfish Host Interface informtion is ready\n", __FUNCTION__));
 
   RedfishCreateSmbiosTable42 ();
+
+  //
+  // Close event so we don't create multiple type 42 records
+  //
+  gBS->CloseEvent (Event);
+  mPlatformHostInterfaceReadylEvent = NULL;
+
   return;
 }
 
