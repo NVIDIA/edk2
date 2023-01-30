@@ -29,7 +29,7 @@ MmMemLibInternalCalculateMaximumSupportAddress (
   VOID
   )
 {
-  mMmMemLibInternalMaximumSupportAddress = MAX_ADDRESS;
+  mMmMemLibInternalMaximumSupportAddress = MAX_ALLOC_ADDRESS;
 
   DEBUG ((DEBUG_INFO, "mMmMemLibInternalMaximumSupportAddress = 0x%lx\n", mMmMemLibInternalMaximumSupportAddress));
 }
