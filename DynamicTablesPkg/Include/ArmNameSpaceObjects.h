@@ -74,7 +74,6 @@ typedef enum ArmObjectID {
   EArmObjMscNodeInfo,                                          ///< 49 - Msc Memory System Controller Node Info
   EArmObjResNodeInfo,                                          ///< 50 - Res Resource Node Info
   EArmObjFuncDepInfo,                                          ///< 51 - Func Dep Info
-  EArmObjLocalityLatencyBandwidthInfo,                         ///< 52 - System Locality Latency and Bandwidth Info
   EArmObjTpm2InterfaceInfo,                                    ///< 53 - TPM Interface Info
   EArmObjMax
 } EARM_OBJECT_ID;
@@ -1390,18 +1389,6 @@ typedef struct CmArmSystemLocalityInfo {
   UINT64    NumSystemLocalities;
   UINT8     *Distance;
 } CM_ARM_SYSTEM_LOCALITY_INFO;
-
-typedef struct CmArmObjLocalityLatencyBandwidthInfo {
-  EFI_ACPI_6_4_HMAT_STRUCTURE_SYSTEM_LOCALITY_LATENCY_AND_BANDWIDTH_INFO_FLAGS    Flags;
-  UINT8                                                                           DataType;
-  UINT8                                                                           MinTransferSize;
-  UINT64                                                                          EntryBaseUnit;
-  UINT32                                                                          NumInitiatorProximityDomains;
-  UINT32                                                                          NumTargetProximityDomains;
-  UINT32                                                                          *InitiatorProximityDomainList;
-  UINT32                                                                          *TargetProximityDomainList;
-  UINT16                                                                          *LatencyBandwidthEntries;
-} CM_ARM_LOCALITY_LATENCY_BANDWIDTH_INFO;
 
 /** A structure that describes the system.
 
