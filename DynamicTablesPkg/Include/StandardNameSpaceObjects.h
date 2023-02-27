@@ -60,6 +60,7 @@ typedef enum StdObjectID {
   EStdObjGroupAssociations,       ///< 12 - Group Associations
   EStdObjBiosLanguageInfo,        ///< 13 - BIOS Language Information
   EStdObjEnclosureInfo,           ///< 14 - Enclosure Information
+  EStdObjSystemBootInfo,          ///< 15 - System Boot Information
   EStdObjMax
 } ESTD_OBJECT_ID;
 
@@ -567,6 +568,20 @@ typedef struct CmStdBiosLanguageInfo {
   /** Token of this Bios language information CM Object */
   CM_OBJECT_TOKEN    BiosLanguageInfoToken;
 } CM_STD_BIOS_LANGUAGE_INFO;
+
+/** A structure that describes the System Boot Information.
+
+  SMBIOS Specification v3.5.0 Type 32
+
+  ID: EStdObjSystemBootInfo
+**/
+typedef struct CmStdSystemBootInfo {
+  /** System boot status */
+  UINT8              BootStatus;
+
+  /** Token of this Bios language information CM Object */
+  CM_OBJECT_TOKEN    SystemBootInfoToken;
+} CM_STD_SYSTEM_BOOT_INFO;
 
 #pragma pack()
 
