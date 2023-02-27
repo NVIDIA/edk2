@@ -582,6 +582,20 @@ typedef struct CmSmbiosEnclosureInfo {
   CHAR8                *SkuNum;
 } CM_SMBIOS_ENCLOSURE_INFO;
 
+/** A structure that describes the System Boot Information.
+
+  SMBIOS Specification v3.5.0 Type 32
+
+  ID: ESmbiosObjSystemBootInfo
+**/
+typedef struct CmSmbiosSystemBootInfo {
+  /** System boot status */
+  UINT8              BootStatus;
+
+  /** Token of this Bios language information CM Object */
+  CM_OBJECT_TOKEN    SystemBootInfoToken;
+} CM_SMBIOS_SYSTEM_BOOT_INFO;
+
 #pragma pack()
 
 #endif // SMBIOS_NAMESPACE_OBJECTS_H_
