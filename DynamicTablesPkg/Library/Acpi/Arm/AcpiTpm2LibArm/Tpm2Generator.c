@@ -158,7 +158,7 @@ BuildTpm2Table (
 
     default:
       ASSERT (FALSE);
-      break;
+      return EFI_INVALID_PARAMETER;
   }
 
   // Allocate the Buffer for TPM2 table
