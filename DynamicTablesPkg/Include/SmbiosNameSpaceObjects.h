@@ -31,6 +31,7 @@ typedef enum SmbiosObjectID {
   ESmbiosObjMemoryDeviceInfo,
   ESmbiosObjSystemBootInfo,
   ESmbiosObjPhysicalMemoryArray,
+  ESmbiosObjMemoryArrayMappedAddress,
   ESmbiosObjMax
 } ESMBIOS_OBJECT_ID;
 
@@ -90,6 +91,9 @@ typedef struct CmSmbiosMemoryDeviceInfo {
 
   CM_OBJECT_TOKEN    MemoryDeviceInfoToken;
   CM_OBJECT_TOKEN    PhysicalArrayToken;
+  UINT16             DataWidth;
+  UINT16             TotalWidth;
+  UINT8              Rank;
 } CM_SMBIOS_MEMORY_DEVICE_INFO;
 
 typedef struct {
@@ -507,6 +511,20 @@ typedef struct CmSmbiosPhysicalMemoryArray {
   CM_OBJECT_TOKEN    MemoryErrInfoToken;
   CM_OBJECT_TOKEN    PhysMemArrayToken;
 } CM_SMBIOS_PHYSICAL_MEMORY_ARRAY;
+
+/** A structure that describes the Memory Array Mapped Address.
+
+  SMBIOS Specification v3.6.0 Type 19
+
+  ID: ESmbiosObjPhysicalMemoryArray
+**/
+typedef struct CmSmbiosMemArrayMappedAddress {
+  EFI_PHYSICAL_ADDRESS    StartingAddress;
+  EFI_PHYSICAL_ADDRESS    EndingAddress;
+  CM_OBJECT_TOKEN         MemoryArrayMappedAddressToken;
+  UINT8                   NumMemDevices;
+  CM_OBJECT_TOKEN         PhysMemArrayToken;
+} CM_SMBIOS_MEMORY_ARRAY_MAPPED_ADDRESS;
 
 #pragma pack()
 
