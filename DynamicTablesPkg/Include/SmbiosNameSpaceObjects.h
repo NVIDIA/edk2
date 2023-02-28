@@ -132,6 +132,25 @@ typedef struct {
   SMBIOS_TABLE_GENERATOR_ID    GeneratorId;
 } CONTAINED_CM_OBJECTS;
 
+/** A structure that describes the Physical Memory Array.
+
+  SMBIOS Specification v3.6.0 Type 16
+
+  ID: ESmbiosObjPhysicalMemoryArray
+**/
+typedef struct CmSmbiosPhysicalMemoryArray {
+  UINT8              Use;
+  UINT8              Location;
+  UINT16             MemoryErrorCorrection;
+  UINT16             MemoryErrorInformationHandle;
+  UINT16             NumberOfMemoryDevices;
+  UINT8              MemoryErrorCorrectionType;
+  UINT64             Size;
+  UINT8              NumMemDevices;
+  CM_OBJECT_TOKEN    MemoryErrInfoToken;
+  CM_OBJECT_TOKEN    PhysMemArrayToken;
+} CM_SMBIOS_PHYSICAL_MEMORY_ARRAY;
+
 #pragma pack()
 
 #endif // SMBIOS_NAMESPACE_OBJECTS_H_
