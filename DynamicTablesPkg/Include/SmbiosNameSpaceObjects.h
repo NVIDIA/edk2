@@ -646,6 +646,31 @@ typedef struct CmSmbiosPowerSupplyInfo {
   CM_OBJECT_TOKEN    PowerSupplyInfoToken;
 } CM_SMBIOS_POWER_SUPPLY_INFO;
 
+/** A structure that describes the Firmware Inventory Information.
+
+  SMBIOS Specification v3.5.0 Type 45
+
+  ID: ESmbiosObjFirmwareInventoryInfo,
+*/
+typedef struct CmStdFirmwareInventoryInfo {
+  /** CM Object Token of Enclosure  */
+  CM_OBJECT_TOKEN              FirmwareInventoryInfoToken;
+  CHAR8                        *FirmwareComponentName;
+  CHAR8                        *FirmwareVersion;
+  UINT8                        FirmwareVersionFormat;   ///< The enumeration value from FIRMWARE_INVENTORY_VERSION_FORMAT_TYPE
+  CHAR8                        *FirmwareId;
+  UINT8                        FirmwareIdFormat;        ///< The enumeration value from FIRMWARE_INVENTORY_FIRMWARE_ID_FORMAT_TYPE.
+  CHAR8                        *ReleaseDate;
+  CHAR8                        *Manufacturer;
+  CHAR8                        *LowestSupportedVersion;
+  UINT64                       ImageSize;
+  FIRMWARE_CHARACTERISTICS     Characteristics;
+  UINT8                        State;                   ///< The enumeration value from FIRMWARE_INVENTORY_STATE.
+  UINT8                        AssociatedComponentCount;
+  CM_OBJECT_TOKEN              *AssociatedComponentHandles;
+  SMBIOS_TABLE_GENERATOR_ID    GeneratorId;
+} CM_SMBIOS_FIRMWARE_INVENTORY_INFO;
+
 #pragma pack()
 
 #endif // SMBIOS_NAMESPACE_OBJECTS_H_
