@@ -25,9 +25,9 @@
     information from the Configuration Manager.
 */
 GET_OBJECT_LIST (
-  EObjNameSpaceStandard,
-  EStdObjSystemInfo,
-  CM_STD_SYSTEM_INFO
+  EObjNameSpaceSmbios,
+  ESmbiosObjSystemInfo,
+  CM_SMBIOS_SYSTEM_INFO
   )
 
 /** This function pointer describes the interface to used by the
@@ -87,18 +87,18 @@ BuildSmbiosType1Table (
   OUT       CM_OBJECT_TOKEN                               *CmObjToken
   )
 {
-  EFI_STATUS          Status;
-  CM_STD_SYSTEM_INFO  *SystemInfo;
-  UINT8               ManufacturerRef;
-  UINT8               ProductNameRef;
-  UINT8               VersionRef;
-  UINT8               SerialNumRef;
-  UINT8               SkuNumRef;
-  UINT8               FamilyRef;
-  CHAR8               *OptionalStrings;
-  SMBIOS_TABLE_TYPE1  *SmbiosRecord;
-  UINTN               SmbiosRecordSize;
-  STRING_TABLE        StrTable;
+  EFI_STATUS             Status;
+  CM_SMBIOS_SYSTEM_INFO  *SystemInfo;
+  UINT8                  ManufacturerRef;
+  UINT8                  ProductNameRef;
+  UINT8                  VersionRef;
+  UINT8                  SerialNumRef;
+  UINT8                  SkuNumRef;
+  UINT8                  FamilyRef;
+  CHAR8                  *OptionalStrings;
+  SMBIOS_TABLE_TYPE1     *SmbiosRecord;
+  UINTN                  SmbiosRecordSize;
+  STRING_TABLE           StrTable;
 
   ASSERT (Generator != NULL);
   ASSERT (SmbiosTableInfo != NULL);
@@ -110,7 +110,7 @@ BuildSmbiosType1Table (
   // Retrieve system info from CM object
   //
   *Table = NULL;
-  Status = GetEStdObjSystemInfo (
+  Status = GetESmbiosObjSystemInfo (
              CfgMgrProtocol,
              CM_NULL_TOKEN,
              &SystemInfo,

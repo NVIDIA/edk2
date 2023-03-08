@@ -24,9 +24,9 @@
     information from the Configuration Manager.
 */
 GET_OBJECT_LIST (
-  EObjNameSpaceStandard,
-  EStdObjTpmDeviceInfo,
-  CM_STD_TPM_DEVICE_INFO
+  EObjNameSpaceSmbios,
+  ESmbiosObjTpmDeviceInfo,
+  CM_SMBIOS_TPM_DEVICE_INFO
   )
 
 /** This function pointer describes the interface to used by the
@@ -86,13 +86,13 @@ BuildSmbiosType43Table (
   OUT       CM_OBJECT_TOKEN                               *CmObjToken
   )
 {
-  EFI_STATUS              Status;
-  CM_STD_TPM_DEVICE_INFO  *TpmInfo;
-  UINT8                   DescriptionRef;
-  CHAR8                   *OptionalStrings;
-  SMBIOS_TABLE_TYPE43     *SmbiosRecord;
-  UINTN                   SmbiosRecordSize;
-  STRING_TABLE            StrTable;
+  EFI_STATUS                 Status;
+  CM_SMBIOS_TPM_DEVICE_INFO  *TpmInfo;
+  UINT8                      DescriptionRef;
+  CHAR8                      *OptionalStrings;
+  SMBIOS_TABLE_TYPE43        *SmbiosRecord;
+  UINTN                      SmbiosRecordSize;
+  STRING_TABLE               StrTable;
 
   ASSERT (Generator != NULL);
   ASSERT (SmbiosTableInfo != NULL);
@@ -104,7 +104,7 @@ BuildSmbiosType43Table (
   // Retrieve TPM info from CM object
   //
   *Table = NULL;
-  Status = GetEStdObjTpmDeviceInfo (
+  Status = GetESmbiosObjTpmDeviceInfo (
              CfgMgrProtocol,
              CM_NULL_TOKEN,
              &TpmInfo,

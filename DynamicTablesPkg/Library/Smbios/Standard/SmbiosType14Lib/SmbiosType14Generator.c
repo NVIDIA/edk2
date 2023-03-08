@@ -25,9 +25,9 @@
     information from the Configuration Manager.
 */
 GET_OBJECT_LIST (
-  EObjNameSpaceStandard,
-  EStdObjGroupAssociations,
-  CM_STD_GROUP_ASSOCIATIONS
+  EObjNameSpaceSmbios,
+  ESmbiosObjGroupAssociations,
+  CM_SMBIOS_GROUP_ASSOCIATIONS
   )
 
 STATIC
@@ -150,20 +150,20 @@ BuildSmbiosType14TableEx (
   OUT       UINTN                                  *CONST  TableCount
   )
 {
-  EFI_STATUS                 Status;
-  UINT32                     NumGroups;
-  SMBIOS_STRUCTURE           **TableList;
-  CM_OBJECT_TOKEN            *CmObjectList;
-  CM_STD_GROUP_ASSOCIATIONS  *GroupAssociations;
-  UINT8                      GroupNameRef;
-  UINTN                      Index;
-  UINTN                      HandleIndex;
-  CHAR8                      *OptionalStrings;
-  SMBIOS_TABLE_TYPE14        *SmbiosRecord;
-  UINTN                      SmbiosRecordSize;
-  UINTN                      SmbiosRecordSizeEx;
-  STRING_TABLE               StrTable;
-  UINT16                     ReferenceHandle;
+  EFI_STATUS                    Status;
+  UINT32                        NumGroups;
+  SMBIOS_STRUCTURE              **TableList;
+  CM_OBJECT_TOKEN               *CmObjectList;
+  CM_SMBIOS_GROUP_ASSOCIATIONS  *GroupAssociations;
+  UINT8                         GroupNameRef;
+  UINTN                         Index;
+  UINTN                         HandleIndex;
+  CHAR8                         *OptionalStrings;
+  SMBIOS_TABLE_TYPE14           *SmbiosRecord;
+  UINTN                         SmbiosRecordSize;
+  UINTN                         SmbiosRecordSizeEx;
+  STRING_TABLE                  StrTable;
+  UINT16                        ReferenceHandle;
 
   ASSERT (This != NULL);
   ASSERT (SmbiosTableInfo != NULL);
@@ -174,7 +174,7 @@ BuildSmbiosType14TableEx (
 
   *Table         = NULL;
   *CmObjectToken = NULL;
-  Status         = GetEStdObjGroupAssociations (
+  Status         = GetESmbiosObjGroupAssociations (
                      CfgMgrProtocol,
                      CM_NULL_TOKEN,
                      &GroupAssociations,

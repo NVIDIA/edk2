@@ -27,9 +27,9 @@
     information from the Configuration Manager.
 **/
 GET_OBJECT_LIST (
-  EObjNameSpaceStandard,
-  EStdObjOemStrings,
-  CM_STD_OEM_STRINGS
+  EObjNameSpaceSmbios,
+  ESmbiosObjOemStrings,
+  CM_SMBIOS_OEM_STRINGS
   )
 
 /** This function pointer describes the interface to use by the
@@ -94,14 +94,14 @@ BuildSmbiosType11Table (
   OUT CM_OBJECT_TOKEN                                      *CmObjectToken
   )
 {
-  EFI_STATUS           Status;
-  SMBIOS_TABLE_TYPE11  *SmbiosRecord;
-  CM_STD_OEM_STRINGS   *OemStrings;
-  UINT8                Index;
-  CHAR8                *OptionalStrings;
-  UINTN                SmbiosRecordSize;
-  STRING_TABLE         StrTable;
-  UINT8                StrRef;
+  EFI_STATUS             Status;
+  SMBIOS_TABLE_TYPE11    *SmbiosRecord;
+  CM_SMBIOS_OEM_STRINGS  *OemStrings;
+  UINT8                  Index;
+  CHAR8                  *OptionalStrings;
+  UINTN                  SmbiosRecordSize;
+  STRING_TABLE           StrTable;
+  UINT8                  StrRef;
 
   ASSERT (Generator != NULL);
   ASSERT (SmbiosTableInfo != NULL);
@@ -110,7 +110,7 @@ BuildSmbiosType11Table (
   ASSERT (SmbiosTableInfo->TableGeneratorId == Generator->GeneratorID);
 
   *Table = NULL;
-  Status = GetEStdObjOemStrings (
+  Status = GetESmbiosObjOemStrings (
              CfgMgrProtocol,
              CM_NULL_TOKEN,
              &OemStrings,
