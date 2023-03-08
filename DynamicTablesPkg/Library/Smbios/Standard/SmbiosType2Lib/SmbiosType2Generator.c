@@ -25,9 +25,9 @@
     information from the Configuration Manager.
 */
 GET_OBJECT_LIST (
-  EObjNameSpaceStandard,
-  EStdObjBaseboardInfo,
-  CM_STD_BASEBOARD_INFO
+  EObjNameSpaceSmbios,
+  ESmbiosObjBaseboardInfo,
+  CM_SMBIOS_BASEBOARD_INFO
   )
 
 STATIC
@@ -150,25 +150,25 @@ BuildSmbiosType2TableEx (
   OUT       UINTN                                  *CONST  TableCount
   )
 {
-  EFI_STATUS             Status;
-  UINT32                 NumBaseboards;
-  SMBIOS_STRUCTURE       **TableList;
-  CM_OBJECT_TOKEN        *CmObjectList;
-  CM_STD_BASEBOARD_INFO  *BaseboardInfo;
-  UINTN                  Index;
-  UINTN                  HandleIndex;
-  UINT8                  ManufacturerRef;
-  UINT8                  ProductNameRef;
-  UINT8                  VersionRef;
-  UINT8                  SerialNumberRef;
-  UINT8                  AssetTagRef;
-  UINT8                  LocationInChassisRef;
-  CHAR8                  *OptionalStrings;
-  SMBIOS_TABLE_TYPE2     *SmbiosRecord;
-  UINTN                  SmbiosRecordSize;
-  UINTN                  SmbiosRecordSizeEx;
-  STRING_TABLE           StrTable;
-  UINT16                 ReferenceHandle;
+  EFI_STATUS                Status;
+  UINT32                    NumBaseboards;
+  SMBIOS_STRUCTURE          **TableList;
+  CM_OBJECT_TOKEN           *CmObjectList;
+  CM_SMBIOS_BASEBOARD_INFO  *BaseboardInfo;
+  UINTN                     Index;
+  UINTN                     HandleIndex;
+  UINT8                     ManufacturerRef;
+  UINT8                     ProductNameRef;
+  UINT8                     VersionRef;
+  UINT8                     SerialNumberRef;
+  UINT8                     AssetTagRef;
+  UINT8                     LocationInChassisRef;
+  CHAR8                     *OptionalStrings;
+  SMBIOS_TABLE_TYPE2        *SmbiosRecord;
+  UINTN                     SmbiosRecordSize;
+  UINTN                     SmbiosRecordSizeEx;
+  STRING_TABLE              StrTable;
+  UINT16                    ReferenceHandle;
 
   ASSERT (This != NULL);
   ASSERT (SmbiosTableInfo != NULL);
@@ -179,7 +179,7 @@ BuildSmbiosType2TableEx (
 
   *Table         = NULL;
   *CmObjectToken = NULL;
-  Status         = GetEStdObjBaseboardInfo (
+  Status         = GetESmbiosObjBaseboardInfo (
                      CfgMgrProtocol,
                      CM_NULL_TOKEN,
                      &BaseboardInfo,

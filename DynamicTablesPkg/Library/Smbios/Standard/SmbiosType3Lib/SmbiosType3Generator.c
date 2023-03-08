@@ -27,9 +27,9 @@
     information from the Configuration Manager.
 */
 GET_OBJECT_LIST (
-  EObjNameSpaceStandard,
-  EStdObjEnclosureInfo,
-  CM_STD_ENCLOSURE_INFO
+  EObjNameSpaceSmbios,
+  ESmbiosObjEnclosureInfo,
+  CM_SMBIOS_ENCLOSURE_INFO
   )
 
 /** This function pointer describes the interface to used by the
@@ -110,25 +110,25 @@ BuildSmbiosType3TableEx (
   OUT       UINTN                                  *CONST  TableCount
   )
 {
-  EFI_STATUS             Status;
-  CM_STD_ENCLOSURE_INFO  *EnclosureInfo;
-  UINT8                  ManufacturerRef;
-  UINT8                  AssetTagRef;
-  UINT8                  VersionRef;
-  UINT8                  SerialNumRef;
-  UINT8                  SkuNumRef;
-  CHAR8                  *SkuNumberField;
-  UINTN                  ContainedElementsSize;
-  CHAR8                  *OptionalStrings;
-  SMBIOS_TABLE_TYPE3     *SmbiosRecord;
-  UINTN                  SmbiosRecordSize;
-  STRING_TABLE           StrTable;
-  UINT32                 CmObjCount;
-  UINT32                 Index;
-  SMBIOS_STRUCTURE       **TableList;
-  CM_OBJECT_TOKEN        *CmObjectList;
-  UINT32                 TableListCount;
-  UINTN                  TableSizeWithoutContainedElements;
+  EFI_STATUS                Status;
+  CM_SMBIOS_ENCLOSURE_INFO  *EnclosureInfo;
+  UINT8                     ManufacturerRef;
+  UINT8                     AssetTagRef;
+  UINT8                     VersionRef;
+  UINT8                     SerialNumRef;
+  UINT8                     SkuNumRef;
+  CHAR8                     *SkuNumberField;
+  UINTN                     ContainedElementsSize;
+  CHAR8                     *OptionalStrings;
+  SMBIOS_TABLE_TYPE3        *SmbiosRecord;
+  UINTN                     SmbiosRecordSize;
+  STRING_TABLE              StrTable;
+  UINT32                    CmObjCount;
+  UINT32                    Index;
+  SMBIOS_STRUCTURE          **TableList;
+  CM_OBJECT_TOKEN           *CmObjectList;
+  UINT32                    TableListCount;
+  UINTN                     TableSizeWithoutContainedElements;
 
   ASSERT (Generator != NULL);
   ASSERT (SmbiosTableInfo != NULL);
@@ -148,7 +148,7 @@ BuildSmbiosType3TableEx (
   //
   // There is no SMBIOS table data, depends on EStdObjEnclosureInfo to establish type 3 record.
   //
-  Status = GetEStdObjEnclosureInfo (
+  Status = GetESmbiosObjEnclosureInfo (
              CfgMgrProtocol,
              CM_NULL_TOKEN,
              &EnclosureInfo,
