@@ -24,9 +24,9 @@
     information from the Configuration Manager.
 */
 GET_OBJECT_LIST (
-  EObjNameSpaceStandard,
-  EStdObjSystemBootInfo,
-  CM_STD_SYSTEM_BOOT_INFO
+  EObjNameSpaceSmbios,
+  ESmbiosObjSystemBootInfo,
+  CM_SMBIOS_SYSTEM_BOOT_INFO
   )
 
 /** This function pointer describes the interface to used by the
@@ -86,10 +86,10 @@ BuildSmbiosType32Table (
   OUT       CM_OBJECT_TOKEN                                *CmObjectToken
   )
 {
-  EFI_STATUS               Status;
-  CM_STD_SYSTEM_BOOT_INFO  *SystemBootInfo;
-  SMBIOS_TABLE_TYPE32      *SmbiosRecord;
-  UINT32                   CmObjCount;
+  EFI_STATUS                  Status;
+  CM_SMBIOS_SYSTEM_BOOT_INFO  *SystemBootInfo;
+  SMBIOS_TABLE_TYPE32         *SmbiosRecord;
+  UINT32                      CmObjCount;
 
   ASSERT (Generator != NULL);
   ASSERT (SmbiosTableInfo != NULL);
@@ -104,7 +104,7 @@ BuildSmbiosType32Table (
 
   Status = EFI_SUCCESS;
 
-  Status = GetEStdObjSystemBootInfo (
+  Status = GetESmbiosObjSystemBootInfo (
              CfgMgrProtocol,
              CM_NULL_TOKEN,
              &SystemBootInfo,

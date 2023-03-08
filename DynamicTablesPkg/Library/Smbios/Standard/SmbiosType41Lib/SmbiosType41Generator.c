@@ -25,9 +25,9 @@
     information from the Configuration Manager.
 */
 GET_OBJECT_LIST (
-  EObjNameSpaceStandard,
-  EStdObjOnboardDeviceExInfo,
-  CM_STD_ONBOARD_DEVICE_EXTENDED_INFO
+  EObjNameSpaceSmbios,
+  ESmbiosObjOnboardDeviceExInfo,
+  CM_SMBIOS_ONBOARD_DEVICE_EXTENDED_INFO
   )
 
 /** This function pointer describes the interface to used by the
@@ -108,18 +108,18 @@ BuildSmbiosType41TableEx (
   OUT       UINTN                                  *CONST  TableCount
   )
 {
-  EFI_STATUS                           Status;
-  CM_STD_ONBOARD_DEVICE_EXTENDED_INFO  *OnboardDeviceExtendedInfo;
-  UINT8                                ReferenceDesignationRef;
-  UINT32                               CmObjCount;
-  UINT32                               Index;
-  SMBIOS_STRUCTURE                     **TableList;
-  CM_OBJECT_TOKEN                      *CmObjectList;
-  UINT32                               TableListCount;
-  CHAR8                                *OptionalStrings;
-  SMBIOS_TABLE_TYPE41                  *SmbiosRecord;
-  UINTN                                SmbiosRecordSize;
-  STRING_TABLE                         StrTable;
+  EFI_STATUS                              Status;
+  CM_SMBIOS_ONBOARD_DEVICE_EXTENDED_INFO  *OnboardDeviceExtendedInfo;
+  UINT8                                   ReferenceDesignationRef;
+  UINT32                                  CmObjCount;
+  UINT32                                  Index;
+  SMBIOS_STRUCTURE                        **TableList;
+  CM_OBJECT_TOKEN                         *CmObjectList;
+  UINT32                                  TableListCount;
+  CHAR8                                   *OptionalStrings;
+  SMBIOS_TABLE_TYPE41                     *SmbiosRecord;
+  UINTN                                   SmbiosRecordSize;
+  STRING_TABLE                            StrTable;
 
   ASSERT (Generator != NULL);
   ASSERT (SmbiosTableInfo != NULL);
@@ -135,7 +135,7 @@ BuildSmbiosType41TableEx (
   CmObjectList   = NULL;
   TableListCount = 0;
 
-  Status = GetEStdObjOnboardDeviceExInfo (
+  Status = GetESmbiosObjOnboardDeviceExInfo (
              CfgMgrProtocol,
              CM_NULL_TOKEN,
              &OnboardDeviceExtendedInfo,
