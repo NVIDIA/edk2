@@ -24,9 +24,9 @@
     information from the Configuration Manager.
 */
 GET_OBJECT_LIST (
-  EObjNameSpaceStandard,
-  EStdObjPortConnectorInfo,
-  CM_STD_PORT_CONNECTOR_INFO
+  EObjNameSpaceSmbios,
+  ESmbiosObjPortConnectorInfo,
+  CM_SMBIOS_PORT_CONNECTOR_INFO
   )
 
 /** This function pointer describes the interface to used by the
@@ -107,19 +107,19 @@ BuildSmbiosType8TableEx (
   OUT       UINTN                                  *CONST  TableCount
   )
 {
-  EFI_STATUS                  Status;
-  CM_STD_PORT_CONNECTOR_INFO  *PortConnectorInfo;
-  UINT8                       InternalPortConnectorRef;
-  UINT8                       ExternalPortConnectorRef;
-  UINT32                      CmObjCount;
-  UINT32                      Index;
-  SMBIOS_STRUCTURE            **TableList;
-  CM_OBJECT_TOKEN             *CmObjectList;
-  UINT32                      TableListCount;
-  CHAR8                       *OptionalStrings;
-  SMBIOS_TABLE_TYPE8          *SmbiosRecord;
-  UINTN                       SmbiosRecordSize;
-  STRING_TABLE                StrTable;
+  EFI_STATUS                     Status;
+  CM_SMBIOS_PORT_CONNECTOR_INFO  *PortConnectorInfo;
+  UINT8                          InternalPortConnectorRef;
+  UINT8                          ExternalPortConnectorRef;
+  UINT32                         CmObjCount;
+  UINT32                         Index;
+  SMBIOS_STRUCTURE               **TableList;
+  CM_OBJECT_TOKEN                *CmObjectList;
+  UINT32                         TableListCount;
+  CHAR8                          *OptionalStrings;
+  SMBIOS_TABLE_TYPE8             *SmbiosRecord;
+  UINTN                          SmbiosRecordSize;
+  STRING_TABLE                   StrTable;
 
   ASSERT (Generator != NULL);
   ASSERT (SmbiosTableInfo != NULL);
@@ -135,7 +135,7 @@ BuildSmbiosType8TableEx (
   CmObjectList   = NULL;
   TableListCount = 0;
 
-  Status = GetEStdObjPortConnectorInfo (
+  Status = GetESmbiosObjPortConnectorInfo (
              CfgMgrProtocol,
              CM_NULL_TOKEN,
              &PortConnectorInfo,

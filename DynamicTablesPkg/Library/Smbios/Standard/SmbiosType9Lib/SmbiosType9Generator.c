@@ -25,9 +25,9 @@
     information from the Configuration Manager.
 */
 GET_OBJECT_LIST (
-  EObjNameSpaceStandard,
-  EStdObjSystemSlotInfo,
-  CM_STD_SYSTEM_SLOTS_INFO
+  EObjNameSpaceSmbios,
+  ESmbiosObjSystemSlotInfo,
+  CM_SMBIOS_SYSTEM_SLOTS_INFO
   )
 
 STATIC
@@ -102,7 +102,7 @@ BuildSmbiosType9TableEx (
   UINT32                       NumSystemSlots;
   SMBIOS_STRUCTURE             **TableList;
   CM_OBJECT_TOKEN              *CmObjectList;
-  CM_STD_SYSTEM_SLOTS_INFO     *SystemSlotInfo;
+  CM_SMBIOS_SYSTEM_SLOTS_INFO  *SystemSlotInfo;
   UINTN                        Index;
   UINTN                        Count;
   UINT8                        SlotDesignationRef;
@@ -122,7 +122,7 @@ BuildSmbiosType9TableEx (
 
   *Table         = NULL;
   *CmObjectToken = NULL;
-  Status         = GetEStdObjSystemSlotInfo (
+  Status         = GetESmbiosObjSystemSlotInfo (
                      CfgMgrProtocol,
                      CM_NULL_TOKEN,
                      &SystemSlotInfo,

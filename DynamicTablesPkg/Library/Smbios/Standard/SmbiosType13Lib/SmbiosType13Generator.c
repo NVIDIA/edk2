@@ -25,9 +25,9 @@
     information from the Configuration Manager.
 */
 GET_OBJECT_LIST (
-  EObjNameSpaceStandard,
-  EStdObjBiosLanguageInfo,
-  CM_STD_BIOS_LANGUAGE_INFO
+  EObjNameSpaceSmbios,
+  ESmbiosObjBiosLanguageInfo,
+  CM_SMBIOS_BIOS_LANGUAGE_INFO
   )
 
 /** This function pointer describes the interface to used by the
@@ -87,16 +87,16 @@ BuildSmbiosType13Table (
   OUT       CM_OBJECT_TOKEN                                *CmObjectToken
   )
 {
-  EFI_STATUS                 Status;
-  CM_STD_BIOS_LANGUAGE_INFO  *BiosLanguageInfo;
-  SMBIOS_TABLE_TYPE13        *SmbiosRecord;
-  UINTN                      SmbiosRecordSize;
-  UINTN                      Index;
-  STRING_TABLE               StrTable;
-  UINT32                     CmObjCount;
-  CM_OBJECT_TOKEN            CmObject;
-  CHAR8                      *OptionalStrings;
-  UINT8                      LanguageRef;
+  EFI_STATUS                    Status;
+  CM_SMBIOS_BIOS_LANGUAGE_INFO  *BiosLanguageInfo;
+  SMBIOS_TABLE_TYPE13           *SmbiosRecord;
+  UINTN                         SmbiosRecordSize;
+  UINTN                         Index;
+  STRING_TABLE                  StrTable;
+  UINT32                        CmObjCount;
+  CM_OBJECT_TOKEN               CmObject;
+  CHAR8                         *OptionalStrings;
+  UINT8                         LanguageRef;
 
   ASSERT (Generator != NULL);
   ASSERT (SmbiosTableInfo != NULL);
@@ -111,7 +111,7 @@ BuildSmbiosType13Table (
 
   Status = EFI_SUCCESS;
 
-  Status = GetEStdObjBiosLanguageInfo (
+  Status = GetESmbiosObjBiosLanguageInfo (
              CfgMgrProtocol,
              CM_NULL_TOKEN,
              &BiosLanguageInfo,
