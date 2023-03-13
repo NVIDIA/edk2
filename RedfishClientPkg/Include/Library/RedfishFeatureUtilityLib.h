@@ -13,25 +13,10 @@
 
 #include <Library/RedfishLib.h>
 #include <Protocol/EdkIIRedfishPlatformConfig.h>
+#include <Protocol/EdkIIRedfishInterchangeData.h>
 #include <RedfishJsonStructure/RedfishCsCommon.h>
 
 #define REDFISH_ENABLE_SYSTEM_REBOOT()  PcdSetBoolS(PcdSystemRebootRequired, TRUE)
-
-//
-// Definition of REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG
-//
-typedef struct {
-  UINTN         Index;
-  EFI_STRING    ConfigureLang;
-} REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG;
-
-//
-// Definition of REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG_LIST
-//
-typedef struct {
-  UINTN                                     Count;
-  REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG    *List;
-} REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG_LIST;
 
 /**
 
