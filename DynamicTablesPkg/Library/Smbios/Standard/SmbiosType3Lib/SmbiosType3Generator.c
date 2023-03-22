@@ -205,6 +205,15 @@ BuildSmbiosType3TableEx (
     TableSizeWithoutContainedElements = sizeof (*SmbiosRecord) -
                                         sizeof (SmbiosRecord->ContainedElements) +
                                         SIZE_OF_SKU_NUMBER;
+    if ((TableSizeWithoutContainedElements + ContainedElementsSize) >= 0x100) {
+      Status = EFI_UNSUPPORTED;
+      DEBUG ((
+        DEBUG_ERROR,
+        "ContainedElementsSize exceed spec defined, %r\n",
+        Status
+        ));
+      goto ErrorExit;
+    }
 
     SmbiosRecordSize = TableSizeWithoutContainedElements +
                        ContainedElementsSize +
@@ -270,7 +279,7 @@ BuildSmbiosType3TableEx (
     // Setup SMBIOS header
     //
     SmbiosRecord->Hdr.Type   = Generator->Type;
-    SmbiosRecord->Hdr.Length = sizeof (*SmbiosRecord) + ContainedElementsSize;
+    SmbiosRecord->Hdr.Length = (UINT8)TableSizeWithoutContainedElements + ContainedElementsSize;
     TableList[Index]         = (SMBIOS_STRUCTURE *)SmbiosRecord;
     CmObjectList[Index]      =  EnclosureInfo[Index].EnclosureInfoToken;
 
