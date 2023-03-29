@@ -23,6 +23,7 @@
 #include <Protocol/ConfigurationManagerProtocol.h>
 #include <Protocol/DynamicTableFactoryProtocol.h>
 #include <SmbiosTableGenerator.h>
+#include <SmbiosTableDispatcher.h>
 
 /** This macro expands to a function that retrieves the SMBIOS Table
     List from the Configuration Manager.
@@ -69,7 +70,6 @@ BuildAndInstallSingleSmbiosTable (
   SMBIOS_STRUCTURE   *SmbiosTable;
   CM_OBJECT_TOKEN    CmObjToken;
   EFI_SMBIOS_HANDLE  TableHandle;
-  SMBIOS_HANDLE_MAP  *HandleMap;
 
   SmbiosTable = NULL;
   Status      = Generator->BuildSmbiosTable (
@@ -97,12 +97,7 @@ BuildAndInstallSingleSmbiosTable (
     goto exit_handler;
   }
 
-  HandleMap = TableFactoryProtocol->GetSmbiosHandle (CmObjToken);
-  if (HandleMap == NULL) {
-    TableHandle = SMBIOS_HANDLE_PI_RESERVED;
-  } else {
-    TableHandle = HandleMap->SmbiosTblHandle;
-  }
+  TableHandle = SMBIOS_HANDLE_PI_RESERVED;
 
   // Install SMBIOS table
   Status = SmbiosProtocol->Add (
@@ -121,15 +116,12 @@ BuildAndInstallSingleSmbiosTable (
     goto exit_handler;
   }
 
-  // If a new handle was generated then add it to the handle map.
-  if (HandleMap == NULL) {
-    TableFactoryProtocol->AddSmbiosHandle (
-                            SmbiosProtocol,
-                            &TableHandle,
-                            CmObjToken,
-                            SmbiosTableInfo->TableGeneratorId
-                            );
-  }
+  TableFactoryProtocol->AddSmbiosHandle (
+                          SmbiosProtocol,
+                          &TableHandle,
+                          CmObjToken,
+                          SmbiosTableInfo->TableGeneratorId
+                          );
 
   DEBUG ((
     DEBUG_INFO,
@@ -205,7 +197,6 @@ BuildAndInstallMultipleSmbiosTables (
   EFI_SMBIOS_HANDLE  TableHandle;
   UINTN              TableCount;
   UINTN              Index;
-  SMBIOS_HANDLE_MAP  *HandleMap;
 
   TableCount = 0;
   Status     = Generator->BuildSmbiosTableEx (
@@ -242,12 +233,7 @@ BuildAndInstallMultipleSmbiosTables (
   }
 
   for (Index = 0; Index < TableCount; Index++) {
-    HandleMap = TableFactoryProtocol->GetSmbiosHandle (CmObjToken[Index]);
-    if (HandleMap == NULL) {
-      TableHandle = SMBIOS_HANDLE_PI_RESERVED;
-    } else {
-      TableHandle = HandleMap->SmbiosTblHandle;
-    }
+    TableHandle = SMBIOS_HANDLE_PI_RESERVED;
 
     // Install SMBIOS table
     Status = SmbiosProtocol->Add (
@@ -266,15 +252,12 @@ BuildAndInstallMultipleSmbiosTables (
       goto exit_handler;
     }
 
-    // If a new handle was generated then add it to the handle map.
-    if (HandleMap == NULL) {
-      TableFactoryProtocol->AddSmbiosHandle (
-                              SmbiosProtocol,
-                              &TableHandle,
-                              CmObjToken[Index],
-                              SmbiosTableInfo->TableGeneratorId
-                              );
-    }
+    TableFactoryProtocol->AddSmbiosHandle (
+                            SmbiosProtocol,
+                            &TableHandle,
+                            CmObjToken[Index],
+                            SmbiosTableInfo->TableGeneratorId
+                            );
 
     DEBUG ((
       DEBUG_INFO,
@@ -335,7 +318,6 @@ exit_handler:
                                 is less than the Object size for the
                                 requested object.
 **/
-STATIC
 EFI_STATUS
 EFIAPI
 BuildAndInstallSmbiosTable (
@@ -500,12 +482,16 @@ ProcessSmbiosTables (
     SmbiosTableCount
     ));
 
+  InitSmbiosTableDispatcher (SmbiosTableInfo, SmbiosTableCount);
+
   for (Idx = 0; Idx < SmbiosTableCount; Idx++) {
-    Status = BuildAndInstallSmbiosTable (
+    Status = DispatchSmbiosTable (
+               SmbiosTableInfo[Idx].TableType,
                TableFactoryProtocol,
                CfgMgrProtocol,
                SmbiosProtocol,
-               &SmbiosTableInfo[Idx]
+               SmbiosTableInfo,
+               SmbiosTableCount
                );
     if (EFI_ERROR (Status)) {
       DEBUG ((
