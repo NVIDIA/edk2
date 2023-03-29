@@ -1,5 +1,6 @@
 /** @file
 
+  Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
   Copyright (c) 2017 - 2022, ARM Limited. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -14,6 +15,7 @@
 
 #include <ArmNameSpaceObjects.h>
 #include <StandardNameSpaceObjects.h>
+#include <SmbiosNameSpaceObjects.h>
 
 #pragma pack(1)
 
@@ -107,7 +109,8 @@ typedef UINT32 CM_OBJECT_ID;
 typedef enum ObjectNameSpaceID {
   EObjNameSpaceStandard,      ///< Standard Objects Namespace
   EObjNameSpaceArm,           ///< ARM Objects Namespace
-  EObjNameSpaceOem = 0x8,     ///< OEM Objects Namespace
+  EObjNameSpaceOem    = 0x8,  ///< OEM Objects Namespace
+  EObjNameSpaceSmbios = 0xA,  ///< SMBIOS Objects Namespace
   EObjNameSpaceMax
 } EOBJECT_NAMESPACE_ID;
 
@@ -191,5 +194,15 @@ typedef struct CmObjDescriptor {
 **/
 #define CREATE_CM_OEM_OBJECT_ID(ObjectId) \
           (CREATE_CM_OBJECT_ID (EObjNameSpaceOem, ObjectId))
+
+/** This macro returns a Configuration Manager Object ID
+    in the SMBIOS Object Namespace.
+
+  @param [in] ObjectId    The Object ID.
+
+  @retval Returns an SMBIOS Configuration Manager Object ID.
+**/
+#define CREATE_CM_SMBIOS_OBJECT_ID(ObjectId) \
+          (CREATE_CM_OBJECT_ID (EObjNameSpaceSmbios, ObjectId))
 
 #endif // CONFIGURATION_MANAGER_OBJECT_H_
