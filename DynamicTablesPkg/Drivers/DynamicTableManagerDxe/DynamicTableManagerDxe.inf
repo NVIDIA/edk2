@@ -25,6 +25,8 @@
   DynamicTableManagerDxe.c
   SmbiosTableDispatcher.c
   SmbiosTableDispatcher.h
+  AcpiTableBuilder.c
+  SmbiosTableBuilder.c
 
 [Packages]
   MdePkg/MdePkg.dec
