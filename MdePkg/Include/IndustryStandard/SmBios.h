@@ -1,6 +1,7 @@
 /** @file
   Industry Standard Definitions of SMBIOS Table Specification v3.6.0.
 
+Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.<BR>
 Copyright (c) 2006 - 2021, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2015-2017 Hewlett Packard Enterprise Development LP<BR>
 (C) Copyright 2015 - 2019 Hewlett Packard Enterprise Development LP<BR>
@@ -27,6 +28,14 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 /// This number is not used for any other purpose by the SMBIOS specification.
 ///
 #define SMBIOS_HANDLE_PI_RESERVED  0xFFFE
+
+///
+/// Reference SMBIOS 3.6, chapter 6.1.2.
+/// Unless otherwise specified, when referring to another structure’s handle, the value
+/// 0FFFFh is used to indicate that the referenced handle is not applicable or does not
+/// exist.
+///
+#define SMBIOS_HANDLE_INVALID  0xFFFF
 
 ///
 /// Reference SMBIOS 2.6, chapter 3.1.3.
@@ -2579,6 +2588,43 @@ typedef struct {
   UINT16    PowerSupplyType           : 4;
   UINT16    Reserved                  : 2;
 } SYS_POWER_SUPPLY_CHARACTERISTICS;
+
+///
+/// System Power Supply - Power Supply Types.
+///
+typedef enum {
+  PowerSupplyTypeOther     = 0x01,
+  PowerSupplyTypeUnknown   = 0x02,
+  PowerSupplyTypeLinear    = 0x03,
+  PowerSupplyTypeSwitching = 0x04,
+  PowerSupplyTypeBattery   = 0x05,
+  PowerSupplyTypeUPS       = 0x06,
+  PowerSupplyTypeConverter = 0x07,
+  PowerSupplyTypeRegulator = 0x08,
+} SYS_POWER_SUPPLY_TYPE;
+
+///
+/// System Power Supply - Power Supply Status.
+///
+typedef enum {
+  PowerSupplyStatusOther       = 0x01,
+  PowerSupplyStatusUnknown     = 0x02,
+  PowerSupplyStatusOk          = 0x03,
+  PowerSupplyStatusNonCritical = 0x04,
+  PowerSupplyStatusCritical    = 0x05
+} SYS_POWER_SUPPLY_STATUS;
+
+///
+/// System Power Supply - DMTF Input Voltage Range Switching.
+///
+typedef enum {
+  PowerSupplyIvrsOther     = 0x01,
+  PowerSupplyIvrsUnknown   = 0x02,
+  PowerSupplyIvrsManual    = 0x03,
+  PowerSupplyIvrsAuto      = 0x04,
+  PowerSupplyIvrsWideRange = 0x05,
+  PowerSupplyIvrsNA        = 0x06
+} SYS_POWER_SUPPLY_IVRS_TYPE;
 
 ///
 /// System Power Supply (Type 39).
