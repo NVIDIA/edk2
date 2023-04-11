@@ -1,5 +1,6 @@
 /** @file
 
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
   Copyright (c) 2017 - 2019, ARM Limited. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -133,9 +134,9 @@ typedef struct DynamicTableFactoryProtocol  EDKII_DYNAMIC_TABLE_FACTORY_PROTOCOL
 typedef UINTN                               CM_OBJECT_TOKEN;
 
 typedef struct SmbiosHandleCmObjMap {
-  ESTD_SMBIOS_TABLE_ID    SmbiosTableId;
-  SMBIOS_HANDLE           SmbiosTblHandle;
-  CM_OBJECT_TOKEN         SmbiosCmToken;
+  SMBIOS_TABLE_GENERATOR_ID    SmbiosGeneratorId;
+  SMBIOS_HANDLE                SmbiosTblHandle;
+  CM_OBJECT_TOKEN              SmbiosCmToken;
 } SMBIOS_HANDLE_MAP;
 
 /** This function pointer describes the interface to SMBIOS table build
@@ -242,7 +243,7 @@ typedef EFI_STATUS (*SMBIOS_TABLE_GENERATOR_FREE_TABLEEX) (
                               if a handle needs to be generated).
   @param [in]  CmObjectToken  The CM Object token for that is used to generate
                               SMBIOS record.
-  @param [in]  SmbiosId       The SMBIOS table generator Id.
+  @param [in]  GeneratorId    The SMBIOS table generator Id.
 
   @retval EFI_SUCCESS           Success.
   @retval EFI_OUT_OF_RESOURCES  Unable to add the handle.
@@ -250,10 +251,10 @@ typedef EFI_STATUS (*SMBIOS_TABLE_GENERATOR_FREE_TABLEEX) (
                                 in the list of registered generators.
 **/
 typedef EFI_STATUS (*EDKII_DYNAMIC_TABLE_FACTORY_SMBIOS_TABLE_ADD_HANDLE) (
-  IN  EFI_SMBIOS_PROTOCOL  *Smbios,
-  IN  SMBIOS_HANDLE        *SmbiosHandle,
-  IN  CM_OBJECT_TOKEN      CmObjectToken,
-  IN ESTD_SMBIOS_TABLE_ID  SmbiosId
+  IN  EFI_SMBIOS_PROTOCOL        *Smbios,
+  IN  SMBIOS_HANDLE              *SmbiosHandle,
+  IN  CM_OBJECT_TOKEN            CmObjectToken,
+  IN  SMBIOS_TABLE_GENERATOR_ID  GeneratorId
   );
 
 /** This function pointer describes the interface to used by the
@@ -272,6 +273,19 @@ typedef EFI_STATUS (*EDKII_DYNAMIC_TABLE_FACTORY_SMBIOS_TABLE_ADD_HANDLE) (
 **/
 typedef SMBIOS_HANDLE_MAP * (*EDKII_DYNAMIC_TABLE_FACTORY_SMBIOS_TABLE_GET_HANDLE) (
   IN  CM_OBJECT_TOKEN  CmObjectToken
+  );
+
+/** Find and return SMBIOS handle based on associated CM object token.
+
+  @param [in]  GeneratorId     SMBIOS generator ID used to build the SMBIOS Table.
+  @param [in]  CmObjectToken   Token of the CM_OBJECT used to build the SMBIOS Table.
+
+  @return  SMBIOS handle of the table associated with SmbiosTableId and
+           CmObjectToken if found. Otherwise, returns 0xFFFF.
+**/
+typedef UINT16 (*EDKII_DYNAMIC_TABLE_FACTORY_SMBIOS_TABLE_GET_HANDLE_EX) (
+  IN  SMBIOS_TABLE_GENERATOR_ID  GeneratorId,
+  IN  CM_OBJECT_TOKEN            CmObjToken
   );
 
 /** The SMBIOS_TABLE_GENERATOR structure provides an interface that the
@@ -356,7 +370,7 @@ DeregisterSmbiosTableGenerator (
                               if a handle needs to be generated).
   @param [in]  CmObjectToken  The CM Object token for that is used to generate
                               SMBIOS record.
-  @param [in]  SmbiosId       The SMBIOS table generator Id.
+  @param [in]  GeneratorId    The SMBIOS table generator Id.
 
   @retval EFI_SUCCESS           Success.
   @retval EFI_OUT_OF_RESOURCES  Unable to add the handle.
@@ -366,10 +380,10 @@ DeregisterSmbiosTableGenerator (
 EFI_STATUS
 EFIAPI
 AddSmbiosHandle (
-  IN EFI_SMBIOS_PROTOCOL   *Smbios,
-  IN SMBIOS_HANDLE         *SmbiosHandle,
-  IN CM_OBJECT_TOKEN       CmObjectToken,
-  IN ESTD_SMBIOS_TABLE_ID  SmbiosId
+  IN EFI_SMBIOS_PROTOCOL         *Smbios,
+  IN SMBIOS_HANDLE               *SmbiosHandle,
+  IN CM_OBJECT_TOKEN             CmObjectToken,
+  IN  SMBIOS_TABLE_GENERATOR_ID  GeneratorId
   );
 
 /** Find SMBIOS Handle given the CM Object token used to generate the SMBIOS
@@ -389,6 +403,21 @@ SMBIOS_HANDLE_MAP *
 EFIAPI
 FindSmbiosHandle (
   IN CM_OBJECT_TOKEN  CmObjectToken
+  );
+
+/** Find and return SMBIOS handle based on associated CM object token.
+
+  @param [in]  GeneratorId     SMBIOS generator ID used to build the SMBIOS Table.
+  @param [in]  CmObjectToken   Token of the CM_OBJECT used to build the SMBIOS Table.
+
+  @return  SMBIOS handle of the table associated with SmbiosTableId and
+           CmObjectToken if found. Otherwise, returns 0xFFFF.
+**/
+UINT16
+EFIAPI
+FindSmbiosHandleEx (
+  IN  SMBIOS_TABLE_GENERATOR_ID  GeneratorId,
+  IN  CM_OBJECT_TOKEN            CmObjToken
   );
 
 #pragma pack()
