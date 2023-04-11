@@ -1,5 +1,6 @@
 /** @file
 
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
   Copyright (c) 2017 - 2019, ARM Limited. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -245,13 +246,14 @@ typedef struct DynamicTableFactoryProtocol {
   EDKII_DYNAMIC_TABLE_FACTORY_SMBIOS_TABLE_GET_HANDLE
                                                             GetSmbiosHandle;
 
+  EDKII_DYNAMIC_TABLE_FACTORY_SMBIOS_TABLE_GET_HANDLE_EX
+                                                            GetSmbiosHandleEx;
+
   /** Pointer to the data structure that holds the
       list of registered table generators
   */
   EDKII_DYNAMIC_TABLE_FACTORY_INFO                          *TableFactoryInfo;
 } EDKII_DYNAMIC_TABLE_FACTORY_PROTOCOL;
-
-
 
 /** The Dynamic Table Factory Protocol GUID.
 */

@@ -1,6 +1,7 @@
 /** @file
   Dynamic Table Factory Dxe
 
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
   Copyright (c) 2017 - 2019, ARM Limited. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -46,6 +47,7 @@ EDKII_DYNAMIC_TABLE_FACTORY_PROTOCOL  DynamicTableFactoryProtocol = {
   DeregisterDtTableGenerator,
   AddSmbiosHandle,
   FindSmbiosHandle,
+  FindSmbiosHandleEx,
   &TableFactoryInfo
 };
 
@@ -71,8 +73,9 @@ DynamicTableFactoryDxeInitialize (
 
   for (Idx = 0; Idx < MAX_SMBIOS_HANDLES; Idx++) {
     TableFactoryInfo.SmbiosHandleMap[Idx].SmbiosTblHandle = SMBIOS_HANDLE_PI_RESERVED;
-    TableFactoryInfo.SmbiosHandleMap[Idx].SmbiosCmToken = 0;
+    TableFactoryInfo.SmbiosHandleMap[Idx].SmbiosCmToken   = 0;
   }
+
   Status = gBS->InstallProtocolInterface (
                   &ImageHandle,
                   &gEdkiiDynamicTableFactoryProtocolGuid,
