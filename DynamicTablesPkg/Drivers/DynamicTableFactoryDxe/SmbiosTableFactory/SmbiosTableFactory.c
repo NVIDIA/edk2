@@ -1,6 +1,7 @@
 /** @file
   SMBIOS Table Factory
 
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
   Copyright (c) 2017 - 2019, ARM Limited. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -25,9 +26,9 @@
 
 extern EDKII_DYNAMIC_TABLE_FACTORY_INFO  TableFactoryInfo;
 // HardCode the max allowed SMBIOS Handle Value.
-#define MAX_HANDLE_RANGE    (0xFEFF)
+#define MAX_HANDLE_RANGE  (0xFEFF)
 // Start looking for SMBIOS handles starting at this value.
-STATIC SMBIOS_HANDLE ReservedHandleRange = 0xE000;
+STATIC SMBIOS_HANDLE  ReservedHandleRange = 0xE000;
 
 /** Check if SMBIOS Handle is already allocated
 
@@ -37,12 +38,11 @@ STATIC SMBIOS_HANDLE ReservedHandleRange = 0xE000;
   @retval TRUE                Collision with an already allocated SMBIOS Handle.
           EFI_NOT_FOUND       No collision with an existing handle..
 **/
-
 STATIC
 BOOLEAN
 HandleClashes (
-  IN EFI_SMBIOS_PROTOCOL *Smbios,
-  IN SMBIOS_HANDLE       GenHandle
+  IN EFI_SMBIOS_PROTOCOL  *Smbios,
+  IN SMBIOS_HANDLE        GenHandle
   )
 {
   BOOLEAN                  Clash;
@@ -50,21 +50,24 @@ HandleClashes (
   SMBIOS_HANDLE            SmbiosHandle;
   EFI_SMBIOS_TABLE_HEADER  *Record;
 
-  Clash = FALSE;
+  Clash        = FALSE;
   SmbiosHandle = SMBIOS_HANDLE_PI_RESERVED;
   do {
-    Status = Smbios->GetNext (Smbios,
-                     &SmbiosHandle,
-                     NULL,
-                     &Record,
-                     NULL);
+    Status = Smbios->GetNext (
+                       Smbios,
+                       &SmbiosHandle,
+                       NULL,
+                       &Record,
+                       NULL
+                       );
     if (Status == EFI_SUCCESS) {
       if (SmbiosHandle == GenHandle) {
         Clash = TRUE;
         break;
       }
     }
-  } while (!EFI_ERROR(Status));
+  } while (!EFI_ERROR (Status));
+
   return Clash;
 }
 
@@ -80,25 +83,26 @@ HandleClashes (
 STATIC
 EFI_STATUS
 GenerateSmbiosHandle (
-  IN EFI_SMBIOS_PROTOCOL *Smbios,
-  OUT SMBIOS_HANDLE      *SmbiosHandle
+  IN EFI_SMBIOS_PROTOCOL  *Smbios,
+  OUT SMBIOS_HANDLE       *SmbiosHandle
   )
 {
-  EFI_STATUS    Status;
-  SMBIOS_HANDLE SmbHandle;
+  EFI_STATUS     Status;
+  SMBIOS_HANDLE  SmbHandle;
 
-  Status = EFI_NOT_FOUND;
+  Status    = EFI_NOT_FOUND;
   SmbHandle = ReservedHandleRange;
   while (*SmbiosHandle < MAX_HANDLE_RANGE) {
     if (HandleClashes (Smbios, SmbHandle) == TRUE) {
       SmbHandle++;
-    } else{
-      *SmbiosHandle = SmbHandle;
+    } else {
+      *SmbiosHandle       = SmbHandle;
       ReservedHandleRange = (SmbHandle + 1);
-      Status = EFI_SUCCESS;
+      Status              = EFI_SUCCESS;
       break;
     }
   }
+
   return Status;
 }
 
@@ -108,7 +112,7 @@ GenerateSmbiosHandle (
   @param [in]  SmbiosHandle   SMBIOS Handle to be added, if the value SMBIOS_HANDLE_PI_RESERVED
                               is passed then a new SmbiosHandle is assigned.
   @param [in]  CmObjectToken  CmObjectToken of the CM_OBJECT used to build the SMBIOS Table
-  @param [in]  SmbiosId       Smbios Table Generator Id.
+  @param [in]  GeneratorId    Smbios Table Generator Id.
 
   @retval EFI_SUCCESS               Successfully added/generated the handle.
   @retval EFI_OUT_OF_RESOURCESNULL  Failure to add/generate the handle.
@@ -116,14 +120,14 @@ GenerateSmbiosHandle (
 EFI_STATUS
 EFIAPI
 AddSmbiosHandle (
-  IN EFI_SMBIOS_PROTOCOL        *Smbios,
-  IN SMBIOS_HANDLE              *SmbiosHandle,
-  IN CM_OBJECT_TOKEN            CmObjectToken,
-  IN ESTD_SMBIOS_TABLE_ID       SmbiosId
+  IN EFI_SMBIOS_PROTOCOL         *Smbios,
+  IN SMBIOS_HANDLE               *SmbiosHandle,
+  IN CM_OBJECT_TOKEN             CmObjectToken,
+  IN  SMBIOS_TABLE_GENERATOR_ID  GeneratorId
   )
 {
-  EFI_STATUS Status;
-  UINTN      Index;
+  EFI_STATUS  Status;
+  UINTN       Index;
 
   Status = EFI_OUT_OF_RESOURCES;
 
@@ -137,13 +141,14 @@ AddSmbiosHandle (
 
   for (Index = 0; Index < MAX_SMBIOS_HANDLES; Index++) {
     if (TableFactoryInfo.SmbiosHandleMap[Index].SmbiosTblHandle == SMBIOS_HANDLE_PI_RESERVED) {
-      TableFactoryInfo.SmbiosHandleMap[Index].SmbiosTblHandle  = *SmbiosHandle;
-      TableFactoryInfo.SmbiosHandleMap[Index].SmbiosCmToken = CmObjectToken;
-      TableFactoryInfo.SmbiosHandleMap[Index].SmbiosTableId = SmbiosId;
-      Status = EFI_SUCCESS;
+      TableFactoryInfo.SmbiosHandleMap[Index].SmbiosTblHandle   = *SmbiosHandle;
+      TableFactoryInfo.SmbiosHandleMap[Index].SmbiosCmToken     = CmObjectToken;
+      TableFactoryInfo.SmbiosHandleMap[Index].SmbiosGeneratorId = GeneratorId;
+      Status                                                    = EFI_SUCCESS;
       break;
     }
   }
+
   return Status;
 }
 
@@ -157,7 +162,7 @@ AddSmbiosHandle (
 SMBIOS_HANDLE_MAP *
 EFIAPI
 FindSmbiosHandle (
-  CM_OBJECT_TOKEN CmObjectToken
+  CM_OBJECT_TOKEN  CmObjectToken
   )
 {
   UINTN              Index;
@@ -170,6 +175,7 @@ FindSmbiosHandle (
       break;
     }
   }
+
   return SmbiosHandleMap;
 }
 
@@ -377,4 +383,45 @@ DeregisterSmbiosTableGenerator (
 
   DEBUG ((DEBUG_INFO, "Deregistering %s\n", Generator->Description));
   return EFI_SUCCESS;
+}
+
+/** Find and return SMBIOS handle based on associated CM object token.
+
+  @param [in]  GeneratorId     SMBIOS generator ID used to build the SMBIOS Table.
+  @param [in]  CmObjectToken   Token of the CM_OBJECT used to build the SMBIOS Table.
+
+  @return  SMBIOS handle of the table associated with SmbiosGeneratorId and
+           CmObjectToken if found. Otherwise, returns 0xFFFF.
+**/
+UINT16
+EFIAPI
+FindSmbiosHandleEx (
+  IN  SMBIOS_TABLE_GENERATOR_ID  GeneratorId,
+  IN  CM_OBJECT_TOKEN            CmObjToken
+  )
+{
+  SMBIOS_HANDLE_MAP  *HandleMap;
+
+  if (CmObjToken == CM_NULL_TOKEN) {
+    return SMBIOS_HANDLE_INVALID;
+  }
+
+  HandleMap = FindSmbiosHandle (CmObjToken);
+  if (HandleMap == NULL) {
+    return SMBIOS_HANDLE_INVALID;
+  }
+
+  if (HandleMap->SmbiosGeneratorId != GeneratorId) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: Expect ID %d but get %d\n",
+      __FUNCTION__,
+      GeneratorId,
+      HandleMap->SmbiosGeneratorId
+      ));
+    ASSERT (FALSE);
+    return SMBIOS_HANDLE_INVALID;
+  }
+
+  return HandleMap->SmbiosTblHandle;
 }
