@@ -1539,4 +1539,21 @@ AmlCreateCpcNode (
   OUT AML_OBJECT_NODE_HANDLE  *NewCpcNode   OPTIONAL
   );
 
+/** AML code generation to add a string to the package in a named node.
+
+
+  @param [in]  String         String to add
+  @param [in]  NamedNode      Node to add the string to the included package.
+
+  @retval EFI_SUCCESS             Success.
+  @retval EFI_INVALID_PARAMETER   Invalid parameter.
+  @retval EFI_OUT_OF_RESOURCES    Failed to allocate memory.
+**/
+EFI_STATUS
+EFIAPI
+AmlAddStringToNamedPackage (
+  IN CHAR8                   *String,
+  IN AML_OBJECT_NODE_HANDLE  NamedNode
+  );
+
 #endif // AML_LIB_H_
