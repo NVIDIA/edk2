@@ -301,6 +301,12 @@ RedfishFeatureDriverStartup (
   // If system configuration is changed, reboot system.
   //
   if (PcdGetBool (PcdSystemRebootRequired)) {
+    //
+    // Save ETag and Config Language list immediately.
+    //
+    SaveETagList ();
+    RedfishSaveConfigList ();
+
     Print (L"System configuration is changed from RESTful interface. Reboot system in %d seconds...\n", RebootTimeout);
     gBS->Stall (RebootTimeout * 1000000U);
     gRT->ResetSystem (EfiResetCold, EFI_SUCCESS, 0, NULL);

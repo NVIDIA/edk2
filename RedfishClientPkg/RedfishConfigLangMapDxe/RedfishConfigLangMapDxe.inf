@@ -41,7 +41,6 @@
   gEdkIIRedfishConfigLangMapProtocolGuid           ## PRODUCED ##
 
 [Guids]
-  gEfiEventExitBootServicesGuid                  ## CONSUMED ##
   gEfiRedfishClientVariableGuid                  ## CONSUMED ##
 
 [Depex]

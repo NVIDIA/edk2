@@ -22,7 +22,7 @@
 
   Read redfish resource by given resource URI.
 
-  @param[in]  Service       Redfish srvice instacne to make query.
+  @param[in]  Service       Redfish service instance to make query.
   @param[in]  ResourceUri   Target resource URI.
   @param[out] Response      HTTP response from redfish service.
 
@@ -47,7 +47,7 @@ GetResourceByUri (
   @param[out] ArraySignatureClose       String to the close of array signature.
 
   @retval     EFI_SUCCESS            Index is found.
-  @retval     EFI_NOT_FOUND          The non-array configure language string is retured.
+  @retval     EFI_NOT_FOUND          The non-array configure language string is returned.
   @retval     EFI_INVALID_PARAMETER  The format of input ConfigureLang is wrong.
   @retval     Others                 Errors occur.
 
@@ -100,7 +100,7 @@ CopyConfiglanguageList (
 
 /**
 
-  Get number of node from the string. Node is seperated by '/'.
+  Get number of node from the string. Node is separated by '/'.
 
   @param[in]  NodeString             The node string to parse.
 
@@ -118,10 +118,10 @@ GetNumberOfRedpathNodes (
 
   @param[in]  NodeString             The node string to parse.
   @param[in]  Index                  Index of the node.
-  @param[out] EndOfNodePtr           Pointer to receive the poitner to
+  @param[out] EndOfNodePtr           Pointer to receive the pointer to
                                      the last character of node string.
 
-  @retval     EFI_STRING             the begining of the node string.
+  @retval     EFI_STRING             the beginning of the node string.
 
 **/
 EFI_STRING
@@ -140,7 +140,7 @@ GetRedpathNodeByIndex (
   @param[out] Index                 The array index number.
 
   @retval     EFI_SUCCESS            Index is found.
-  @retval     EFI_NOT_FOUND          The non-array configure language string is retured.
+  @retval     EFI_NOT_FOUND          The non-array configure language string is returned.
   @retval     EFI_INVALID_PARAMETER  The format of input ConfigureLang is wrong.
   @retval     Others                 Errors occur.
 
@@ -188,7 +188,7 @@ DestroyConfiglanguageList (
 
   @param[in]  DestConfigLang        Pointer to the node's configure language string.
                                     The memory pointed by ConfigLang must be allocated
-                                    through memory allocation interface. Becasue we will replace
+                                    through memory allocation interface. Because we will replace
                                     the pointer in this function.
   @param[in]  MaxtLengthConfigLang  The maximum length of ConfigLang.
   @param[in]  ConfigLangInstance    Pointer to Collection member instance.
@@ -244,7 +244,7 @@ ApplyFeatureSettingsStringType (
 
 /**
 
-  Apply property value to UEFI HII database in numric type.
+  Apply property value to UEFI HII database in numeric type.
 
   @param[in]  Schema        Property schema.
   @param[in]  Version       Property schema version.
@@ -356,7 +356,7 @@ ApplyFeatureSettingsNumericArrayType (
   @param[in]  Schema        Property schema.
   @param[in]  Version       Property schema version.
   @param[in]  ConfigureLang Configure language refers to this property.
-  @param[in]  ArrayHead     Head of Redfich CS boolean array value.
+  @param[in]  ArrayHead     Head of Redfish CS boolean array value.
 
   @retval     EFI_SUCCESS     New value is applied successfully.
   @retval     Others          Errors occur.
@@ -442,19 +442,29 @@ CreatePayloadToPutResource (
   @param[in]    ConfigLang        ConfigLang to save
   @param[in]    Uri               Redfish Uri to save
 
-  @retval  EFI_INVALID_PARAMETR   SystemId is NULL or EMPTY
+  @retval  EFI_INVALID_PARAMETER  SystemId is NULL or EMPTY
   @retval  EFI_SUCCESS            Redfish uri is saved
 
 **/
 EFI_STATUS
-RedfisSetRedfishUri (
+RedfishSetRedfishUri (
   IN    EFI_STRING  ConfigLang,
   IN    EFI_STRING  Uri
   );
 
 /**
 
-  Get the property name by given Configure Langauge.
+  Save Config Language list to variable immediately.
+
+**/
+VOID
+RedfishSaveConfigList (
+  VOID
+  );
+
+/**
+
+  Get the property name by given Configure Language.
 
   @param[in]  ResourceUri              URI of root of resource.
   @param[in]  ConfigureLang            Configure Language string.
@@ -549,6 +559,25 @@ PropertyChecker (
   );
 
 /**
+  This function query ETag from given URI string and keep it in database.
+
+  @param[in]  Service               Redfish service instance to make query.
+  @param[in]  Uri                   URI to query ETag.
+  @param[in]  CheckPendingSettings  Set this to true and @Redfish.Settings will
+                                    be handled together. FALSE otherwise.
+
+  @retval     EFI_SUCCESS     ETAG and URI are applied successfully.
+  @retval     Others          Errors occur.
+
+**/
+EFI_STATUS
+SetEtagFromUri (
+  IN  REDFISH_SERVICE  *RedfishService,
+  IN  EFI_STRING       Uri,
+  IN  BOOLEAN          CheckPendingSettings
+  );
+
+/**
 
   Keep ETAG string and URI string in database.
 
@@ -582,6 +611,16 @@ GetEtagWithUri (
 
 /**
 
+  Save ETag list to variable immediately.
+
+**/
+VOID
+SaveETagList (
+  VOID
+  );
+
+/**
+
   Get @odata.id from give HTTP payload. It's call responsibility to release returned buffer.
 
   @param[in]  Payload             HTTP payload
@@ -597,7 +636,7 @@ GetOdataId (
 
 /**
 
-  Return config language from given URI and prperty name. It's call responsibility to release returned buffer.
+  Return config language from given URI and property name. It's call responsibility to release returned buffer.
 
   @param[in] Uri            The URI to match
   @param[in] PropertyName   The property name of resource. This is optional.
@@ -811,7 +850,7 @@ MatchPropertyWithJsonContext (
 
 /**
 
-  Create string array and append to arry node in Redfish JSON convert format.
+  Create string array and append to array node in Redfish JSON convert format.
 
   @param[in,out]  Head          The head of string array.
   @param[in]      StringArray   Input string array.
@@ -830,7 +869,7 @@ AddRedfishCharArray (
 
 /**
 
-  Create numeric array and append to arry node in Redfish JSON convert format.
+  Create numeric array and append to array node in Redfish JSON convert format.
 
   @param[in,out]  Head           The head of string array.
   @param[in]      NumericArray   Input numeric array.
@@ -849,7 +888,7 @@ AddRedfishNumericArray (
 
 /**
 
-  Create boolean array and append to arry node in Redfish JSON convert format.
+  Create boolean array and append to array node in Redfish JSON convert format.
 
   @param[in,out]  Head           The head of string array.
   @param[in]      BooleanArray   Input boolean array.
@@ -892,7 +931,7 @@ CompareRedfishStringArrayValues (
   Check and see if value in Redfish numeric array are all the same as the one
   from HII configuration.
 
-  @param[in]  Head          The head of Redfish CS numeraic array.
+  @param[in]  Head          The head of Redfish CS numeric array.
   @param[in]  NumericArray  Input numeric array.
   @param[in]  ArraySize     The size of NumericArray.
 
@@ -935,9 +974,9 @@ CompareRedfishBooleanArrayValues (
   This is just a simple check.
 
   @param[in]  RedfishVagueKeyValuePtr     The vague key value sets on Redfish service.
-  @param[in]  RedfishVagueKeyValueNumber  The numebr of vague key value sets
+  @param[in]  RedfishVagueKeyValueNumber  The number of vague key value sets
   @param[in]  ConfigVagueKeyValuePtr      The vague configuration on platform.
-  @param[in]  ConfigVagueKeyValueNumber   The numebr of vague key value sets
+  @param[in]  ConfigVagueKeyValueNumber   The number of vague key value sets
 
   @retval     TRUE          All values are the same.
               FALSE         There is some difference.

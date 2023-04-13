@@ -55,7 +55,7 @@ HandleResource (
         return EFI_SUCCESS;
       } else if (Status == EFI_NOT_FOUND) {
         DEBUG ((DEBUG_INFO, "%a: \"%s\" has nothing to handle\n", __FUNCTION__, Uri));
-        RedfisSetRedfishUri (L"/Systems/{1}", Uri);
+        RedfishSetRedfishUri (L"/Systems/{1}", Uri);
         EdkIIRedfishResourceSetConfigureLangString (L"/Systems/{1}", 1);
         return EFI_SUCCESS;
       }

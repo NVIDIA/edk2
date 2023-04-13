@@ -109,6 +109,119 @@ GetArraykeyFromUri (
 
 /**
 
+  This function query ETag from given URI string and keep it in database.
+
+  @param[in]  Service               Redfish service instance to make query.
+  @param[in]  Uri                   URI to query ETag.
+  @param[in]  CheckPendingSettings  Set this to true and @Redfish.Settings will
+                                    be handled together. FALSE otherwise.
+
+  @retval     EFI_SUCCESS     ETAG and URI are applied successfully.
+  @retval     Others          Errors occur.
+
+**/
+EFI_STATUS
+SetEtagFromUri (
+  IN  REDFISH_SERVICE  *RedfishService,
+  IN  EFI_STRING       Uri,
+  IN  BOOLEAN          CheckPendingSettings
+  )
+{
+  EFI_STATUS        Status;
+  CHAR8             *Etag;
+  CHAR8             *AsciiUri;
+  REDFISH_RESPONSE  Response;
+  EFI_STRING        PendingSettingUri;
+
+  if ((RedfishService == NULL) || IS_EMPTY_STRING (Uri)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  AsciiUri          = NULL;
+  Etag              = NULL;
+  PendingSettingUri = NULL;
+
+  Status = RedfishLocateProtocol ((VOID **)&mEtagProtocol, &gEdkIIRedfishETagProtocolGuid);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: fail to locate gEdkIIRedfishETagProtocolGuid: %r\n", __FUNCTION__, Status));
+    return Status;
+  }
+
+  Status = GetResourceByUri (RedfishService, Uri, &Response);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: get resource from: %s failed\n", __FUNCTION__, Uri));
+    return Status;
+  }
+
+  //
+  // Find etag in HTTP response header
+  //
+  Status = GetEtagAndLocation (&Response, &Etag, NULL);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: failed to get ETag from HTTP header\n", __FUNCTION__));
+    Status = EFI_NOT_FOUND;
+    goto ON_RELEASE;
+  }
+
+  AsciiUri = StrUnicodeToAscii (Uri);
+  if (AsciiUri == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ON_RELEASE;
+  }
+
+  //
+  // Save ETag to variable.
+  //
+  Status = mEtagProtocol->Set (mEtagProtocol, AsciiUri, Etag);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: failed to set ETag %a -> %a\n", __FUNCTION__, Etag, AsciiUri));
+  }
+
+  if (CheckPendingSettings && (Response.Payload != NULL)) {
+    //
+    // Check to see if there is @Redfish.Settings
+    //
+    Status = GetPendingSettings (
+               RedfishService,
+               Response.Payload,
+               NULL,
+               &PendingSettingUri
+               );
+    if (!EFI_ERROR (Status)) {
+      DEBUG ((REDFISH_DEBUG_TRACE, "%a: @Redfish.Settings found: %s\n", __FUNCTION__, PendingSettingUri));
+
+      Status = SetEtagFromUri (RedfishService, PendingSettingUri, FALSE);
+    }
+  }
+
+ON_RELEASE:
+
+  if (AsciiUri != NULL) {
+    FreePool (AsciiUri);
+  }
+
+  if (Etag != NULL) {
+    FreePool (Etag);
+  }
+
+  if (PendingSettingUri != NULL) {
+    FreePool (PendingSettingUri);
+  }
+
+  if (Response.Payload != NULL) {
+    RedfishFreeResponse (
+      Response.StatusCode,
+      Response.HeaderCount,
+      Response.Headers,
+      Response.Payload
+      );
+  }
+
+  return Status;
+}
+
+/**
+
   Keep ETAG string and URI string in database.
 
   @param[in]  EtagStr   ETAG string.
@@ -143,7 +256,6 @@ SetEtagWithUri (
   }
 
   mEtagProtocol->Set (mEtagProtocol, AsciiUri, EtagStr);
-  mEtagProtocol->Flush (mEtagProtocol);
 
   FreePool (AsciiUri);
 
@@ -193,6 +305,27 @@ GetEtagWithUri (
   }
 
   return EtagStr;
+}
+
+/**
+
+  Save ETag list to variable immediately.
+
+**/
+VOID
+SaveETagList (
+  VOID
+  )
+{
+  EFI_STATUS  Status;
+
+  Status = RedfishLocateProtocol ((VOID **)&mEtagProtocol, &gEdkIIRedfishETagProtocolGuid);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: fail to locate gEdkIIRedfishETagProtocolGuid: %r\n", __FUNCTION__, Status));
+    return;
+  }
+
+  mEtagProtocol->Flush (mEtagProtocol);
 }
 
 /**
@@ -341,7 +474,7 @@ ApplyFeatureSettingsStringType (
 
 /**
 
-  Apply property value to UEFI HII database in numric type.
+  Apply property value to UEFI HII database in numeric type.
 
   @param[in]  Schema        Property schema.
   @param[in]  Version       Property schema version.
@@ -574,7 +707,7 @@ ApplyFeatureSettingsVagueType (
           //
           // Apply settings from redfish
           //
-          DEBUG ((DEBUG_INFO, "%a: %a.%a apply %s from %a to %a\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, RedfishValue.Value.Buffer, CurrentVagueValuePtr->Value->DataValue.CharPtr));
+          DEBUG ((REDFISH_DEBUG_TRACE, "%a: %a.%a apply %s from %a to %a\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, RedfishValue.Value.Buffer, CurrentVagueValuePtr->Value->DataValue.CharPtr));
           FreePool (RedfishValue.Value.Buffer);
           RedfishValue.Value.Buffer = CurrentVagueValuePtr->Value->DataValue.CharPtr;
           Status                    = RedfishPlatformConfigSetValue (Schema, Version, ConfigureKeyLang, RedfishValue);
@@ -587,7 +720,7 @@ ApplyFeatureSettingsVagueType (
             DEBUG ((DEBUG_ERROR, "%a: apply %a to %a failed: %r\n", __FUNCTION__, ConfigureKeyLang, CurrentVagueValuePtr->Value->DataValue.CharPtr, Status));
           }
         } else {
-          DEBUG ((DEBUG_INFO, "%a: %a.%a %s value is: %a\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, RedfishValue.Value.Buffer, Status));
+          DEBUG ((REDFISH_DEBUG_TRACE, "%a: %a.%a %s value is: %a\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, RedfishValue.Value.Buffer, Status));
         }
       } else if (PropertyDatatype == REDFISH_VALUE_TYPE_BOOLEAN) {
         //
@@ -598,7 +731,7 @@ ApplyFeatureSettingsVagueType (
           // Apply settings from redfish
           //
           DEBUG ((
-            DEBUG_INFO,
+            REDFISH_DEBUG_TRACE,
             "%a: %a.%a apply %s from %a to %a\n",
             __FUNCTION__,
             Schema,
@@ -619,7 +752,7 @@ ApplyFeatureSettingsVagueType (
             DEBUG ((DEBUG_ERROR, "%a: apply %s to %a failed: %r\n", __FUNCTION__, ConfigureKeyLang, (*CurrentVagueValuePtr->Value->DataValue.BoolPtr ? "True" : "False"), Status));
           }
         } else {
-          DEBUG ((DEBUG_INFO, "%a: %a.%a %s value is: %a\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, (RedfishValue.Value.Boolean ? "True" : "False"), Status));
+          DEBUG ((REDFISH_DEBUG_TRACE, "%a: %a.%a %s value is: %a\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, (RedfishValue.Value.Boolean ? "True" : "False"), Status));
         }
       } else if (PropertyDatatype == REDFISH_VALUE_TYPE_INTEGER) {
         //
@@ -629,7 +762,7 @@ ApplyFeatureSettingsVagueType (
           //
           // Apply settings from redfish
           //
-          DEBUG ((DEBUG_INFO, "%a: %a.%a apply %s from 0x%x to 0x%x\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, RedfishValue.Value.Integer, *CurrentVagueValuePtr->Value->DataValue.Int64Ptr));
+          DEBUG ((REDFISH_DEBUG_TRACE, "%a: %a.%a apply %s from 0x%x to 0x%x\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, RedfishValue.Value.Integer, *CurrentVagueValuePtr->Value->DataValue.Int64Ptr));
 
           RedfishValue.Value.Integer = (INT64)*CurrentVagueValuePtr->Value->DataValue.Int64Ptr;
           Status                     = RedfishPlatformConfigSetValue (Schema, Version, ConfigureKeyLang, RedfishValue);
@@ -642,7 +775,7 @@ ApplyFeatureSettingsVagueType (
             DEBUG ((DEBUG_ERROR, "%a: apply %s to 0x%x failed: %r\n", __FUNCTION__, ConfigureKeyLang, *CurrentVagueValuePtr->Value->DataValue.Int64Ptr, Status));
           }
         } else {
-          DEBUG ((DEBUG_INFO, "%a: %a.%a %s value is: 0x%x\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, RedfishValue.Value.Integer, Status));
+          DEBUG ((REDFISH_DEBUG_TRACE, "%a: %a.%a %s value is: 0x%x\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, RedfishValue.Value.Integer, Status));
         }
       } else {
         DEBUG ((DEBUG_ERROR, "%a: %a.%a %s Unsupported Redfish property data type\n", __FUNCTION__, Schema, Version, ConfigureLang));
@@ -936,7 +1069,7 @@ ApplyFeatureSettingsNumericArrayType (
   @param[in]  Schema        Property schema.
   @param[in]  Version       Property schema version.
   @param[in]  ConfigureLang Configure language refers to this property.
-  @param[in]  ArrayHead     Head of Redfich CS boolean array value.
+  @param[in]  ArrayHead     Head of Redfish CS boolean array value.
 
   @retval     EFI_SUCCESS     New value is applied successfully.
   @retval     Others          Errors occur.
@@ -1031,7 +1164,7 @@ ApplyFeatureSettingsBooleanArrayType (
 
   Read redfish resource by given resource URI.
 
-  @param[in]  Service       Redfish srvice instacne to make query.
+  @param[in]  Service       Redfish service instance to make query.
   @param[in]  ResourceUri   Target resource URI.
   @param[out] Response      HTTP response from redfish service.
 
@@ -1097,7 +1230,7 @@ GetResourceByUri (
   @param[out] ArraySignatureClose       String to the close of array signature.
 
   @retval     EFI_SUCCESS            Index is found.
-  @retval     EFI_NOT_FOUND          The non-array configure language string is retured.
+  @retval     EFI_NOT_FOUND          The non-array configure language string is returned.
   @retval     EFI_INVALID_PARAMETER  The format of input ConfigureLang is wrong.
   @retval     Others                 Errors occur.
 
@@ -1156,7 +1289,7 @@ IsRedpathArray (
 
 /**
 
-  Get number of node from the string. Node is seperated by '/'.
+  Get number of node from the string. Node is separated by '/'.
 
   @param[in]  NodeString             The node string to parse.
 
@@ -1194,10 +1327,10 @@ GetNumberOfRedpathNodes (
 
   @param[in]  NodeString             The node string to parse.
   @param[in]  Index                  Zero-based index of the node.
-  @param[out] EndOfNodePtr           Pointer to receive the poitner to
+  @param[out] EndOfNodePtr           Pointer to receive the pointer to
                                      the last character of node string.
 
-  @retval     EFI_STRING             the begining of the node string.
+  @retval     EFI_STRING             the beginning of the node string.
 
 **/
 EFI_STRING
@@ -1250,7 +1383,7 @@ GetRedpathNodeByIndex (
   @param[out] Index                 The array index number.
 
   @retval     EFI_SUCCESS            Index is found.
-  @retval     EFI_NOT_FOUND          The non-array configure language string is retured.
+  @retval     EFI_NOT_FOUND          The non-array configure language string is returned.
   @retval     EFI_INVALID_PARAMETER  The format of input ConfigureLang is wrong.
   @retval     Others                 Errors occur.
 
@@ -1972,7 +2105,7 @@ CreatePayloadToPostResource (
   }
 
   //
-  // per Redfish spec. the URL of new eresource will be returned in "Location" header.
+  // per Redfish spec. the URL of new resource will be returned in "Location" header.
   //
   Status = GetEtagAndLocation (&PostResponse, Etag, Location);
   if (EFI_ERROR (Status)) {
@@ -2165,7 +2298,7 @@ RedfishGetConfigLanguage (
 
 /**
 
-  Return config language from given URI and prperty name. It's call responsibility to release returned buffer.
+  Return config language from given URI and property name. It's call responsibility to release returned buffer.
 
   @param[in] Uri            The URI to match
   @param[in] PropertyName   The property name of resource. This is optional.
@@ -2244,12 +2377,12 @@ GetConfigureLang (
   @param[in]    ConfigLang        ConfigLang to save
   @param[in]    Uri               Redfish Uri to save
 
-  @retval  EFI_INVALID_PARAMETR   SystemId is NULL or EMPTY
+  @retval  EFI_INVALID_PARAMETER  SystemId is NULL or EMPTY
   @retval  EFI_SUCCESS            Redfish uri is saved
 
 **/
 EFI_STATUS
-RedfisSetRedfishUri (
+RedfishSetRedfishUri (
   IN    EFI_STRING  ConfigLang,
   IN    EFI_STRING  Uri
   )
@@ -2269,6 +2402,27 @@ RedfisSetRedfishUri (
   DEBUG ((REDFISH_DEBUG_TRACE, "%a: Saved: %s -> %s\n", __FUNCTION__, ConfigLang, Uri));
 
   return mConfigLangMapProtocol->Set (mConfigLangMapProtocol, ConfigLang, Uri);
+}
+
+/**
+
+  Save Config Language list to variable immediately.
+
+**/
+VOID
+RedfishSaveConfigList (
+  VOID
+  )
+{
+  EFI_STATUS  Status;
+
+  Status = RedfishLocateProtocol ((VOID **)&mConfigLangMapProtocol, &gEdkIIRedfishConfigLangMapProtocolGuid);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: fail to locate gEdkIIRedfishConfigLangMapProtocolGuid: %r\n", __FUNCTION__, Status));
+    return;
+  }
+
+  mConfigLangMapProtocol->Flush (mConfigLangMapProtocol);
 }
 
 /**
@@ -2314,7 +2468,7 @@ GetOdataId (
 
 /**
 
-  Get the property name by given Configure Langauge.
+  Get the property name by given Configure Language.
 
   @param[in]  ResourceUri              URI of root of resource.
   @param[in]  ConfigureLang            Configure Language string.
@@ -2347,7 +2501,7 @@ GetPropertyFromConfigureLang (
   }
 
   //
-  // The ConigLang has no '{}'
+  // The ConfigLang has no '{}'
   //
   if (GetNumberOfRedpathNodes (ConfigureLang) == 1) {
     return NULL;
@@ -2873,7 +3027,7 @@ NewEmptyPropKeyValueFromRedfishValue (
     VagueValue->DataType = RedfishCS_Vague_DataType_Bool;
     DataSize             = sizeof (BOOLEAN);
     //
-    // Redfish JSON to C strcuture converter uses
+    // Redfish JSON to C structure converter uses
     // "int" for the BOOLEAN.
     //
     Bool32 = (INT32)RedfishValue->Value.Boolean;
@@ -3104,7 +3258,7 @@ CheckEtag (
   EtagInDb = NULL;
   EtagInDb = GetEtagWithUri (Uri);
   if (EtagInDb == NULL) {
-    DEBUG ((REDFISH_DEBUG_TRACE, "%a: no ETAG record cound be found for: %s\n", __FUNCTION__, Uri));
+    DEBUG ((REDFISH_DEBUG_TRACE, "%a: no ETAG record could be found for: %s\n", __FUNCTION__, Uri));
     return FALSE;
   }
 
@@ -3121,6 +3275,8 @@ CheckEtag (
       return TRUE;
     }
   }
+
+  DEBUG ((ETAG_DEBUG_TRACE, "%a: Etag: %a Db: %a\n", __FUNCTION__, EtagInHeader, EtagInDb));
 
   FreePool (EtagInDb);
 
@@ -3263,7 +3419,7 @@ MatchPropertyWithJsonContext (
 
 /**
 
-  Create string array and append to arry node in Redfish JSON convert format.
+  Create string array and append to array node in Redfish JSON convert format.
 
   @param[in,out]  Head          The head of string array.
   @param[in]      StringArray   Input string array.
@@ -3314,7 +3470,7 @@ AddRedfishCharArray (
 
 /**
 
-  Create numeric array and append to arry node in Redfish JSON convert format.
+  Create numeric array and append to array node in Redfish JSON convert format.
 
   @param[in,out]  Head           The head of string array.
   @param[in]      NumericArray   Input numeric array.
@@ -3371,7 +3527,7 @@ AddRedfishNumericArray (
 
 /**
 
-  Create boolean array and append to arry node in Redfish JSON convert format.
+  Create boolean array and append to array node in Redfish JSON convert format.
 
   @param[in,out]  Head           The head of string array.
   @param[in]      BooleanArray   Input boolean array.
@@ -3477,7 +3633,7 @@ CompareRedfishStringArrayValues (
   Check and see if value in Redfish numeric array are all the same as the one
   from HII configuration.
 
-  @param[in]  Head          The head of Redfish CS numeraic array.
+  @param[in]  Head          The head of Redfish CS numeric array.
   @param[in]  NumericArray  Input numeric array.
   @param[in]  ArraySize     The size of NumericArray.
 
@@ -3571,7 +3727,7 @@ CompareRedfishBooleanArrayValues (
   "SettingUri".
 
   @param[in]  Payload         Payload that may contain "@Redfish.Settings"
-  @param[out] SettingPayload  Payload keeps pending settings.
+  @param[out] SettingPayload  Payload keeps pending settings. This is optional.
   @param[out] SettingUri      URI to pending settings.
 
   @retval     EFI_SUCCESS     Pending settings is found and returned.
@@ -3580,9 +3736,9 @@ CompareRedfishBooleanArrayValues (
 **/
 EFI_STATUS
 GetPendingSettings (
-  IN  REDFISH_SERVICE   RedfishService,
-  IN  REDFISH_PAYLOAD   Payload,
-  OUT REDFISH_RESPONSE  *SettingResponse,
+  IN  REDFISH_SERVICE RedfishService,
+  IN  REDFISH_PAYLOAD Payload,
+  OUT REDFISH_RESPONSE *SettingResponse, OPTIONAL
   OUT EFI_STRING        *SettingUri
   )
 {
@@ -3591,7 +3747,7 @@ GetPendingSettings (
   UINTN             Index;
   EFI_STATUS        Status;
 
-  if ((RedfishService == NULL) || (Payload == NULL) || (SettingResponse == NULL) || (SettingUri == NULL)) {
+  if ((RedfishService == NULL) || (Payload == NULL) || (SettingUri == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -3618,10 +3774,12 @@ GetPendingSettings (
       return EFI_NOT_FOUND;
     }
 
-    Status = GetResourceByUri (RedfishService, *SettingUri, SettingResponse);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a: @Redfish.Settings exists, get resource from: %s failed: %r\n", __FUNCTION__, *SettingUri, Status));
-      return Status;
+    if (SettingResponse != NULL) {
+      Status = GetResourceByUri (RedfishService, *SettingUri, SettingResponse);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a: @Redfish.Settings exists, get resource from: %s failed: %r\n", __FUNCTION__, *SettingUri, Status));
+        return Status;
+      }
     }
 
     return EFI_SUCCESS;
@@ -3636,9 +3794,9 @@ GetPendingSettings (
   This is just a simple check.
 
   @param[in]  RedfishVagueKeyValuePtr     The vague key value sets on Redfish service.
-  @param[in]  RedfishVagueKeyValueNumber  The numebr of vague key value sets
+  @param[in]  RedfishVagueKeyValueNumber  The number of vague key value sets
   @param[in]  ConfigVagueKeyValuePtr      The vague configuration on platform.
-  @param[in]  ConfigVagueKeyValueNumber   The numebr of vague key value sets
+  @param[in]  ConfigVagueKeyValueNumber   The number of vague key value sets
 
   @retval     TRUE          All values are the same.
               FALSE         There is some difference.
@@ -3656,6 +3814,7 @@ CompareRedfishPropertyVagueValues (
   RedfishCS_EmptyProp_KeyValue  *ThisRedfishVagueKeyValuePtr;
 
   if (RedfishVagueKeyValueNumber != ConfigVagueKeyValueNumber) {
+    DEBUG ((REDFISH_DEBUG_TRACE, "%a: size is different: %d vs %d\n", __FUNCTION__, RedfishVagueKeyValueNumber, ConfigVagueKeyValueNumber));
     return FALSE;
   }
 
@@ -3674,6 +3833,7 @@ CompareRedfishPropertyVagueValues (
         // Check the type of value.
         //
         if (ThisConfigVagueKeyValuePtr->Value->DataType != ThisRedfishVagueKeyValuePtr->Value->DataType) {
+          DEBUG ((REDFISH_DEBUG_TRACE, "%a: %a data type is different\n", __FUNCTION__, ThisConfigVagueKeyValuePtr->KeyNamePtr));
           return FALSE;
         }
 
@@ -3691,21 +3851,25 @@ CompareRedfishPropertyVagueValues (
           {
             break;
           } else {
+            DEBUG ((REDFISH_DEBUG_TRACE, "%a: %a is updated\n", __FUNCTION__, ThisConfigVagueKeyValuePtr->KeyNamePtr));
             return FALSE;
           }
         } else if (ThisConfigVagueKeyValuePtr->Value->DataType == RedfishCS_Vague_DataType_Int64) {
           if (*ThisConfigVagueKeyValuePtr->Value->DataValue.Int64Ptr == *ThisRedfishVagueKeyValuePtr->Value->DataValue.Int64Ptr) {
             break;
           } else {
+            DEBUG ((REDFISH_DEBUG_TRACE, "%a: %a is updated\n", __FUNCTION__, ThisConfigVagueKeyValuePtr->KeyNamePtr));
             return FALSE;
           }
         } else if (ThisConfigVagueKeyValuePtr->Value->DataType == RedfishCS_Vague_DataType_Bool) {
           if ((UINT8)*ThisConfigVagueKeyValuePtr->Value->DataValue.BoolPtr == (UINT8)*ThisRedfishVagueKeyValuePtr->Value->DataValue.BoolPtr) {
             break;
           } else {
+            DEBUG ((REDFISH_DEBUG_TRACE, "%a: %a is updated\n", __FUNCTION__, ThisConfigVagueKeyValuePtr->KeyNamePtr));
             return FALSE;
           }
         } else {
+          DEBUG ((REDFISH_DEBUG_TRACE, "%a: %a unsupported type: 0x%x\n", __FUNCTION__, ThisConfigVagueKeyValuePtr->KeyNamePtr, ThisConfigVagueKeyValuePtr->Value->DataType));
           return FALSE;
         }
       }
@@ -3733,7 +3897,7 @@ CompareRedfishPropertyVagueValues (
   @param[in] ImageHandle     The image handle.
   @param[in] SystemTable     The system table.
 
-  @retval  EFI_SUCEESS  Install Boot manager menu success.
+  @retval  EFI_SUCCESS  Install Boot manager menu success.
   @retval  Other        Return error status.
 
 **/
