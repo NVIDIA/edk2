@@ -2,6 +2,7 @@
   Common header file for RedfishETagDxe driver.
 
   (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -25,22 +26,23 @@
 #include <Library/UefiDriverEntryPoint.h>
 #include <Library/UefiLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
+#include <Library/RedfishEventLib.h>
 
 #include <Protocol/EdkIIRedfishETagProtocol.h>
 
 #include <Guid/VariableFormat.h>
 
-#define ETAG_VARIABLE_NAME    L"RedfishETag"
-#define ETAG_DEBUG_ENABLED    0x00
+#define ETAG_VARIABLE_NAME  L"RedfishETag"
+#define ETAG_DEBUG_ENABLED  0x00
 
 //
 // Definition of REDFISH_ETAG_RECORD
 //
 typedef struct {
-  LIST_ENTRY  List;
-  CHAR8       *Uri;
-  CHAR8       *ETag;
-  UINTN       Size;
+  LIST_ENTRY    List;
+  CHAR8         *Uri;
+  CHAR8         *ETag;
+  UINTN         Size;
 } REDFISH_ETAG_RECORD;
 
 #define REDFISH_ETAG_RECORD_FROM_LIST(a)  BASE_CR (a, REDFISH_ETAG_RECORD, List)
@@ -49,7 +51,7 @@ typedef struct {
 // Definition of REDFISH_ETAG_LIST
 //
 typedef struct {
-  LIST_ENTRY    Listheader;
+  LIST_ENTRY    ListHeader;
   UINTN         TotalSize;
   UINTN         Count;
 } REDFISH_ETAG_LIST;
@@ -58,11 +60,12 @@ typedef struct {
 // Definition of REDFISH_ETAG_PRIVATE_DATA
 //
 typedef struct {
-  EFI_HANDLE                  ImageHandle;
-  REDFISH_ETAG_LIST           ETagList;
-  EDKII_REDFISH_ETAG_PROTOCOL Protocol;
-  EFI_STRING                  VariableName;
-  EFI_EVENT                   Event;
+  EFI_HANDLE                     ImageHandle;
+  REDFISH_ETAG_LIST              ETagList;
+  EDKII_REDFISH_ETAG_PROTOCOL    Protocol;
+  EFI_STRING                     VariableName;
+  EFI_EVENT                      Event;
+  EFI_EVENT                      ProvisionEvent;
 } REDFISH_ETAG_PRIVATE_DATA;
 
 #define REDFISH_ETAG_PRIVATE_FROM_THIS(a)  BASE_CR (a, REDFISH_ETAG_PRIVATE_DATA, Protocol)

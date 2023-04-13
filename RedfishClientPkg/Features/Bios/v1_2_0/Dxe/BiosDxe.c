@@ -66,6 +66,14 @@ RedfishResourceProvisioningResource (
   ASSERT (Private->Payload != NULL);
 
   Status = RedfishProvisioningResourceCommon (Private, !PostMode);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: failed to provision resource to: %s: %r\n", __FUNCTION__, Uri, Status));
+  } else {
+    //
+    // Get latest ETag on URI and keep it in variable.
+    //
+    SetEtagFromUri (Private->RedfishService, Private->Uri, TRUE);
+  }
 
   //
   // Release resource
@@ -159,21 +167,16 @@ RedfishResourceConsumeResource (
 
   Status = RedfishConsumeResourceCommon (Private, Private->Json, Etag);
   if (EFI_ERROR (Status)) {
-    if (Status != EFI_ALREADY_STARTED) {
-      DEBUG ((DEBUG_ERROR, "%a: failed to consume resource from: %s: %r\n", __FUNCTION__, Private->Uri, Status));
-    }
-  } else {
-    //
-    // Keep etag after consuming pending settings.
-    //
-    if (Etag != NULL) {
-      SetEtagWithUri (Etag, Private->Uri);
-    }
+    DEBUG ((DEBUG_ERROR, "%a: failed to consume resource from: %s: %r\n", __FUNCTION__, Private->Uri, Status));
   }
 
   //
   // Release resource
   //
+  if (Etag != NULL) {
+    FreePool (Etag);
+  }
+
   if (Private->Payload != NULL) {
     if (Response.Payload != NULL) {
       RedfishFreeResponse (
@@ -284,7 +287,12 @@ RedfishResourceUpdate (
 
   Status = RedfishUpdateResourceCommon (Private, Private->Json);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: failed to update resource from: %s: %r\n", __FUNCTION__, Uri, Status));
+    DEBUG ((DEBUG_ERROR, "%a: failed to update resource to: %s: %r\n", __FUNCTION__, Uri, Status));
+  } else {
+    //
+    // Get latest ETag on URI and keep it in variable.
+    //
+    SetEtagFromUri (Private->RedfishService, Private->Uri, TRUE);
   }
 
   //
@@ -327,6 +335,7 @@ RedfishResourceCheck (
   REDFISH_RESOURCE_COMMON_PRIVATE  *Private;
   EFI_STATUS                       Status;
   REDFISH_RESPONSE                 Response;
+  CHAR8                            *Etag;
 
   if ((This == NULL) || IS_EMPTY_STRING (Uri)) {
     return EFI_INVALID_PARAMETER;
@@ -351,14 +360,27 @@ RedfishResourceCheck (
   Private->Json = JsonDumpString (RedfishJsonInPayload (Private->Payload), EDKII_JSON_COMPACT);
   ASSERT (Private->Json != NULL);
 
-  Status = RedfishCheckResourceCommon (Private, Private->Json);
+  //
+  // Find etag in HTTP response header
+  //
+  Etag   = NULL;
+  Status = GetEtagAndLocation (&Response, &Etag, NULL);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: failed to check resource from: %s: %r\n", __FUNCTION__, Uri, Status));
+    DEBUG ((DEBUG_ERROR, "%a: failed to get ETag from HTTP header\n", __FUNCTION__));
+  }
+
+  Status = RedfishCheckResourceCommon (Private, Private->Json, Etag);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: failed to check resource on: %s: %r\n", __FUNCTION__, Uri, Status));
   }
 
   //
   // Release resource
   //
+  if (Etag != NULL) {
+    FreePool (Etag);
+  }
+
   if (Private->Payload != NULL) {
     RedfishFreeResponse (
       Response.StatusCode,
