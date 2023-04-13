@@ -17,15 +17,15 @@
 //
 // Schema information.
 //
-#define REDFISH_MANAGED_URI      L"Systems/{}/Bios"
-#define MAX_URI_LENGTH           256
-#define RESOURCE_SCHEMA          "Bios"
-#define RESOURCE_SCHEMA_MAJOR    "1"
-#define RESOURCE_SCHEMA_MINOR    "2"
-#define RESOURCE_SCHEMA_ERRATA   "0"
-#define RESOURCE_SCHEMA_VERSION  "v1_2_0"
-#define REDPATH_ARRAY_PATTERN    L"/Bios/.*"
-#define REDPATH_ARRAY_PREFIX     L"/Bios/"
-#define RESOURCE_SCHEMA_FULL     "x-uefi-redfish-Bios.v1_2_0"
+#define REDFISH_MANAGED_URI        L"Systems/{}/Bios"
+#define MAX_URI_LENGTH             256
+#define RESOURCE_SCHEMA            "Bios"
+#define RESOURCE_SCHEMA_MAJOR      "1"
+#define RESOURCE_SCHEMA_MINOR      "2"
+#define RESOURCE_SCHEMA_ERRATA     "0"
+#define RESOURCE_SCHEMA_VERSION    "v1_2_0"
+#define CONFIG_LANG_ARRAY_PATTERN  L"/Bios/.*"
+#define CONFIG_LANG_ARRAY_PREFIX   L"/Bios/"
+#define RESOURCE_SCHEMA_FULL       "x-uefi-redfish-Bios.v1_2_0"
 
 #endif

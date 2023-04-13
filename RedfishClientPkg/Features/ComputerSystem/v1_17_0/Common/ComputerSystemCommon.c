@@ -66,7 +66,7 @@ RedfishConsumeResourceCommon (
     // No change
     //
     DEBUG ((DEBUG_INFO, "%a: ETAG: %s has no change, ignore consume action\n", __FUNCTION__, Private->Uri));
-    Status = EFI_ALREADY_STARTED;
+    Status = EFI_SUCCESS;
     goto ON_RELEASE;
   }
 
@@ -1275,7 +1275,7 @@ ProvisioningComputerSystemResource (
   // Keep location of new resource.
   //
   if (NewResourceLocation != NULL) {
-    RedfisSetRedfishUri (ConfigureLang, NewResourceLocation);
+    RedfishSetRedfishUri (ConfigureLang, NewResourceLocation);
   }
 
   //
@@ -1433,6 +1433,7 @@ RedfishProvisioningResourceCommon (
 
   @param[in]   This                Pointer to REDFISH_RESOURCE_COMMON_PRIVATE instance.
   @param[in]   Json                The JSON to consume.
+  @param[in]   HeaderEtag          The Etag string returned in HTTP header.
 
   @retval EFI_SUCCESS              Value is returned successfully.
   @retval Others                   Some error happened.
@@ -1441,7 +1442,8 @@ RedfishProvisioningResourceCommon (
 EFI_STATUS
 RedfishCheckResourceCommon (
   IN     REDFISH_RESOURCE_COMMON_PRIVATE  *Private,
-  IN     CHAR8                            *Json
+  IN     CHAR8                            *Json,
+  IN     CHAR8                            *HeaderEtag OPTIONAL
   )
 {
   UINTN       Index;
@@ -1452,6 +1454,17 @@ RedfishCheckResourceCommon (
 
   if ((Private == NULL) || IS_EMPTY_STRING (Json)) {
     return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Check ETAG to see if we need to check it
+  //
+  if (CheckEtag (Private->Uri, HeaderEtag, NULL)) {
+    //
+    // No change
+    //
+    DEBUG ((REDFISH_DEBUG_TRACE, "%a: ETAG: %s has no change, ignore check action\n", __FUNCTION__, Private->Uri));
+    return EFI_SUCCESS;
   }
 
   Status = RedfishPlatformConfigGetConfigureLang (RESOURCE_SCHEMA, RESOURCE_SCHEMA_VERSION, REDPATH_ARRAY_PATTERN, &ConfigureLangList, &Count);
@@ -1544,14 +1557,6 @@ RedfishUpdateResourceCommon (
     DEBUG ((DEBUG_ERROR, "%a: patch resource for %s failed: %r\n", __FUNCTION__, ConfigureLang, Status));
   }
 
-  //
-  // Handle Etag
-  //
-  if (EtagStr != NULL) {
-    SetEtagWithUri (EtagStr, Private->Uri);
-    FreePool (EtagStr);
-  }
-
 ON_RELEASE:
 
   if (Json != NULL) {
@@ -1622,7 +1627,7 @@ RedfishIdentifyResourceCommon (
     //
     // Keep URI and ConfigLang mapping
     //
-    RedfisSetRedfishUri (ConfigLangList.List[0].ConfigureLang, Private->Uri);
+    RedfishSetRedfishUri (ConfigLangList.List[0].ConfigureLang, Private->Uri);
     //
     // Set the configuration language in the RESOURCE_INFORMATION_EXCHANGE.
     // This information is sent back to the parent resource (e.g. the collection driver).
