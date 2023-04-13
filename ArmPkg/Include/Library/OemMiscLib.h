@@ -60,6 +60,22 @@ typedef enum {
   SkuNumberType03,
   ProcessorPartNumType04,
   ProcessorSerialNumType04,
+  ProcessorSerialNumType04_0 = ProcessorSerialNumType04,
+  ProcessorSerialNumType04_1,
+  ProcessorSerialNumType04_2,
+  ProcessorSerialNumType04_3,
+  ProcessorSerialNumType04_4,
+  ProcessorSerialNumType04_5,
+  ProcessorSerialNumType04_6,
+  ProcessorSerialNumType04_7,
+  ProcessorSerialNumType04_8,
+  ProcessorSerialNumType04_9,
+  ProcessorSerialNumType04_10,
+  ProcessorSerialNumType04_11,
+  ProcessorSerialNumType04_12,
+  ProcessorSerialNumType04_13,
+  ProcessorSerialNumType04_14,
+  ProcessorSerialNumType04_15,
   ProcessorVersionType04,
   ProcessorSocketDesType04_0,
   ProcessorSocketDesType04_1,
@@ -80,8 +96,24 @@ typedef enum {
   SmbiosHiiStringFieldMax
 } OEM_MISC_SMBIOS_HII_STRING_FIELD;
 
-#define SD_INDEX_TO_FIELD(n)  ((n) + ProcessorSocketDesType04_0)
-#define SD_FIELD_TO_INDEX(n)  ((n) - ProcessorSocketDesType04_0)
+#define INDEX_TO_FIELD(n, v)  ((n) + (v))
+#define FIELD_TO_INDEX(n, v)  ((n) - (v))
+
+STATIC_ASSERT ((ProcessorSerialNumType04_1 - ProcessorSerialNumType04_0) == 1, "Incorrect order for ProcessorSerialNumType04_1");
+STATIC_ASSERT ((ProcessorSerialNumType04_2 - ProcessorSerialNumType04_0) == 2, "Incorrect order for ProcessorSerialNumType04_2");
+STATIC_ASSERT ((ProcessorSerialNumType04_3 - ProcessorSerialNumType04_0) == 3, "Incorrect order for ProcessorSerialNumType04_3");
+STATIC_ASSERT ((ProcessorSerialNumType04_4 - ProcessorSerialNumType04_0) == 4, "Incorrect order for ProcessorSerialNumType04_4");
+STATIC_ASSERT ((ProcessorSerialNumType04_5 - ProcessorSerialNumType04_0) == 5, "Incorrect order for ProcessorSerialNumType04_5");
+STATIC_ASSERT ((ProcessorSerialNumType04_6 - ProcessorSerialNumType04_0) == 6, "Incorrect order for ProcessorSerialNumType04_6");
+STATIC_ASSERT ((ProcessorSerialNumType04_7 - ProcessorSerialNumType04_0) == 7, "Incorrect order for ProcessorSerialNumType04_7");
+STATIC_ASSERT ((ProcessorSerialNumType04_8 - ProcessorSerialNumType04_0) == 8, "Incorrect order for ProcessorSerialNumType04_8");
+STATIC_ASSERT ((ProcessorSerialNumType04_9 - ProcessorSerialNumType04_0) == 9, "Incorrect order for ProcessorSerialNumType04_9");
+STATIC_ASSERT ((ProcessorSerialNumType04_10 - ProcessorSerialNumType04_0) == 10, "Incorrect order for ProcessorSerialNumType04_10");
+STATIC_ASSERT ((ProcessorSerialNumType04_11 - ProcessorSerialNumType04_0) == 11, "Incorrect order for ProcessorSerialNumType04_11");
+STATIC_ASSERT ((ProcessorSerialNumType04_12 - ProcessorSerialNumType04_0) == 12, "Incorrect order for ProcessorSerialNumType04_12");
+STATIC_ASSERT ((ProcessorSerialNumType04_13 - ProcessorSerialNumType04_0) == 13, "Incorrect order for ProcessorSerialNumType04_13");
+STATIC_ASSERT ((ProcessorSerialNumType04_14 - ProcessorSerialNumType04_0) == 14, "Incorrect order for ProcessorSerialNumType04_14");
+STATIC_ASSERT ((ProcessorSerialNumType04_15 - ProcessorSerialNumType04_0) == 15, "Incorrect order for ProcessorSerialNumType04_15");
 
 STATIC_ASSERT ((ProcessorSocketDesType04_1 - ProcessorSocketDesType04_0) == 1, "Incorrect order for ProcessorSocketDesType04_1");
 STATIC_ASSERT ((ProcessorSocketDesType04_2 - ProcessorSocketDesType04_0) == 2, "Incorrect order for ProcessorSocketDesType04_2");
