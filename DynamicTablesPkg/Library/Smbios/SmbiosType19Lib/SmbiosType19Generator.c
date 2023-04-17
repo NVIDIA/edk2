@@ -141,8 +141,8 @@ UpdateSmbiosType19Address (
   if (StartingAddressKb >= EXTENDED_ADDRESS_THRESHOLD) {
     SmbiosRecord->StartingAddress         = EXTENDED_ADDRESS_THRESHOLD;
     SmbiosRecord->EndingAddress           = EXTENDED_ADDRESS_THRESHOLD;
-    SmbiosRecord->ExtendedStartingAddress = StartingAddressKb;
-    SmbiosRecord->ExtendedEndingAddress   = EndingAddressKb;
+    SmbiosRecord->ExtendedStartingAddress = StartAddress;
+    SmbiosRecord->ExtendedEndingAddress   = EndAddress;
   } else {
     SmbiosRecord->StartingAddress = StartingAddressKb;
     SmbiosRecord->EndingAddress   = EndingAddressKb;
