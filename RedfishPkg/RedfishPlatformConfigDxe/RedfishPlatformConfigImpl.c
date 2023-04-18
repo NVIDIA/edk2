@@ -469,7 +469,7 @@ GetSupportedSchema (
 }
 
 /**
-  Search and find statement private instance by given regular expression patthern
+  Search and find statement private instance by given regular expression pattern
   which describes the Configure Language.
 
   @param[in]  RegularExpressionProtocol   Regular express protocol.
@@ -895,7 +895,7 @@ LoadFormset (
   FormsetPrivate->DevicePathStr = ConvertDevicePathToText (HiiFormSet->DevicePath, FALSE, FALSE);
   Status                        = GetSupportedSchema (FormsetPrivate->HiiHandle, &FormsetPrivate->SupportedSchema);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_WARN, "%a, No schema from HII handle: 0x%x found: %r\n", __FUNCTION__, FormsetPrivate->HiiHandle, Status));
+    DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a, No schema from HII handle: 0x%x found: %r\n", __FUNCTION__, FormsetPrivate->HiiHandle, Status));
   }
 
   HiiFormLink = GetFirstNode (&HiiFormSet->FormListHead);
@@ -1003,7 +1003,7 @@ ErrorExit:
 /**
   Release formset list and all the forms that belong to this formset.
 
-  @param[in]      FormsetList   Pointer to formst list that needs to be
+  @param[in]      FormsetList   Pointer to formset list that needs to be
                                 released.
 
   @retval         EFI_STATUS
@@ -1058,7 +1058,7 @@ LoadFormsetList (
 /**
   Release formset list and all the forms that belong to this formset.
 
-  @param[in]      FormsetList   Pointer to formst list that needs to be
+  @param[in]      FormsetList   Pointer to formset list that needs to be
                                 released.
 
   @retval         EFI_STATUS
@@ -1146,7 +1146,7 @@ GetPendingList (
   @param[in]  PendingList Pending list to keep HII handle which is recently updated.
 
   @retval EFI_SUCCESS             HII handle is saved in pending list.
-  @retval EFI_INVALID_PARAMETER   HiiHnalde is NULL or PendingList is NULL.
+  @retval EFI_INVALID_PARAMETER   HiiHandle is NULL or PendingList is NULL.
   @retval EFI_OUT_OF_RESOURCES    System is out of memory.
 
 **/
@@ -1199,7 +1199,7 @@ NotifyFormsetUpdate (
   @param[in]  PendingList Pending list to keep HII handle which is recently updated.
 
   @retval EFI_SUCCESS             HII handle is saved in pending list.
-  @retval EFI_INVALID_PARAMETER   HiiHnalde is NULL or PendingList is NULL.
+  @retval EFI_INVALID_PARAMETER   HiiHandle is NULL or PendingList is NULL.
   @retval EFI_OUT_OF_RESOURCES    System is out of memory.
 
 **/
@@ -1292,7 +1292,7 @@ ProcessPendingList (
         ReleaseFormset (FormsetPrivate);
         FreePool (FormsetPrivate);
       } else {
-        DEBUG ((DEBUG_WARN, "%a, formset on HII handle 0x%x was removed already\n", __FUNCTION__, Target->HiiHandle));
+        DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a, formset on HII handle 0x%x was removed already\n", __FUNCTION__, Target->HiiHandle));
       }
     } else {
       //

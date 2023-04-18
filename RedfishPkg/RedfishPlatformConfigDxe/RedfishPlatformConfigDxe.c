@@ -1,6 +1,6 @@
 /** @file
 
-  The implementation of EDKII Redfidh Platform Config Protocol.
+  The implementation of EDKII Redfish Platform Config Protocol.
 
   (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP<BR>
   Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
@@ -71,7 +71,7 @@ ReleaseRedfishStack (
 }
 
 /**
-  Chech and see if stack is empty or not.
+  Check and see if stack is empty or not.
 
   @param[in]  Stack     Pointer to stack instance.
 
@@ -140,7 +140,7 @@ PopRedfishStack (
 
   @param[in]  FormPrivate   Pointer to form private instance.
 
-  @retval REDFISH_PLATFORM_CONFIG_FORM_PRIVATE Ponter to target form
+  @retval REDFISH_PLATFORM_CONFIG_FORM_PRIVATE Pointer to target form
   @retval NULL                                 No form links to give form.
 
 **/
@@ -303,7 +303,7 @@ RELEASE:
 /**
   Get the attribute name from config language.
 
-  For example:  /Bios/Attributes/BiosOption1 is config laugnage
+  For example:  /Bios/Attributes/BiosOption1 is config language
   and attribute name is BiosOption1.
 
   @param[in]  ConfigLanguage     Config language string.
@@ -454,7 +454,7 @@ OneOfStatementToAttributeValues (
 }
 
 /**
-  Return Redfish attribute type from given HII statment operand.
+  Return Redfish attribute type from given HII statement operand.
 
   @param[in]  HiiStatement       Target HII statement.
 
@@ -676,10 +676,10 @@ OrderedListOptionValueToStringId (
 /**
   Compare two value in HII statement format.
 
-  @param[in]  Value1        Firt value to compare.
+  @param[in]  Value1        First value to compare.
   @param[in]  Value2        Second value to be compared.
 
-  @retval INTN          0 is retuned when two values are equal.
+  @retval INTN          0 is returned when two values are equal.
                         1 is returned when first value is greater than second value.
                         -1 is returned when second value is greater than first value.
 
@@ -1395,7 +1395,7 @@ RedfishPlatformConfigGetStatementCommon (
              TargetStatement->ParentForm->ParentFormset->HiiFormSet,
              TargetStatement->ParentForm->HiiForm,
              TargetStatement->HiiStatement,
-             GetSetValueWithHiiDriver
+             GetSetValueWithBuffer
              );
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a, failed to get question current value: %r\n", __FUNCTION__, Status));
@@ -1492,7 +1492,7 @@ RELEASE_RESOURCE:
   @param[in]   HiiFormset       HII form-set instance
   @param[in]   HiiForm          HII form instance
   @param[in]   HiiStatement     HII statement that keeps new value.
-  @param[in]   Value            New value to applyu.
+  @param[in]   Value            New value to apply.
 
   @retval EFI_SUCCESS       HII value is returned successfully.
   @retval Others            Errors occur
@@ -1613,7 +1613,7 @@ RedfishPlatformConfigSetStatementCommon (
       }
 
       //
-      // Arrage new option order from input string array
+      // Arrange new option order from input string array
       //
       CharArray = (CHAR8 **)StatementValue->Buffer;
       for (Index = 0; Index < StatementValue->BufferLen; Index++) {
@@ -1862,7 +1862,7 @@ RELEASE_RESOURCE:
 }
 
 /**
-  Get the list of supported Redfish schema from paltform configuration on give HII handle.
+  Get the list of supported Redfish schema from platform configuration on give HII handle.
 
   @param[in]   This                Pointer to EDKII_REDFISH_PLATFORM_CONFIG_PROTOCOL instance.
   @param[in]   HiiHandle           The target handle to search. If handle is NULL,

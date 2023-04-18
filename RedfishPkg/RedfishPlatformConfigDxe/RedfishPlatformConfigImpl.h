@@ -127,7 +127,7 @@ typedef struct {
 /**
   Release formset list and all the forms that belong to this formset.
 
-  @param[in]      FormsetList   Pointer to formst list that needs to be
+  @param[in]      FormsetList   Pointer to formset list that needs to be
                                 released.
 
   @retval         EFI_STATUS
@@ -141,7 +141,7 @@ ReleaseFormsetList (
 /**
   Release formset list and all the forms that belong to this formset.
 
-  @param[in]      FormsetList   Pointer to formst list that needs to be
+  @param[in]      FormsetList   Pointer to formset list that needs to be
                                 released.
 
   @retval         EFI_STATUS
@@ -161,7 +161,7 @@ LoadFormsetList (
   @param[in]  PendingList Pending list to keep HII handle which is recently updated.
 
   @retval EFI_SUCCESS             HII handle is saved in pending list.
-  @retval EFI_INVALID_PARAMETER   HiiHnalde is NULL or PendingList is NULL.
+  @retval EFI_INVALID_PARAMETER   HiiHandle is NULL or PendingList is NULL.
   @retval EFI_OUT_OF_RESOURCES    System is out of memory.
 
 **/
@@ -179,7 +179,7 @@ NotifyFormsetUpdate (
   @param[in]  PendingList Pending list to keep HII handle which is recently updated.
 
   @retval EFI_SUCCESS             HII handle is saved in pending list.
-  @retval EFI_INVALID_PARAMETER   HiiHnalde is NULL or PendingList is NULL.
+  @retval EFI_INVALID_PARAMETER   HiiHandle is NULL or PendingList is NULL.
   @retval EFI_OUT_OF_RESOURCES    System is out of memory.
 
 **/
@@ -207,7 +207,7 @@ GetStatementPrivateByConfigureLang (
   );
 
 /**
-  Search and find statement private instance by given regular expression patthern
+  Search and find statement private instance by given regular expression pattern
   which describes the Configure Language.
 
   @param[in]  RegularExpressionProtocol   Regular express protocol.
