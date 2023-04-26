@@ -1266,6 +1266,30 @@ HiiValueToRedfishValue (
 
       FreePool (StringIdArray);
       break;
+    case EFI_IFR_TEXT_OP:
+      //
+      // Use text two as the value
+      //
+      if (HiiStatement->ExtraData.TextTwo == 0x00) {
+        Status = EFI_NOT_FOUND;
+        break;
+      }
+
+      RedfishValue->Value.Buffer = HiiGetRedfishAsciiString (HiiHandle, FullSchema, HiiStatement->ExtraData.TextTwo);
+      if (RedfishValue->Value.Buffer == NULL) {
+        //
+        // No x-uefi-redfish string defined. Try to get string in English.
+        //
+        RedfishValue->Value.Buffer = HiiGetEnglishAsciiString (HiiHandle, HiiStatement->ExtraData.TextTwo);
+      }
+
+      if (RedfishValue->Value.Buffer == NULL) {
+        Status = EFI_OUT_OF_RESOURCES;
+        break;
+      }
+
+      RedfishValue->Type = RedfishValueTypeString;
+      break;
     default:
       DEBUG ((DEBUG_ERROR, "%a: catch unsupported type: 0x%x! Please contact with author if we need to support this type.\n", __func__, HiiStatement->Operand));
       ASSERT (FALSE);

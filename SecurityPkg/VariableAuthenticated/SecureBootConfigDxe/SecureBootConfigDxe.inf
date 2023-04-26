@@ -3,6 +3,7 @@
 #  By this module, user may change the content of DB, DBX, PK and KEK.
 #
 # Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -31,6 +32,7 @@
   SecureBootConfig.vfr
   SecureBootConfigStrings.uni
   SecureBootConfigNvData.h
+  SecureBootConfigMap.uni
 
 [Packages]
   MdePkg/MdePkg.dec
