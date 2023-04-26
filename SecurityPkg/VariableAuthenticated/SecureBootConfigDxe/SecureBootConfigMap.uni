@@ -1,0 +1,15 @@
+/** @file
+*
+*  x-uefi string definitions for the Secure Boot.
+*
+*  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+*
+*  SPDX-License-Identifier: BSD-2-Clause-Patent
+*
+**/
+
+#langdef   x-uefi-redfish-SecureBoot.v1_1_0 "SecureBoot.v1_1_0"
+
+#string STR_SECURE_BOOT_STATE_PROMPT        #language x-uefi-redfish-SecureBoot.v1_1_0 "/SecureBoot/SecureBootCurrentBoot"
+#string STR_SECURE_BOOT_PROMPT              #language x-uefi-redfish-SecureBoot.v1_1_0 "/SecureBoot/SecureBootEnable"
+#string STR_SECURE_BOOT_SETUP_MODE_PROMMPT  #language x-uefi-redfish-SecureBoot.v1_1_0 "/SecureBoot/SecureBootMode"
