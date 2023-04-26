@@ -3,6 +3,7 @@
 
 Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2018 Hewlett Packard Enterprise Development LP<BR>
+Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -5300,6 +5301,11 @@ InstallSecureBootConfigForm (
                                       );
   mEndLabel->ExtendOpCode = EFI_IFR_EXTEND_OP_LABEL;
   mEndLabel->Number       = LABEL_END;
+
+  //
+  // Update secure boot strings
+  //
+  UpdateSecureBootString (PrivateData);
 
   return EFI_SUCCESS;
 }
