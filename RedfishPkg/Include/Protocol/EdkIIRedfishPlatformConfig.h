@@ -13,9 +13,9 @@
 
 typedef struct _EDKII_REDFISH_PLATFORM_CONFIG_PROTOCOL EDKII_REDFISH_PLATFORM_CONFIG_PROTOCOL;
 
-/**
-  Definition of EDKII_REDFISH_TYPE_VALUE
- **/
+///
+/// Definition of EDKII_REDFISH_TYPE_VALUE
+///
 typedef union {
   INT64      Integer;
   BOOLEAN    Boolean;
@@ -25,60 +25,60 @@ typedef union {
   BOOLEAN    *BooleanArray;
 } EDKII_REDFISH_TYPE_VALUE;
 
-/**
-  Definition of EDKII_REDFISH_VALUE_TYPES
- **/
+///
+/// Definition of EDKII_REDFISH_VALUE_TYPES
+///
 typedef enum {
-  REDFISH_VALUE_TYPE_UNKNOWN = 0,
-  REDFISH_VALUE_TYPE_INTEGER,
-  REDFISH_VALUE_TYPE_BOOLEAN,
-  REDFISH_VALUE_TYPE_STRING,
-  REDFISH_VALUE_TYPE_STRING_ARRAY,
-  REDFISH_VALUE_TYPE_INTEGER_ARRAY,
-  REDFISH_VALUE_TYPE_BOOLEAN_ARRAY,
-  REDFISH_VALUE_TYPE_MAX
+  RedfishValueTypeUnknown = 0,
+  RedfishValueTypeInteger,
+  RedfishValueTypeBoolean,
+  RedfishValueTypeString,
+  RedfishValueTypeStringArray,
+  RedfishValueTypeIntegerArray,
+  RedfishValueTypeBooleanArray,
+  RedfishValueTypeMax
 } EDKII_REDFISH_VALUE_TYPES;
 
-/**
-  Definition of EDKII_REDFISH_ATTRIBUTE_TYPES
- **/
+///
+/// Definition of EDKII_REDFISH_ATTRIBUTE_TYPES
+///
 typedef enum {
-  REDFISH_ATTRIBUTE_TYPE_UNKNOWN = 0,
-  REDFISH_ATTRIBUTE_TYPE_ENUMERATION,
-  REDFISH_ATTRIBUTE_TYPE_STRING,
-  REDFISH_ATTRIBUTE_TYPE_INTEGER,
-  REDFISH_ATTRIBUTE_TYPE_BOOLEAN,
-  REDFISH_ATTRIBUTE_TYPE_PASSWORD
+  RedfishAttributeTypeUnknown = 0,
+  RedfishAttributeTypeEnumeration,
+  RedfishAttributeTypeString,
+  RedfishAttributeTypeInteger,
+  RedfishAttributeTypeBoolean,
+  RedfishAttributeTypePassword
 } EDKII_REDFISH_ATTRIBUTE_TYPES;
 
-/**
-  Definition of EDKII_REDFISH_VALUE
- **/
+///
+/// Definition of EDKII_REDFISH_VALUE
+///
 typedef struct {
   EDKII_REDFISH_VALUE_TYPES    Type;
   EDKII_REDFISH_TYPE_VALUE     Value;
   UINTN                        ArrayCount;
 } EDKII_REDFISH_VALUE;
 
-/**
-  Definition of EDKII_REDFISH_ATTRIBUTE_VALUE
- **/
+///
+/// Definition of EDKII_REDFISH_ATTRIBUTE_VALUE
+///
 typedef struct {
   CHAR8    *ValueName;
   CHAR8    *ValueDisplayName;
 } EDKII_REDFISH_ATTRIBUTE_VALUE;
 
-/**
-  Definition of EDKII_REDFISH_POSSIBLE_VALUES
- **/
+///
+/// Definition of EDKII_REDFISH_POSSIBLE_VALUES
+///
 typedef struct {
   UINTN                            ValueCount;
   EDKII_REDFISH_ATTRIBUTE_VALUE    *ValueArray;
 } EDKII_REDFISH_POSSIBLE_VALUES;
 
-/**
-  Definition of EDKII_REDFISH_ATTRIBUTE
- **/
+///
+/// Definition of EDKII_REDFISH_ATTRIBUTE
+///
 typedef struct {
   CHAR8                            *AttributeName;
   CHAR8                            *DisplayName;
@@ -87,7 +87,7 @@ typedef struct {
   EDKII_REDFISH_ATTRIBUTE_TYPES    Type;
   BOOLEAN                          ResetRequired;
   BOOLEAN                          ReadOnly;
-  BOOLEAN                          Grayout;
+  BOOLEAN                          GrayedOut;
   BOOLEAN                          Suppress;
   UINT64                           NumMaximum;
   UINT64                           NumMinimum;
@@ -223,11 +223,9 @@ EFI_STATUS
   );
 
 /**
-  Get the list of supported Redfish schema from platform configuration on the give HII handle.
+  Get the list of supported Redfish schema from platform configuration.
 
   @param[in]   This                Pointer to EDKII_REDFISH_PLATFORM_CONFIG_PROTOCOL instance.
-  @param[in]   HiiHandle           The target handle to search. If handle is NULL,
-                                   this function returns all schema from HII database.
   @param[out]  SupportedSchema     The supported schema list which is separated by ';'.
                                    For example: "x-uefi-redfish-Memory.v1_7_1;x-uefi-redfish-Boot.v1_0_1"
                                    The SupportedSchema is allocated by the callee. It's caller's
@@ -241,7 +239,6 @@ typedef
 EFI_STATUS
 (EFIAPI *EDKII_REDFISH_PLATFORM_CONFIG_GET_SUPPORTED_SCHEMA)(
   IN     EDKII_REDFISH_PLATFORM_CONFIG_PROTOCOL    *This,
-  IN     EFI_HII_HANDLE                            HiiHandle, OPTIONAL
   OUT    CHAR8                                     **SupportedSchema
   );
 

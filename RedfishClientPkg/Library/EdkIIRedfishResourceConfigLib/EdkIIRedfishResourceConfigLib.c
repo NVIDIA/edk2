@@ -125,7 +125,7 @@ GetSupportedSchemaVersion (
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = RedfishPlatformConfigGetSupportedSchema (NULL, &SupportSchema);
+  Status = RedfishPlatformConfigGetSupportedSchema (&SupportSchema);
   if (EFI_ERROR (Status)) {
     return Status;
   }

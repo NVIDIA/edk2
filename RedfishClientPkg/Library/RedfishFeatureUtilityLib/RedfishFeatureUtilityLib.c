@@ -441,7 +441,7 @@ ApplyFeatureSettingsStringType (
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
   } else {
-    if (RedfishValue.Type != REDFISH_VALUE_TYPE_STRING) {
+    if (RedfishValue.Type != RedfishValueTypeString) {
       DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not string type\n", __FUNCTION__, Schema, Version, ConfigureLang));
       return EFI_DEVICE_ERROR;
     }
@@ -507,7 +507,7 @@ ApplyFeatureSettingsNumericType (
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
   } else {
-    if (RedfishValue.Type != REDFISH_VALUE_TYPE_INTEGER) {
+    if (RedfishValue.Type != RedfishValueTypeInteger) {
       DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not numeric type\n", __FUNCTION__, Schema, Version, ConfigureLang));
       return EFI_DEVICE_ERROR;
     }
@@ -572,7 +572,7 @@ ApplyFeatureSettingsBooleanType (
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
   } else {
-    if (RedfishValue.Type != REDFISH_VALUE_TYPE_BOOLEAN) {
+    if (RedfishValue.Type != RedfishValueTypeBoolean) {
       DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not boolean type\n", __FUNCTION__, Schema, Version, ConfigureLang));
       return EFI_DEVICE_ERROR;
     }
@@ -677,11 +677,11 @@ ApplyFeatureSettingsVagueType (
     // Initial property data type and value.
     //
     if (CurrentVagueValuePtr->Value->DataType == RedfishCS_Vague_DataType_String) {
-      PropertyDatatype = REDFISH_VALUE_TYPE_STRING;
+      PropertyDatatype = RedfishValueTypeString;
     } else if (CurrentVagueValuePtr->Value->DataType == RedfishCS_Vague_DataType_Bool) {
-      PropertyDatatype = REDFISH_VALUE_TYPE_BOOLEAN;
+      PropertyDatatype = RedfishValueTypeBoolean;
     } else if (CurrentVagueValuePtr->Value->DataType == RedfishCS_Vague_DataType_Int64) {
-      PropertyDatatype = REDFISH_VALUE_TYPE_INTEGER;
+      PropertyDatatype = RedfishValueTypeInteger;
     } else {
       DEBUG ((DEBUG_ERROR, "%a: %a.%a %s Unsupported Redfish property data type\n", __FUNCTION__, Schema, Version, ConfigureLang));
       goto ErrorContinue;
@@ -699,7 +699,7 @@ ApplyFeatureSettingsVagueType (
         goto ErrorContinue;
       }
 
-      if (PropertyDatatype == REDFISH_VALUE_TYPE_STRING) {
+      if (PropertyDatatype == RedfishValueTypeString) {
         //
         // This is a string property.
         //
@@ -722,7 +722,7 @@ ApplyFeatureSettingsVagueType (
         } else {
           DEBUG ((REDFISH_DEBUG_TRACE, "%a: %a.%a %s value is: %a\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, RedfishValue.Value.Buffer, Status));
         }
-      } else if (PropertyDatatype == REDFISH_VALUE_TYPE_BOOLEAN) {
+      } else if (PropertyDatatype == RedfishValueTypeBoolean) {
         //
         // This is a boolean property.
         //
@@ -754,7 +754,7 @@ ApplyFeatureSettingsVagueType (
         } else {
           DEBUG ((REDFISH_DEBUG_TRACE, "%a: %a.%a %s value is: %a\n", __FUNCTION__, Schema, Version, ConfigureKeyLang, (RedfishValue.Value.Boolean ? "True" : "False"), Status));
         }
-      } else if (PropertyDatatype == REDFISH_VALUE_TYPE_INTEGER) {
+      } else if (PropertyDatatype == RedfishValueTypeInteger) {
         //
         // This is a integer property.
         //
@@ -830,12 +830,12 @@ FreeArrayTypeRedfishValue (
     return;
   }
 
-  if ((RedfishValue->Type != REDFISH_VALUE_TYPE_INTEGER_ARRAY) && (RedfishValue->Type != REDFISH_VALUE_TYPE_STRING_ARRAY)) {
+  if ((RedfishValue->Type != RedfishValueTypeIntegerArray) && (RedfishValue->Type != RedfishValueTypeStringArray)) {
     return;
   }
 
   switch (RedfishValue->Type) {
-    case REDFISH_VALUE_TYPE_STRING_ARRAY:
+    case RedfishValueTypeStringArray:
       for (Index = 0; Index < RedfishValue->ArrayCount; Index++) {
         FreePool (RedfishValue->Value.StringArray[Index]);
       }
@@ -844,12 +844,12 @@ FreeArrayTypeRedfishValue (
       RedfishValue->Value.StringArray = NULL;
       break;
 
-    case REDFISH_VALUE_TYPE_INTEGER_ARRAY:
+    case RedfishValueTypeIntegerArray:
       FreePool (RedfishValue->Value.IntegerArray);
       RedfishValue->Value.IntegerArray = NULL;
       break;
 
-    case REDFISH_VALUE_TYPE_BOOLEAN_ARRAY:
+    case RedfishValueTypeBooleanArray:
       FreePool (RedfishValue->Value.BooleanArray);
       RedfishValue->Value.BooleanArray = NULL;
       break;
@@ -898,7 +898,7 @@ ApplyFeatureSettingsStringArrayType (
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
   } else {
-    if (RedfishValue.Type != REDFISH_VALUE_TYPE_STRING_ARRAY) {
+    if (RedfishValue.Type != RedfishValueTypeStringArray) {
       DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not string array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
       return EFI_DEVICE_ERROR;
     }
@@ -1001,8 +1001,8 @@ ApplyFeatureSettingsNumericArrayType (
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
   } else {
-    if (RedfishValue.Type != REDFISH_VALUE_TYPE_INTEGER_ARRAY) {
-      DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not string array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
+    if (RedfishValue.Type != RedfishValueTypeIntegerArray) {
+      DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not integer array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
       return EFI_DEVICE_ERROR;
     }
 
@@ -1099,8 +1099,8 @@ ApplyFeatureSettingsBooleanArrayType (
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: %a.%a %s failed: %r\n", __FUNCTION__, Schema, Version, ConfigureLang, Status));
   } else {
-    if (RedfishValue.Type != REDFISH_VALUE_TYPE_BOOLEAN_ARRAY) {
-      DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not string array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
+    if (RedfishValue.Type != RedfishValueTypeBooleanArray) {
+      DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not boolean array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
       return EFI_DEVICE_ERROR;
     }
 
@@ -2565,7 +2565,7 @@ GetPropertyStringValue (
     return NULL;
   }
 
-  if (RedfishValue.Type != REDFISH_VALUE_TYPE_STRING) {
+  if (RedfishValue.Type != RedfishValueTypeString) {
     DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not string type\n", __FUNCTION__, Schema, Version, ConfigureLang));
     return NULL;
   }
@@ -2623,7 +2623,7 @@ GetPropertyNumericValue (
     return NULL;
   }
 
-  if (RedfishValue.Type != REDFISH_VALUE_TYPE_INTEGER) {
+  if (RedfishValue.Type != RedfishValueTypeInteger) {
     DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not numeric type\n", __FUNCTION__, Schema, Version, ConfigureLang));
     return NULL;
   }
@@ -2685,7 +2685,7 @@ GetPropertyBooleanValue (
     return NULL;
   }
 
-  if (RedfishValue.Type != REDFISH_VALUE_TYPE_BOOLEAN) {
+  if (RedfishValue.Type != RedfishValueTypeBoolean) {
     DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not boolean type\n", __FUNCTION__, Schema, Version, ConfigureLang));
     return NULL;
   }
@@ -2786,7 +2786,7 @@ GetPropertyStringArrayValue (
     return NULL;
   }
 
-  if (RedfishValue.Type != REDFISH_VALUE_TYPE_STRING_ARRAY) {
+  if (RedfishValue.Type != RedfishValueTypeStringArray) {
     DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not string array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
     return NULL;
   }
@@ -2857,8 +2857,8 @@ GetPropertyNumericArrayValue (
     return NULL;
   }
 
-  if (RedfishValue.Type != REDFISH_VALUE_TYPE_INTEGER_ARRAY) {
-    DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not string array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
+  if (RedfishValue.Type != RedfishValueTypeIntegerArray) {
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not integer array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
     return NULL;
   }
 
@@ -2928,8 +2928,8 @@ GetPropertyBooleanArrayValue (
     return NULL;
   }
 
-  if (RedfishValue.Type != REDFISH_VALUE_TYPE_BOOLEAN_ARRAY) {
-    DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not string array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
+  if (RedfishValue.Type != RedfishValueTypeBooleanArray) {
+    DEBUG ((DEBUG_ERROR, "%a: %a.%a %s value is not boolean array type\n", __FUNCTION__, Schema, Version, ConfigureLang));
     return NULL;
   }
 
@@ -3023,7 +3023,7 @@ NewEmptyPropKeyValueFromRedfishValue (
     return NULL;
   }
 
-  if (RedfishValue->Type == REDFISH_VALUE_TYPE_BOOLEAN) {
+  if (RedfishValue->Type == RedfishValueTypeBoolean) {
     VagueValue->DataType = RedfishCS_Vague_DataType_Bool;
     DataSize             = sizeof (BOOLEAN);
     //
@@ -3032,11 +3032,11 @@ NewEmptyPropKeyValueFromRedfishValue (
     //
     Bool32 = (INT32)RedfishValue->Value.Boolean;
     Data   = (VOID *)&Bool32;
-  } else if (RedfishValue->Type == REDFISH_VALUE_TYPE_INTEGER) {
+  } else if (RedfishValue->Type == RedfishValueTypeInteger) {
     VagueValue->DataType = RedfishCS_Vague_DataType_Int64;
     DataSize             = sizeof (INT64);
     Data                 = (VOID *)&RedfishValue->Value.Integer;
-  } else if (RedfishValue->Type == REDFISH_VALUE_TYPE_STRING) {
+  } else if (RedfishValue->Type == RedfishValueTypeString) {
     VagueValue->DataType = RedfishCS_Vague_DataType_String;
     DataSize             = AsciiStrSize (RedfishValue->Value.Buffer);
     Data                 = (VOID *)RedfishValue->Value.Buffer;

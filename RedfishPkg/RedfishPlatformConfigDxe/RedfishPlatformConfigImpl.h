@@ -1,5 +1,5 @@
 /** @file
-  This file defines the EDKII Redfish Platform Config Protocol interface.
+  This file defines the EDKII Redfish Platform Config Protocol private structure.
 
   (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP<BR>
   Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
@@ -101,7 +101,7 @@ typedef struct {
   UINT8                                     Flags;          // The statement flag.
   REDFISH_PLATFORM_CONFIG_STATEMENT_DATA    StatementData;  // The max/min for statement value.
   BOOLEAN                                   Suppressed;     // Statement is suppressed.
-  BOOLEAN                                   Grayout;        // Statement is grayout.
+  BOOLEAN                                   GrayedOut;      // Statement is GrayedOut.
 } REDFISH_PLATFORM_CONFIG_STATEMENT_PRIVATE;
 
 #define REDFISH_PLATFORM_CONFIG_STATEMENT_FROM_LINK(a)  BASE_CR (a, REDFISH_PLATFORM_CONFIG_STATEMENT_PRIVATE, Link)

@@ -1,5 +1,5 @@
 /** @file
-  Definitinos of RedfishPlatformConfigLib
+  HII utility internal functions.
 
   Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
   (C) Copyright 2021 Hewlett Packard Enterprise Development LP<BR>
@@ -28,12 +28,12 @@ EFI_USER_MANAGER_PROTOCOL       *mUserManager      = NULL;
 /**
   Allocate new memory and then copy the Unicode string Source to Destination.
 
-  @param  Dest                   Location to copy string
-  @param  Src                    String to copy
+  @param[in,out]  Dest                   Location to copy string
+  @param[in]      Src                    String to copy
 
 **/
 VOID
-NewStringCpy (
+NewStringCopy (
   IN OUT CHAR16  **Dest,
   IN     CHAR16  *Src
   )
@@ -48,10 +48,10 @@ NewStringCpy (
 /**
   Set Value of given Name in a NameValue Storage.
 
-  @param  Storage                The NameValue Storage.
-  @param  Name                   The Name.
-  @param  Value                  The Value to set.
-  @param  ReturnNode             The node use the input name.
+  @param[in]  Storage                The NameValue Storage.
+  @param[in]  Name                   The Name.
+  @param[in]  Value                  The Value to set.
+  @param[out] ReturnNode             The node use the input name.
 
   @retval EFI_SUCCESS            Value found for given Name.
   @retval EFI_NOT_FOUND          No such Name found in NameValue storage.
@@ -103,9 +103,9 @@ SetValueByName (
   Get bit field value from the buffer and then set the value for the question.
   Note: Data type UINT32 can cover all the bit field value.
 
-  @param  Question        The question refer to bit field.
-  @param  Buffer          Point to the buffer which the question value get from.
-  @param  QuestionValue   The Question Value retrieved from Bits.
+  @param[in]  Question        The question refer to bit field.
+  @param[in]  Buffer          Point to the buffer which the question value get from.
+  @param[out] QuestionValue   The Question Value retrieved from Bits.
 
 **/
 VOID
@@ -130,7 +130,7 @@ GetBitsQuestionValue (
   //
   // Set question value.
   // Note: Since Question with BufferValue (orderedlist, password, string)are not supported to refer bit field.
-  // Only oneof/checkbox/oneof can support bit field.So we can copy the value to the Hiivalue of Question directly.
+  // Only oneof/checkbox/oneof can support bit field.So we can copy the value to the HiiValue of Question directly.
   //
   CopyMem ((UINT8 *)&QuestionValue->Value, (UINT8 *)&RetVal, Question->StorageWidth);
 }
@@ -139,9 +139,9 @@ GetBitsQuestionValue (
   Set bit field value to the buffer.
   Note: Data type UINT32 can cover all the bit field value.
 
-  @param  Question        The question refer to bit field.
-  @param  Buffer          Point to the buffer which the question value set to.
-  @param  Value           The bit field value need to set.
+  @param[in]     Question        The question refer to bit field.
+  @param[in,out] Buffer          Point to the buffer which the question value set to.
+  @param[in]     Value           The bit field value need to set.
 
 **/
 VOID
@@ -167,15 +167,15 @@ SetBitsQuestionValue (
 /**
   Convert the buffer value to HiiValue.
 
-  @param  Question              The question.
-  @param  Value                 Unicode buffer save the question value.
-  @param  QuestionValue         The Question Value retrieved from Buffer.
+  @param[in]  Question              The question.
+  @param[in]  Value                 Unicode buffer save the question value.
+  @param[out] QuestionValue         The Question Value retrieved from Buffer.
 
   @retval  Status whether convert the value success.
 
 **/
 EFI_STATUS
-BufferToValue (
+BufferToQuestionValue (
   IN     HII_STATEMENT     *Question,
   IN     CHAR16            *Value,
   OUT HII_STATEMENT_VALUE  *QuestionValue
@@ -302,15 +302,15 @@ BufferToValue (
 /**
   Get the string based on the StringId and HII Package List Handle.
 
-  @param  Token                  The String's ID.
-  @param  HiiHandle              The package list in the HII database to search for
+  @param[in]  Token                  The String's ID.
+  @param[in]  HiiHandle              The package list in the HII database to search for
                                  the specified string.
 
   @return The output string.
 
 **/
 CHAR16 *
-GetToken (
+GetTokenString (
   IN EFI_STRING_ID   Token,
   IN EFI_HII_HANDLE  HiiHandle
   )
@@ -336,12 +336,12 @@ GetToken (
   Converts the unicode character of the string from uppercase to lowercase.
   This is a internal function.
 
-  @param ConfigString  String to be converted
+  @param[in] ConfigString  String to be converted
 
 **/
 VOID
 EFIAPI
-HiiToLower (
+HiiStringToLowercase (
   IN EFI_STRING  ConfigString
   )
 {
@@ -365,14 +365,14 @@ HiiToLower (
 /**
   Evaluate if the result is a non-zero value.
 
-  @param  Result           The result to be evaluated.
+  @param[in]  Result       The result to be evaluated.
 
   @retval TRUE             It is a non-zero value.
   @retval FALSE            It is a zero value.
 
 **/
 BOOLEAN
-IsTrue (
+IsHiiValueTrue (
   IN EFI_HII_VALUE  *Result
   )
 {
@@ -410,7 +410,7 @@ IsTrue (
 
 **/
 EFI_STRING_ID
-NewString (
+NewHiiString (
   IN CHAR16          *String,
   IN EFI_HII_HANDLE  HiiHandle
   )
@@ -424,9 +424,9 @@ NewString (
 /**
   Perform nosubmitif check for a Form.
 
-  @param  FormSet                FormSet data structure.
-  @param  Form                   Form data structure.
-  @param  Question               The Question to be validated.
+  @param[in]  FormSet                FormSet data structure.
+  @param[in]  Form                   Form data structure.
+  @param[in]  Question               The Question to be validated.
 
   @retval EFI_SUCCESS            Form validation pass.
   @retval other                  Form validation failed.
@@ -457,7 +457,7 @@ ValidateNoSubmit (
       return Status;
     }
 
-    if (IsTrue (&Expression->Result)) {
+    if (IsHiiValueTrue (&Expression->Result)) {
       return EFI_NOT_READY;
     }
 
@@ -470,9 +470,9 @@ ValidateNoSubmit (
 /**
   Perform NoSubmit check for each Form in FormSet.
 
-  @param  FormSet                FormSet data structure.
-  @param  CurrentForm            Current input form data structure.
-  @param  Statement              The statement for this check.
+  @param[in]     FormSet                FormSet data structure.
+  @param[in,out] CurrentForm            Current input form data structure.
+  @param[out]    Statement              The statement for this check.
 
   @retval EFI_SUCCESS            Form validation pass.
   @retval other                  Form validation failed.
@@ -524,10 +524,10 @@ NoSubmitCheck (
 }
 
 /**
-  Allocate new memory and concatinate Source on the end of Destination.
+  Allocate new memory and concatenate Source on the end of Destination.
 
   @param  Dest                   String to added to the end of.
-  @param  Src                    String to concatinate.
+  @param  Src                    String to concatenate.
 
 **/
 VOID
@@ -536,33 +536,33 @@ NewStringCat (
   IN     CHAR16  *Src
   )
 {
-  CHAR16  *NewString;
+  CHAR16  *NewHiiString;
   UINTN   MaxLen;
 
   if (*Dest == NULL) {
-    NewStringCpy (Dest, Src);
+    NewStringCopy (Dest, Src);
     return;
   }
 
-  MaxLen    = (StrSize (*Dest) + StrSize (Src) - 2) / sizeof (CHAR16);
-  NewString = AllocatePool (MaxLen * sizeof (CHAR16));
-  if (NewString == NULL) {
+  MaxLen       = (StrSize (*Dest) + StrSize (Src) - 2) / sizeof (CHAR16);
+  NewHiiString = AllocatePool (MaxLen * sizeof (CHAR16));
+  if (NewHiiString == NULL) {
     return;
   }
 
-  StrCpyS (NewString, MaxLen, *Dest);
-  StrCatS (NewString, MaxLen, Src);
+  StrCpyS (NewHiiString, MaxLen, *Dest);
+  StrCatS (NewHiiString, MaxLen, Src);
 
   FreePool (*Dest);
-  *Dest = NewString;
+  *Dest = NewHiiString;
 }
 
 /**
   Convert setting of Buffer Storage or NameValue Storage to <ConfigResp>.
 
-  @param  Storage                The Storage to be conveted.
-  @param  ConfigResp             The returned <ConfigResp>.
-  @param  ConfigRequest          The ConfigRequest string.
+  @param[in]  Storage                The Storage to be converted.
+  @param[in]  ConfigResp             The returned <ConfigResp>.
+  @param[in]  ConfigRequest          The ConfigRequest string.
 
   @retval EFI_SUCCESS            Convert success.
   @retval EFI_INVALID_PARAMETER  Incorrect storage type.
@@ -668,8 +668,8 @@ StorageToConfigResp (
 /**
   Convert <ConfigResp> to settings in Buffer Storage or NameValue Storage.
 
-  @param  Storage                The Storage to receive the settings.
-  @param  ConfigResp             The <ConfigResp> to be converted.
+  @param[in]  Storage                The Storage to receive the settings.
+  @param[in]  ConfigResp             The <ConfigResp> to be converted.
 
   @retval EFI_SUCCESS            Convert success.
   @retval EFI_INVALID_PARAMETER  Incorrect storage type.
@@ -761,14 +761,14 @@ ConfigRespToStorage (
 /**
   Fetch the Ifr binary data of a FormSet.
 
-  @param  Handle                 PackageList Handle
-  @param  FormSetGuid            On input, GUID or class GUID of a formset. If not
+  @param[in]  Handle             PackageList Handle
+  @param[in,out]  FormSetGuid    On input, GUID or class GUID of a formset. If not
                                  specified (NULL or zero GUID), take the first
                                  FormSet with class GUID EFI_HII_PLATFORM_SETUP_FORMSET_GUID
                                  found in package list.
                                  On output, GUID of the formset found(if not NULL).
-  @param  BinaryLength           The length of the FormSet IFR binary.
-  @param  BinaryData             The buffer designed to receive the FormSet.
+  @param[out]  BinaryLength      The length of the FormSet IFR binary.
+  @param[out]  BinaryData        The buffer designed to receive the FormSet.
 
   @retval EFI_SUCCESS            Buffer filled with the requested FormSet.
                                  BufferLength was updated.
@@ -968,7 +968,7 @@ ElementValidation (
   Append the Request element to the Config Request.
 
   @param  ConfigRequest          Current ConfigRequest info.
-  @param  SpareStrLen            Current remain free buffer for config reqeust.
+  @param  SpareStrLen            Current remain free buffer for config request.
   @param  RequestElement         New Request element.
 
 **/
@@ -1036,15 +1036,15 @@ ConfigRequestAdjust (
 {
   CHAR16   *RequestElement;
   CHAR16   *NextRequestElement;
-  CHAR16   *NextElementBakup;
+  CHAR16   *NextElementBackup;
   CHAR16   *SearchKey;
   CHAR16   *ValueKey;
   BOOLEAN  RetVal;
   CHAR16   *ConfigRequest;
 
-  RetVal           = FALSE;
-  NextElementBakup = NULL;
-  ValueKey         = NULL;
+  RetVal            = FALSE;
+  NextElementBackup = NULL;
+  ValueKey          = NULL;
 
   if (Request != NULL) {
     ConfigRequest = Request;
@@ -1099,7 +1099,7 @@ ConfigRequestAdjust (
     //
     if (NextRequestElement != NULL) {
       if (RespString && (Storage->Type == EFI_HII_VARSTORE_EFI_VARIABLE_BUFFER)) {
-        NextElementBakup   = NextRequestElement;
+        NextElementBackup  = NextRequestElement;
         NextRequestElement = StrStr (RequestElement, ValueKey);
         if (NextRequestElement == NULL) {
           return FALSE;
@@ -1112,7 +1112,7 @@ ConfigRequestAdjust (
       *NextRequestElement = L'\0';
     } else {
       if (RespString && (Storage->Type == EFI_HII_VARSTORE_EFI_VARIABLE_BUFFER)) {
-        NextElementBakup   = NextRequestElement;
+        NextElementBackup  = NextRequestElement;
         NextRequestElement = StrStr (RequestElement, ValueKey);
         if (NextRequestElement == NULL) {
           return FALSE;
@@ -1141,7 +1141,7 @@ ConfigRequestAdjust (
     }
 
     if (RespString && (Storage->Type == EFI_HII_VARSTORE_EFI_VARIABLE_BUFFER)) {
-      RequestElement = NextElementBakup;
+      RequestElement = NextElementBackup;
     } else {
       RequestElement = NextRequestElement;
     }
@@ -1153,12 +1153,12 @@ ConfigRequestAdjust (
 /**
   Fill storage with settings requested from Configuration Driver.
 
-  @param  FormSet                FormSet data structure.
-  @param  Storage                Buffer Storage.
+  @param[in] FormSet                FormSet data structure.
+  @param[in] Storage                Buffer Storage.
 
 **/
 VOID
-LoadStorage (
+LoadFormSetStorage (
   IN HII_FORMSET          *FormSet,
   IN HII_FORMSET_STORAGE  *Storage
   )
@@ -1287,7 +1287,7 @@ LoadStorage (
 /**
   Zero extend integer/boolean/date/time to UINT64 for comparing.
 
-  @param  Value                  HII Value to be converted.
+  @param[in]  Value                  HII Value to be converted.
 
 **/
 VOID
@@ -1371,13 +1371,13 @@ PushStack (
 /**
   Initialize the internal data structure of a FormSet.
 
-  @param  Handle                 PackageList Handle
-  @param  FormSetGuid            On input, GUID or class GUID of a formset. If not
+  @param[in]      Handle         PackageList Handle
+  @param[in,out]  FormSetGuid    On input, GUID or class GUID of a formset. If not
                                  specified (NULL or zero GUID), take the first
                                  FormSet with class GUID EFI_HII_PLATFORM_SETUP_FORMSET_GUID
                                  found in package list.
                                  On output, GUID of the formset found(if not NULL).
-  @param  FormSet                FormSet data structure.
+  @param[out]     FormSet        FormSet data structure.
 
   @retval EFI_SUCCESS            The function completed successfully.
   @retval EFI_NOT_FOUND          The specified FormSet could not be found.
@@ -1393,7 +1393,7 @@ CreateFormSetFromHiiHandle (
 /**
   Initialize a Formset and get current setting for Questions.
 
-  @param  FormSet                FormSet data structure.
+  @param[in,out]  FormSet                FormSet data structure.
 
 **/
 VOID
@@ -1406,7 +1406,7 @@ InitializeFormSet (
 
   @param[in]      Storage        The NameValue Storage.
   @param[in]      Name           The Name.
-  @param[in,out]  Value          The retured Value.
+  @param[in,out]  Value          The returned Value.
 
   @retval EFI_SUCCESS            Value found for given Name.
   @retval EFI_NOT_FOUND          No such Name found in NameValue storage.
@@ -1434,7 +1434,7 @@ GetValueByName (
     Node = HII_NAME_VALUE_NODE_FROM_LINK (Link);
 
     if (StrCmp (Name, Node->Name) == 0) {
-      NewStringCpy (Value, Node->Value);
+      NewStringCopy (Value, Node->Value);
       return EFI_SUCCESS;
     }
 
@@ -1447,10 +1447,10 @@ GetValueByName (
 /**
   Get Question's current Value.
 
-  @param[in]   FormSet                FormSet data structure.
-  @param[in]   Form                   Form data structure.
-  @param[out]  Question               Question to be initialized.
-  @param[in]   GetValueFrom           Where to get value, may from editbuffer, buffer or hii driver.
+  @param[in]      FormSet        FormSet data structure.
+  @param[in]      Form           Form data structure.
+  @param[in,out]  Question       Question to be initialized.
+  @param[in]      GetValueFrom   Where to get value, may from editbuffer, buffer or hii driver.
 
   @retval EFI_SUCCESS            The function completed successfully.
   @retval EFI_INVALID_PARAMETER  Formset, Form or Question is NULL.
@@ -1674,7 +1674,7 @@ GetQuestionValue (
       }
 
       ASSERT (Value != NULL);
-      Status = BufferToValue (Question, Value, &Question->Value);
+      Status = BufferToQuestionValue (Question, Value, &Question->Value);
       FreePool (Value);
     }
   } else {
@@ -1756,7 +1756,7 @@ GetQuestionValue (
     //
     Value = Value + 1;
 
-    Status = BufferToValue (Question, Value, &Question->Value);
+    Status = BufferToQuestionValue (Question, Value, &Question->Value);
     if (EFI_ERROR (Status)) {
       FreePool (Result);
       return Status;
@@ -1811,8 +1811,8 @@ IfrStrToUpper (
 
   @param[in]  Value              Expression value to compare on.
 
-  @retval TRUE                   This value type can be transter to EFI_IFR_TYPE_BUFFER type.
-  @retval FALSE                  This value type can't be transter to EFI_IFR_TYPE_BUFFER type.
+  @retval TRUE                   This value type can be transferred to EFI_IFR_TYPE_BUFFER type.
+  @retval FALSE                  This value type can't be transferred to EFI_IFR_TYPE_BUFFER type.
 
 **/
 BOOLEAN
@@ -1841,8 +1841,8 @@ IsTypeInBuffer (
 
   @param[in]  Value              Expression value to compare on.
 
-  @retval TRUE                   This value type can be transter to EFI_IFR_TYPE_BUFFER type.
-  @retval FALSE                  This value type can't be transter to EFI_IFR_TYPE_BUFFER type.
+  @retval TRUE                   This value type can be transferred to EFI_IFR_TYPE_BUFFER type.
+  @retval FALSE                  This value type can't be transferred to EFI_IFR_TYPE_BUFFER type.
 
 **/
 BOOLEAN
@@ -2047,7 +2047,7 @@ CompareHiiValue (
       return EFI_SUCCESS;
     }
 
-    Str1 = GetToken (Value1->Value.string, HiiHandle);
+    Str1 = GetTokenString (Value1->Value.string, HiiHandle);
     if (Str1 == NULL) {
       //
       // String not found
@@ -2055,7 +2055,7 @@ CompareHiiValue (
       return EFI_NOT_FOUND;
     }
 
-    Str2 = GetToken (Value2->Value.string, HiiHandle);
+    Str2 = GetTokenString (Value2->Value.string, HiiHandle);
     if (Str2 == NULL) {
       FreePool (Str1);
       return EFI_NOT_FOUND;
@@ -2082,7 +2082,7 @@ CompareHiiValue (
     *Result = CompareMem (Buf1, Buf2, Len);
     if ((*Result == 0) && (Buf1Len != Buf2Len)) {
       //
-      // In this case, means base on samll number buffer, the data is same
+      // In this case, means base on small number buffer, the data is same
       // So which value has more data, which value is bigger.
       //
       *Result = Buf1Len > Buf2Len ? 1 : -1;
@@ -2348,7 +2348,7 @@ PushExpression (
 /**
   Pop an Expression value from the stack.
 
-  @param[in]  Value              Expression value to pop.
+  @param[out]  Value              Expression value to pop.
 
   @retval EFI_SUCCESS            The value was popped onto the stack.
   @retval EFI_ACCESS_DENIED      The pop operation underflowed the stack
@@ -2509,7 +2509,7 @@ IfrToString (
   }
 
   Result->Type         = EFI_IFR_TYPE_STRING;
-  Result->Value.string = NewString (String, FormSet->HiiHandle);
+  Result->Value.string = NewHiiString (String, FormSet->HiiHandle);
   return EFI_SUCCESS;
 }
 
@@ -2550,7 +2550,7 @@ IfrToUint (
 
   Status = EFI_SUCCESS;
   if (Value.Type == EFI_IFR_TYPE_STRING) {
-    String = GetToken (Value.Value.string, FormSet->HiiHandle);
+    String = GetTokenString (Value.Value.string, FormSet->HiiHandle);
     if (String == NULL) {
       return EFI_NOT_FOUND;
     }
@@ -2651,7 +2651,7 @@ IfrCatenate (
     }
 
     if (Value[Index].Type == EFI_IFR_TYPE_STRING) {
-      String[Index] = GetToken (Value[Index].Value.string, FormSet->HiiHandle);
+      String[Index] = GetTokenString (Value[Index].Value.string, FormSet->HiiHandle);
       if (String[Index] == NULL) {
         Status = EFI_NOT_FOUND;
         goto Done;
@@ -2668,7 +2668,7 @@ IfrCatenate (
     StrCatS (StringPtr, MaxLen, String[0]);
 
     Result->Type         = EFI_IFR_TYPE_STRING;
-    Result->Value.string = NewString (StringPtr, FormSet->HiiHandle);
+    Result->Value.string = NewHiiString (StringPtr, FormSet->HiiHandle);
   } else {
     Result->Type      = EFI_IFR_TYPE_BUFFER;
     Length0           = GetLengthForValue (&Value[0]);
@@ -2761,7 +2761,7 @@ IfrMatch (
       goto Done;
     }
 
-    String[Index] = GetToken (Value[Index].Value.string, FormSet->HiiHandle);
+    String[Index] = GetTokenString (Value[Index].Value.string, FormSet->HiiHandle);
     if (String[Index] == NULL) {
       Status = EFI_NOT_FOUND;
       goto Done;
@@ -2845,7 +2845,7 @@ IfrMatch2 (
       goto Done;
     }
 
-    String[Index] = GetToken (Value[Index].Value.string, FormSet->HiiHandle);
+    String[Index] = GetTokenString (Value[Index].Value.string, FormSet->HiiHandle);
     if (String[Index] == NULL) {
       Status = EFI_NOT_FOUND;
       goto Done;
@@ -3039,7 +3039,7 @@ IfrFind (
       goto Done;
     }
 
-    String[Index] = GetToken (Value[Index + 1].Value.string, FormSet->HiiHandle);
+    String[Index] = GetTokenString (Value[Index + 1].Value.string, FormSet->HiiHandle);
     if (String[Index] == NULL) {
       Status = EFI_NOT_FOUND;
       goto Done;
@@ -3139,7 +3139,7 @@ IfrMid (
   }
 
   if (Value[2].Type == EFI_IFR_TYPE_STRING) {
-    String = GetToken (Value[2].Value.string, FormSet->HiiHandle);
+    String = GetTokenString (Value[2].Value.string, FormSet->HiiHandle);
     if (String == NULL) {
       return EFI_NOT_FOUND;
     }
@@ -3154,7 +3154,7 @@ IfrMid (
     }
 
     Result->Type         = EFI_IFR_TYPE_STRING;
-    Result->Value.string = NewString (SubString, FormSet->HiiHandle);
+    Result->Value.string = NewHiiString (SubString, FormSet->HiiHandle);
 
     FreePool (String);
   } else {
@@ -3246,7 +3246,7 @@ IfrToken (
       goto Done;
     }
 
-    String[Index] = GetToken (Value[Index + 1].Value.string, FormSet->HiiHandle);
+    String[Index] = GetTokenString (Value[Index + 1].Value.string, FormSet->HiiHandle);
     if (String[Index] == NULL) {
       Status = EFI_NOT_FOUND;
       goto Done;
@@ -3285,7 +3285,7 @@ IfrToken (
   }
 
   Result->Type         = EFI_IFR_TYPE_STRING;
-  Result->Value.string = NewString (SubString, FormSet->HiiHandle);
+  Result->Value.string = NewHiiString (SubString, FormSet->HiiHandle);
 
 Done:
   if (String[0] != NULL) {
@@ -3367,7 +3367,7 @@ IfrSpan (
       goto Done;
     }
 
-    String[Index] = GetToken (Value[Index + 1].Value.string, FormSet->HiiHandle);
+    String[Index] = GetTokenString (Value[Index + 1].Value.string, FormSet->HiiHandle);
     if (String[Index] == NULL) {
       Status = EFI_NOT_FOUND;
       goto Done;
@@ -3480,7 +3480,7 @@ InitializeUnicodeCollationProtocol (
   }
 
   //
-  // BUGBUG: Proper impelmentation is to locate all Unicode Collation Protocol
+  // BUGBUG: Proper implementation is to locate all Unicode Collation Protocol
   // instances first and then select one which support English language.
   // Current implementation just pick the first instance.
   //
@@ -3702,7 +3702,7 @@ DevicePathToHiiHandle (
 /**
   Get question value from the predefined formset.
 
-  @param[in]  DevicePath         The driver's device path which produece the formset data.
+  @param[in]  DevicePath         The driver's device path which produce the formset data.
   @param[in]  InputHiiHandle     The hii handle associate with the formset data.
   @param[in]  FormSetGuid        The formset guid which include the question.
   @param[in]  QuestionId         The question id which need to get value from.
@@ -3898,7 +3898,7 @@ ReleaseHiiValue (
   @param[in]      Form           Form associated with this expression.
   @param[in,out]  Expression     Expression to be evaluated.
 
-  @retval EFI_SUCCESS            The expression evaluated successfuly
+  @retval EFI_SUCCESS            The expression evaluated successfully.
   @retval EFI_NOT_FOUND          The Question which referenced by a QuestionId
                                  could not be found.
   @retval EFI_OUT_OF_RESOURCES   There is not enough system memory to grow the
@@ -4293,7 +4293,7 @@ EvaluateHiiExpression (
             goto Done;
           }
 
-          StrPtr = GetToken (OpCode->ExtraData.QuestionRef3Data.DevicePath, FormSet->HiiHandle);
+          StrPtr = GetTokenString (OpCode->ExtraData.QuestionRef3Data.DevicePath, FormSet->HiiHandle);
           if ((StrPtr != NULL) && (PathFromText != NULL)) {
             DevicePath = PathFromText->ConvertTextToDevicePath (StrPtr);
             if ((DevicePath != NULL) && GetQuestionValueFromForm (DevicePath, NULL, &OpCode->ExtraData.Guid, Value->Value.u16, &QuestionVal)) {
@@ -4398,7 +4398,7 @@ EvaluateHiiExpression (
         }
 
         if (Value->Type == EFI_IFR_TYPE_STRING) {
-          StrPtr = GetToken (Value->Value.string, FormSet->HiiHandle);
+          StrPtr = GetTokenString (Value->Value.string, FormSet->HiiHandle);
           if (StrPtr == NULL) {
             Status = EFI_INVALID_PARAMETER;
             goto Done;
@@ -4482,12 +4482,12 @@ EvaluateHiiExpression (
         }
 
         Value->Type = EFI_IFR_TYPE_STRING;
-        StrPtr      = GetToken (Value->Value.u16, FormSet->HiiHandle);
+        StrPtr      = GetTokenString (Value->Value.u16, FormSet->HiiHandle);
         if (StrPtr == NULL) {
           //
           // If String not exit, push an empty string
           //
-          Value->Value.string = NewString (gEmptyString, FormSet->HiiHandle);
+          Value->Value.string = NewHiiString (gEmptyString, FormSet->HiiHandle);
         } else {
           Index               = (UINT16)Value->Value.u64;
           Value->Value.string = Index;
@@ -4522,7 +4522,7 @@ EvaluateHiiExpression (
           // with "true" is True, then push True. If a case-insensitive compare
           // with "false" is True, then push False. Otherwise, push Undefined.
           //
-          StrPtr = GetToken (Value->Value.string, FormSet->HiiHandle);
+          StrPtr = GetTokenString (Value->Value.string, FormSet->HiiHandle);
           if (StrPtr == NULL) {
             Status = EFI_INVALID_PARAMETER;
             goto Done;
@@ -4588,7 +4588,7 @@ EvaluateHiiExpression (
           break;
         }
 
-        StrPtr = GetToken (Value->Value.string, FormSet->HiiHandle);
+        StrPtr = GetTokenString (Value->Value.string, FormSet->HiiHandle);
         if (StrPtr == NULL) {
           Status = EFI_NOT_FOUND;
           goto Done;
@@ -4600,7 +4600,7 @@ EvaluateHiiExpression (
           mUnicodeCollation->StrUpr (mUnicodeCollation, StrPtr);
         }
 
-        Value->Value.string = NewString (StrPtr, FormSet->HiiHandle);
+        Value->Value.string = NewHiiString (StrPtr, FormSet->HiiHandle);
         FreePool (StrPtr);
         break;
 
@@ -5288,7 +5288,7 @@ GetOffsetFromConfigResp (
   //
   // Convert all hex digits in ConfigResp to lower case before searching.
   //
-  HiiToLower (ConfigResp);
+  HiiStringToLowercase (ConfigResp);
 
   //
   // 1. Directly use Question->BlockName to find.
@@ -5307,7 +5307,7 @@ GetOffsetFromConfigResp (
   //
   BlockData = AllocateCopyPool (StrSize (Question->BlockName), Question->BlockName);
   ASSERT (BlockData != NULL);
-  HiiToLower (BlockData);
+  HiiStringToLowercase (BlockData);
   RequestElement = StrStr (ConfigResp, BlockData);
   FreePool (BlockData);
 
@@ -5376,7 +5376,7 @@ GetDefaultValueFromAltCfg (
     return EFI_NOT_FOUND;
   }
 
-  return BufferToValue (Question, Value, DefaultValue);
+  return BufferToQuestionValue (Question, Value, DefaultValue);
 }
 
 /**
@@ -5458,7 +5458,7 @@ GetQuestionDefault (
   // Statement don't have storage, skip them
   //
   if (Question->QuestionId == 0) {
-    DEBUG ((DEBUG_ERROR, "%a, Question has no storage, skip it\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: Question has no storage, skip it\n", __func__));
     return Status;
   }
 
@@ -5489,7 +5489,7 @@ ReGetDefault:
   }
 
   //
-  // Get Question defaut value from call back function.
+  // Get Question default value from call back function.
   // The string type of question cause HII driver to set string to its default value.
   // So, we don't do this otherwise it will actually set question to default value.
   // We only want to get default value of question.

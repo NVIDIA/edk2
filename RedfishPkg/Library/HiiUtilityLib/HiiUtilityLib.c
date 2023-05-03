@@ -1,8 +1,9 @@
 /** @file
-  Definitinos of RedfishPlatformConfigLib
+  Implementation of HII utility library.
 
   Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
   (C) Copyright 2021 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -130,7 +131,7 @@ InitializeFormSet (
   Link = GetFirstNode (&FormSet->StorageListHead);
   while (!IsNull (&FormSet->StorageListHead, Link)) {
     Storage = HII_STORAGE_FROM_LINK (Link);
-    LoadStorage (FormSet, Storage);
+    LoadFormSetStorage (FormSet, Storage);
     Link = GetNextNode (&FormSet->StorageListHead, Link);
   }
 
@@ -157,7 +158,7 @@ InitializeFormSet (
 /**
   Free resources allocated for a FormSet.
 
-  @param  FormSet                Pointer of the FormSet
+  @param[in,out]  FormSet                Pointer of the FormSet
 
 **/
 VOID
@@ -230,8 +231,8 @@ DestroyFormSet (
 /**
   Submit data for a form.
 
-  @param  FormSet                FormSet which contains the Form.
-  @param  Form                   Form to submit.
+  @param[in]  FormSet                FormSet which contains the Form.
+  @param[in]  Form                   Form to submit.
 
   @retval EFI_SUCCESS            The function completed successfully.
   @retval Others                 Other errors occur.
@@ -311,10 +312,10 @@ SubmitForm (
 /**
   Save Question Value to the memory, but not to storage.
 
-  @param  FormSet                FormSet data structure.
-  @param  Form                   Form data structure.
-  @param  Question               Pointer to the Question.
-  @param  QuestionValue          New Question Value to be set.
+  @param[in]     FormSet                FormSet data structure.
+  @param[in]     Form                   Form data structure.
+  @param[in,out] Question               Pointer to the Question.
+  @param[in]     QuestionValue          New Question Value to be set.
 
   @retval EFI_SUCCESS            The question value has been set successfully.
   @retval EFI_INVALID_PARAMETER  One or more parameters are invalid.
@@ -517,9 +518,9 @@ SetQuestionValue (
 /**
   Get Question's current Value from storage.
 
-  @param  FormSet                FormSet data structure.
-  @param  Form                   Form data structure.
-  @param  Question               Question to be initialized.
+  @param[in]     FormSet                FormSet data structure.
+  @param[in]     Form                   Form data structure.
+  @param[in,out] Question               Question to be initialized.
 
   @return the current Question Value in storage if success.
   @return NULL if Question is not found or any error occurs.
@@ -549,7 +550,7 @@ RetrieveQuestion (
   CHAR16                           *ValueStr;
   UINTN                            Length;
   BOOLEAN                          IsBufferStorage;
-  CHAR16                           *NewString;
+  CHAR16                           *NewHiiString;
 
   if ((FormSet == NULL) || (Form == NULL) || (Question == NULL)) {
     return NULL;
@@ -659,21 +660,21 @@ RetrieveQuestion (
           goto ON_ERROR;
         }
 
-        NewString = GetToken (TypeValue->string, FormSet->HiiHandle);
-        if (NewString == NULL) {
+        NewHiiString = GetTokenString (TypeValue->string, FormSet->HiiHandle);
+        if (NewHiiString == NULL) {
           goto ON_ERROR;
         }
 
-        QuestionValue->Buffer = AllocatePool (StrSize (NewString));
+        QuestionValue->Buffer = AllocatePool (StrSize (NewHiiString));
         if (QuestionValue->Buffer == NULL) {
-          FreePool (NewString);
+          FreePool (NewHiiString);
           goto ON_ERROR;
         }
 
-        CopyMem (QuestionValue->Buffer, NewString, StrSize (NewString));
-        QuestionValue->BufferLen = (UINT16)StrSize (NewString);
+        CopyMem (QuestionValue->Buffer, NewHiiString, StrSize (NewHiiString));
+        QuestionValue->BufferLen = (UINT16)StrSize (NewHiiString);
 
-        FreePool (NewString);
+        FreePool (NewHiiString);
       }
     }
 
@@ -785,7 +786,7 @@ RetrieveQuestion (
   }
 
   ValueStr++;
-  Status = BufferToValue (Question, ValueStr, QuestionValue);
+  Status = BufferToQuestionValue (Question, ValueStr, QuestionValue);
   if (EFI_ERROR (Status)) {
     FreePool (Result);
     goto ON_ERROR;

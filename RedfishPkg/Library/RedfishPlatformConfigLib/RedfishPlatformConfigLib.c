@@ -156,7 +156,7 @@ RedfishPlatformConfigSetValue (
   @param[in]   Schema              The Redfish schema to query.
   @param[in]   Version             The Redfish version to query.
   @param[in]   Pattern             The target Configure Language pattern.
-  @param[out]  RedpathList         The list of Configure Language.
+  @param[out]  ConfigureLangList   The list of Configure Language.
   @param[out]  Count               The number of Configure Language in ConfigureLangList.
 
   @retval EFI_SUCCESS              ConfigureLangList is returned successfully.
@@ -188,11 +188,10 @@ RedfishPlatformConfigGetConfigureLang (
 }
 
 /**
-  Get the list of supported Redfish schema from paltform configuration on give HII handle.
+  Get the list of supported Redfish schema from platform configuration.
 
-  @param[in]   HiiHandle           The target handle to search. If handle is NULL,
-                                   this function return all schema from HII database.
   @param[out]  SupportedSchema     The supported schema list which is separated by ';'.
+                                   For example: "x-uefi-redfish-Memory.v1_7_1;x-uefi-redfish-Boot.v1_0_1"
                                    The SupportedSchema is allocated by the callee. It's caller's
                                    responsibility to free this buffer using FreePool().
 
@@ -204,8 +203,7 @@ RedfishPlatformConfigGetConfigureLang (
 EFI_STATUS
 EFIAPI
 RedfishPlatformConfigGetSupportedSchema (
-  IN     EFI_HII_HANDLE  HiiHandle     OPTIONAL,
-  OUT    CHAR8           **SupportedSchema
+  OUT    CHAR8  **SupportedSchema
   )
 {
   if (mRedfishPlatformConfigLibPrivate.Protocol == NULL) {
@@ -214,7 +212,6 @@ RedfishPlatformConfigGetSupportedSchema (
 
   return mRedfishPlatformConfigLibPrivate.Protocol->GetSupportedSchema (
                                                       mRedfishPlatformConfigLibPrivate.Protocol,
-                                                      HiiHandle,
                                                       SupportedSchema
                                                       );
 }
@@ -246,7 +243,7 @@ RedfishPlatformConfigProtocolInstalled (
                   (VOID **)&mRedfishPlatformConfigLibPrivate.Protocol
                   );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, locate EDKII_REDFISH_PLATFORM_CONFIG_PROTOCOL failure: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: locate EDKII_REDFISH_PLATFORM_CONFIG_PROTOCOL failure: %r\n", __func__, Status));
     return;
   }
 
@@ -256,12 +253,12 @@ RedfishPlatformConfigProtocolInstalled (
 
 /**
 
-  Create prottocol listener and wait for Redfish Platform Config protocol.
+  Create protocol listener and wait for Redfish Platform Config protocol.
 
   @param ImageHandle     The image handle.
   @param SystemTable     The system table.
 
-  @retval  EFI_SUCEESS  Protocol listener is registered successfully.
+  @retval  EFI_SUCCESS  Protocol listener is registered successfully.
 
 **/
 EFI_STATUS
@@ -280,7 +277,7 @@ RedfishPlatformConfigLibConstructor (
                                                      &mRedfishPlatformConfigLibPrivate.Registration
                                                      );
   if (mRedfishPlatformConfigLibPrivate.ProtocolEvent == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, failed to create protocol notify event\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: failed to create protocol notify event\n", __func__));
   }
 
   return EFI_SUCCESS;

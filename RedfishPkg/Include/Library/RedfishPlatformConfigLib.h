@@ -1,5 +1,5 @@
 /** @file
-  Definitinos of RedfishPlatformConfigLib
+  Definitions of RedfishPlatformConfigLib
 
   (C) Copyright 2021 Hewlett Packard Enterprise Development LP<BR>
   Copyright (c) 2022-2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
@@ -61,7 +61,7 @@ RedfishPlatformConfigSetValue (
   @param[in]   Schema              The Redfish schema to query.
   @param[in]   Version             The Redfish version to query.
   @param[in]   Pattern             The target Configure Language pattern.
-  @param[out]  RedpathList         The list of Configure Language.
+  @param[out]  ConfigureLangList   The list of Configure Language.
   @param[out]  Count               The number of Configure Language in ConfigureLangList.
 
   @retval EFI_SUCCESS              ConfigureLangList is returned successfully.
@@ -79,10 +79,8 @@ RedfishPlatformConfigGetConfigureLang (
   );
 
 /**
-  Get the list of supported Redfish schema from platform configuration on the give HII handle.
+  Get the list of supported Redfish schema from platform configuration.
 
-  @param[in]   HiiHandle           The target handle to search. If handle is NULL,
-                                   this function return all schema from HII database.
   @param[out]  SupportedSchema     The supported schema list which is separated by ';'.
                                    For example: "x-uefi-redfish-Memory.v1_7_1;x-uefi-redfish-Boot.v1_0_1"
                                    The SupportedSchema is allocated by the callee. It's caller's
@@ -96,8 +94,7 @@ RedfishPlatformConfigGetConfigureLang (
 EFI_STATUS
 EFIAPI
 RedfishPlatformConfigGetSupportedSchema (
-  IN     EFI_HII_HANDLE HiiHandle, OPTIONAL
-  OUT    CHAR8          **SupportedSchema
+  OUT    CHAR8  **SupportedSchema
   );
 
 /**

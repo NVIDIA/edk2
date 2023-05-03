@@ -1,5 +1,5 @@
 /** @file
-  Definitinos of RedfishPlatformConfigLib
+  The implementation of HII IFR parser.
 
   Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
   (C) Copyright 2021 Hewlett Packard Enterprise Development LP<BR>
@@ -10,8 +10,6 @@
 **/
 
 #include "HiiInternal.h"
-
-#define EFI_IFR_SPECIFICATION_VERSION  (UINT16) (((EFI_SYSTEM_TABLE_REVISION >> 16) << 8) | (((EFI_SYSTEM_TABLE_REVISION & 0xFFFF) / 10) << 4) | ((EFI_SYSTEM_TABLE_REVISION & 0xFFFF) % 10))
 
 /**
   Initialize Statement header members.
@@ -159,12 +157,12 @@ CreateQuestion (
   }
 
   //
-  // Initialilze varname for Name/Value or EFI Variable
+  // Initialize varname for Name/Value or EFI Variable
   //
   if ((Statement->Storage->Type == EFI_HII_VARSTORE_NAME_VALUE) ||
       (Statement->Storage->Type == EFI_HII_VARSTORE_EFI_VARIABLE))
   {
-    Statement->VariableName = GetToken (Statement->VarStoreInfo.VarName, FormSet->HiiHandle);
+    Statement->VariableName = GetTokenString (Statement->VarStoreInfo.VarName, FormSet->HiiHandle);
     if (Statement->VariableName == NULL) {
       return NULL;
     }
@@ -499,7 +497,7 @@ InitializeRequestElement (
                Question->VarStoreInfo.VarOffset,
                Question->StorageWidth
                );
-    HiiToLower (RequestElement);
+    HiiStringToLowercase (RequestElement);
     Question->BlockName = AllocateCopyPool ((StrLen + 1) * sizeof (CHAR16), RequestElement);
     if (Question->BlockName == NULL) {
       return EFI_OUT_OF_RESOURCES;
@@ -934,10 +932,10 @@ IsUnKnownOpCode (
 }
 
 /**
-  Calculate number of Statemens(Questions) and Expression OpCodes.
+  Calculate number of Statements(Questions) and Expression OpCodes.
 
   @param[in]      FormSet                The FormSet to be counted.
-  @param[in,out]  NumberOfStatement      Number of Statemens(Questions)
+  @param[in,out]  NumberOfStatement      Number of Statements(Questions)
   @param[in,out]  NumberOfExpression     Number of Expression OpCodes
 
 **/
@@ -1298,7 +1296,7 @@ ParseOpCodes (
               ((ExpressionOpCode->ExtraData.GetSetData.VarStorage->Type == EFI_HII_VARSTORE_NAME_VALUE) ||
                (ExpressionOpCode->ExtraData.GetSetData.VarStorage->Type == EFI_HII_VARSTORE_EFI_VARIABLE)))
           {
-            ExpressionOpCode->ExtraData.GetSetData.ValueName = GetToken (ExpressionOpCode->ExtraData.GetSetData.VarStoreInfo.VarName, FormSet->HiiHandle);
+            ExpressionOpCode->ExtraData.GetSetData.ValueName = GetTokenString (ExpressionOpCode->ExtraData.GetSetData.VarStoreInfo.VarName, FormSet->HiiHandle);
             if (ExpressionOpCode->ExtraData.GetSetData.ValueName == NULL) {
               //
               // String ID is invalid.
@@ -1459,7 +1457,7 @@ ParseOpCodes (
             return Status;
           }
 
-          OpCodeDisabled = IsTrue (&CurrentExpression->Result);
+          OpCodeDisabled = IsHiiValueTrue (&CurrentExpression->Result);
         }
 
         CurrentExpression = NULL;
@@ -1928,7 +1926,7 @@ ParseOpCodes (
           return EFI_OUT_OF_RESOURCES;
         }
 
-        CurrentStatement->Value.Value.string = NewString ((CHAR16 *)CurrentStatement->Value.Buffer, FormSet->HiiHandle);
+        CurrentStatement->Value.Value.string = NewHiiString ((CHAR16 *)CurrentStatement->Value.Buffer, FormSet->HiiHandle);
 
         InitializeRequestElement (FormSet, CurrentStatement, CurrentForm);
         break;
@@ -1952,7 +1950,7 @@ ParseOpCodes (
           return EFI_OUT_OF_RESOURCES;
         }
 
-        CurrentStatement->Value.Value.string = NewString ((CHAR16 *)CurrentStatement->Value.Buffer, FormSet->HiiHandle);
+        CurrentStatement->Value.Value.string = NewHiiString ((CHAR16 *)CurrentStatement->Value.Buffer, FormSet->HiiHandle);
 
         InitializeRequestElement (FormSet, CurrentStatement, CurrentForm);
         break;
@@ -2678,7 +2676,7 @@ ParseOpCodes (
                   return Status;
                 }
 
-                OpCodeDisabled = IsTrue (&CurrentExpression->Result);
+                OpCodeDisabled = IsHiiValueTrue (&CurrentExpression->Result);
 
                 //
                 // DisableIf Expression is only used once and not queued, free it

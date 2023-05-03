@@ -1,5 +1,4 @@
 /** @file
-
   The implementation of EDKII Redfish Platform Config Protocol.
 
   (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP<BR>
@@ -336,7 +335,7 @@ GetAttributeNameFromConfigLanguage (
     //
     // wrong format
     //
-    DEBUG ((DEBUG_ERROR, "%a, invalid format: %a\n", __FUNCTION__, ConfigLanguage));
+    DEBUG ((DEBUG_ERROR, "%a: invalid format: %a\n", __func__, ConfigLanguage));
     ASSERT (FALSE);
     return NULL;
   }
@@ -469,28 +468,28 @@ HiiStatementToAttributeType (
   EDKII_REDFISH_ATTRIBUTE_TYPES  type;
 
   if (HiiStatement == NULL) {
-    return REDFISH_ATTRIBUTE_TYPE_UNKNOWN;
+    return RedfishAttributeTypeUnknown;
   }
 
-  type = REDFISH_ATTRIBUTE_TYPE_UNKNOWN;
+  type = RedfishAttributeTypeUnknown;
   switch (HiiStatement->Operand) {
     case EFI_IFR_ONE_OF_OP:
     case EFI_IFR_ORDERED_LIST_OP:
-      type = REDFISH_ATTRIBUTE_TYPE_ENUMERATION;
+      type = RedfishAttributeTypeEnumeration;
       break;
     case EFI_IFR_STRING_OP:
-      type = REDFISH_ATTRIBUTE_TYPE_STRING;
+      type = RedfishAttributeTypeString;
       break;
     case EFI_IFR_NUMERIC_OP:
-      type = REDFISH_ATTRIBUTE_TYPE_INTEGER;
+      type = RedfishAttributeTypeInteger;
       break;
     case EFI_IFR_CHECKBOX_OP:
-      type = REDFISH_ATTRIBUTE_TYPE_BOOLEAN;
+      type = RedfishAttributeTypeBoolean;
       break;
     case EFI_IFR_DATE_OP:
     case EFI_IFR_TIME_OP:
     default:
-      DEBUG ((DEBUG_ERROR, "%a, unsupported operand: 0x%x\n", __FUNCTION__, HiiStatement->Operand));
+      DEBUG ((DEBUG_ERROR, "%a: unsupported operand: 0x%x\n", __func__, HiiStatement->Operand));
       break;
   }
 
@@ -642,7 +641,6 @@ OrderedListOptionValueToStringId (
 {
   LIST_ENTRY           *Link;
   HII_QUESTION_OPTION  *Option;
-  BOOLEAN              Found;
   UINT64               CurrentValue;
 
   if (HiiStatement == NULL) {
@@ -657,8 +655,7 @@ OrderedListOptionValueToStringId (
     return 0;
   }
 
-  Found = FALSE;
-  Link  = GetFirstNode (&HiiStatement->OptionListHead);
+  Link = GetFirstNode (&HiiStatement->OptionListHead);
   while (!IsNull (&HiiStatement->OptionListHead, Link)) {
     Option = HII_QUESTION_OPTION_FROM_LINK (Link);
 
@@ -872,27 +869,27 @@ HiiValueToRedfishNumeric (
 
   switch (Value->Type) {
     case EFI_IFR_TYPE_NUM_SIZE_8:
-      RedfishValue->Type          = REDFISH_VALUE_TYPE_INTEGER;
+      RedfishValue->Type          = RedfishValueTypeInteger;
       RedfishValue->Value.Integer = (INT64)Value->Value.u8;
       break;
     case EFI_IFR_TYPE_NUM_SIZE_16:
-      RedfishValue->Type          = REDFISH_VALUE_TYPE_INTEGER;
+      RedfishValue->Type          = RedfishValueTypeInteger;
       RedfishValue->Value.Integer = (INT64)Value->Value.u16;
       break;
     case EFI_IFR_TYPE_NUM_SIZE_32:
-      RedfishValue->Type          = REDFISH_VALUE_TYPE_INTEGER;
+      RedfishValue->Type          = RedfishValueTypeInteger;
       RedfishValue->Value.Integer = (INT64)Value->Value.u32;
       break;
     case EFI_IFR_TYPE_NUM_SIZE_64:
-      RedfishValue->Type          = REDFISH_VALUE_TYPE_INTEGER;
+      RedfishValue->Type          = RedfishValueTypeInteger;
       RedfishValue->Value.Integer = (INT64)Value->Value.u64;
       break;
     case EFI_IFR_TYPE_BOOLEAN:
-      RedfishValue->Type          = REDFISH_VALUE_TYPE_BOOLEAN;
+      RedfishValue->Type          = RedfishValueTypeBoolean;
       RedfishValue->Value.Boolean = Value->Value.b;
       break;
     default:
-      RedfishValue->Type = REDFISH_VALUE_TYPE_UNKNOWN;
+      RedfishValue->Type = RedfishValueTypeUnknown;
       break;
   }
 
@@ -920,11 +917,11 @@ RedfishNumericToHiiValue (
   }
 
   switch (RedfishValue->Type) {
-    case REDFISH_VALUE_TYPE_INTEGER:
+    case RedfishValueTypeInteger:
       Value->Type      = EFI_IFR_TYPE_NUM_SIZE_64;
       Value->Value.u64 = (UINT64)RedfishValue->Value.Integer;
       break;
-    case REDFISH_VALUE_TYPE_BOOLEAN:
+    case RedfishValueTypeBoolean:
       Value->Type    = EFI_IFR_TYPE_BOOLEAN;
       Value->Value.b = RedfishValue->Value.Boolean;
       break;
@@ -1037,12 +1034,11 @@ HiiValueToOrderedListOptionStringId (
   OUT UINTN          *ReturnSize
   )
 {
-  LIST_ENTRY           *Link;
-  HII_QUESTION_OPTION  *Option;
-  UINTN                OptionCount;
-  EFI_STRING_ID        *ReturnedArray;
-  UINTN                Index;
-  UINT64               Value;
+  LIST_ENTRY     *Link;
+  UINTN          OptionCount;
+  EFI_STRING_ID  *ReturnedArray;
+  UINTN          Index;
+  UINT64         Value;
 
   if ((HiiStatement == NULL) || (ReturnSize == NULL)) {
     return NULL;
@@ -1065,17 +1061,14 @@ HiiValueToOrderedListOptionStringId (
   OptionCount = 0;
   Link        = GetFirstNode (&HiiStatement->OptionListHead);
   while (!IsNull (&HiiStatement->OptionListHead, Link)) {
-    Option = HII_QUESTION_OPTION_FROM_LINK (Link);
-
     ++OptionCount;
-
     Link = GetNextNode (&HiiStatement->OptionListHead, Link);
   }
 
   *ReturnSize   = OptionCount;
   ReturnedArray = AllocatePool (sizeof (EFI_STRING_ID) * OptionCount);
   if (ReturnedArray == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, out of resource\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: out of resource\n", __func__));
     *ReturnSize = 0;
     return NULL;
   }
@@ -1203,7 +1196,7 @@ HiiValueToRedfishValue (
         break;
       }
 
-      RedfishValue->Type = REDFISH_VALUE_TYPE_STRING;
+      RedfishValue->Type = RedfishValueTypeString;
       break;
     case EFI_IFR_STRING_OP:
       if (Value->Type != EFI_IFR_TYPE_STRING) {
@@ -1212,7 +1205,7 @@ HiiValueToRedfishValue (
         break;
       }
 
-      RedfishValue->Type         = REDFISH_VALUE_TYPE_STRING;
+      RedfishValue->Type         = RedfishValueTypeString;
       RedfishValue->Value.Buffer = AllocatePool (StrLen ((CHAR16 *)Value->Buffer) + 1);
       UnicodeStrToAsciiStrS ((CHAR16 *)Value->Buffer, RedfishValue->Value.Buffer, StrLen ((CHAR16 *)Value->Buffer) + 1);
       break;
@@ -1220,7 +1213,7 @@ HiiValueToRedfishValue (
     case EFI_IFR_NUMERIC_OP:
       Status = HiiValueToRedfishNumeric (Value, RedfishValue);
       if (EFI_ERROR (Status)) {
-        DEBUG ((DEBUG_ERROR, "%a, failed to convert HII value to Redfish value: %r\n", __FUNCTION__, Status));
+        DEBUG ((DEBUG_ERROR, "%a: failed to convert HII value to Redfish value: %r\n", __func__, Status));
         break;
       }
 
@@ -1235,7 +1228,7 @@ HiiValueToRedfishValue (
       //
       // Action has no value. Just return unknown type.
       //
-      RedfishValue->Type = REDFISH_VALUE_TYPE_UNKNOWN;
+      RedfishValue->Type = RedfishValueTypeUnknown;
       break;
     case EFI_IFR_ORDERED_LIST_OP:
       StringIdArray = HiiValueToOrderedListOptionStringId (HiiStatement, &Count);
@@ -1259,12 +1252,12 @@ HiiValueToRedfishValue (
       }
 
       RedfishValue->ArrayCount = Count;
-      RedfishValue->Type       = REDFISH_VALUE_TYPE_STRING_ARRAY;
+      RedfishValue->Type       = RedfishValueTypeStringArray;
 
       FreePool (StringIdArray);
       break;
     default:
-      DEBUG ((DEBUG_ERROR, "%a, catch unsupported type: 0x%x! Please contact with author if we need to support this type.\n", __FUNCTION__, HiiStatement->Operand));
+      DEBUG ((DEBUG_ERROR, "%a: catch unsupported type: 0x%x! Please contact with author if we need to support this type.\n", __func__, HiiStatement->Operand));
       ASSERT (FALSE);
       Status = EFI_UNSUPPORTED;
       break;
@@ -1338,7 +1331,7 @@ GetFullSchemaString (
 
   FullName = AllocatePool (Size);
   if (FullName == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, out-of-resource\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: out-of-resource\n", __func__));
     return NULL;
   }
 
@@ -1378,13 +1371,13 @@ RedfishPlatformConfigGetStatementCommon (
 
   Status = ProcessPendingList (&RedfishPlatformConfigPrivate->FormsetList, &RedfishPlatformConfigPrivate->PendingList);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, ProcessPendingList failure: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: ProcessPendingList failure: %r\n", __func__, Status));
     return Status;
   }
 
   TargetStatement = GetStatementPrivateByConfigureLang (&RedfishPlatformConfigPrivate->FormsetList, Schema, ConfigureLang);
   if (TargetStatement == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, No match HII statement is found by the given %s in schema %a\n", __FUNCTION__, ConfigureLang, Schema));
+    DEBUG ((DEBUG_ERROR, "%a: No match HII statement is found by the given %s in schema %a\n", __func__, ConfigureLang, Schema));
     return EFI_NOT_FOUND;
   }
 
@@ -1398,7 +1391,7 @@ RedfishPlatformConfigGetStatementCommon (
              GetSetValueWithBuffer
              );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, failed to get question current value: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: failed to get question current value: %r\n", __func__, Status));
     return Status;
   }
 
@@ -1447,7 +1440,7 @@ RedfishPlatformConfigProtocolGetValue (
   }
 
   RedfishPlatformConfigPrivate = REDFISH_PLATFORM_CONFIG_PRIVATE_FROM_THIS (This);
-  Value->Type                  = REDFISH_VALUE_TYPE_UNKNOWN;
+  Value->Type                  = RedfishValueTypeUnknown;
   Value->ArrayCount            = 0;
   FullSchema                   = NULL;
 
@@ -1474,7 +1467,7 @@ RedfishPlatformConfigProtocolGetValue (
              Value
              );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, HiiValueToRedfishValue failed: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: HiiValueToRedfishValue failed: %r\n", __func__, Status));
   }
 
 RELEASE_RESOURCE:
@@ -1519,13 +1512,13 @@ RedfishPlatformConfigSaveQuestionValue (
              Value
              );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, failed to set question value: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: failed to set question value: %r\n", __func__, Status));
     return Status;
   }
 
   Status = SubmitForm (HiiFormset, HiiForm);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, failed to submit form: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: failed to submit form: %r\n", __func__, Status));
     return Status;
   }
 
@@ -1538,7 +1531,7 @@ RedfishPlatformConfigSaveQuestionValue (
   @param[in]   RedfishPlatformConfigPrivate   Private instance.
   @param[in]   Schema                         Redfish schema string.
   @param[in]   ConfigureLang                  Configure language that refers to this statement.
-  @param[in]   Statement                      Statement instance
+  @param[in]   StatementValue                 Statement value.
 
   @retval EFI_SUCCESS       HII value is returned successfully.
   @retval Others            Errors occur
@@ -1569,13 +1562,13 @@ RedfishPlatformConfigSetStatementCommon (
 
   Status = ProcessPendingList (&RedfishPlatformConfigPrivate->FormsetList, &RedfishPlatformConfigPrivate->PendingList);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, ProcessPendingList failure: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: ProcessPendingList failure: %r\n", __func__, Status));
     return Status;
   }
 
   TargetStatement = GetStatementPrivateByConfigureLang (&RedfishPlatformConfigPrivate->FormsetList, Schema, ConfigureLang);
   if (TargetStatement == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, No match HII statement is found by the given %s in schema %a\n", __FUNCTION__, ConfigureLang, Schema));
+    DEBUG ((DEBUG_ERROR, "%a: No match HII statement is found by the given %s in schema %a\n", __func__, ConfigureLang, Schema));
     return EFI_NOT_FOUND;
   }
 
@@ -1596,7 +1589,7 @@ RedfishPlatformConfigSetStatementCommon (
 
       Status = HiiStringToOneOfOptionValue (TargetStatement, Schema, TempBuffer, StatementValue);
       if (EFI_ERROR (Status)) {
-        DEBUG ((DEBUG_ERROR, "%a, failed to find option value by the given %s\n", __FUNCTION__, TempBuffer));
+        DEBUG ((DEBUG_ERROR, "%a: failed to find option value by the given %s\n", __func__, TempBuffer));
         FreePool (TempBuffer);
         return EFI_NOT_FOUND;
       }
@@ -1643,7 +1636,7 @@ RedfishPlatformConfigSetStatementCommon (
       //
       StatementValue->Type = TargetStatement->HiiStatement->Value.Type;
     } else {
-      DEBUG ((DEBUG_ERROR, "%a, catch value type mismatch! input type: 0x%x but target value type: 0x%x\n", __FUNCTION__, StatementValue->Type, TargetStatement->HiiStatement->Value.Type));
+      DEBUG ((DEBUG_ERROR, "%a: catch value type mismatch! input type: 0x%x but target value type: 0x%x\n", __func__, StatementValue->Type, TargetStatement->HiiStatement->Value.Type));
       ASSERT (FALSE);
     }
   }
@@ -1655,7 +1648,7 @@ RedfishPlatformConfigSetStatementCommon (
              StatementValue
              );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, failed to save question value: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: failed to save question value: %r\n", __func__, Status));
     return Status;
   }
 
@@ -1694,7 +1687,7 @@ RedfishPlatformConfigProtocolSetValue (
     return EFI_INVALID_PARAMETER;
   }
 
-  if ((Value.Type == REDFISH_VALUE_TYPE_UNKNOWN) || (Value.Type >= REDFISH_VALUE_TYPE_MAX)) {
+  if ((Value.Type == RedfishValueTypeUnknown) || (Value.Type >= RedfishValueTypeMax)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -1709,16 +1702,16 @@ RedfishPlatformConfigProtocolSetValue (
   ZeroMem (&NewValue, sizeof (HII_STATEMENT_VALUE));
 
   switch (Value.Type) {
-    case REDFISH_VALUE_TYPE_INTEGER:
-    case REDFISH_VALUE_TYPE_BOOLEAN:
+    case RedfishValueTypeInteger:
+    case RedfishValueTypeBoolean:
       Status = RedfishNumericToHiiValue (&Value, &NewValue);
       if (EFI_ERROR (Status)) {
-        DEBUG ((DEBUG_ERROR, "%a, failed to convert Redfish value to Hii value: %r\n", __FUNCTION__, Status));
+        DEBUG ((DEBUG_ERROR, "%a: failed to convert Redfish value to Hii value: %r\n", __func__, Status));
         goto RELEASE_RESOURCE;
       }
 
       break;
-    case REDFISH_VALUE_TYPE_STRING:
+    case RedfishValueTypeString:
       NewValue.Type      = EFI_IFR_TYPE_STRING;
       NewValue.BufferLen = (UINT16)AsciiStrSize (Value.Value.Buffer);
       NewValue.Buffer    = AllocateCopyPool (NewValue.BufferLen, Value.Value.Buffer);
@@ -1728,7 +1721,7 @@ RedfishPlatformConfigProtocolSetValue (
       }
 
       break;
-    case REDFISH_VALUE_TYPE_STRING_ARRAY:
+    case RedfishValueTypeStringArray:
       NewValue.Type      = EFI_IFR_TYPE_STRING;
       NewValue.BufferLen = (UINT16)Value.ArrayCount;
       NewValue.Buffer    = (UINT8 *)Value.Value.StringArray;
@@ -1740,7 +1733,7 @@ RedfishPlatformConfigProtocolSetValue (
 
   Status = RedfishPlatformConfigSetStatementCommon (RedfishPlatformConfigPrivate, FullSchema, ConfigureLang, &NewValue);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, failed to set value to statement: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: failed to set value to statement: %r\n", __func__, Status));
   }
 
 RELEASE_RESOURCE:
@@ -1799,7 +1792,7 @@ RedfishPlatformConfigProtocolGetConfigureLang (
 
   Status = ProcessPendingList (&RedfishPlatformConfigPrivate->FormsetList, &RedfishPlatformConfigPrivate->PendingList);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, ProcessPendingList failure: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: ProcessPendingList failure: %r\n", __func__, Status));
     return Status;
   }
 
@@ -1816,7 +1809,7 @@ RedfishPlatformConfigProtocolGetConfigureLang (
              &StatementList
              );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, GetStatementPrivateByConfigureLangRegex failure: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: GetStatementPrivateByConfigureLangRegex failure: %r\n", __func__, Status));
     goto RELEASE_RESOURCE;
   }
 
@@ -1862,12 +1855,11 @@ RELEASE_RESOURCE:
 }
 
 /**
-  Get the list of supported Redfish schema from platform configuration on give HII handle.
+  Get the list of supported Redfish schema from platform configuration.
 
   @param[in]   This                Pointer to EDKII_REDFISH_PLATFORM_CONFIG_PROTOCOL instance.
-  @param[in]   HiiHandle           The target handle to search. If handle is NULL,
-                                   this function return all schema from HII database.
   @param[out]  SupportedSchema     The supported schema list which is separated by ';'.
+                                   For example: "x-uefi-redfish-Memory.v1_7_1;x-uefi-redfish-Boot.v1_0_1"
                                    The SupportedSchema is allocated by the callee. It's caller's
                                    responsibility to free this buffer using FreePool().
 
@@ -1878,9 +1870,8 @@ RELEASE_RESOURCE:
 EFI_STATUS
 EFIAPI
 RedfishPlatformConfigProtocolGetSupportedSchema (
-  IN     EDKII_REDFISH_PLATFORM_CONFIG_PROTOCOL *This,
-  IN     EFI_HII_HANDLE HiiHandle, OPTIONAL
-  OUT    CHAR8                                    **SupportedSchema
+  IN     EDKII_REDFISH_PLATFORM_CONFIG_PROTOCOL  *This,
+  OUT    CHAR8                                   **SupportedSchema
   )
 {
   REDFISH_PLATFORM_CONFIG_PRIVATE           *RedfishPlatformConfigPrivate;
@@ -1903,7 +1894,7 @@ RedfishPlatformConfigProtocolGetSupportedSchema (
 
   Status = ProcessPendingList (&RedfishPlatformConfigPrivate->FormsetList, &RedfishPlatformConfigPrivate->PendingList);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, ProcessPendingList failure: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: ProcessPendingList failure: %r\n", __func__, Status));
     return Status;
   }
 
@@ -1919,11 +1910,6 @@ RedfishPlatformConfigProtocolGetSupportedSchema (
   while (!IsNull (&RedfishPlatformConfigPrivate->FormsetList, HiiFormsetLink)) {
     HiiFormsetNextLink = GetNextNode (&RedfishPlatformConfigPrivate->FormsetList, HiiFormsetLink);
     HiiFormsetPrivate  = REDFISH_PLATFORM_CONFIG_FORMSET_FROM_LINK (HiiFormsetLink);
-
-    if ((HiiHandle != NULL) && (HiiHandle != HiiFormsetPrivate->HiiHandle)) {
-      HiiFormsetLink = HiiFormsetNextLink;
-      continue;
-    }
 
     if (HiiFormsetPrivate->SupportedSchema.Count > 0) {
       for (Index = 0; Index < HiiFormsetPrivate->SupportedSchema.Count; Index++) {
@@ -1948,11 +1934,6 @@ RedfishPlatformConfigProtocolGetSupportedSchema (
   while (!IsNull (&RedfishPlatformConfigPrivate->FormsetList, HiiFormsetLink)) {
     HiiFormsetNextLink = GetNextNode (&RedfishPlatformConfigPrivate->FormsetList, HiiFormsetLink);
     HiiFormsetPrivate  = REDFISH_PLATFORM_CONFIG_FORMSET_FROM_LINK (HiiFormsetLink);
-
-    if ((HiiHandle != NULL) && (HiiHandle != HiiFormsetPrivate->HiiHandle)) {
-      HiiFormsetLink = HiiFormsetNextLink;
-      continue;
-    }
 
     if (HiiFormsetPrivate->SupportedSchema.Count > 0) {
       for (Index = 0; Index < HiiFormsetPrivate->SupportedSchema.Count; Index++) {
@@ -1989,6 +1970,7 @@ RedfishPlatformConfigProtocolGetSupportedSchema (
 
 **/
 EFI_STATUS
+EFIAPI
 RedfishPlatformConfigProtocolGetDefaultValue (
   IN     EDKII_REDFISH_PLATFORM_CONFIG_PROTOCOL  *This,
   IN     CHAR8                                   *Schema,
@@ -2030,7 +2012,7 @@ RedfishPlatformConfigProtocolGetDefaultValue (
 
   Status = GetQuestionDefault (TargetStatement->ParentForm->ParentFormset->HiiFormSet, TargetStatement->ParentForm->HiiForm, TargetStatement->HiiStatement, DefaultClass, &DefaultValue);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, GetQuestionDefault failed: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: GetQuestionDefault failed: %r\n", __func__, Status));
     goto RELEASE_RESOURCE;
   }
 
@@ -2042,7 +2024,7 @@ RedfishPlatformConfigProtocolGetDefaultValue (
              Value
              );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, HiiValueToRedfishValue failed: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: HiiValueToRedfishValue failed: %r\n", __func__, Status));
   }
 
 RELEASE_RESOURCE:
@@ -2068,6 +2050,7 @@ RELEASE_RESOURCE:
 
 **/
 EFI_STATUS
+EFIAPI
 RedfishPlatformConfigProtocolGetAttribute (
   IN     EDKII_REDFISH_PLATFORM_CONFIG_PROTOCOL  *This,
   IN     CHAR8                                   *Schema,
@@ -2118,23 +2101,23 @@ RedfishPlatformConfigProtocolGetAttribute (
   AttributeValue->ResetRequired = ((TargetStatement->Flags & EFI_IFR_FLAG_RESET_REQUIRED) == 0 ? FALSE : TRUE);
   AttributeValue->Type          = HiiStatementToAttributeType (TargetStatement->HiiStatement);
   AttributeValue->Suppress      = TargetStatement->Suppressed;
-  AttributeValue->Grayout       = TargetStatement->Grayout;
+  AttributeValue->GrayedOut     = TargetStatement->GrayedOut;
 
   //
   // Build up menu path
   //
   AttributeValue->MenuPath = BuildMenPath (TargetStatement);
   if (AttributeValue->MenuPath == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, failed to build menu path for \"%a\"\n", __FUNCTION__, AttributeValue->AttributeName));
+    DEBUG ((DEBUG_ERROR, "%a: failed to build menu path for \"%a\"\n", __func__, AttributeValue->AttributeName));
   }
 
   //
   // Deal with maximum and minimum
   //
-  if (AttributeValue->Type == REDFISH_ATTRIBUTE_TYPE_STRING) {
+  if (AttributeValue->Type == RedfishAttributeTypeString) {
     AttributeValue->StrMaxSize = TargetStatement->StatementData.StrMaxSize;
     AttributeValue->StrMinSize = TargetStatement->StatementData.StrMinSize;
-  } else if (AttributeValue->Type == REDFISH_ATTRIBUTE_TYPE_INTEGER) {
+  } else if (AttributeValue->Type == RedfishAttributeTypeInteger) {
     AttributeValue->NumMaximum = TargetStatement->StatementData.NumMaximum;
     AttributeValue->NumMinimum = TargetStatement->StatementData.NumMinimum;
     AttributeValue->NumStep    = TargetStatement->StatementData.NumStep;
@@ -2146,7 +2129,7 @@ RedfishPlatformConfigProtocolGetAttribute (
   if (TargetStatement->HiiStatement->Operand == EFI_IFR_ONE_OF_OP) {
     Status = OneOfStatementToAttributeValues (TargetStatement->ParentForm->ParentFormset->HiiHandle, FullSchema, TargetStatement, &AttributeValue->Values);
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a, failed to convert one-of options to attribute values: %r\n", __FUNCTION__, Status));
+      DEBUG ((DEBUG_ERROR, "%a: failed to convert one-of options to attribute values: %r\n", __func__, Status));
     }
   }
 
@@ -2199,7 +2182,7 @@ RedfishPlatformConfigFormUpdateNotify (
     //
     Status = NotifyFormsetUpdate (Handle, &mRedfishPlatformConfigPrivate->PendingList);
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a, failed to notify updated formset of HII handle: 0x%x\n", __FUNCTION__, Handle));
+      DEBUG ((DEBUG_ERROR, "%a: failed to notify updated formset of HII handle: 0x%x\n", __func__, Handle));
       return Status;
     }
   } else if (NotifyType == EFI_HII_DATABASE_NOTIFY_REMOVE_PACK) {
@@ -2208,7 +2191,7 @@ RedfishPlatformConfigFormUpdateNotify (
     //
     Status = NotifyFormsetDeleted (Handle, &mRedfishPlatformConfigPrivate->PendingList);
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a, failed to notify deleted formset of HII handle: 0x%x\n", __FUNCTION__, Handle));
+      DEBUG ((DEBUG_ERROR, "%a: failed to notify deleted formset of HII handle: 0x%x\n", __func__, Handle));
       return Status;
     }
   }
@@ -2243,7 +2226,7 @@ HiiStringProtocolInstalled (
                   (VOID **)&mRedfishPlatformConfigPrivate->HiiString
                   );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, locate EFI_HII_STRING_PROTOCOL failure: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: locate EFI_HII_STRING_PROTOCOL failure: %r\n", __func__, Status));
     return;
   }
 
@@ -2278,7 +2261,7 @@ HiiDatabaseProtocolInstalled (
                   (VOID **)&mRedfishPlatformConfigPrivate->HiiDatabase
                   );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, locate EFI_HII_DATABASE_PROTOCOL failure: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: locate EFI_HII_DATABASE_PROTOCOL failure: %r\n", __func__, Status));
     return;
   }
 
@@ -2294,7 +2277,7 @@ HiiDatabaseProtocolInstalled (
                                                          &mRedfishPlatformConfigPrivate->NotifyHandle
                                                          );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, RegisterPackageNotify for EFI_HII_DATABASE_NOTIFY_NEW_PACK failure: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: RegisterPackageNotify for EFI_HII_DATABASE_NOTIFY_NEW_PACK failure: %r\n", __func__, Status));
   }
 
   //
@@ -2309,7 +2292,7 @@ HiiDatabaseProtocolInstalled (
                                                          &mRedfishPlatformConfigPrivate->NotifyHandle
                                                          );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, RegisterPackageNotify for EFI_HII_DATABASE_NOTIFY_NEW_PACK failure: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: RegisterPackageNotify for EFI_HII_DATABASE_NOTIFY_NEW_PACK failure: %r\n", __func__, Status));
   }
 
   gBS->CloseEvent (Event);
@@ -2341,7 +2324,7 @@ RegexProtocolInstalled (
                   (VOID **)&mRedfishPlatformConfigPrivate->RegularExpressionProtocol
                   );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, locate EFI_REGULAR_EXPRESSION_PROTOCOL failure: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: locate EFI_REGULAR_EXPRESSION_PROTOCOL failure: %r\n", __func__, Status));
     return;
   }
 
@@ -2373,7 +2356,7 @@ RedfishPlatformConfigDxeUnload (
                     (VOID *)&mRedfishPlatformConfigPrivate->Protocol
                     );
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a, can not uninstall gEdkIIRedfishPlatformConfigProtocolGuid: %r\n", __FUNCTION__, Status));
+      DEBUG ((DEBUG_ERROR, "%a: can not uninstall gEdkIIRedfishPlatformConfigProtocolGuid: %r\n", __func__, Status));
       ASSERT (FALSE);
     }
 
@@ -2432,7 +2415,7 @@ RedfishPlatformConfigDxeEntryPoint (
 
   mRedfishPlatformConfigPrivate = (REDFISH_PLATFORM_CONFIG_PRIVATE *)AllocateZeroPool (sizeof (REDFISH_PLATFORM_CONFIG_PRIVATE));
   if (mRedfishPlatformConfigPrivate == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, can not allocate pool for REDFISH_PLATFORM_CONFIG_PRIVATE\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: can not allocate pool for REDFISH_PLATFORM_CONFIG_PRIVATE\n", __func__));
     ASSERT (FALSE);
     return EFI_OUT_OF_RESOURCES;
   }
@@ -2459,7 +2442,7 @@ RedfishPlatformConfigDxeEntryPoint (
                   (VOID *)&mRedfishPlatformConfigPrivate->Protocol
                   );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, can not install gEdkIIRedfishPlatformConfigProtocolGuid: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: can not install gEdkIIRedfishPlatformConfigProtocolGuid: %r\n", __func__, Status));
     ASSERT (FALSE);
   }
 
@@ -2474,7 +2457,7 @@ RedfishPlatformConfigDxeEntryPoint (
                                                                &mRedfishPlatformConfigPrivate->HiiDbNotify.Registration
                                                                );
   if (mRedfishPlatformConfigPrivate->HiiDbNotify.ProtocolEvent == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, failed to create protocol notification for gEfiHiiDatabaseProtocolGuid\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: failed to create protocol notification for gEfiHiiDatabaseProtocolGuid\n", __func__));
     ASSERT (FALSE);
   }
 
@@ -2489,7 +2472,7 @@ RedfishPlatformConfigDxeEntryPoint (
                                                                    &mRedfishPlatformConfigPrivate->HiiStringNotify.Registration
                                                                    );
   if (mRedfishPlatformConfigPrivate->HiiStringNotify.ProtocolEvent == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, failed to create protocol notification for gEfiHiiStringProtocolGuid\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: failed to create protocol notification for gEfiHiiStringProtocolGuid\n", __func__));
     ASSERT (FALSE);
   }
 
@@ -2504,7 +2487,7 @@ RedfishPlatformConfigDxeEntryPoint (
                                                                &mRedfishPlatformConfigPrivate->RegexNotify.Registration
                                                                );
   if (mRedfishPlatformConfigPrivate->RegexNotify.ProtocolEvent == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, failed to create protocol notification for gEfiRegularExpressionProtocolGuid\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: failed to create protocol notification for gEfiRegularExpressionProtocolGuid\n", __func__));
     ASSERT (FALSE);
   }
 

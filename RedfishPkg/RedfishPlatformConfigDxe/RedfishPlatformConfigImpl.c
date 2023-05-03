@@ -1,5 +1,4 @@
 /** @file
-
   The implementation of EDKII Redfish Platform Config Protocol.
 
   (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP<BR>
@@ -14,7 +13,7 @@
 extern REDFISH_PLATFORM_CONFIG_PRIVATE  *mRedfishPlatformConfigPrivate;
 
 /**
-  Debug dump HII string
+  Debug dump HII string.
 
   @param[in]  HiiHandle   HII handle instance
   @param[in]  StringId    HII string to dump
@@ -48,7 +47,7 @@ DumpHiiString (
 }
 
 /**
-  Debug dump HII form-set data
+  Debug dump HII form-set data.
 
   @param[in]  FormsetPrivate    HII form-set private instance.
 
@@ -102,7 +101,7 @@ DumpFormset (
 }
 
 /**
-  Debug dump HII form-set list
+  Debug dump HII form-set list.
 
   @param[in]  FormsetList   Form-set list instance
 
@@ -125,7 +124,7 @@ DumpFormsetList (
   }
 
   if (IsListEmpty (FormsetList)) {
-    DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a, Empty formset list\n", __FUNCTION__));
+    DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a: Empty formset list\n", __func__));
     return EFI_SUCCESS;
   }
 
@@ -265,7 +264,7 @@ HiiGetRedfishAsciiString (
 
   HiiString = HiiGetRedfishString (HiiHandle, Language, StringId);
   if (HiiString == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, Can not find string ID: 0x%x with %a\n", __FUNCTION__, StringId, Language));
+    DEBUG ((DEBUG_ERROR, "%a: Can not find string ID: 0x%x with %a\n", __func__, StringId, Language));
     return NULL;
   }
 
@@ -328,7 +327,7 @@ HiiGetEnglishAsciiString (
 
   HiiString = HiiGetRedfishString (HiiHandle, ENGLISH_LANGUAGE_CODE, StringId);
   if (HiiString == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, Can not find string ID: 0x%x with %a\n", __FUNCTION__, StringId, ENGLISH_LANGUAGE_CODE));
+    DEBUG ((DEBUG_ERROR, "%a: Can not find string ID: 0x%x with %a\n", __func__, StringId, ENGLISH_LANGUAGE_CODE));
     return NULL;
   }
 
@@ -561,7 +560,7 @@ GetStatementPrivateByConfigureLangRegex (
                                                   &CaptureCount
                                                   );
             if (EFI_ERROR (Status)) {
-              DEBUG ((DEBUG_ERROR, "%a, MatchString \"%s\" failed: %r\n", __FUNCTION__, Pattern, Status));
+              DEBUG ((DEBUG_ERROR, "%a: MatchString \"%s\" failed: %r\n", __func__, Pattern, Status));
               ASSERT (FALSE);
               return Status;
             }
@@ -658,7 +657,7 @@ GetStatementPrivateByConfigureLang (
 
         DEBUG_CODE (
           STATIC UINTN Index = 0;
-          DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a, [%d] search %s in QID: 0x%x form: 0x%x formset: %g\n", __FUNCTION__, ++Index, ConfigureLang, HiiStatementPrivate->QuestionId, HiiFormPrivate->Id, &HiiFormsetPrivate->Guid));
+          DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a: [%d] search %s in QID: 0x%x form: 0x%x formset: %g\n", __func__, ++Index, ConfigureLang, HiiStatementPrivate->QuestionId, HiiFormPrivate->Id, &HiiFormsetPrivate->Guid));
           );
 
         if (HiiStatementPrivate->Description != 0) {
@@ -895,7 +894,7 @@ LoadFormset (
   FormsetPrivate->DevicePathStr = ConvertDevicePathToText (HiiFormSet->DevicePath, FALSE, FALSE);
   Status                        = GetSupportedSchema (FormsetPrivate->HiiHandle, &FormsetPrivate->SupportedSchema);
   if (EFI_ERROR (Status)) {
-    DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a, No schema from HII handle: 0x%x found: %r\n", __FUNCTION__, FormsetPrivate->HiiHandle, Status));
+    DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a: No schema from HII handle: 0x%x found: %r\n", __func__, FormsetPrivate->HiiHandle, Status));
   }
 
   HiiFormLink = GetFirstNode (&HiiFormSet->FormListHead);
@@ -949,7 +948,7 @@ LoadFormset (
       HiiStatementPrivate->StatementData.StrMaxSize = HiiStatement->ExtraData.StrData.MaxSize;
       HiiStatementPrivate->StatementData.StrMinSize = HiiStatement->ExtraData.StrData.MinSize;
       HiiStatementPrivate->Suppressed               = FALSE;
-      HiiStatementPrivate->Grayout                  = FALSE;
+      HiiStatementPrivate->GrayedOut                = FALSE;
 
       //
       // Expression
@@ -960,7 +959,7 @@ LoadFormset (
         if (HiiStatement->ExpressionList != NULL) {
           ExpressionResult =  EvaluateExpressionList (HiiStatement->ExpressionList, TRUE, HiiFormSet, HiiForm);
           if (ExpressionResult == ExpressGrayOut) {
-            HiiStatementPrivate->Grayout = TRUE;
+            HiiStatementPrivate->GrayedOut = TRUE;
           } else if (ExpressionResult == ExpressSuppress) {
             HiiStatementPrivate->Suppressed = TRUE;
           }
@@ -1001,12 +1000,12 @@ ErrorExit:
 }
 
 /**
-  Release formset list and all the forms that belong to this formset.
+  Load formset list on given HII handle.
 
-  @param[in]      FormsetList   Pointer to formset list that needs to be
-                                released.
+  @param[in]  HiiHandle     HII handle to load formset list.
+  @param[out] FormsetList   Pointer to formset list returned on given handle.
 
-  @retval         EFI_STATUS
+  @retval     EFI_STATUS
 
 **/
 EFI_STATUS
@@ -1029,7 +1028,7 @@ LoadFormsetList (
 
   FormsetPrivate =  NewFormsetPrivate ();
   if (FormsetPrivate == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a, out of resource\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: out of resource\n", __func__));
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -1038,7 +1037,7 @@ LoadFormsetList (
   //
   Status = LoadFormset (HiiHandle, FormsetPrivate);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, failed to load formset: %r\n", __FUNCTION__, Status));
+    DEBUG ((DEBUG_ERROR, "%a: failed to load formset: %r\n", __func__, Status));
     FreePool (FormsetPrivate);
     return Status;
   }
@@ -1169,7 +1168,7 @@ NotifyFormsetUpdate (
   if (TargetPendingList != NULL) {
     TargetPendingList->IsDeleted = FALSE;
     DEBUG_CODE (
-      DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a, HII handle: 0x%x is updated\n", __FUNCTION__, HiiHandle));
+      DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a: HII handle: 0x%x is updated\n", __func__, HiiHandle));
       );
     return EFI_SUCCESS;
   }
@@ -1185,7 +1184,7 @@ NotifyFormsetUpdate (
   InsertTailList (PendingList, &TargetPendingList->Link);
 
   DEBUG_CODE (
-    DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a, HII handle: 0x%x is created\n", __FUNCTION__, HiiHandle));
+    DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a: HII handle: 0x%x is created\n", __func__, HiiHandle));
     );
 
   return EFI_SUCCESS;
@@ -1222,7 +1221,7 @@ NotifyFormsetDeleted (
   if (TargetPendingList != NULL) {
     TargetPendingList->IsDeleted = TRUE;
     DEBUG_CODE (
-      DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a, HII handle: 0x%x is updated and deleted\n", __FUNCTION__, HiiHandle));
+      DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a: HII handle: 0x%x is updated and deleted\n", __func__, HiiHandle));
       );
     return EFI_SUCCESS;
   }
@@ -1238,7 +1237,7 @@ NotifyFormsetDeleted (
   InsertTailList (PendingList, &TargetPendingList->Link);
 
   DEBUG_CODE (
-    DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a, HII handle: 0x%x is deleted\n", __FUNCTION__, HiiHandle));
+    DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a: HII handle: 0x%x is deleted\n", __func__, HiiHandle));
     );
 
   return EFI_SUCCESS;
@@ -1287,12 +1286,12 @@ ProcessPendingList (
       //
       FormsetPrivate = GetFormsetPrivateByHiiHandle (Target->HiiHandle, FormsetList);
       if (FormsetPrivate != NULL) {
-        DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a, formset: %g is removed because driver release HII resource it already\n", __FUNCTION__, FormsetPrivate->Guid));
+        DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a: formset: %g is removed because driver release HII resource it already\n", __func__, FormsetPrivate->Guid));
         RemoveEntryList (&FormsetPrivate->Link);
         ReleaseFormset (FormsetPrivate);
         FreePool (FormsetPrivate);
       } else {
-        DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a, formset on HII handle 0x%x was removed already\n", __FUNCTION__, Target->HiiHandle));
+        DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a: formset on HII handle 0x%x was removed already\n", __func__, Target->HiiHandle));
       }
     } else {
       //
@@ -1303,7 +1302,7 @@ ProcessPendingList (
         //
         // HII formset already exist, release it and query again.
         //
-        DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a, formset: %g is updated. Release current formset\n", __FUNCTION__, &FormsetPrivate->Guid));
+        DEBUG ((REDFISH_PLATFORM_CONFIG_DEBUG, "%a: formset: %g is updated. Release current formset\n", __func__, &FormsetPrivate->Guid));
         RemoveEntryList (&FormsetPrivate->Link);
         ReleaseFormset (FormsetPrivate);
         FreePool (FormsetPrivate);
@@ -1311,7 +1310,7 @@ ProcessPendingList (
 
       Status = LoadFormsetList (Target->HiiHandle, FormsetList);
       if (EFI_ERROR (Status)) {
-        DEBUG ((DEBUG_ERROR, "%a, load formset from HII handle: 0x%x failed: %r\n", __FUNCTION__, Target->HiiHandle, Status));
+        DEBUG ((DEBUG_ERROR, "%a: load formset from HII handle: 0x%x failed: %r\n", __func__, Target->HiiHandle, Status));
       }
     }
 

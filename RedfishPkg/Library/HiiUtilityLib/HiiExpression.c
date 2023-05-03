@@ -1,5 +1,5 @@
 /** @file
-  Definitinos of RedfishPlatformConfigLib
+  The implementation of HII expression.
 
   Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
   (C) Copyright 2021 Hewlett Packard Enterprise Development LP<BR>
@@ -11,14 +11,14 @@
 #include "HiiInternal.h"
 
 //
-// Global stack used to evaluate boolean expresions
+// Global stack used to evaluate boolean expressions
 //
 EFI_HII_VALUE  *mOpCodeScopeStack        = NULL;
 EFI_HII_VALUE  *mOpCodeScopeStackEnd     = NULL;
 EFI_HII_VALUE  *mOpCodeScopeStackPointer = NULL;
 
 //
-// Stack used for Suppressif/grayoutif/dusableif expression list.
+// Stack used for Suppressif/grayoutif/disableif expression list.
 //
 HII_EXPRESSION  **mFormExpressionStack   = NULL;
 HII_EXPRESSION  **mFormExpressionEnd     = NULL;
@@ -52,8 +52,6 @@ EFI_HII_VALUE  *mMapExpressionListPointer = NULL;
 HII_DEPENDENCY_EXPRESSION  **mExpressionDependencyStack   = NULL;
 HII_DEPENDENCY_EXPRESSION  **mExpressionDependencyEnd     = NULL;
 HII_DEPENDENCY_EXPRESSION  **mExpressionDependencyPointer = NULL;
-
-#define EXPRESSION_STACK_SIZE_INCREMENT  0x100
 
 /**
   Grow size of the stack.
@@ -874,7 +872,7 @@ PopDependencyExpDes (
   Retrieve dependencies within an expression. These dependencies can express how
   this expression will be evaluated.
 
-  @param  Expression             Expression to retrieve dependencies.
+  @param[in,out]  Expression     Expression to retrieve dependencies.
 
   @retval EFI_SUCCESS            The dependencies were successfully retrieved.
   @retval EFI_OUT_OF_RESOURCES   There is not enough system memory.
@@ -891,7 +889,7 @@ GetHiiExpressionDependency (
   HII_DEPENDENCY_EXPRESSION  *DepExpressionOpCode;
   LIST_ENTRY                 *SubExpressionLink;
   HII_EXPRESSION             *SubExpression;
-  UINT8                      MapPairpCount;
+  UINT8                      MapPairCount;
 
   Link = GetFirstNode (&Expression->OpCodeListHead);
   while (!IsNull (&Expression->OpCodeListHead, Link)) {
@@ -919,8 +917,8 @@ GetHiiExpressionDependency (
       case EFI_IFR_UNDEFINED_OP:
       case EFI_IFR_VERSION_OP:
       case EFI_IFR_ZERO_OP:
-        DepExpressionOpCode->ContantExp.Operand = ExpressionOpCode->Operand;
-        CopyMem (&DepExpressionOpCode->ContantExp.Value, &ExpressionOpCode->ExtraData.Value, sizeof (EFI_HII_VALUE));
+        DepExpressionOpCode->ConstantExp.Operand = ExpressionOpCode->Operand;
+        CopyMem (&DepExpressionOpCode->ConstantExp.Value, &ExpressionOpCode->ExtraData.Value, sizeof (EFI_HII_VALUE));
         PushDependencyExpDes (&DepExpressionOpCode);
         break;
 
@@ -1284,7 +1282,7 @@ GetHiiExpressionDependency (
         DepExpressionOpCode->SpanExp.Operand = ExpressionOpCode->Operand;
         PopDependencyExpDes (&DepExpressionOpCode->SpanExp.StringToSearchExp);
         PopDependencyExpDes (&DepExpressionOpCode->SpanExp.CharsetExp);
-        PopDependencyExpDes (&DepExpressionOpCode->SpanExp.IndeExp);
+        PopDependencyExpDes (&DepExpressionOpCode->SpanExp.IndexExp);
         PushDependencyExpDes (&DepExpressionOpCode);
         break;
 
@@ -1296,10 +1294,10 @@ GetHiiExpressionDependency (
         // Go through map expression list.
         //
         DepExpressionOpCode->MapExp.Operand = ExpressionOpCode->Operand;
-        MapPairpCount                       = 0;
+        MapPairCount                        = 0;
         SubExpressionLink                   = GetFirstNode (&ExpressionOpCode->MapExpressionList);
         while (!IsNull (&ExpressionOpCode->MapExpressionList, SubExpressionLink)) {
-          MapPairpCount++;
+          MapPairCount++;
           SubExpressionLink = GetNextNode (&ExpressionOpCode->MapExpressionList, SubExpressionLink);
           if (IsNull (&ExpressionOpCode->MapExpressionList, SubExpressionLink)) {
             Status = EFI_INVALID_PARAMETER;
@@ -1313,15 +1311,15 @@ GetHiiExpressionDependency (
         }
 
         DepExpressionOpCode->MapExp.ExpPair = (HII_DEPENDENCY_EXPRESSION_PAIR *)AllocateZeroPool (
-                                                                                  MapPairpCount * sizeof (HII_DEPENDENCY_EXPRESSION_PAIR)
+                                                                                  MapPairCount * sizeof (HII_DEPENDENCY_EXPRESSION_PAIR)
                                                                                   );
         if (DepExpressionOpCode->MapExp.ExpPair == NULL) {
           Status = EFI_OUT_OF_RESOURCES;
           goto Done;
         }
 
-        DepExpressionOpCode->MapExp.ExpPairNo = MapPairpCount;
-        MapPairpCount                         = 0;
+        DepExpressionOpCode->MapExp.ExpPairNo = MapPairCount;
+        MapPairCount                          = 0;
         PopDependencyExpDes (&DepExpressionOpCode->MapExp.SubExp);
 
         //
@@ -1334,7 +1332,7 @@ GetHiiExpressionDependency (
           // Get the first expression description in this pair.
           //
           GetHiiExpressionDependency (SubExpression);
-          DepExpressionOpCode->MapExp.ExpPair[MapPairpCount].MatchExp = SubExpression->RootDepdencyExp;
+          DepExpressionOpCode->MapExp.ExpPair[MapPairCount].MatchExp = SubExpression->RootDependencyExp;
 
           //
           // Get the second expression description in this pair.
@@ -1342,12 +1340,12 @@ GetHiiExpressionDependency (
           SubExpressionLink = GetNextNode (&ExpressionOpCode->MapExpressionList, SubExpressionLink);
           SubExpression     = HII_EXPRESSION_FROM_LINK (SubExpressionLink);
           GetHiiExpressionDependency (SubExpression);
-          DepExpressionOpCode->MapExp.ExpPair[MapPairpCount].ReturnExp = SubExpression->RootDepdencyExp;
+          DepExpressionOpCode->MapExp.ExpPair[MapPairCount].ReturnExp = SubExpression->RootDependencyExp;
           //
           // Goto the first expression on next pair.
           //
           SubExpressionLink = GetNextNode (&ExpressionOpCode->MapExpressionList, SubExpressionLink);
-          MapPairpCount++;
+          MapPairCount++;
         }
 
         PushDependencyExpDes (&DepExpressionOpCode);
@@ -1358,7 +1356,7 @@ GetHiiExpressionDependency (
     }
   }
 
-  PopDependencyExpDes (&Expression->RootDepdencyExp);
+  PopDependencyExpDes (&Expression->RootDependencyExp);
 
 Done:
   return Status;
@@ -1380,10 +1378,10 @@ Done:
 **/
 EXPRESS_RESULT
 EvaluateExpressionList (
-  IN HII_EXPRESSION_LIST *ExpList,
-  IN BOOLEAN Evaluate,
-  IN HII_FORMSET *FormSet, OPTIONAL
-  IN HII_FORM    *Form OPTIONAL
+  IN HII_EXPRESSION_LIST  *ExpList,
+  IN BOOLEAN              Evaluate,
+  IN HII_FORMSET          *FormSet  OPTIONAL,
+  IN HII_FORM             *Form OPTIONAL
   )
 {
   UINTN           Index;
@@ -1415,7 +1413,7 @@ EvaluateExpressionList (
   //
   ReturnVal = ExpressFalse;
   for (Index = 0; Index < ExpList->Count; Index++) {
-    if (IsTrue (&ExpList->Expression[Index]->Result)) {
+    if (IsHiiValueTrue (&ExpList->Expression[Index]->Result)) {
       switch (ExpList->Expression[Index]->Type) {
         case EFI_HII_EXPRESSION_SUPPRESS_IF:
           CompareOne = ExpressSuppress;
