@@ -58,7 +58,7 @@ STATIC
 SMBIOS_TABLE_DISPATCHER  mSmBiosDispatcher[MAX_SMBIOS_TABLES] = {
   SMBIOS_TABLE_DEP (SMBIOS_TYPE_BIOS_INFORMATION,                     SMTT_NULL,                                  SMTT_NULL,                                        SMTT_NULL,                                  SMTT_NULL, SMTT_NULL),
   SMBIOS_TABLE_DEP (SMBIOS_TYPE_SYSTEM_INFORMATION,                   SMTT_NULL,                                  SMTT_NULL,                                        SMTT_NULL,                                  SMTT_NULL, SMTT_NULL),
-  SMBIOS_TABLE_DEP (SMBIOS_TYPE_BASEBOARD_INFORMATION,                SMTT_NULL,                                  SMTT_NULL,                                        SMTT_NULL,                                  SMTT_NULL, SMTT_NULL),
+  SMBIOS_TABLE_DEP (SMBIOS_TYPE_BASEBOARD_INFORMATION,                SMBIOS_TYPE_SYSTEM_ENCLOSURE,               SMBIOS_TYPE_MEMORY_DEVICE,                        SMTT_NULL,                                  SMTT_NULL, SMTT_NULL),
   SMBIOS_TABLE_DEP (SMBIOS_TYPE_SYSTEM_ENCLOSURE,                     SMTT_NULL,                                  SMTT_NULL,                                        SMTT_NULL,                                  SMTT_NULL, SMTT_NULL),
   SMBIOS_TABLE_DEP (SMBIOS_TYPE_PROCESSOR_INFORMATION,                SMBIOS_TYPE_CACHE_INFORMATION,              SMTT_NULL,                                        SMTT_NULL,                                  SMTT_NULL, SMTT_NULL),
   SMBIOS_TABLE_DEP (SMBIOS_TYPE_MEMORY_CONTROLLER_INFORMATION,        SMTT_NULL,                                  SMTT_NULL,                                        SMTT_NULL,                                  SMTT_NULL, SMTT_NULL),
