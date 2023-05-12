@@ -150,7 +150,7 @@ typedef struct CmSmbiosBaseboardInfo {
   UINT8                   NumberOfContainedObjectHandles;
 
   /** Contained Object Handles */
-  CONTAINED_CM_OBJECTS    ContainedCmObjects[1];
+  CONTAINED_CM_OBJECTS    *ContainedCmObjects;
 } CM_SMBIOS_BASEBOARD_INFO;
 
 /** A structure that describes the enclosure.
