@@ -2,6 +2,7 @@
   Redfish event library to deliver Redfish specific event.
 
   (C) Copyright 2022 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -31,16 +32,16 @@
 EFI_STATUS
 EFIAPI
 CreateReadyToProvisioningEvent (
-  IN  EFI_EVENT_NOTIFY  NotifyFunction,  OPTIONAL
-  IN  VOID              *NotifyContext,  OPTIONAL
+  IN  EFI_EVENT_NOTIFY  NotifyFunction OPTIONAL,
+  IN  VOID              *NotifyContext OPTIONAL,
   OUT EFI_EVENT         *ReadyToProvisioningEvent
   )
 {
-  EFI_STATUS Status;
+  EFI_STATUS  Status;
 
   Status = gBS->CreateEventEx (
                   EVT_NOTIFY_SIGNAL,
-                  TPL_CALLBACK,
+                  TPL_NOTIFY,
                   (NotifyFunction == NULL ? EfiEventEmptyFunction : NotifyFunction),
                   NotifyContext,
                   &gEfiRedfishClientFeatureReadyToProvisioningGuid,
@@ -64,16 +65,16 @@ CreateReadyToProvisioningEvent (
 EFI_STATUS
 EFIAPI
 CreateAfterProvisioningEvent (
-  IN  EFI_EVENT_NOTIFY  NotifyFunction,  OPTIONAL
-  IN  VOID              *NotifyContext,  OPTIONAL
+  IN  EFI_EVENT_NOTIFY  NotifyFunction OPTIONAL,
+  IN  VOID              *NotifyContext OPTIONAL,
   OUT EFI_EVENT         *ReadyToProvisioningEvent
   )
 {
-  EFI_STATUS Status;
+  EFI_STATUS  Status;
 
   Status = gBS->CreateEventEx (
                   EVT_NOTIFY_SIGNAL,
-                  TPL_CALLBACK,
+                  TPL_NOTIFY,
                   (NotifyFunction == NULL ? EfiEventEmptyFunction : NotifyFunction),
                   NotifyContext,
                   &gEfiRedfishClientFeatureAfterProvisioningGuid,
@@ -95,8 +96,8 @@ SignalReadyToProvisioningEvent (
   IN VOID
   )
 {
-  EFI_STATUS Status;
-  EFI_EVENT  Event;
+  EFI_STATUS  Status;
+  EFI_EVENT   Event;
 
   Status = CreateReadyToProvisioningEvent (NULL, NULL, &Event);
   if (EFI_ERROR (Status)) {
@@ -122,8 +123,8 @@ SignalAfterProvisioningEvent (
   IN VOID
   )
 {
-  EFI_STATUS Status;
-  EFI_EVENT  Event;
+  EFI_STATUS  Status;
+  EFI_EVENT   Event;
 
   Status = CreateAfterProvisioningEvent (NULL, NULL, &Event);
   if (EFI_ERROR (Status)) {
@@ -136,4 +137,3 @@ SignalAfterProvisioningEvent (
 
   return EFI_SUCCESS;
 }
-
