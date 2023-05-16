@@ -41,7 +41,7 @@ RedfishResourceProvisioningResource (
     return EFI_INVALID_PARAMETER;
   }
 
-  DEBUG ((DEBUG_INFO, "%a: provisioning in %s mode\n", __FUNCTION__, (PostMode ? L"POST" : L"PATCH")));
+  DEBUG ((REDFISH_DEBUG_TRACE, "%a: provisioning in %s mode\n", __FUNCTION__, (PostMode ? L"POST" : L"PATCH")));
 
   Private = REDFISH_RESOURCE_COMMON_PRIVATE_DATA_FROM_RESOURCE_PROTOCOL (This);
 
@@ -60,6 +60,14 @@ RedfishResourceProvisioningResource (
   ASSERT (Private->Payload != NULL);
 
   Status = RedfishProvisioningResourceCommon (Private, !PostMode);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: failed to provision resource to: %s: %r\n", __FUNCTION__, Uri, Status));
+  } else {
+    //
+    // Get latest ETag on URI and keep it in variable.
+    //
+    SetEtagFromUri (Private->RedfishService, Private->Uri, TRUE);
+  }
 
   //
   // Release resource
@@ -159,6 +167,10 @@ RedfishResourceConsumeResource (
   //
   // Release resource
   //
+  if (Etag != NULL) {
+    FreePool (Etag);
+  }
+
   if (Private->Payload != NULL) {
     if (Response.Payload != NULL) {
       RedfishFreeResponse (
@@ -269,7 +281,7 @@ RedfishResourceUpdate (
 
   Status = RedfishUpdateResourceCommon (Private, Private->Json);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: failed to update resource from: %s: %r\n", __FUNCTION__, Uri, Status));
+    DEBUG ((DEBUG_ERROR, "%a: failed to update resource to: %s: %r\n", __FUNCTION__, Uri, Status));
   } else {
     //
     // Get latest ETag on URI and keep it in variable.
