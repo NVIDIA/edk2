@@ -790,7 +790,6 @@ EdkIIRedfishFeatureProtocolIsReady (
   @param[in]   SystemTable      A pointer to the EFI System Table.
 
   @retval EFI_SUCCESS           The operation completed successfully.
-  @retval EFI_ACCESS_DENIED     EFI_ISCSI_INITIATOR_NAME_PROTOCOL was installed unexpectedly.
   @retval Others                Other errors as indicated.
 **/
 EFI_STATUS
