@@ -773,6 +773,7 @@ HandleResource (
   EFI_STATUS           Status;
   REDFISH_SCHEMA_INFO  SchemaInfo;
   EFI_STRING           ConfigLang;
+  BOOLEAN              SystemRestDetected;
 
   if ((Private == NULL) || IS_EMPTY_STRING (Uri)) {
     return EFI_INVALID_PARAMETER;
@@ -795,7 +796,8 @@ HandleResource (
   // Some resource is handled by other provider so we have to make sure this first.
   //
   DEBUG ((REDFISH_DEBUG_TRACE, "%s Identify for %s\n", __FUNCTION__, Uri));
-  ConfigLang = RedfishGetConfigLanguage (Uri);
+  SystemRestDetected = FALSE;
+  ConfigLang         = RedfishGetConfigLanguage (Uri);
   if (ConfigLang == NULL) {
     Status = EdkIIRedfishResourceConfigIdentify (&SchemaInfo, Uri, Private->InformationExchange);
     if (EFI_ERROR (Status)) {
@@ -810,6 +812,13 @@ HandleResource (
       DEBUG ((DEBUG_ERROR, "%a: fail to identify resource: \"%s\": %r\n", __FUNCTION__, Uri, Status));
       return Status;
     }
+
+    //
+    // When there is no history record in UEFI variable, this is first boot or
+    // system is reset by defaulting command. The pending setting on BMC may be
+    // a stale value so we will ignore pending settings in BMC.
+    //
+    SystemRestDetected = TRUE;
   } else {
     DEBUG ((REDFISH_DEBUG_TRACE, "%a: history record found: %s\n", __FUNCTION__, ConfigLang));
     FreePool (ConfigLang);
@@ -844,10 +853,14 @@ HandleResource (
   //
   // Consume first.
   //
-  DEBUG ((REDFISH_DEBUG_TRACE, "%a consume for %s\n", __FUNCTION__, Uri));
-  Status = EdkIIRedfishResourceConfigConsume (&SchemaInfo, Uri);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: failed to consume resource for: %s: %r\n", __FUNCTION__, Uri, Status));
+  if (SystemRestDetected) {
+    DEBUG ((REDFISH_DEBUG_TRACE, "%a system has been reset to default setting. ignore pending settings because they may be stale values\n", __FUNCTION__));
+  } else {
+    DEBUG ((REDFISH_DEBUG_TRACE, "%a consume for %s\n", __FUNCTION__, Uri));
+    Status = EdkIIRedfishResourceConfigConsume (&SchemaInfo, Uri);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: failed to consume resource for: %s: %r\n", __FUNCTION__, Uri, Status));
+    }
   }
 
   //
