@@ -673,6 +673,29 @@ JsonObjectSize (
 }
 
 /**
+  The function removes all elements from object. Returns 0 on success and -1 if object is not
+  a JSON object. The reference count of all removed values are decremented.
+
+  @param[in]   JsonObject              The provided JSON object.
+
+  @retval      EFI_ABORTED            Some error occur and operation aborted.
+  @retval      EFI_SUCCESS            JSON value has been appended to the end of the JSON array.
+
+**/
+EFI_STATUS
+EFIAPI
+JsonObjectClear (
+  IN    EDKII_JSON_OBJECT  JsonObject
+  )
+{
+  if (json_object_clear ((json_t *)JsonObject) != 0) {
+    return EFI_ABORTED;
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
   The function is used to enumerate all keys in a JSON object.
 
   Caller should be responsible to free the returned key array reference using
