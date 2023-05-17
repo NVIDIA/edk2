@@ -3,6 +3,7 @@
 
   Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
  (C) Copyright 2021 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
     SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -568,6 +569,22 @@ JsonValueGetString (
 UINTN
 EFIAPI
 JsonObjectSize (
+  IN    EDKII_JSON_OBJECT  JsonObject
+  );
+
+/**
+  The function removes all elements from object. Returns 0 on success and -1 if object is not
+  a JSON object. The reference count of all removed values are decremented.
+
+  @param[in]   JsonObject              The provided JSON object.
+
+  @retval      EFI_ABORTED            Some error occur and operation aborted.
+  @retval      EFI_SUCCESS            JSON value has been appended to the end of the JSON array.
+
+**/
+EFI_STATUS
+EFIAPI
+JsonObjectClear (
   IN    EDKII_JSON_OBJECT  JsonObject
   );
 
