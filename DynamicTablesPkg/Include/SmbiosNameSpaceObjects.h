@@ -37,6 +37,8 @@ typedef enum SmbiosObjectID {
   ESmbiosObjPowerSupplyInfo,           ///< 16 - Power Supply Info
   ESmbiosObjFirmwareInventoryInfo,     ///< 17 - Firmware Inventory Info
   ESmbiosObjIpmiDeviceInfo,            ///< 18 - IPMI Device Information
+  ESmbiosObjProcessorInfo,             ///< 19 - Processor Information
+  ESmbiosObjCacheInfo,                 ///< 20 - Cache Information
   ESmbiosObjMax
 } ESMBIOS_OBJECT_ID;
 
@@ -670,6 +672,158 @@ typedef struct CmStdFirmwareInventoryInfo {
   CM_OBJECT_TOKEN              *AssociatedComponentHandles;
   SMBIOS_TABLE_GENERATOR_ID    GeneratorId;
 } CM_SMBIOS_FIRMWARE_INVENTORY_INFO;
+
+/** A structure that describes the Processor Information.
+
+  The Processor Information on the system is described by this object.
+
+  SMBIOS Specification v3.6.0 Type4
+
+  ID: EStdObjProcessorInfo
+**/
+typedef struct CmSmbiosProcessorInfo {
+  /** Socket Designation string */
+  CHAR8                *SocketDesignation;
+
+  /** Processor Type */
+  UINT8                ProcessorType;
+
+  /** Processor Family */
+  UINT8                ProcessorFamily;
+
+  /** Processor Manufacturer string */
+  CHAR8                *ProcessorManufacturer;
+
+  /** Processor ID */
+  PROCESSOR_ID_DATA    ProcessorId;
+
+  /** Processor Version string */
+  CHAR8                *ProcessorVersion;
+
+  /** Voltage */
+  PROCESSOR_VOLTAGE    Voltage;
+
+  /** External Clock */
+  UINT16               ExternalClock;
+
+  /** Max Speed*/
+  UINT16               MaxSpeed;
+
+  /** Current Speed */
+  UINT16               CurrentSpeed;
+
+  /** Status */
+  UINT8                Status;
+
+  /** Processor Upgrade */
+  UINT8                ProcessorUpgrade;
+
+  /** L1 Cache Handle */
+  UINT16               L1CacheHandle;
+
+  /** L2 Cache Handle */
+  UINT16               L2CacheHandle;
+
+  /** L3 Cache Handle */
+  UINT16               L3CacheHandle;
+
+  /** Serial Number string */
+  CHAR8                *SerialNumber;
+
+  /** Asset Tag string */
+  CHAR8                *AssetTag;
+
+  /** Part Number string */
+  CHAR8                *PartNumber;
+
+  /** Core Count */
+  UINT8                CoreCount;
+
+  /** Enabled Core Count */
+  UINT8                EnabledCoreCount;
+
+  /** Thread Count */
+  UINT8                ThreadCount;
+
+  /** Processor Characteristics */
+  UINT16               ProcessorCharacteristics;
+
+  /** Processor Family 2 */
+  UINT16               ProcessorFamily2;
+
+  /** Core Count 2 */
+  UINT16               CoreCount2;
+
+  /** Enabled Core Count 2 */
+  UINT16               EnabledCoreCount2;
+
+  /** Thread Count 2 */
+  UINT16               ThreadCount2;
+
+  /** Thread Enabled */
+  UINT16               ThreadEnabled;
+
+  /** CM Object Token of Processor information */
+  CM_OBJECT_TOKEN      ProcessorInfoToken;
+
+  /** CM Object Token of L1 Cache information */
+  CM_OBJECT_TOKEN      CacheInfoTokenL1;
+
+  /** CM Object Token of L2 Cache information */
+  CM_OBJECT_TOKEN      CacheInfoTokenL2;
+
+  /** CM Object Token of L3 Cache information */
+  CM_OBJECT_TOKEN      CacheInfoTokenL3;
+} CM_SMBIOS_PROCESSOR_INFO;
+
+/** A structure that describes the Cache Information.
+
+  The Cache Information on the system is described by this object.
+
+  SMBIOS Specification v3.6.0 Type7
+
+  ID: EStdObjCacheInfo
+**/
+typedef struct CmSmbiosCacheInfo {
+  /** Socket Designation string */
+  CHAR8                   *SocketDesignation;
+
+  /** Cache Configuration */
+  UINT16                  CacheConfiguration;
+
+  /** Maximum Cache Size */
+  UINT16                  MaximumCacheSize;
+
+  /** Installed Size */
+  UINT16                  InstalledSize;
+
+  /** Supported SRAM Type */
+  CACHE_SRAM_TYPE_DATA    SupportedSRAMType;
+
+  /** Current SRAM Type */
+  CACHE_SRAM_TYPE_DATA    CurrentSRAMType;
+
+  /** Cache Speed */
+  UINT8                   CacheSpeed;
+
+  /** Error Correction Type */
+  UINT8                   ErrorCorrectionType;
+
+  /** System Cache Type*/
+  UINT8                   SystemCacheType;
+
+  /** Associativity */
+  UINT8                   Associativity;
+
+  /** Maximum Cache Size 2*/
+  UINT32                  MaximumCacheSize2;
+
+  /** Installed Size 2*/
+  UINT32                  InstalledSize2;
+
+  /** CM Object Token of Cache information */
+  CM_OBJECT_TOKEN         CacheInfoToken;
+} CM_SMBIOS_CACHE_INFO;
 
 #pragma pack()
 
