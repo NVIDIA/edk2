@@ -904,60 +904,68 @@ ApplyFeatureSettingsStringArrayType (
     }
 
     //
-    // If there is no change in array, do nothing
+    // Check and see if element in request string array can be found in HII string array.
     //
-    if (!CompareRedfishStringArrayValues (ArrayHead, RedfishValue.Value.StringArray, RedfishValue.ArrayCount)) {
+    if (ValidateRedfishStringArrayValues (ArrayHead, RedfishValue.Value.StringArray, RedfishValue.ArrayCount)) {
       //
-      // Apply settings from redfish
+      // If there is no change in array, do nothing
       //
-      DEBUG ((DEBUG_INFO, "%a: %a.%a apply %s for array\n", __FUNCTION__, Schema, Version, ConfigureLang));
-      FreeArrayTypeRedfishValue (&RedfishValue);
+      if (!CompareRedfishStringArrayValues (ArrayHead, RedfishValue.Value.StringArray, RedfishValue.ArrayCount)) {
+        //
+        // Apply settings from redfish
+        //
+        DEBUG ((DEBUG_INFO, "%a: %a.%a apply %s for array\n", __FUNCTION__, Schema, Version, ConfigureLang));
+        FreeArrayTypeRedfishValue (&RedfishValue);
 
-      //
-      // Convert array from RedfishCS_char_Array to EDKII_REDFISH_VALUE
-      //
-      RedfishValue.ArrayCount = 0;
-      Buffer                  = ArrayHead;
-      while (Buffer != NULL) {
-        RedfishValue.ArrayCount += 1;
-        Buffer                   = Buffer->Next;
-      }
+        //
+        // Convert array from RedfishCS_char_Array to EDKII_REDFISH_VALUE
+        //
+        RedfishValue.ArrayCount = 0;
+        Buffer                  = ArrayHead;
+        while (Buffer != NULL) {
+          RedfishValue.ArrayCount += 1;
+          Buffer                   = Buffer->Next;
+        }
 
-      //
-      // Allocate pool for new values
-      //
-      RedfishValue.Value.StringArray = AllocatePool (RedfishValue.ArrayCount *sizeof (CHAR8 *));
-      if (RedfishValue.Value.StringArray == NULL) {
-        ASSERT (FALSE);
-        return EFI_OUT_OF_RESOURCES;
-      }
-
-      Buffer = ArrayHead;
-      Index  = 0;
-      while (Buffer != NULL) {
-        RedfishValue.Value.StringArray[Index] = AllocateCopyPool (AsciiStrSize (Buffer->ArrayValue), Buffer->ArrayValue);
-        if (RedfishValue.Value.StringArray[Index] == NULL) {
+        //
+        // Allocate pool for new values
+        //
+        RedfishValue.Value.StringArray = AllocatePool (RedfishValue.ArrayCount *sizeof (CHAR8 *));
+        if (RedfishValue.Value.StringArray == NULL) {
           ASSERT (FALSE);
           return EFI_OUT_OF_RESOURCES;
         }
 
-        Buffer = Buffer->Next;
-        Index++;
-      }
+        Buffer = ArrayHead;
+        Index  = 0;
+        while (Buffer != NULL) {
+          RedfishValue.Value.StringArray[Index] = AllocateCopyPool (AsciiStrSize (Buffer->ArrayValue), Buffer->ArrayValue);
+          if (RedfishValue.Value.StringArray[Index] == NULL) {
+            ASSERT (FALSE);
+            return EFI_OUT_OF_RESOURCES;
+          }
 
-      ASSERT (Index <= RedfishValue.ArrayCount);
+          Buffer = Buffer->Next;
+          Index++;
+        }
 
-      Status = RedfishPlatformConfigSetValue (Schema, Version, ConfigureLang, RedfishValue);
-      if (!EFI_ERROR (Status)) {
-        //
-        // Configuration changed. Enable system reboot flag.
-        //
-        REDFISH_ENABLE_SYSTEM_REBOOT ();
+        ASSERT (Index <= RedfishValue.ArrayCount);
+
+        Status = RedfishPlatformConfigSetValue (Schema, Version, ConfigureLang, RedfishValue);
+        if (!EFI_ERROR (Status)) {
+          //
+          // Configuration changed. Enable system reboot flag.
+          //
+          REDFISH_ENABLE_SYSTEM_REBOOT ();
+        } else {
+          DEBUG ((DEBUG_ERROR, "%a: apply %s array failed: %r\n", __FUNCTION__, ConfigureLang, Status));
+        }
       } else {
-        DEBUG ((DEBUG_ERROR, "%a: apply %s array failed: %r\n", __FUNCTION__, ConfigureLang, Status));
+        DEBUG ((DEBUG_ERROR, "%a: %a.%a %s array value has no change\n", __FUNCTION__, Schema, Version, ConfigureLang));
       }
     } else {
-      DEBUG ((DEBUG_ERROR, "%a: %a.%a %s array value has no change\n", __FUNCTION__, Schema, Version, ConfigureLang));
+      DEBUG ((DEBUG_ERROR, "%a: %a.%a %s array value has invalid element, skip!\n", __FUNCTION__, Schema, Version, ConfigureLang));
+      Status = EFI_DEVICE_ERROR;
     }
   }
 
@@ -3698,6 +3706,54 @@ CompareRedfishStringArrayValues (
 
   if ((CharArrayBuffer != NULL) || (Index < ArraySize)) {
     return FALSE;
+  }
+
+  return TRUE;
+}
+
+/**
+
+  Check and see if value in Redfish string array can be found in HII
+  configuration string array. This is to see if there is any invalid
+  values from Redfish.
+
+  @param[in]  Head          The head of string array.
+  @param[in]  StringArray   Input string array.
+  @param[in]  ArraySize     The size of StringArray.
+
+  @retval     TRUE          All string in Redfish array are as same as string
+                            in HII configuration array.
+              FALSE         These two array are not identical.
+
+**/
+BOOLEAN
+ValidateRedfishStringArrayValues (
+  IN RedfishCS_char_Array  *Head,
+  IN CHAR8                 **StringArray,
+  IN UINTN                 ArraySize
+  )
+{
+  UINTN                 Index;
+  RedfishCS_char_Array  *CharArrayBuffer;
+
+  if ((Head == NULL) || (StringArray == NULL) || (ArraySize == 0)) {
+    return FALSE;
+  }
+
+  CharArrayBuffer = Head;
+  Index           = 0;
+  while (CharArrayBuffer != NULL) {
+    for (Index = 0; Index < ArraySize; Index++) {
+      if (AsciiStrCmp (StringArray[Index], CharArrayBuffer->ArrayValue) == 0) {
+        break;
+      }
+    }
+
+    if (Index == ArraySize) {
+      return FALSE;
+    }
+
+    CharArrayBuffer = CharArrayBuffer->Next;
   }
 
   return TRUE;

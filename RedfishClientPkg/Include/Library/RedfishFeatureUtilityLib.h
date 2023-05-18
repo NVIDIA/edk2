@@ -947,6 +947,28 @@ CompareRedfishStringArrayValues (
 
 /**
 
+  Check and see if value in Redfish string array can be found in HII
+  configuration string array. This is to see if there is any invalid
+  values from Redfish.
+
+  @param[in]  Head          The head of string array.
+  @param[in]  StringArray   Input string array.
+  @param[in]  ArraySize     The size of StringArray.
+
+  @retval     TRUE          All string in Redfish array are as same as string
+                            in HII configuration array.
+              FALSE         These two array are not identical.
+
+**/
+BOOLEAN
+ValidateRedfishStringArrayValues (
+  IN RedfishCS_char_Array  *Head,
+  IN CHAR8                 **StringArray,
+  IN UINTN                 ArraySize
+  );
+
+/**
+
   Check and see if value in Redfish numeric array are all the same as the one
   from HII configuration.
 
