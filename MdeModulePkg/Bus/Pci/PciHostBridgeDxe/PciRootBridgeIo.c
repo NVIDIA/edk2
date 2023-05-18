@@ -287,6 +287,30 @@ CreateRootBridge (
 }
 
 /**
+  Free the Pci Root Bridge instance.
+
+  @param Bridge            The root bridge instance.
+
+  @return The pointer to PCI_ROOT_BRIDGE_INSTANCE just created
+          or NULL if creation fails.
+**/
+VOID
+FreeRootBridge (
+  IN PCI_ROOT_BRIDGE_INSTANCE  *Bridge
+  )
+{
+  if (Bridge->ConfigBuffer != NULL) {
+    FreePool (Bridge->ConfigBuffer);
+  }
+
+  if (Bridge->DevicePath != NULL) {
+    FreePool (Bridge->DevicePath);
+  }
+
+  FreePool (Bridge);
+}
+
+/**
   Check parameters for IO,MMIO,PCI read/write services of PCI Root Bridge IO.
 
   The I/O operations are carried out exactly as requested. The caller is

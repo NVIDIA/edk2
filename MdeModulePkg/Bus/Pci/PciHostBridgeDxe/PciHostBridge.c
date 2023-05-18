@@ -422,6 +422,468 @@ IoMmuProtocolCallback (
 }
 
 /**
+  PCI Root Bridge Memory setup.
+
+  @param  RootBridge            Root Bridge instance.
+
+  @retval EFI_SUCCESS           Memory was setup correctly
+  @retval others                Error in setup
+
+**/
+EFI_STATUS
+EFIAPI
+PciRootBridgeMemorySetup (
+  IN PCI_ROOT_BRIDGE  *RootBridge
+  )
+{
+  EFI_STATUS                Status;
+  UINT64                    HostAddress;
+  PCI_ROOT_BRIDGE_APERTURE  *MemApertures[4];
+  UINTN                     MemApertureIndex;
+
+  if (RootBridge->Io.Base <= RootBridge->Io.Limit) {
+    //
+    // Base and Limit in PCI_ROOT_BRIDGE_APERTURE are device address.
+    // For GCD resource manipulation, we need to use host address.
+    //
+    HostAddress = TO_HOST_ADDRESS (
+                    RootBridge->Io.Base,
+                    RootBridge->Io.Translation
+                    );
+
+    Status = AddIoSpace (
+               HostAddress,
+               RootBridge->Io.Limit - RootBridge->Io.Base + 1
+               );
+    ASSERT_EFI_ERROR (Status);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+
+    if (RootBridge->ResourceAssigned) {
+      Status = gDS->AllocateIoSpace (
+                      EfiGcdAllocateAddress,
+                      EfiGcdIoTypeIo,
+                      0,
+                      RootBridge->Io.Limit - RootBridge->Io.Base + 1,
+                      &HostAddress,
+                      gImageHandle,
+                      NULL
+                      );
+      ASSERT_EFI_ERROR (Status);
+      if (EFI_ERROR (Status)) {
+        return Status;
+      }
+    }
+  }
+
+  //
+  // Add all the Mem/PMem aperture to GCD
+  // Mem/PMem shouldn't overlap with each other
+  // Root bridge which needs to combine MEM and PMEM should only report
+  // the MEM aperture in Mem
+  //
+  MemApertures[0] = &RootBridge->Mem;
+  MemApertures[1] = &RootBridge->MemAbove4G;
+  MemApertures[2] = &RootBridge->PMem;
+  MemApertures[3] = &RootBridge->PMemAbove4G;
+
+  for (MemApertureIndex = 0; MemApertureIndex < ARRAY_SIZE (MemApertures); MemApertureIndex++) {
+    if (MemApertures[MemApertureIndex]->Base <= MemApertures[MemApertureIndex]->Limit) {
+      //
+      // Base and Limit in PCI_ROOT_BRIDGE_APERTURE are device address.
+      // For GCD resource manipulation, we need to use host address.
+      //
+      HostAddress = TO_HOST_ADDRESS (
+                      MemApertures[MemApertureIndex]->Base,
+                      MemApertures[MemApertureIndex]->Translation
+                      );
+      Status = AddMemoryMappedIoSpace (
+                 HostAddress,
+                 MemApertures[MemApertureIndex]->Limit - MemApertures[MemApertureIndex]->Base + 1,
+                 EFI_MEMORY_UC
+                 );
+      ASSERT_EFI_ERROR (Status);
+      if (EFI_ERROR (Status)) {
+        return Status;
+      }
+
+      Status = gDS->SetMemorySpaceAttributes (
+                      HostAddress,
+                      MemApertures[MemApertureIndex]->Limit - MemApertures[MemApertureIndex]->Base + 1,
+                      EFI_MEMORY_UC
+                      );
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_WARN, "PciHostBridge driver failed to set EFI_MEMORY_UC to MMIO aperture - %r.\n", Status));
+      }
+
+      if (RootBridge->ResourceAssigned) {
+        Status = gDS->AllocateMemorySpace (
+                        EfiGcdAllocateAddress,
+                        EfiGcdMemoryTypeMemoryMappedIo,
+                        0,
+                        MemApertures[MemApertureIndex]->Limit - MemApertures[MemApertureIndex]->Base + 1,
+                        &HostAddress,
+                        gImageHandle,
+                        NULL
+                        );
+        ASSERT_EFI_ERROR (Status);
+        if (EFI_ERROR (Status)) {
+          return Status;
+        }
+      }
+    }
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  PCI Root Bridge Memory free.
+
+  @param  RootBridge            Root Bridge instance.
+
+  @retval EFI_SUCCESS           Memory was setup correctly
+  @retval others                Error in setup
+
+**/
+EFI_STATUS
+EFIAPI
+PciRootBridgeMemoryFree (
+  IN PCI_ROOT_BRIDGE  *RootBridge
+  )
+{
+  EFI_STATUS                Status;
+  UINT64                    HostAddress;
+  PCI_ROOT_BRIDGE_APERTURE  *MemApertures[4];
+  UINTN                     MemApertureIndex;
+
+  if (RootBridge->Io.Base <= RootBridge->Io.Limit) {
+    //
+    // Base and Limit in PCI_ROOT_BRIDGE_APERTURE are device address.
+    // For GCD resource manipulation, we need to use host address.
+    //
+    HostAddress = TO_HOST_ADDRESS (
+                    RootBridge->Io.Base,
+                    RootBridge->Io.Translation
+                    );
+
+    if (RootBridge->ResourceAssigned) {
+      Status = gDS->FreeIoSpace (HostAddress, RootBridge->Io.Limit - RootBridge->Io.Base + 1);
+      ASSERT_EFI_ERROR (Status);
+      if (EFI_ERROR (Status)) {
+        return Status;
+      }
+    }
+  }
+
+  //
+  // Add all the Mem/PMem aperture to GCD
+  // Mem/PMem shouldn't overlap with each other
+  // Root bridge which needs to combine MEM and PMEM should only report
+  // the MEM aperture in Mem
+  //
+  MemApertures[0] = &RootBridge->Mem;
+  MemApertures[1] = &RootBridge->MemAbove4G;
+  MemApertures[2] = &RootBridge->PMem;
+  MemApertures[3] = &RootBridge->PMemAbove4G;
+
+  for (MemApertureIndex = 0; MemApertureIndex < ARRAY_SIZE (MemApertures); MemApertureIndex++) {
+    if (MemApertures[MemApertureIndex]->Base <= MemApertures[MemApertureIndex]->Limit) {
+      //
+      // Base and Limit in PCI_ROOT_BRIDGE_APERTURE are device address.
+      // For GCD resource manipulation, we need to use host address.
+      //
+      HostAddress = TO_HOST_ADDRESS (
+                      MemApertures[MemApertureIndex]->Base,
+                      MemApertures[MemApertureIndex]->Translation
+                      );
+      if (RootBridge->ResourceAssigned) {
+        Status = gDS->FreeMemorySpace (HostAddress, RootBridge->Io.Limit - RootBridge->Io.Base + 1);
+        ASSERT_EFI_ERROR (Status);
+        if (EFI_ERROR (Status)) {
+          return Status;
+        }
+      }
+    }
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Test to see if this driver supports ControllerHandle. Any ControllerHandle
+  than contains a gEdkiiPciHostBridgeProtocolGuid protocol can be supported.
+
+  @param  This                Protocol instance pointer.
+  @param  Controller          Handle of device to test.
+  @param  RemainingDevicePath Optional parameter use to pick a specific child
+                              device to start.
+
+  @retval EFI_SUCCESS         This driver supports this device.
+  @retval EFI_ALREADY_STARTED This driver is already running on this device.
+  @retval other               This driver does not support this device.
+
+**/
+EFI_STATUS
+EFIAPI
+PciHostBrigeDriverBindingSupported (
+  IN EFI_DRIVER_BINDING_PROTOCOL  *This,
+  IN EFI_HANDLE                   Controller,
+  IN EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath
+  )
+{
+  EFI_STATUS       Status;
+  PCI_ROOT_BRIDGE  *PciRootBridge;
+
+  //
+  // Check if Pci Host Bridge protocol is installed by platform
+  //
+  Status = gBS->OpenProtocol (
+                  Controller,
+                  &gEdkiiPciHostBridgeProtocolGuid,
+                  (VOID **)&PciRootBridge,
+                  This->DriverBindingHandle,
+                  Controller,
+                  EFI_OPEN_PROTOCOL_BY_DRIVER
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  //
+  // Close the protocol used to perform the supported test
+  //
+  gBS->CloseProtocol (
+         Controller,
+         &gEdkiiPciHostBridgeProtocolGuid,
+         This->DriverBindingHandle,
+         Controller
+         );
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Start this driver on ControllerHandle and enumerate Pci bus and start
+  all device under PCI bus.
+
+  @param  This                 Protocol instance pointer.
+  @param  Controller           Handle of device to bind driver to.
+  @param  RemainingDevicePath  Optional parameter use to pick a specific child
+                               device to start.
+
+  @retval EFI_SUCCESS          This driver is added to ControllerHandle.
+  @retval EFI_ALREADY_STARTED  This driver is already running on ControllerHandle.
+  @retval other                This driver does not support this device.
+
+**/
+EFI_STATUS
+EFIAPI
+PciHostBrigeDriverBindingStart (
+  IN EFI_DRIVER_BINDING_PROTOCOL  *This,
+  IN EFI_HANDLE                   Controller,
+  IN EFI_DEVICE_PATH_PROTOCOL     *RemainingDevicePath
+  )
+{
+  EFI_STATUS                Status;
+  PCI_ROOT_BRIDGE           *PciRootBridge;
+  PCI_ROOT_BRIDGE_INSTANCE  *RootBridge;
+  PCI_HOST_BRIDGE_INSTANCE  *HostBridge;
+  BOOLEAN                   MemorySetupDone;
+
+  MemorySetupDone = FALSE;
+  //
+  // Check if Pci Host Bridge protocol is installed by platform
+  //
+  Status = gBS->OpenProtocol (
+                  Controller,
+                  &gEdkiiPciHostBridgeProtocolGuid,
+                  (VOID **)&PciRootBridge,
+                  This->DriverBindingHandle,
+                  Controller,
+                  EFI_OPEN_PROTOCOL_BY_DRIVER
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  RootBridge = CreateRootBridge (PciRootBridge);
+  ASSERT (RootBridge != NULL);
+  if (RootBridge == NULL) {
+    Status = EFI_DEVICE_ERROR;
+    goto ErrorExit;
+  }
+
+  Status = PciRootBridgeMemorySetup (PciRootBridge);
+  if (EFI_ERROR (Status)) {
+    goto ErrorExit;
+  }
+
+  MemorySetupDone = TRUE;
+
+  if (!PciRootBridge->ResourceAssigned) {
+    // Create host bridge
+    HostBridge = AllocateZeroPool (sizeof (PCI_HOST_BRIDGE_INSTANCE));
+    ASSERT (HostBridge != NULL);
+    if (HostBridge == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
+      goto ErrorExit;
+    }
+
+    HostBridge->Handle       = 0;
+    HostBridge->Signature    = PCI_HOST_BRIDGE_SIGNATURE;
+    HostBridge->CanRestarted = TRUE;
+    InitializeListHead (&HostBridge->RootBridges);
+
+    HostBridge->ResAlloc.NotifyPhase          = NotifyPhase;
+    HostBridge->ResAlloc.GetNextRootBridge    = GetNextRootBridge;
+    HostBridge->ResAlloc.GetAllocAttributes   = GetAttributes;
+    HostBridge->ResAlloc.StartBusEnumeration  = StartBusEnumeration;
+    HostBridge->ResAlloc.SetBusNumbers        = SetBusNumbers;
+    HostBridge->ResAlloc.SubmitResources      = SubmitResources;
+    HostBridge->ResAlloc.GetProposedResources = GetProposedResources;
+    HostBridge->ResAlloc.PreprocessController = PreprocessController;
+
+    Status = gBS->InstallMultipleProtocolInterfaces (
+                    &HostBridge->Handle,
+                    &gEfiPciHostBridgeResourceAllocationProtocolGuid,
+                    &HostBridge->ResAlloc,
+                    NULL
+                    );
+    ASSERT_EFI_ERROR (Status);
+    if (EFI_ERROR (Status)) {
+      goto ErrorExit;
+    }
+
+    //
+    // Insert Root Bridge Handle Instance
+    //
+    InsertTailList (&HostBridge->RootBridges, &RootBridge->Link);
+    RootBridge->RootBridgeIo.ParentHandle = HostBridge->Handle;
+  } else {
+    RootBridge->RootBridgeIo.ParentHandle = 0;
+  }
+
+  RootBridge->Handle = Controller;
+  Status             = gBS->InstallMultipleProtocolInterfaces (
+                              &RootBridge->Handle,
+                              &gEfiPciRootBridgeIoProtocolGuid,
+                              &RootBridge->RootBridgeIo,
+                              NULL
+                              );
+
+ErrorExit:
+  if (EFI_ERROR (Status)) {
+    if (MemorySetupDone) {
+      PciRootBridgeMemoryFree (PciRootBridge);
+    }
+
+    if (RootBridge != NULL) {
+      if (!IsListEmpty (&RootBridge->Link)) {
+        RemoveEntryList (&RootBridge->Link);
+      }
+
+      FreeRootBridge (RootBridge);
+    }
+
+    gBS->CloseProtocol (
+           Controller,
+           &gEdkiiPciHostBridgeProtocolGuid,
+           This->DriverBindingHandle,
+           Controller
+           );
+  }
+
+  return Status;
+}
+
+/**
+  Stop this driver on ControllerHandle. Support stopping any child handles
+  created by this driver.
+
+  @param  This              Protocol instance pointer.
+  @param  Controller        Handle of device to stop driver on.
+  @param  NumberOfChildren  Number of Handles in ChildHandleBuffer. If number of
+                            children is zero stop the entire bus driver.
+  @param  ChildHandleBuffer List of Child Handles to Stop.
+
+  @retval EFI_SUCCESS       This driver is removed ControllerHandle.
+  @retval other             This driver was not removed from this device.
+
+**/
+EFI_STATUS
+EFIAPI
+PciHostBrigeDriverBindingStop (
+  IN  EFI_DRIVER_BINDING_PROTOCOL  *This,
+  IN  EFI_HANDLE                   Controller,
+  IN  UINTN                        NumberOfChildren,
+  IN  EFI_HANDLE                   *ChildHandleBuffer
+  )
+{
+  EFI_STATUS                       Status;
+  PCI_ROOT_BRIDGE                  *PciRootBridge;
+  PCI_ROOT_BRIDGE_INSTANCE         *RootBridge;
+  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL  *RootBridgeIo;
+
+  Status = gBS->HandleProtocol (
+                  Controller,
+                  &gEfiPciRootBridgeIoProtocolGuid,
+                  (VOID **)&RootBridgeIo
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  RootBridge = ROOT_BRIDGE_FROM_THIS (RootBridgeIo);
+
+  Status = gBS->HandleProtocol (
+                  Controller,
+                  &gEdkiiPciHostBridgeProtocolGuid,
+                  (VOID **)&PciRootBridge
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = gBS->UninstallMultipleProtocolInterfaces (
+                  Controller,
+                  &gEfiPciRootBridgeIoProtocolGuid,
+                  (VOID **)&PciRootBridge
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  if (!IsListEmpty (&RootBridge->Link)) {
+    RemoveEntryList (&RootBridge->Link);
+  }
+
+  PciRootBridgeMemoryFree (PciRootBridge);
+
+  FreeRootBridge (RootBridge);
+  gBS->CloseProtocol (
+         Controller,
+         &gEdkiiPciHostBridgeProtocolGuid,
+         This->DriverBindingHandle,
+         Controller
+         );
+  return EFI_SUCCESS;
+}
+
+//
+// PCI Bus Driver Global Variables
+//
+EFI_DRIVER_BINDING_PROTOCOL  gPciHostBrigeDriverBinding = {
+  PciHostBrigeDriverBindingSupported,
+  PciHostBrigeDriverBindingStart,
+  PciHostBrigeDriverBindingStop,
+  0xa,
+  NULL,
+  NULL
+};
+
+/**
 
   Entry point of this driver.
 
@@ -445,182 +907,111 @@ InitializePciHostBridge (
   PCI_ROOT_BRIDGE           *RootBridges;
   UINTN                     RootBridgeCount;
   UINTN                     Index;
-  PCI_ROOT_BRIDGE_APERTURE  *MemApertures[4];
-  UINTN                     MemApertureIndex;
   BOOLEAN                   ResourceAssigned;
   LIST_ENTRY                *Link;
-  UINT64                    HostAddress;
-
-  RootBridges = PciHostBridgeGetRootBridges (&RootBridgeCount);
-  if ((RootBridges == NULL) || (RootBridgeCount == 0)) {
-    return EFI_UNSUPPORTED;
-  }
 
   Status = gBS->LocateProtocol (&gEfiCpuIo2ProtocolGuid, NULL, (VOID **)&mCpuIo);
   ASSERT_EFI_ERROR (Status);
 
-  //
-  // Most systems in the world including complex servers have only one Host Bridge.
-  //
-  HostBridge = AllocateZeroPool (sizeof (PCI_HOST_BRIDGE_INSTANCE));
-  ASSERT (HostBridge != NULL);
-
-  HostBridge->Signature    = PCI_HOST_BRIDGE_SIGNATURE;
-  HostBridge->CanRestarted = TRUE;
-  InitializeListHead (&HostBridge->RootBridges);
-  ResourceAssigned = FALSE;
-
-  //
-  // Create Root Bridge Device Handle in this Host Bridge
-  //
-  for (Index = 0; Index < RootBridgeCount; Index++) {
+  RootBridges = PciHostBridgeGetRootBridges (&RootBridgeCount);
+  if ((RootBridges == NULL) || (RootBridgeCount == 0)) {
+    // Register for binding protocol if library enumeration is not used
+    Status = EfiLibInstallDriverBinding (
+               ImageHandle,
+               SystemTable,
+               &gPciHostBrigeDriverBinding,
+               ImageHandle
+               );
+    ASSERT_EFI_ERROR (Status);
+  } else {
     //
-    // Create Root Bridge Handle Instance
+    // Most systems in the world including complex servers have only one Host Bridge.
     //
-    RootBridge = CreateRootBridge (&RootBridges[Index]);
-    ASSERT (RootBridge != NULL);
-    if (RootBridge == NULL) {
-      continue;
+    HostBridge = AllocateZeroPool (sizeof (PCI_HOST_BRIDGE_INSTANCE));
+    ASSERT (HostBridge != NULL);
+
+    HostBridge->Signature    = PCI_HOST_BRIDGE_SIGNATURE;
+    HostBridge->CanRestarted = TRUE;
+    InitializeListHead (&HostBridge->RootBridges);
+    ResourceAssigned = FALSE;
+
+    //
+    // Create Root Bridge Device Handle in this Host Bridge
+    //
+    for (Index = 0; Index < RootBridgeCount; Index++) {
+      //
+      // Create Root Bridge Handle Instance
+      //
+      RootBridge = CreateRootBridge (&RootBridges[Index]);
+      ASSERT (RootBridge != NULL);
+      if (RootBridge == NULL) {
+        continue;
+      }
+
+      //
+      // Make sure all root bridges share the same ResourceAssigned value.
+      //
+      if (Index == 0) {
+        ResourceAssigned = RootBridges[Index].ResourceAssigned;
+      } else {
+        ASSERT (ResourceAssigned == RootBridges[Index].ResourceAssigned);
+      }
+
+      Status = PciRootBridgeMemorySetup (&RootBridges[Index]);
+      if (EFI_ERROR (Status)) {
+        continue;
+      }
+
+      //
+      // Insert Root Bridge Handle Instance
+      //
+      InsertTailList (&HostBridge->RootBridges, &RootBridge->Link);
     }
 
     //
-    // Make sure all root bridges share the same ResourceAssigned value.
+    // When resources were assigned, it's not needed to expose
+    // PciHostBridgeResourceAllocation protocol.
     //
-    if (Index == 0) {
-      ResourceAssigned = RootBridges[Index].ResourceAssigned;
-    } else {
-      ASSERT (ResourceAssigned == RootBridges[Index].ResourceAssigned);
-    }
+    if (!ResourceAssigned) {
+      HostBridge->ResAlloc.NotifyPhase          = NotifyPhase;
+      HostBridge->ResAlloc.GetNextRootBridge    = GetNextRootBridge;
+      HostBridge->ResAlloc.GetAllocAttributes   = GetAttributes;
+      HostBridge->ResAlloc.StartBusEnumeration  = StartBusEnumeration;
+      HostBridge->ResAlloc.SetBusNumbers        = SetBusNumbers;
+      HostBridge->ResAlloc.SubmitResources      = SubmitResources;
+      HostBridge->ResAlloc.GetProposedResources = GetProposedResources;
+      HostBridge->ResAlloc.PreprocessController = PreprocessController;
 
-    if (RootBridges[Index].Io.Base <= RootBridges[Index].Io.Limit) {
-      //
-      // Base and Limit in PCI_ROOT_BRIDGE_APERTURE are device address.
-      // For GCD resource manipulation, we need to use host address.
-      //
-      HostAddress = TO_HOST_ADDRESS (
-                      RootBridges[Index].Io.Base,
-                      RootBridges[Index].Io.Translation
+      Status = gBS->InstallMultipleProtocolInterfaces (
+                      &HostBridge->Handle,
+                      &gEfiPciHostBridgeResourceAllocationProtocolGuid,
+                      &HostBridge->ResAlloc,
+                      NULL
                       );
-
-      Status = AddIoSpace (
-                 HostAddress,
-                 RootBridges[Index].Io.Limit - RootBridges[Index].Io.Base + 1
-                 );
       ASSERT_EFI_ERROR (Status);
-      if (ResourceAssigned) {
-        Status = gDS->AllocateIoSpace (
-                        EfiGcdAllocateAddress,
-                        EfiGcdIoTypeIo,
-                        0,
-                        RootBridges[Index].Io.Limit - RootBridges[Index].Io.Base + 1,
-                        &HostAddress,
-                        gImageHandle,
-                        NULL
-                        );
-        ASSERT_EFI_ERROR (Status);
-      }
     }
 
-    //
-    // Add all the Mem/PMem aperture to GCD
-    // Mem/PMem shouldn't overlap with each other
-    // Root bridge which needs to combine MEM and PMEM should only report
-    // the MEM aperture in Mem
-    //
-    MemApertures[0] = &RootBridges[Index].Mem;
-    MemApertures[1] = &RootBridges[Index].MemAbove4G;
-    MemApertures[2] = &RootBridges[Index].PMem;
-    MemApertures[3] = &RootBridges[Index].PMemAbove4G;
+    for (Link = GetFirstNode (&HostBridge->RootBridges)
+         ; !IsNull (&HostBridge->RootBridges, Link)
+         ; Link = GetNextNode (&HostBridge->RootBridges, Link)
+         )
+    {
+      RootBridge                            = ROOT_BRIDGE_FROM_LINK (Link);
+      RootBridge->RootBridgeIo.ParentHandle = HostBridge->Handle;
 
-    for (MemApertureIndex = 0; MemApertureIndex < ARRAY_SIZE (MemApertures); MemApertureIndex++) {
-      if (MemApertures[MemApertureIndex]->Base <= MemApertures[MemApertureIndex]->Limit) {
-        //
-        // Base and Limit in PCI_ROOT_BRIDGE_APERTURE are device address.
-        // For GCD resource manipulation, we need to use host address.
-        //
-        HostAddress = TO_HOST_ADDRESS (
-                        MemApertures[MemApertureIndex]->Base,
-                        MemApertures[MemApertureIndex]->Translation
-                        );
-        Status = AddMemoryMappedIoSpace (
-                   HostAddress,
-                   MemApertures[MemApertureIndex]->Limit - MemApertures[MemApertureIndex]->Base + 1,
-                   EFI_MEMORY_UC
-                   );
-        ASSERT_EFI_ERROR (Status);
-        Status = gDS->SetMemorySpaceAttributes (
-                        HostAddress,
-                        MemApertures[MemApertureIndex]->Limit - MemApertures[MemApertureIndex]->Base + 1,
-                        EFI_MEMORY_UC
-                        );
-        if (EFI_ERROR (Status)) {
-          DEBUG ((DEBUG_WARN, "PciHostBridge driver failed to set EFI_MEMORY_UC to MMIO aperture - %r.\n", Status));
-        }
-
-        if (ResourceAssigned) {
-          Status = gDS->AllocateMemorySpace (
-                          EfiGcdAllocateAddress,
-                          EfiGcdMemoryTypeMemoryMappedIo,
-                          0,
-                          MemApertures[MemApertureIndex]->Limit - MemApertures[MemApertureIndex]->Base + 1,
-                          &HostAddress,
-                          gImageHandle,
-                          NULL
-                          );
-          ASSERT_EFI_ERROR (Status);
-        }
-      }
+      Status = gBS->InstallMultipleProtocolInterfaces (
+                      &RootBridge->Handle,
+                      &gEfiDevicePathProtocolGuid,
+                      RootBridge->DevicePath,
+                      &gEfiPciRootBridgeIoProtocolGuid,
+                      &RootBridge->RootBridgeIo,
+                      NULL
+                      );
+      ASSERT_EFI_ERROR (Status);
     }
 
-    //
-    // Insert Root Bridge Handle Instance
-    //
-    InsertTailList (&HostBridge->RootBridges, &RootBridge->Link);
+    PciHostBridgeFreeRootBridges (RootBridges, RootBridgeCount);
   }
-
-  //
-  // When resources were assigned, it's not needed to expose
-  // PciHostBridgeResourceAllocation protocol.
-  //
-  if (!ResourceAssigned) {
-    HostBridge->ResAlloc.NotifyPhase          = NotifyPhase;
-    HostBridge->ResAlloc.GetNextRootBridge    = GetNextRootBridge;
-    HostBridge->ResAlloc.GetAllocAttributes   = GetAttributes;
-    HostBridge->ResAlloc.StartBusEnumeration  = StartBusEnumeration;
-    HostBridge->ResAlloc.SetBusNumbers        = SetBusNumbers;
-    HostBridge->ResAlloc.SubmitResources      = SubmitResources;
-    HostBridge->ResAlloc.GetProposedResources = GetProposedResources;
-    HostBridge->ResAlloc.PreprocessController = PreprocessController;
-
-    Status = gBS->InstallMultipleProtocolInterfaces (
-                    &HostBridge->Handle,
-                    &gEfiPciHostBridgeResourceAllocationProtocolGuid,
-                    &HostBridge->ResAlloc,
-                    NULL
-                    );
-    ASSERT_EFI_ERROR (Status);
-  }
-
-  for (Link = GetFirstNode (&HostBridge->RootBridges)
-       ; !IsNull (&HostBridge->RootBridges, Link)
-       ; Link = GetNextNode (&HostBridge->RootBridges, Link)
-       )
-  {
-    RootBridge                            = ROOT_BRIDGE_FROM_LINK (Link);
-    RootBridge->RootBridgeIo.ParentHandle = HostBridge->Handle;
-
-    Status = gBS->InstallMultipleProtocolInterfaces (
-                    &RootBridge->Handle,
-                    &gEfiDevicePathProtocolGuid,
-                    RootBridge->DevicePath,
-                    &gEfiPciRootBridgeIoProtocolGuid,
-                    &RootBridge->RootBridgeIo,
-                    NULL
-                    );
-    ASSERT_EFI_ERROR (Status);
-  }
-
-  PciHostBridgeFreeRootBridges (RootBridges, RootBridgeCount);
 
   if (!EFI_ERROR (Status)) {
     mIoMmuEvent = EfiCreateProtocolNotifyEvent (

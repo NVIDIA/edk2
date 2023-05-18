@@ -93,6 +93,19 @@ CreateRootBridge (
   IN PCI_ROOT_BRIDGE  *Bridge
   );
 
+/**
+  Free the Pci Root Bridge instance.
+
+  @param Bridge            The root bridge instance.
+
+  @return The pointer to PCI_ROOT_BRIDGE_INSTANCE just created
+          or NULL if creation fails.
+**/
+VOID
+FreeRootBridge (
+  IN PCI_ROOT_BRIDGE_INSTANCE  *Bridge
+  );
+
 //
 // Protocol Member Function Prototypes
 //
