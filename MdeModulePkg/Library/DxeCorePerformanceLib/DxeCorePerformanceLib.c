@@ -1403,6 +1403,8 @@ ReportFpdtRecordBuffer (
         &BPDTAddr,
         sizeof (UINT64)
         );
+      Status = gBS->InstallConfigurationTable (&gEdkiiFpdtExtendedFirmwarePerformanceGuid, (VOID *)(UINTN)BPDTAddr);
+      ASSERT_EFI_ERROR (Status);
     }
 
     //
