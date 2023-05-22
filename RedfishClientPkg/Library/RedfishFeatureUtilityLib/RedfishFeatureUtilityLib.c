@@ -1222,6 +1222,66 @@ GetResourceByUri (
 
 /**
 
+  Delete redfish resource by given resource URI.
+
+  @param[in]  Service       Redfish service instance to make query.
+  @param[in]  ResourceUri   Target resource URI.
+  @param[out] Response      HTTP response from redfish service.
+
+  @retval     EFI_SUCCESS     Resrouce is returned successfully.
+  @retval     Others          Errors occur.
+
+**/
+EFI_STATUS
+DeleteResourceByUri (
+  IN  REDFISH_SERVICE   *Service,
+  IN  EFI_STRING        ResourceUri,
+  OUT REDFISH_RESPONSE  *Response
+  )
+{
+  EFI_STATUS  Status;
+  CHAR8       *AsciiResourceUri;
+
+  if ((Service == NULL) || (Response == NULL) || IS_EMPTY_STRING (ResourceUri)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  AsciiResourceUri = StrUnicodeToAscii (ResourceUri);
+  if (AsciiResourceUri == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  //
+  // Get resource from redfish service.
+  //
+  Status = RedfishDeleteByUri (
+             Service,
+             AsciiResourceUri,
+             Response
+             );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: RedfishDeleteByUri to %a failed: %r\n", __FUNCTION__, AsciiResourceUri, Status));
+    if (Response->Payload != NULL) {
+      RedfishDumpPayload (Response->Payload);
+      RedfishFreeResponse (
+        NULL,
+        0,
+        NULL,
+        Response->Payload
+        );
+      Response->Payload = NULL;
+    }
+  }
+
+  if (AsciiResourceUri != NULL) {
+    FreePool (AsciiResourceUri);
+  }
+
+  return Status;
+}
+
+/**
+
   Check if this is the Redpath array. Usually the Redpath array represents
   the collection member. Return
 
@@ -1815,12 +1875,18 @@ GetEtagAndLocation (
     return EFI_SUCCESS;
   }
 
-  Status = EFI_SUCCESS;
+  OdataString   = NULL;
+  AsciiLocation = NULL;
+  Header        = NULL;
+  Status        = EFI_SUCCESS;
 
   if (Etag != NULL) {
     *Etag = NULL;
 
-    if (*(Response->StatusCode) == HTTP_STATUS_200_OK) {
+    if ((*(Response->StatusCode) == HTTP_STATUS_200_OK) ||
+        (*(Response->StatusCode) == HTTP_STATUS_204_NO_CONTENT) ||
+        (*(Response->StatusCode) == HTTP_STATUS_201_CREATED))
+    {
       Header = HttpFindHeader (Response->HeaderCount, Response->Headers, HTTP_HEADER_ETAG);
       if (Header != NULL) {
         *Etag = AllocateCopyPool (AsciiStrSize (Header->FieldValue), Header->FieldValue);
@@ -1831,7 +1897,7 @@ GetEtagAndLocation (
     //
     // No header is returned. Search payload for location.
     //
-    if ((*Etag == NULL) && (Response->Payload != NULL)) {
+    if ((*Etag == NULL) && (Response->Payload != NULL) && (*(Response->StatusCode) != HTTP_STATUS_204_NO_CONTENT)) {
       JsonValue = RedfishJsonInPayload (Response->Payload);
       if (JsonValue != NULL) {
         OdataValue = JsonObjectGetValue (JsonValueGetObject (JsonValue), "@odata.etag");
@@ -1855,7 +1921,12 @@ GetEtagAndLocation (
   if (Location != NULL) {
     *Location = NULL;
 
-    if (*(Response->StatusCode) == HTTP_STATUS_200_OK) {
+    //
+    // Per Redfish specification, 201 and 202 shall return Location in header
+    //
+    if ((*(Response->StatusCode) == HTTP_STATUS_202_ACCEPTED) ||
+        (*(Response->StatusCode) == HTTP_STATUS_201_CREATED))
+    {
       Header = HttpFindHeader (Response->HeaderCount, Response->Headers, HTTP_HEADER_LOCATION);
       if (Header != NULL) {
         AsciiLocation = AllocateCopyPool (AsciiStrSize (Header->FieldValue), Header->FieldValue);
@@ -1866,7 +1937,7 @@ GetEtagAndLocation (
     //
     // No header is returned. Search payload for location.
     //
-    if ((*Location == NULL) && (Response->Payload != NULL)) {
+    if ((*Location == NULL) && (Response->Payload != NULL) && (*(Response->StatusCode) != HTTP_STATUS_204_NO_CONTENT)) {
       JsonValue = RedfishJsonInPayload (Response->Payload);
       if (JsonValue != NULL) {
         OdataValue = JsonObjectGetValue (JsonValueGetObject (JsonValue), "@odata.id");
@@ -1989,7 +2060,7 @@ CreatePayloadToPatchResource (
   IN  REDFISH_SERVICE  *Service,
   IN  REDFISH_PAYLOAD  *TargetPayload,
   IN  CHAR8            *Json,
-  OUT CHAR8            **Etag
+  OUT CHAR8            **Etag OPTIONAL
   )
 {
   REDFISH_PAYLOAD   Payload;
@@ -1997,7 +2068,7 @@ CreatePayloadToPatchResource (
   REDFISH_RESPONSE  PostResponse;
   EFI_STATUS        Status;
 
-  if ((Service == NULL) || (TargetPayload == NULL) || IS_EMPTY_STRING (Json) || (Etag == NULL)) {
+  if ((Service == NULL) || (TargetPayload == NULL) || IS_EMPTY_STRING (Json)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -2069,7 +2140,7 @@ CreatePayloadToPostResource (
   IN  REDFISH_PAYLOAD  *TargetPayload,
   IN  CHAR8            *Json,
   OUT EFI_STRING       *Location,
-  OUT CHAR8            **Etag
+  OUT CHAR8            **Etag OPTIONAL
   )
 {
   REDFISH_PAYLOAD   Payload;
@@ -2077,7 +2148,7 @@ CreatePayloadToPostResource (
   REDFISH_RESPONSE  PostResponse;
   EFI_STATUS        Status;
 
-  if ((Service == NULL) || (TargetPayload == NULL) || IS_EMPTY_STRING (Json) || (Location == NULL) || (Etag == NULL)) {
+  if ((Service == NULL) || (TargetPayload == NULL) || IS_EMPTY_STRING (Json) || (Location == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 

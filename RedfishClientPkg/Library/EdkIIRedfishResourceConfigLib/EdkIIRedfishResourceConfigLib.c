@@ -16,6 +16,7 @@
 #include <Library/EdkIIRedfishResourceConfigLib.h>
 #include <Library/RedfishFeatureUtilityLib.h>
 #include <Library/RedfishPlatformConfigLib.h>
+#include <Library/RedfishHttpCacheLib.h>
 
 EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL           *mRedfishResourceConfigProtocol = NULL;
 EFI_HANDLE                                       mCachedHandle;
@@ -47,7 +48,7 @@ GetRedfishSchemaInfo (
   )
 {
   EFI_STATUS                      Status;
-  REDFISH_RESPONSE                Response;
+  REDFISH_RESPONSE                *Response;
   REDFISH_PAYLOAD                 Payload;
   CHAR8                           *JsonText;
   EFI_REST_JSON_STRUCTURE_HEADER  *Header;
@@ -56,13 +57,13 @@ GetRedfishSchemaInfo (
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = GetResourceByUri (RedfishService, Uri, &Response);
+  Status = RedfishHttpGetResource (RedfishService, Uri, &Response, TRUE);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: failed to get resource from %s: %r", __FUNCTION__, Uri, Status));
     return Status;
   }
 
-  Payload = Response.Payload;
+  Payload = Response->Payload;
   ASSERT (Payload != NULL);
 
   JsonText = JsonDumpString (RedfishJsonInPayload (Payload), EDKII_JSON_COMPACT);
@@ -92,7 +93,6 @@ GetRedfishSchemaInfo (
   //
   JsonStructProtocol->DestoryStructure (JsonStructProtocol, Header);
   FreePool (JsonText);
-  RedfishFreeResponse (Response.StatusCode, Response.HeaderCount, Response.Headers, Response.Payload);
 
   return EFI_SUCCESS;
 }
