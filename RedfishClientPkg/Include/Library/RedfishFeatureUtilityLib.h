@@ -39,6 +39,25 @@ GetResourceByUri (
 
 /**
 
+  Delete redfish resource by given resource URI.
+
+  @param[in]  Service       Redfish service instance to make query.
+  @param[in]  ResourceUri   Target resource URI.
+  @param[out] Response      HTTP response from redfish service.
+
+  @retval     EFI_SUCCESS     Resrouce is returned successfully.
+  @retval     Others          Errors occur.
+
+**/
+EFI_STATUS
+DeleteResourceByUri (
+  IN  REDFISH_SERVICE   *Service,
+  IN  EFI_STRING        ResourceUri,
+  OUT REDFISH_RESPONSE  *Response
+  );
+
+/**
+
   Check if this is the Redpath array. Usually the Redpath array represents
   the collection member. Return
 
@@ -390,7 +409,7 @@ CreatePayloadToPostResource (
   IN  REDFISH_PAYLOAD  *TargetPayload,
   IN  CHAR8            *Json,
   OUT EFI_STRING       *Location,
-  OUT CHAR8            **Etag
+  OUT CHAR8            **Etag OPTIONAL
   );
 
 /**
@@ -411,7 +430,7 @@ CreatePayloadToPatchResource (
   IN  REDFISH_SERVICE  *Service,
   IN  REDFISH_PAYLOAD  *TargetPayload,
   IN  CHAR8            *Json,
-  OUT CHAR8            **Etag
+  OUT CHAR8            **Etag OPTIONAL
   );
 
 /**

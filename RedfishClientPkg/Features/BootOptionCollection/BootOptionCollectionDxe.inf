@@ -1,0 +1,60 @@
+## @file
+#
+#  Redfish BootOptionCollection collection driver.
+#
+#  (C) Copyright 2020-2022 Hewlett Packard Enterprise Development LP<BR>
+#  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+
+[Defines]
+  INF_VERSION               = 0x00010005
+  BASE_NAME                 = BootOptionCollectionDxe
+  FILE_GUID                 = C66FAB8D-38D0-424D-86F4-F3A37204F7D7
+  MODULE_TYPE               = DXE_DRIVER
+  VERSION_STRING            = 1.0
+  ENTRY_POINT               = RedfishCollectionEntryPoint
+  UNLOAD_IMAGE              = RedfishCollectionUnload
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  RedfishPkg/RedfishPkg.dec
+  RedfishClientPkg/RedfishClientPkg.dec
+
+[Sources]
+  BootOptionCollectionDxe.h
+  BootOptionCollectionDxe.c
+
+[LibraryClasses]
+  DebugLib
+  BaseMemoryLib
+  ConverterCommonLib
+  MemoryAllocationLib
+  RedfishFeatureUtilityLib
+  RedfishLib
+  UefiLib
+  UefiDriverEntryPoint
+  UefiBootServicesTableLib
+  EdkIIRedfishResourceConfigLib
+  RedfishVersionLib
+  RedfishHttpCacheLib
+  UefiBootManagerLib
+  DevicePathLib
+
+[Protocols]
+  gEdkIIRedfishConfigHandlerProtocolGuid    ## CONSUMED
+  gEfiRestJsonStructureProtocolGuid         ## CONSUMED
+  gEdkIIRedfishFeatureProtocolGuid          ## CONSUMED
+
+[Guids]
+
+[Pcd]
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdMaxRedfishSchemaStringSize
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdMaxRedfishSchemaVersionSize
+
+[Depex]
+  TRUE
