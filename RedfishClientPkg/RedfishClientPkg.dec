@@ -27,6 +27,7 @@
   RedfishEventLib|Include/Library/RedfishEventLib.h
   RedfishVersionLib|Include/Library/RedfishVersionLib.h
   RedfishClientDebugLib|Include/Library/RedfishClientDebugLib.h
+  RedfishHttpCacheLib|Include/Library/RedfishHttpCacheLib.h
 
 [LibraryClasses.Common.Private]
   ##  @libraryclass Redfish Helper Library
