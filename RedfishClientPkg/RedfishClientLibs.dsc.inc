@@ -39,3 +39,4 @@
   RedfishEventLib|RedfishClientPkg/Library/RedfishEventLib/RedfishEventLib.inf
   RedfishVersionLib|RedfishClientPkg/Library/RedfishVersionLib/RedfishVersionLib.inf
   RedfishAddendumLib|RedfishClientPkg/Library/RedfishAddendumLib/RedfishAddendumLib.inf
+  RedfishHttpCacheLib|RedfishClientPkg/Library/RedfishHttpCacheLib/RedfishHttpCacheLib.inf
