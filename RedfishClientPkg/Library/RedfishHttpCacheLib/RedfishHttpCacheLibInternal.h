@@ -20,10 +20,11 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/RedfishHttpCacheLib.h>
+#include <Library/RedfishDebugLib.h>
 
-#define REDFISH_HTTP_CACHE_LIST_SIZE   0x05
-#define REDFISH_HTTP_GET_RETRY_MAX     0x02
-#define REDFISH_HTTP_RETRY_WAIT        (1 * 1000000U)  ///< 1 second
+#define REDFISH_HTTP_CACHE_LIST_SIZE   0x0F
+#define REDFISH_HTTP_GET_RETRY_MAX     0x0F
+#define REDFISH_HTTP_RETRY_WAIT        (2 * 1000000U)  ///< 1 second
 #define REDFISH_HTTP_CACHE_DEBUG       DEBUG_VERBOSE
 #define REDFISH_HTTP_CACHE_DEBUG_DUMP  DEBUG_VERBOSE
 

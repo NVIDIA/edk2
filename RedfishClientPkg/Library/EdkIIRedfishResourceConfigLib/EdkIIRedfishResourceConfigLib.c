@@ -48,7 +48,7 @@ GetRedfishSchemaInfo (
   )
 {
   EFI_STATUS                      Status;
-  REDFISH_RESPONSE                *Response;
+  REDFISH_RESPONSE                Response;
   REDFISH_PAYLOAD                 Payload;
   CHAR8                           *JsonText;
   EFI_REST_JSON_STRUCTURE_HEADER  *Header;
@@ -63,7 +63,7 @@ GetRedfishSchemaInfo (
     return Status;
   }
 
-  Payload = Response->Payload;
+  Payload = Response.Payload;
   ASSERT (Payload != NULL);
 
   JsonText = JsonDumpString (RedfishJsonInPayload (Payload), EDKII_JSON_COMPACT);
@@ -91,6 +91,15 @@ GetRedfishSchemaInfo (
   //
   // Release resource.
   //
+  if (Response.Payload != NULL) {
+    RedfishFreeResponse (
+      Response.StatusCode,
+      Response.HeaderCount,
+      Response.Headers,
+      Response.Payload
+      );
+  }
+
   JsonStructProtocol->DestoryStructure (JsonStructProtocol, Header);
   FreePool (JsonText);
 

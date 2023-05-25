@@ -154,7 +154,7 @@ MarkBootOptionProcessed (
   )
 {
   UINTN             Index;
-  REDFISH_RESPONSE  *Response;
+  REDFISH_RESPONSE  Response;
   EDKII_JSON_VALUE  *JsonValue;
   EDKII_JSON_VALUE  *BootOptionReference;
   EFI_STATUS        Status;
@@ -169,41 +169,56 @@ MarkBootOptionProcessed (
   // Get boot option reference attribute
   //
   Status = RedfishHttpGetResource (RedfishService, Uri, &Response, TRUE);
-  if (EFI_ERROR (Status) || (Response->Payload == NULL)) {
+  if (EFI_ERROR (Status) || (Response.Payload == NULL)) {
     DEBUG ((DEBUG_ERROR, "%a: failed to get resource from %s: %r", __func__, Uri, Status));
     return Status;
   }
 
-  JsonValue = RedfishJsonInPayload (Response->Payload);
+  JsonValue = RedfishJsonInPayload (Response.Payload);
   if (!JsonValueIsObject (JsonValue)) {
-    return EFI_NOT_FOUND;
+    Status = EFI_NOT_FOUND;
+    goto ON_RELEASE;
   }
 
   BootOptionReference = JsonObjectGetValue (JsonValueGetObject (JsonValue), REDFISH_BOOT_OPTION_REFERENCE_NAME);
   if (!JsonValueIsString (BootOptionReference)) {
-    return EFI_NOT_FOUND;
+    Status = EFI_NOT_FOUND;
+    goto ON_RELEASE;
   }
 
   BootReferenceString = JsonValueGetAsciiString (BootOptionReference);
   if (BootReferenceString == NULL) {
-    return EFI_NOT_FOUND;
+    Status = EFI_NOT_FOUND;
+    goto ON_RELEASE;
   }
 
   if (AsciiStrnCmp (BootReferenceString, REDFISH_BOOT_OPTION_PREFIX, REDFISH_BOOT_OPTION_PREFIX_LEN) != 0) {
-    return EFI_NOT_FOUND;
+    Status = EFI_NOT_FOUND;
+    goto ON_RELEASE;
   }
 
   OptionNumber = AsciiStrHexToUintn (&BootReferenceString[4]);
   DEBUG ((REDFISH_BOOT_OPTION_COLLECTION_DEBUG_TRACE, "%a: boot option number: 0x%x in %s\n", __func__, OptionNumber, Uri));
 
+  Status = EFI_NOT_FOUND;
   for (Index = 0; Index < BootOptionCount; Index++) {
     if (BootOptions[Index].OptionNumber == OptionNumber) {
       BootOptions[Index].Status = EFI_ALREADY_STARTED;
+      Status                    = EFI_SUCCESS;
       break;
     }
   }
 
-  return (Index == BootOptionCount ? EFI_NOT_FOUND : EFI_SUCCESS);
+ON_RELEASE:
+
+  RedfishFreeResponse (
+    Response.StatusCode,
+    Response.HeaderCount,
+    Response.Headers,
+    Response.Payload
+    );
+
+  return Status;
 }
 
 /**
@@ -420,17 +435,17 @@ ReleaseCollectionResource (
   //
   // Release resource
   //
-  if (Private->RedResponse.Payload != NULL) {
+  if (Private->Response.Payload != NULL) {
     RedfishFreeResponse (
-      Private->RedResponse.StatusCode,
-      Private->RedResponse.HeaderCount,
-      Private->RedResponse.Headers,
-      Private->RedResponse.Payload
+      Private->Response.StatusCode,
+      Private->Response.HeaderCount,
+      Private->Response.Headers,
+      Private->Response.Payload
       );
-    Private->RedResponse.StatusCode  = NULL;
-    Private->RedResponse.HeaderCount = 0;
-    Private->RedResponse.Headers     = NULL;
-    Private->RedResponse.Payload     = NULL;
+    Private->Response.StatusCode  = NULL;
+    Private->Response.HeaderCount = 0;
+    Private->Response.Headers     = NULL;
+    Private->Response.Payload     = NULL;
   }
 
   if (Private->CollectionJson != NULL) {
@@ -462,13 +477,13 @@ CollectionHandler (
   //
   // Query collection from Redfish service.
   //
-  Status = GetResourceByUri (Private->RedfishService, Private->CollectionUri, &Private->RedResponse);
+  Status = RedfishHttpGetResource (Private->RedfishService, Private->CollectionUri, &Private->Response, TRUE);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: unable to get resource from: %s :%r\n", __func__, Private->CollectionUri, Status));
     goto ON_RELEASE;
   }
 
-  Private->CollectionPayload = Private->RedResponse.Payload;
+  Private->CollectionPayload = Private->Response.Payload;
   ASSERT (Private->CollectionPayload != NULL);
 
   Private->CollectionJson = JsonDumpString (RedfishJsonInPayload (Private->CollectionPayload), EDKII_JSON_COMPACT);
