@@ -2,6 +2,7 @@
 # Redfish Client Package
 #
 # (C) Copyright 2021 Hewlett-Packard Enterprise Development LP.
+# Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 #    SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -49,5 +50,6 @@
 
   RedfishClientPkg/Library/RedfishFeatureUtilityLib/RedfishFeatureUtilityLib.inf
   RedfishClientPkg/PrivateLibrary/RedfishLib/RedfishLib.inf
+  RedfishClientPkg/Library/RedfishHttpCacheLib/RedfishHttpCacheLib.inf
 
   !include RedfishClientPkg/RedfishClient.dsc.inc

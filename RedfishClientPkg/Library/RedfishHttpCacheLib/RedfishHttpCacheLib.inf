@@ -1,0 +1,45 @@
+## @file
+#  Redfish HTTP cache library helps Redfish application to get Redfish resource
+#  from BMC with cache mechanism enabled.
+#
+#  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = RedfishHttpCacheLib
+  FILE_GUID                      = 21F8FEEC-023C-451D-824D-823058FD9481
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = RedfishHttpCacheLib| DXE_DRIVER UEFI_DRIVER
+  CONSTRUCTOR                    = RedfishHttpCacheConstructor
+  DESTRUCTOR                     = RedfishHttpCacheDestructor
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 EBC
+#
+
+[Sources]
+  RedfishHttpCacheLibInternal.h
+  RedfishHttpCacheLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  RedfishPkg/RedfishPkg.dec
+  RedfishClientPkg/RedfishClientPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  UefiBootServicesTableLib
+  MemoryAllocationLib
+  RedfishLib
+  UefiLib
+
+[depex]
+  TRUE
+
