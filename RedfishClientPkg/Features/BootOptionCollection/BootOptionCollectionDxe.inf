@@ -44,6 +44,7 @@
   RedfishHttpCacheLib
   UefiBootManagerLib
   DevicePathLib
+  RedfishHttpCacheLib
 
 [Protocols]
   gEdkIIRedfishConfigHandlerProtocolGuid    ## CONSUMED

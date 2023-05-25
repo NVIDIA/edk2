@@ -29,8 +29,8 @@
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
-  RedfishPkg/RedfishPkg.dec
   RedfishClientPkg/RedfishClientPkg.dec
+  RedfishPkg/RedfishPkg.dec
 
 [LibraryClasses]
   BaseLib
@@ -39,6 +39,7 @@
   MemoryAllocationLib
   RedfishLib
   UefiLib
+  RedfishDebugLib
 
 [depex]
   TRUE

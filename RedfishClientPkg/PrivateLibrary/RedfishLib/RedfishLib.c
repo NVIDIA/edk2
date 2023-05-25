@@ -169,6 +169,30 @@ RedfishJsonInPayload (
 }
 
 /**
+  This function returns the Redfish service of a REDFISH_PAYLOAD.
+
+  Caller doesn't need to free the returned JSON value because it will be released
+  in corresponding RedfishCleanupService() function.
+
+  @param[in]    Payload     A REDFISH_PAYLOAD instance.
+
+  @return     Redfish service of the payload.
+
+**/
+REDFISH_SERVICE
+EFIAPI
+RedfishServiceInPayload (
+  IN REDFISH_PAYLOAD  Payload
+  )
+{
+  if (Payload == NULL) {
+    return NULL;
+  }
+
+  return ((redfishPayload *)Payload)->service;
+}
+
+/**
   Fill the input RedPath string with system UUID from SMBIOS table or use the customized
   ID if  FromSmbios == FALSE.
 

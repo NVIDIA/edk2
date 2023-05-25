@@ -2,6 +2,7 @@
   Redfish feature driver collection common header file.
 
   (C) Copyright 2020-2022 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -26,6 +27,7 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/EdkIIRedfishResourceConfigLib.h>
 #include <Library/RedfishVersionLib.h>
+#include <Library/RedfishHttpCacheLib.h>
 
 //
 // Protocols
@@ -38,16 +40,16 @@
 #define REDFISH_MAX_COLLECTION_INDEX_LEN  8
 
 typedef struct _REDFISH_COLLECTION_PRIVATE {
-  EFI_REST_JSON_STRUCTURE_PROTOCOL      *JsonStructProtocol;
-  EDKII_REDFISH_FEATURE_PROTOCOL        *FeatureProtocol;
-  REDFISH_SERVICE                       RedfishService;
-  RESOURCE_INFORMATION_EXCHANGE         *InformationExchange;
-  EDKII_REDFISH_CONFIG_HANDLER_PROTOCOL ConfigHandler;
-  EFI_STRING                            CollectionUri;
-  CHAR8                                 *CollectionJson;
-  REDFISH_PAYLOAD                       CollectionPayload;
-  REDFISH_RESPONSE                      RedResponse;
-  EFI_STRING                            RedfishVersion;
+  EFI_REST_JSON_STRUCTURE_PROTOCOL         *JsonStructProtocol;
+  EDKII_REDFISH_FEATURE_PROTOCOL           *FeatureProtocol;
+  REDFISH_SERVICE                          RedfishService;
+  RESOURCE_INFORMATION_EXCHANGE            *InformationExchange;
+  EDKII_REDFISH_CONFIG_HANDLER_PROTOCOL    ConfigHandler;
+  EFI_STRING                               CollectionUri;
+  CHAR8                                    *CollectionJson;
+  REDFISH_PAYLOAD                          CollectionPayload;
+  REDFISH_RESPONSE                         Response;
+  EFI_STRING                               RedfishVersion;
 } REDFISH_COLLECTION_PRIVATE;
 
 #define REDFISH_COLLECTION_PRIVATE_DATA_FROM_PROTOCOL(This) \

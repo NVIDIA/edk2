@@ -312,13 +312,21 @@ ReSendRequest:;
     if (EFI_ERROR (Status)) {
       goto ON_EXIT;
     }
-  } else if (ResponseData->Response.StatusCode == HTTP_STATUS_500_INTERNAL_SERVER_ERROR) {
-    DEBUG ((DEBUG_ERROR, "Status Code: HTTP_STATUS_500_INTERNAL_SERVER_ERROR\n"));
-    Status = EFI_UNSUPPORTED;
-    goto ON_EXIT;
   } else {
     DEBUG ((DEBUG_ERROR, "This HTTP Status is not handled!: 0x%x\n", ResponseData->Response.StatusCode));
     Status = EFI_UNSUPPORTED;
+
+    //
+    // Deliver status code back to caller so caller can handle it.
+    //
+    ResponseMessage->Data.Response = AllocateZeroPool (sizeof (EFI_HTTP_RESPONSE_DATA));
+    if (ResponseMessage->Data.Response == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
+      goto ON_EXIT;
+    }
+
+    ResponseMessage->Data.Response->StatusCode = ResponseData->Response.StatusCode;
+
     goto ON_EXIT;
   }
 
@@ -443,11 +451,6 @@ ON_EXIT:
   }
 
   if (EFI_ERROR (Status)) {
-    if (ResponseMessage->Data.Response != NULL) {
-      FreePool (ResponseMessage->Data.Response);
-      ResponseMessage->Data.Response = NULL;
-    }
-
     if (ResponseMessage->Body != NULL) {
       FreePool (ResponseMessage->Body);
       ResponseMessage->Body = NULL;

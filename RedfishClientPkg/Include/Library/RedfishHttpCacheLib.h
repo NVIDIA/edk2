@@ -14,9 +14,9 @@
 #include <Library/RedfishLib.h>
 
 /**
-  Read redfish resource by given resource URI. Returned "Response"
-  will be released in library destructor so caller does not release
-  it manually.
+  Get redfish resource from given resource URI with cache mechanism
+  supported. It's caller's responsibility to Response by calling
+  RedfishFreeResponse ().
 
   @param[in]  Service       Redfish service instance to make query.
   @param[in]  Uri           Target resource URI.
@@ -33,7 +33,7 @@ EFI_STATUS
 RedfishHttpGetResource (
   IN  REDFISH_SERVICE   *Service,
   IN  EFI_STRING        Uri,
-  OUT REDFISH_RESPONSE  **Response,
+  OUT REDFISH_RESPONSE  *Response,
   IN  BOOLEAN           UseCache
   );
 
