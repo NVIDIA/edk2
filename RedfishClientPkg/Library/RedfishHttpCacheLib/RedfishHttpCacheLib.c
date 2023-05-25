@@ -13,6 +13,130 @@
 REDFISH_HTTP_CACHE_PRIVATE  *mRedfishHttpCachePrivate = NULL;
 
 /**
+  This function copy the data in SrcResponse to DstResponse.
+
+  @param[in]  SrcResponse      Source Response to copy.
+  @param[out] DstResponse      Destination Response.
+
+  @retval     EFI_SUCCESS      Response is copied successfully.
+  @retval     Others           Error occurs.
+
+**/
+EFI_STATUS
+CopyRedfishResponse (
+  IN  REDFISH_RESPONSE  *SrcResponse,
+  OUT REDFISH_RESPONSE  *DstResponse
+  )
+{
+  EDKII_JSON_VALUE  JsonValue;
+  REDFISH_SERVICE   Service;
+  UINTN             Index;
+
+  if ((SrcResponse == NULL) || (DstResponse == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (SrcResponse == DstResponse) {
+    return EFI_SUCCESS;
+  }
+
+  //
+  // Status code
+  //
+  if (SrcResponse->StatusCode != NULL) {
+    DstResponse->StatusCode = AllocateCopyPool (sizeof (EFI_HTTP_STATUS_CODE), SrcResponse->StatusCode);
+    if (DstResponse->StatusCode == NULL) {
+      goto ON_ERROR;
+    }
+  }
+
+  //
+  // Header
+  //
+  if ((SrcResponse->HeaderCount > 0) && (SrcResponse->Headers != NULL)) {
+    DstResponse->HeaderCount = 0;
+    DstResponse->Headers     = AllocateZeroPool (sizeof (EFI_HTTP_HEADER) * SrcResponse->HeaderCount);
+    if (DstResponse->Headers == NULL) {
+      goto ON_ERROR;
+    }
+
+    for (Index = 0; Index < SrcResponse->HeaderCount; Index++) {
+      DstResponse->Headers[Index].FieldName = AllocateCopyPool (AsciiStrSize (SrcResponse->Headers[Index].FieldName), SrcResponse->Headers[Index].FieldName);
+      if (DstResponse->Headers[Index].FieldName == NULL) {
+        goto ON_ERROR;
+      }
+
+      DstResponse->Headers[Index].FieldValue = AllocateCopyPool (AsciiStrSize (SrcResponse->Headers[Index].FieldValue), SrcResponse->Headers[Index].FieldValue);
+      if (DstResponse->Headers[Index].FieldValue == NULL) {
+        goto ON_ERROR;
+      }
+
+      DstResponse->HeaderCount += 1;
+    }
+  }
+
+  //
+  // Payload
+  //
+  if (SrcResponse->Payload != NULL) {
+    Service              = RedfishServiceInPayload (SrcResponse->Payload);
+    JsonValue            = RedfishJsonInPayload (SrcResponse->Payload);
+    DstResponse->Payload = RedfishCreatePayload (JsonValue, Service);
+    if (DstResponse->Payload  == NULL) {
+      goto ON_ERROR;
+    }
+  }
+
+  return EFI_SUCCESS;
+
+ON_ERROR:
+
+  RedfishFreeResponse (
+    DstResponse->StatusCode,
+    DstResponse->HeaderCount,
+    DstResponse->Headers,
+    DstResponse->Payload
+    );
+
+  return EFI_OUT_OF_RESOURCES;
+}
+
+/**
+  This function clone input response and return to caller
+
+  @param[in]  Response      Response to clone.
+
+  @retval     REDFISH_RESPONSE *  Response is cloned.
+  @retval     NULL                Errors occur.
+
+**/
+REDFISH_RESPONSE *
+CloneRedfishResponse (
+  IN REDFISH_RESPONSE  *Response
+  )
+{
+  EFI_STATUS        Status;
+  REDFISH_RESPONSE  *NewResponse;
+
+  if (Response == NULL) {
+    return NULL;
+  }
+
+  NewResponse = AllocateZeroPool (sizeof (REDFISH_RESPONSE));
+  if (NewResponse == NULL) {
+    return NULL;
+  }
+
+  Status = CopyRedfishResponse (Response, NewResponse);
+  if (EFI_ERROR (Status)) {
+    FreePool (NewResponse);
+    return NULL;
+  }
+
+  return NewResponse;
+}
+
+/**
 
   Convert Unicode string to ASCII string. It's call responsibility to release returned buffer.
 
@@ -247,6 +371,8 @@ DeleteHttpCacheData (
     return EFI_INVALID_PARAMETER;
   }
 
+  DEBUG ((REDFISH_HTTP_CACHE_DEBUG, "%a: delete: %s\n", __func__, Data->Uri));
+
   RemoveEntryList (&Data->List);
   --List->Count;
 
@@ -274,6 +400,7 @@ AddHttpCacheData (
   REDFISH_HTTP_CACHE_DATA  *NewData;
   REDFISH_HTTP_CACHE_DATA  *OldData;
   REDFISH_HTTP_CACHE_DATA  *UnusedData;
+  REDFISH_RESPONSE         *NewResponse;
 
   if ((List == NULL) || IS_EMPTY_STRING (Uri) || (Response == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -300,13 +427,23 @@ AddHttpCacheData (
     DeleteHttpCacheData (List, UnusedData);
   }
 
-  NewData = NewHttpCacheData (Uri, Response);
+  //
+  // Clone a local copy
+  //
+  NewResponse = CloneRedfishResponse (Response);
+  if (NewResponse == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  NewData = NewHttpCacheData (Uri, NewResponse);
   if (NewData == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
   InsertTailList (&List->Head, &NewData->List);
   ++List->Count;
+
+  DEBUG ((REDFISH_HTTP_CACHE_DEBUG, "%a: cache(%d/%d) %s\n", __func__, List->Count, List->Capacity, NewData->Uri));
 
   return EFI_SUCCESS;
 }
@@ -403,9 +540,9 @@ DumpHttpCacheList (
 }
 
 /**
-  Read redfish resource by given resource URI. Returned "Response"
-  will be released in library destructor so caller does not release
-  it manually.
+  Get redfish resource from given resource URI with cache mechanism
+  supported. It's caller's responsibility to Response by calling
+  RedfishFreeResponse ().
 
   @param[in]  Service       Redfish service instance to make query.
   @param[in]  Uri           Target resource URI.
@@ -422,13 +559,12 @@ EFI_STATUS
 RedfishHttpGetResource (
   IN  REDFISH_SERVICE   *Service,
   IN  EFI_STRING        Uri,
-  OUT REDFISH_RESPONSE  **Response,
+  OUT REDFISH_RESPONSE  *Response,
   IN  BOOLEAN           UseCache
   )
 {
   EFI_STATUS               Status;
   CHAR8                    *AsciiUri;
-  REDFISH_RESPONSE         *GetResponse;
   REDFISH_HTTP_CACHE_DATA  *CacheData;
   UINTN                    RetryCount;
 
@@ -442,7 +578,6 @@ RedfishHttpGetResource (
 
   AsciiUri   = NULL;
   CacheData  = NULL;
-  *Response  = NULL;
   RetryCount = 0;
 
   //
@@ -452,21 +587,19 @@ RedfishHttpGetResource (
     CacheData = FindHttpCacheData (&mRedfishHttpCachePrivate->CacheList.Head, Uri);
     if (CacheData != NULL) {
       DEBUG ((REDFISH_HTTP_CACHE_DEBUG, "%a: cache hit! %s\n", __func__, Uri));
-      *Response            = CacheData->Response;
+
+      //
+      // Copy cached response to caller's buffer.
+      //
+      Status               = CopyRedfishResponse (CacheData->Response, Response);
       CacheData->HitCount += 1;
-      return EFI_SUCCESS;
+      return Status;
     }
   }
 
   AsciiUri = StringUnicodeToAscii (Uri);
   if (AsciiUri == NULL) {
     return EFI_OUT_OF_RESOURCES;
-  }
-
-  GetResponse = AllocateZeroPool (sizeof (REDFISH_RESPONSE));
-  if (GetResponse == NULL) {
-    Status = EFI_OUT_OF_RESOURCES;
-    goto ON_RELEASE;
   }
 
   //
@@ -477,10 +610,26 @@ RedfishHttpGetResource (
     Status      = RedfishGetByUri (
                     Service,
                     AsciiUri,
-                    GetResponse
+                    Response
                     );
     if (!EFI_ERROR (Status) || (RetryCount >= REDFISH_HTTP_GET_RETRY_MAX)) {
       break;
+    }
+
+    //
+    // Retry when BMC is not ready.
+    //
+    if ((Response->StatusCode != NULL)) {
+      DEBUG_CODE (
+        DumpRedfishResponse (NULL, DEBUG_ERROR, Response);
+        );
+
+      if (*Response->StatusCode != HTTP_STATUS_500_INTERNAL_SERVER_ERROR) {
+        break;
+      }
+
+      FreePool (Response->StatusCode);
+      Response->StatusCode = NULL;
     }
 
     DEBUG ((DEBUG_WARN, "%a: RedfishGetByUri failed, retry (%d/%d)\n", __func__, RetryCount, REDFISH_HTTP_GET_RETRY_MAX));
@@ -489,14 +638,14 @@ RedfishHttpGetResource (
 
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: get %a failed (%d/%d): %r\n", __func__, AsciiUri, RetryCount, REDFISH_HTTP_GET_RETRY_MAX, Status));
-    if (GetResponse->Payload != NULL) {
+    if (Response->Payload != NULL) {
       RedfishFreeResponse (
         NULL,
         0,
         NULL,
-        GetResponse->Payload
+        Response->Payload
         );
-      GetResponse->Payload = NULL;
+      Response->Payload = NULL;
     }
 
     goto ON_RELEASE;
@@ -505,8 +654,7 @@ RedfishHttpGetResource (
   //
   // Keep response in cache list
   //
-  *Response = GetResponse;
-  Status    = AddHttpCacheData (&mRedfishHttpCachePrivate->CacheList, Uri, GetResponse);
+  Status = AddHttpCacheData (&mRedfishHttpCachePrivate->CacheList, Uri, Response);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: failed to cache %s: %r\n", __func__, Uri, Status));
     goto ON_RELEASE;

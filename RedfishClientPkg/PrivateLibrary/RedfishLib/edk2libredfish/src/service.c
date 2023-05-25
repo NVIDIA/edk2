@@ -525,6 +525,23 @@ getUriFromServiceEx (
   Status = service->RestEx->SendReceive (service->RestEx, RequestMsg, &ResponseMsg);
   if (EFI_ERROR (Status)) {
     ret = NULL;
+
+    //
+    // Deliver status code to caller when error happens so caller can do error handling.
+    //
+    if (ResponseMsg.Data.Response != NULL) {
+      *StatusCode = AllocateZeroPool (sizeof (EFI_HTTP_STATUS_CODE));
+      if (*StatusCode == NULL) {
+        ret = NULL;
+        goto ON_EXIT;
+      }
+
+      //
+      // The caller shall take the responsibility to free the buffer.
+      //
+      **StatusCode = ResponseMsg.Data.Response->StatusCode;
+    }
+
     goto ON_EXIT;
   }
 

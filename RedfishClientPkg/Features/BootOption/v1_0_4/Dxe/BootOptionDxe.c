@@ -35,7 +35,7 @@ RedfishResourceProvisioningResource (
 {
   REDFISH_RESOURCE_COMMON_PRIVATE  *Private;
   EFI_STATUS                       Status;
-  REDFISH_RESPONSE                 *Response;
+  REDFISH_RESPONSE                 Response;
 
   if ((This == NULL) || IS_EMPTY_STRING (Uri)) {
     return EFI_INVALID_PARAMETER;
@@ -56,7 +56,7 @@ RedfishResourceProvisioningResource (
   }
 
   Private->Uri     = Uri;
-  Private->Payload = Response->Payload;
+  Private->Payload = Response.Payload;
   ASSERT (Private->Payload != NULL);
 
   Status = RedfishProvisioningResourceCommon (Private, !PostMode);
@@ -70,6 +70,12 @@ RedfishResourceProvisioningResource (
   }
 
   if (Private->Payload != NULL) {
+    RedfishFreeResponse (
+      Response.StatusCode,
+      Response.HeaderCount,
+      Response.Headers,
+      Response.Payload
+      );
     Private->Payload = NULL;
   }
 
@@ -94,7 +100,7 @@ RedfishResourceConsumeResource (
 {
   REDFISH_RESOURCE_COMMON_PRIVATE  *Private;
   EFI_STATUS                       Status;
-  REDFISH_RESPONSE                 *Response;
+  REDFISH_RESPONSE                 Response;
   EFI_STRING                       PendingSettingUri;
   REDFISH_RESPONSE                 PendingSettingResponse;
   REDFISH_RESPONSE                 *ExpectedResponse;
@@ -122,7 +128,7 @@ RedfishResourceConsumeResource (
   ZeroMem (&PendingSettingResponse, sizeof (REDFISH_RESPONSE));
   Status = GetPendingSettings (
              Private->RedfishService,
-             Response->Payload,
+             Response.Payload,
              &PendingSettingResponse,
              &PendingSettingUri
              );
@@ -132,7 +138,7 @@ RedfishResourceConsumeResource (
     ExpectedResponse = &PendingSettingResponse;
   } else {
     Private->Uri     = Uri;
-    ExpectedResponse = Response;
+    ExpectedResponse = &Response;
   }
 
   Private->Payload = ExpectedResponse->Payload;
@@ -163,6 +169,12 @@ RedfishResourceConsumeResource (
   }
 
   if (Private->Payload != NULL) {
+    RedfishFreeResponse (
+      Response.StatusCode,
+      Response.HeaderCount,
+      Response.Headers,
+      Response.Payload
+      );
     if (PendingSettingResponse.Payload != NULL) {
       RedfishFreeResponse (
         PendingSettingResponse.StatusCode,
@@ -236,7 +248,7 @@ RedfishResourceUpdate (
 {
   REDFISH_RESOURCE_COMMON_PRIVATE  *Private;
   EFI_STATUS                       Status;
-  REDFISH_RESPONSE                 *Response;
+  REDFISH_RESPONSE                 Response;
 
   if ((This == NULL) || IS_EMPTY_STRING (Uri)) {
     return EFI_INVALID_PARAMETER;
@@ -255,7 +267,7 @@ RedfishResourceUpdate (
   }
 
   Private->Uri     = Uri;
-  Private->Payload = Response->Payload;
+  Private->Payload = Response.Payload;
   ASSERT (Private->Payload != NULL);
 
   Private->Json = JsonDumpString (RedfishJsonInPayload (Private->Payload), EDKII_JSON_COMPACT);
@@ -275,6 +287,12 @@ RedfishResourceUpdate (
   // Release resource
   //
   if (Private->Payload != NULL) {
+    RedfishFreeResponse (
+      Response.StatusCode,
+      Response.HeaderCount,
+      Response.Headers,
+      Response.Payload
+      );
     RedfishHttpResetResource (Uri);
     Private->Payload = NULL;
   }
@@ -305,7 +323,7 @@ RedfishResourceCheck (
 {
   REDFISH_RESOURCE_COMMON_PRIVATE  *Private;
   EFI_STATUS                       Status;
-  REDFISH_RESPONSE                 *Response;
+  REDFISH_RESPONSE                 Response;
   CHAR8                            *Etag;
 
   if ((This == NULL) || IS_EMPTY_STRING (Uri)) {
@@ -325,7 +343,7 @@ RedfishResourceCheck (
   }
 
   Private->Uri     = Uri;
-  Private->Payload = Response->Payload;
+  Private->Payload = Response.Payload;
   ASSERT (Private->Payload != NULL);
 
   Private->Json = JsonDumpString (RedfishJsonInPayload (Private->Payload), EDKII_JSON_COMPACT);
@@ -335,7 +353,7 @@ RedfishResourceCheck (
   // Find etag in HTTP response header
   //
   Etag   = NULL;
-  Status = GetEtagAndLocation (Response, &Etag, NULL);
+  Status = GetEtagAndLocation (&Response, &Etag, NULL);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: failed to get ETag from HTTP header\n", __func__));
   }
@@ -353,6 +371,12 @@ RedfishResourceCheck (
   }
 
   if (Private->Payload != NULL) {
+    RedfishFreeResponse (
+      Response.StatusCode,
+      Response.HeaderCount,
+      Response.Headers,
+      Response.Payload
+      );
     Private->Payload = NULL;
   }
 
@@ -383,7 +407,7 @@ RedfishResourceIdentify (
 {
   REDFISH_RESOURCE_COMMON_PRIVATE  *Private;
   EFI_STATUS                       Status;
-  REDFISH_RESPONSE                 *Response;
+  REDFISH_RESPONSE                 Response;
 
   if ((This == NULL) || IS_EMPTY_STRING (Uri)) {
     return EFI_INVALID_PARAMETER;
@@ -402,7 +426,7 @@ RedfishResourceIdentify (
   }
 
   Private->Uri     = Uri;
-  Private->Payload = Response->Payload;
+  Private->Payload = Response.Payload;
   ASSERT (Private->Payload != NULL);
 
   Private->Json = JsonDumpString (RedfishJsonInPayload (Private->Payload), EDKII_JSON_COMPACT);
@@ -417,6 +441,12 @@ RedfishResourceIdentify (
   // Release resource
   //
   if (Private->Payload != NULL) {
+    RedfishFreeResponse (
+      Response.StatusCode,
+      Response.HeaderCount,
+      Response.Headers,
+      Response.Payload
+      );
     Private->Payload = NULL;
   }
 

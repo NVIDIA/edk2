@@ -316,6 +316,18 @@ ReSendRequest:;
     DEBUG ((DEBUG_ERROR, "This HTTP Status is not handled!\n"));
     DumpHttpStatusCode (DEBUG_REDFISH_NETWORK, ResponseData->Response.StatusCode);
     Status = EFI_UNSUPPORTED;
+
+    //
+    // Deliver status code back to caller so caller can handle it.
+    //
+    ResponseMessage->Data.Response = AllocateZeroPool (sizeof (EFI_HTTP_RESPONSE_DATA));
+    if (ResponseMessage->Data.Response == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
+      goto ON_EXIT;
+    }
+
+    ResponseMessage->Data.Response->StatusCode = ResponseData->Response.StatusCode;
+
     goto ON_EXIT;
   }
 
@@ -440,11 +452,6 @@ ON_EXIT:
   }
 
   if (EFI_ERROR (Status)) {
-    if (ResponseMessage->Data.Response != NULL) {
-      FreePool (ResponseMessage->Data.Response);
-      ResponseMessage->Data.Response = NULL;
-    }
-
     if (ResponseMessage->Body != NULL) {
       FreePool (ResponseMessage->Body);
       ResponseMessage->Body = NULL;

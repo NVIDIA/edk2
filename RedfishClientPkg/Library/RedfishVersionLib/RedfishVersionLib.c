@@ -2,6 +2,7 @@
   Redfish version library implementation
 
   (C) Copyright 2022 Hewlett Packard Enterprise Development LP<BR>
+  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -10,19 +11,21 @@
 #include <Uefi.h>
 #include <RedfishBase.h>
 #include <Library/BaseLib.h>
+#include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
 #include <Library/PcdLib.h>
 #include <Library/RedfishLib.h>
 #include <Library/JsonLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/RedfishVersionLib.h>
+#include <Library/RedfishHttpCacheLib.h>
 
-#define REDFISH_VERSION_DEFAULT_STRING L"v1"
-#define REDFISH_ROOT_URI               "/redfish"
+#define REDFISH_VERSION_DEFAULT_STRING  L"v1"
+#define REDFISH_ROOT_URI                L"/redfish"
 
-REDFISH_SERVICE *mCacheService;
-EFI_STRING      mVersionCache;
-UINTN           mVersionStringSize;
+REDFISH_SERVICE  *mCacheService;
+EFI_STRING       mVersionCache;
+UINTN            mVersionStringSize;
 
 /**
   Cache the redfish service version for later use so we don't have to query
@@ -41,7 +44,7 @@ CacheVersion (
   IN EFI_STRING       Version
   )
 {
-  if (Service == NULL || IS_EMPTY_STRING (Version)) {
+  if ((Service == NULL) || IS_EMPTY_STRING (Version)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -55,7 +58,7 @@ CacheVersion (
   }
 
   mVersionStringSize = StrSize (Version);
-  mVersionCache = AllocateCopyPool (mVersionStringSize, Version);
+  mVersionCache      = AllocateCopyPool (mVersionStringSize, Version);
   if (mVersionCache == NULL) {
     mCacheService = NULL;
     return EFI_OUT_OF_RESOURCES;
@@ -90,6 +93,7 @@ RedfishGetVersion (
   EDKII_JSON_VALUE  Value;
 
   VersionString = NULL;
+  ZeroMem (&Response, sizeof (REDFISH_RESPONSE));
 
   if (Service == NULL) {
     goto ON_ERROR;
@@ -105,13 +109,14 @@ RedfishGetVersion (
   //
   // Get resource from redfish service.
   //
-  Status = RedfishGetByUri (
+  Status = RedfishHttpGetResource (
              Service,
              REDFISH_ROOT_URI,
-             &Response
+             &Response,
+             TRUE
              );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a, RedfishGetByService to %a failed: %r\n", __FUNCTION__, REDFISH_ROOT_URI, Status));
+    DEBUG ((DEBUG_ERROR, "%a, RedfishHttpGetResource to %s failed: %r\n", __FUNCTION__, REDFISH_ROOT_URI, Status));
     if (Response.Payload != NULL) {
       RedfishDumpPayload (Response.Payload);
       RedfishFreeResponse (
@@ -127,12 +132,12 @@ RedfishGetVersion (
   }
 
   JsonValue = RedfishJsonInPayload (Response.Payload);
-  if (JsonValue == NULL || !JsonValueIsObject (JsonValue)) {
+  if ((JsonValue == NULL) || !JsonValueIsObject (JsonValue)) {
     goto ON_ERROR;
   }
 
   EDKII_JSON_OBJECT_FOREACH_SAFE (JsonValue, N, Key, Value) {
-    if (Key[0] == 'v' && JsonValueIsString (Value)) {
+    if ((Key[0] == 'v') && JsonValueIsString (Value)) {
       VersionString = JsonValueGetUnicodeString (Value);
       break;
     }
@@ -148,6 +153,15 @@ ON_ERROR:
   VersionString = (CHAR16 *)PcdGetPtr (PcdDefaultRedfishVersion);
   if (VersionString == NULL) {
     VersionString = REDFISH_VERSION_DEFAULT_STRING;
+  }
+
+  if (Response.Payload != NULL) {
+    RedfishFreeResponse (
+      Response.StatusCode,
+      Response.HeaderCount,
+      Response.Headers,
+      Response.Payload
+      );
   }
 
   return AllocateCopyPool (StrSize (VersionString), VersionString);
@@ -167,17 +181,16 @@ ON_ERROR:
 EFI_STATUS
 EFIAPI
 RedfishVersionLibConstructor (
-  IN EFI_HANDLE                            ImageHandle,
-  IN EFI_SYSTEM_TABLE                      *SystemTable
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  mCacheService = NULL;
-  mVersionCache = NULL;
+  mCacheService      = NULL;
+  mVersionCache      = NULL;
   mVersionStringSize = 0;
 
   return EFI_SUCCESS;
 }
-
 
 /**
   Release allocated resource.
@@ -191,8 +204,8 @@ RedfishVersionLibConstructor (
 EFI_STATUS
 EFIAPI
 RedfishVersionLibDestructor (
-  IN EFI_HANDLE                            ImageHandle,
-  IN EFI_SYSTEM_TABLE                      *SystemTable
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
   if (mVersionCache != NULL) {
