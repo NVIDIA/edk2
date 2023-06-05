@@ -41,7 +41,7 @@ CreateReadyToProvisioningEvent (
 
   Status = gBS->CreateEventEx (
                   EVT_NOTIFY_SIGNAL,
-                  TPL_NOTIFY,
+                  TPL_CALLBACK,
                   (NotifyFunction == NULL ? EfiEventEmptyFunction : NotifyFunction),
                   NotifyContext,
                   &gEfiRedfishClientFeatureReadyToProvisioningGuid,
@@ -74,7 +74,7 @@ CreateAfterProvisioningEvent (
 
   Status = gBS->CreateEventEx (
                   EVT_NOTIFY_SIGNAL,
-                  TPL_NOTIFY,
+                  TPL_CALLBACK,
                   (NotifyFunction == NULL ? EfiEventEmptyFunction : NotifyFunction),
                   NotifyContext,
                   &gEfiRedfishClientFeatureAfterProvisioningGuid,
