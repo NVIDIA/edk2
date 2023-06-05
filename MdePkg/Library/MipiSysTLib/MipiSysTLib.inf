@@ -1,7 +1,8 @@
 ## @file
-#  A library providing funcitons to communicate with mipi sys-T submodule.
+#  A library providing functions to communicate with mipi sys-T submodule.
 #
 #  Copyright (c) 2023, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -36,6 +37,7 @@
   mipi_syst.h
   Platform.c
   Platform.h
+  $(MIPI_HEADER_PATH)/../.
   $(MIPI_HEADER_PATH)/api.h
   $(MIPI_HEADER_PATH)/crc32.h
   $(MIPI_HEADER_PATH)/compiler.h

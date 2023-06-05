@@ -11,6 +11,7 @@
 # Copyright (c) 2021 - 2022, Arm Limited. All rights reserved.<BR>
 # Copyright (C) 2023 Advanced Micro Devices, Inc. All rights reserved.<BR>
 # Copyright (c) 2023, Ampere Computing LLC. All rights reserved.<BR>
+# Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -29,7 +30,6 @@
   Include
   Test/UnitTest/Include
   Test/Mock/Include
-  Library/MipiSysTLib/mipisyst/library/include
 
 [Includes.IA32]
   Include/Ia32
