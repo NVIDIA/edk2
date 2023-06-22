@@ -3959,6 +3959,15 @@ CompareRedfishPropertyVagueValues (
     // Loop through all key/value on Redfish service..
     //
     while (ThisRedfishVagueKeyValuePtr != NULL) {
+      //
+      // Empty attribute string check.
+      //
+      if (IS_EMPTY_STRING (ThisConfigVagueKeyValuePtr->KeyNamePtr) || IS_EMPTY_STRING (ThisRedfishVagueKeyValuePtr->KeyNamePtr)) {
+        DEBUG ((DEBUG_ERROR, "%a: empty attribute name detected!!\n", __func__));
+        ThisRedfishVagueKeyValuePtr = ThisRedfishVagueKeyValuePtr->NextKeyValuePtr;
+        continue;
+      }
+
       if (AsciiStrCmp (ThisConfigVagueKeyValuePtr->KeyNamePtr, ThisRedfishVagueKeyValuePtr->KeyNamePtr) == 0) {
         //
         // Check the type of value.
@@ -3975,15 +3984,19 @@ CompareRedfishPropertyVagueValues (
           //
           // Is the string identical?
           //
-          if (AsciiStrCmp (
-                ThisConfigVagueKeyValuePtr->Value->DataValue.CharPtr,
-                ThisRedfishVagueKeyValuePtr->Value->DataValue.CharPtr
-                ) == 0)
-          {
-            break;
+          if ((ThisConfigVagueKeyValuePtr->Value->DataValue.CharPtr != NULL) && (ThisRedfishVagueKeyValuePtr->Value->DataValue.CharPtr != NULL)) {
+            if (AsciiStrCmp (
+                  ThisConfigVagueKeyValuePtr->Value->DataValue.CharPtr,
+                  ThisRedfishVagueKeyValuePtr->Value->DataValue.CharPtr
+                  ) == 0)
+            {
+              break;
+            } else {
+              DEBUG ((REDFISH_DEBUG_TRACE, "%a: %a is updated\n", __FUNCTION__, ThisConfigVagueKeyValuePtr->KeyNamePtr));
+              return FALSE;
+            }
           } else {
-            DEBUG ((REDFISH_DEBUG_TRACE, "%a: %a is updated\n", __FUNCTION__, ThisConfigVagueKeyValuePtr->KeyNamePtr));
-            return FALSE;
+            DEBUG ((DEBUG_ERROR, "%a: NULL attribute (%a) value detected!!\n", __func__, ThisConfigVagueKeyValuePtr->KeyNamePtr));
           }
         } else if (ThisConfigVagueKeyValuePtr->Value->DataType == RedfishCS_Vague_DataType_Int64) {
           if (*ThisConfigVagueKeyValuePtr->Value->DataValue.Int64Ptr == *ThisRedfishVagueKeyValuePtr->Value->DataValue.Int64Ptr) {
