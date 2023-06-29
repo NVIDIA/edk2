@@ -11,14 +11,13 @@
 #include "../Common/BiosCommon.h"
 
 extern REDFISH_RESOURCE_COMMON_PRIVATE  *mRedfishResourcePrivate;
+extern EFI_HANDLE                       mRedfishResourceConfigProtocolHandle;
 
 EFI_STATUS
 HandleResource (
   IN  REDFISH_RESOURCE_COMMON_PRIVATE  *Private,
   IN  EFI_STRING                       Uri
   );
-
-EFI_HANDLE  mRedfishResourceConfigProtocolHandle;
 
 /**
   Provision redfish resource by given URI.

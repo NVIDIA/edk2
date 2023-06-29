@@ -12,7 +12,8 @@
 
 CHAR8  SecureBootEmptyJson[] = "{\"@odata.id\": \"\", \"@odata.type\": \"#SecureBoot.v1_1_0.SecureBoot\", \"Id\": \"\", \"Name\": \"\", \"Attributes\":{}}";
 
-REDFISH_RESOURCE_COMMON_PRIVATE  *mRedfishResourcePrivate = NULL;
+REDFISH_RESOURCE_COMMON_PRIVATE  *mRedfishResourcePrivate             = NULL;
+EFI_HANDLE                       mRedfishResourceConfigProtocolHandle = NULL;
 
 /**
   Consume resource from given URI.
@@ -352,7 +353,7 @@ ProvisioningSecureBootResources (
   // Set the configuration language in the RESOURCE_INFORMATION_EXCHANGE.
   // This information is sent back to the parent resource (e.g. the collection driver).
   //
-  EdkIIRedfishResourceSetConfigureLang (&UnifiedConfigureLangList);
+  EdkIIRedfishResourceSetConfigureLang (mRedfishResourceConfigProtocolHandle, &UnifiedConfigureLangList);
 
   for (Index = 0; Index < UnifiedConfigureLangList.Count; Index++) {
     DEBUG ((REDFISH_DEBUG_TRACE, "[%d] create SecureBoot resource from: %s\n", UnifiedConfigureLangList.List[Index].Index, UnifiedConfigureLangList.List[Index].ConfigureLang));
@@ -725,7 +726,7 @@ RedfishIdentifyResourceCommon (
     // Set the configuration language in the RESOURCE_INFORMATION_EXCHANGE.
     // This information is sent back to the parent resource (e.g. the collection driver).
     //
-    EdkIIRedfishResourceSetConfigureLang (&ConfigLangList);
+    EdkIIRedfishResourceSetConfigureLang (mRedfishResourceConfigProtocolHandle, &ConfigLangList);
     DestroyConfiglanguageList (&ConfigLangList);
     return EFI_SUCCESS;
   }
