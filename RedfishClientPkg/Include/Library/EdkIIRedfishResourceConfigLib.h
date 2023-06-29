@@ -110,6 +110,7 @@ EdkIIRedfishResourceConfigIdentify (
   Set Configure language of this resource in the
   RESOURCE_INFORMATION_EXCHANGE structure.
 
+  @param[in]   ImageHandle     Pointer to image handle.
   @param[in]   ConfigLangList  Pointer to REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG_LIST.
 
   @retval EFI_SUCCESS              Configure language is set.
@@ -119,13 +120,15 @@ EdkIIRedfishResourceConfigIdentify (
 **/
 EFI_STATUS
 EdkIIRedfishResourceSetConfigureLang (
-  REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG_LIST  *ConfigLangList
+  IN EFI_HANDLE                                   ImageHandle,
+  IN REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG_LIST  *ConfigLangList
   );
 
 /**
   Set Configure language of this resource in the
   RESOURCE_INFORMATION_EXCHANGE structure.
 
+  @param[in]   ImageHandle         Pointer to image handle.
   @param[in]   ConfigLangString    Configure language string.
   @param[in]   Index               Index value of configure language string.
 
@@ -136,6 +139,7 @@ EdkIIRedfishResourceSetConfigureLang (
 **/
 EFI_STATUS
 EdkIIRedfishResourceSetConfigureLangString (
+  IN EFI_HANDLE  ImageHandle,
   IN EFI_STRING  ConfigLangString,
   IN UINTN       Index
   );

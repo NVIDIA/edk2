@@ -11,8 +11,7 @@
 #include "../Common/ComputerSystemCommon.h"
 
 extern REDFISH_RESOURCE_COMMON_PRIVATE  *mRedfishResourcePrivate;
-
-EFI_HANDLE  mRedfishResourceConfigProtocolHandle;
+extern EFI_HANDLE                       mRedfishResourceConfigProtocolHandle;
 
 /**
   Provision redfish resource by given URI.
