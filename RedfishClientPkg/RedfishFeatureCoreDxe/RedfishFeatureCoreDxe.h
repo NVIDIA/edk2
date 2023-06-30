@@ -12,6 +12,7 @@
 #define EDKII_REDFISH_FEATURE_CORE_DXE_H_
 
 #include <Protocol/EdkIIRedfishFeature.h>
+#include <Protocol/EdkIIRedfishOverrideProtocol.h>
 
 #include <Base.h>
 #include <Library/UefiLib.h>
