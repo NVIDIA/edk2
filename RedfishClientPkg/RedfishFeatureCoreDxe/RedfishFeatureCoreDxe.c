@@ -242,11 +242,14 @@ RedfishFeatureDriverStartup (
   IN  VOID       *Context
   )
 {
+  EFI_STATUS                       Status;
   REDFISH_FEATURE_STARTUP_CONTEXT  *StartupContext;
   UINT16                           RebootTimeout;
+  EDKII_REDFISH_OVERRIDE_PROTOCOL  *RedfishOverride;
 
-  StartupContext = (REDFISH_FEATURE_STARTUP_CONTEXT *)Context;
-  RebootTimeout  = PcdGet16 (PcdSystemRebootTimeout);
+  RedfishOverride = NULL;
+  StartupContext  = (REDFISH_FEATURE_STARTUP_CONTEXT *)Context;
+  RebootTimeout   = PcdGet16 (PcdSystemRebootTimeout);
 
   //
   // Invoke EDK2 Redfish feature driver callback to start up
@@ -309,6 +312,24 @@ RedfishFeatureDriverStartup (
 
     Print (L"System configuration is changed from RESTful interface. Reboot system in %d seconds...\n", RebootTimeout);
     gBS->Stall (RebootTimeout * 1000000U);
+
+    //
+    // Call override protocol to notify platform that Redfish is processed
+    // and about to reboot system.
+    //
+    Status = gBS->LocateProtocol (
+                    &gEdkiiRedfishOverrideProtocolGuid,
+                    NULL,
+                    (VOID **)&RedfishOverride
+                    );
+    if (!EFI_ERROR (Status)) {
+      Status = RedfishOverride->NotifyPhase (RedfishOverride, EdkiiRedfishPhaseBeforeReboot);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a: abort the reboot because NotifyPhase() returns failure: %r\n", __func__, Status));
+        return;
+      }
+    }
+
     gRT->ResetSystem (EfiResetCold, EFI_SUCCESS, 0, NULL);
     CpuDeadLoop ();
   }
