@@ -189,6 +189,7 @@ ConfigureCacheArchitectureInformation (
   IN     UINT8               CacheLevel,
   IN     BOOLEAN             DataCache,
   IN     BOOLEAN             UnifiedCache,
+  IN     UINTN               EnabledCores,
   OUT    SMBIOS_TABLE_TYPE7  *Type7Record
   )
 {
@@ -219,6 +220,7 @@ ConfigureCacheArchitectureInformation (
                     UnifiedCache
                     );
 
+  CacheSize64 *= EnabledCores;
   CacheSize64 /= 1024; // Minimum granularity is 1K
 
   // Encode the cache size into the format SMBIOS wants
@@ -358,10 +360,11 @@ AllocateAndInitCacheInformation (
 **/
 VOID
 AddSmbiosCacheTypeTable (
-  IN UINTN               ProcessorIndex,
-  OUT EFI_SMBIOS_HANDLE  *L1CacheHandle,
-  OUT EFI_SMBIOS_HANDLE  *L2CacheHandle,
-  OUT EFI_SMBIOS_HANDLE  *L3CacheHandle
+  IN  UINTN                    ProcessorIndex,
+  IN  OEM_MISC_PROCESSOR_DATA  *MiscProcessorData,
+  OUT EFI_SMBIOS_HANDLE        *L1CacheHandle,
+  OUT EFI_SMBIOS_HANDLE        *L2CacheHandle,
+  OUT EFI_SMBIOS_HANDLE        *L3CacheHandle
   )
 {
   EFI_STATUS          Status;
@@ -411,6 +414,7 @@ AddSmbiosCacheTypeTable (
         CacheLevel,
         DataCacheType,
         !SeparateCaches,
+        MiscProcessorData->CoresEnabled,
         Type7Record
         );
 
@@ -690,6 +694,7 @@ AddSmbiosProcessorTypeTable (
   if (ProcessorPopulated) {
     AddSmbiosCacheTypeTable (
       ProcessorIndex,
+      &MiscProcessorData,
       &L1CacheHandle,
       &L2CacheHandle,
       &L3CacheHandle
