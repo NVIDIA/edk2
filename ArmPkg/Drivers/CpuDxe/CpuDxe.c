@@ -329,8 +329,6 @@ CpuDxeInitialize (
                   &mCpuHandle,
                   &gEfiCpuArchProtocolGuid,
                   &mCpu,
-                  &gEfiMemoryAttributeProtocolGuid,
-                  &mMemoryAttribute,
                   NULL
                   );
 
