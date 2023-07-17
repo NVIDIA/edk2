@@ -166,6 +166,52 @@ typedef struct CmSmbiosMemArrayMappedAddress {
   CM_OBJECT_TOKEN         PhysMemArrayToken;
 } CM_SMBIOS_MEMORY_ARRAY_MAPPED_ADDRESS;
 
+/** A structure that describes the Baseboard.
+
+  The Baseboard information are described by this object.
+
+  SMBIOS Specification v3.5.0 Type2
+
+  ID: EStdObjBaseboardInfo,
+*/
+typedef struct CmSmbiosBaseboardInfo {
+  /** CM Object Token of baseboard */
+  CM_OBJECT_TOKEN         BaseboardInfoToken;
+
+  /** CM Object Token of Chassis */
+  CM_OBJECT_TOKEN         ChassisToken;
+
+  /** Manufacturer of baseboard  */
+  CHAR8                   *Manufacturer;
+
+  /** Product Name */
+  CHAR8                   *ProductName;
+
+  /** Version of device baseboard */
+  CHAR8                   *Version;
+
+  /** Serial Number of baseboard */
+  CHAR8                   *SerialNumber;
+
+  /** AssetTag of baseboard  */
+  CHAR8                   *AssetTag;
+
+  /** Feature Flag of baseboard  */
+  UINT8                   FeatureFlag;
+
+  /** Location in Chassis */
+  CHAR8                   *LocationInChassis;
+
+  /** Board Type  */
+  UINT8                   BoardType;
+
+  /** Number Of Contained Object Handles  */
+  UINT8                   NumberOfContainedObjectHandles;
+
+  /** Contained Object Handles */
+  CONTAINED_CM_OBJECTS    *ContainedCmObjects;
+} CM_SMBIOS_BASEBOARD_INFO;
+
 /** A structure that describes the system.
 
   SMBIOS Specification v3.5.0 Type 1
