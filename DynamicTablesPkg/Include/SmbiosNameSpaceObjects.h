@@ -212,6 +212,75 @@ typedef struct CmSmbiosBaseboardInfo {
   CONTAINED_CM_OBJECTS    *ContainedCmObjects;
 } CM_SMBIOS_BASEBOARD_INFO;
 
+#define MAX_SLOT_PEER_GROUP  0x05
+
+/** A structure that describes the physical system slot.
+
+   The physical system slot on the system are described by this object.
+
+   SMBIOS Specification v3.5.0 Type9
+
+   ID: EStdObjSystemSlotInfo,
+*/
+typedef struct CmSmbiosSystemSlotInfo {
+  /** CM Object Token of SystemSlot  */
+  CM_OBJECT_TOKEN         SystemSlotInfoToken;
+
+  /** Slot Designation */
+  CHAR8                   *SlotDesignation;
+
+  /** Slot Type */
+  UINT8                   SlotType;
+
+  /** Slot Data Bus Width */
+  UINT8                   SlotDataBusWidth;
+
+  /** Current Usage */
+  UINT8                   CurrentUsage;
+
+  /** Slot Length */
+  UINT8                   SlotLength;
+
+  /** Slot ID */
+  UINT16                  SlotID;
+
+  /** Slot Characteristics 1 */
+  UINT8                   SlotCharacteristics1;
+
+  /** Slot Characteristics 2 */
+  UINT8                   SlotCharacteristics2;
+
+  /** Segment Group Number (Base) */
+  UINT16                  SegmentGroupNum;
+
+  /** Bus Number (Base) */
+  UINT8                   BusNum;
+
+  /** Device/Function Number (Base) */
+  UINT8                   DevFuncNum;
+
+  /** Data Bus Width (Base) */
+  UINT8                   DataBusWidth;
+
+  /** Slot Information */
+  UINT8                   SlotInformation;
+
+  /** Slot Physical Width */
+  UINT8                   SlotPhysicalWidth;
+
+  /** Slot Pitch */
+  UINT16                  SlotPitch;
+
+  /** Slot Height */
+  UINT8                   SlotHeight;
+
+  /** Peer (S/B/D/F/Width) grouping count (n) */
+  UINT8                   PeerGroupingCount;
+
+  /** Peer (S/B/D/F/Width) groups */
+  MISC_SLOT_PEER_GROUP    PeerGroups[MAX_SLOT_PEER_GROUP];
+} CM_SMBIOS_SYSTEM_SLOTS_INFO;
+
 /** A structure that describes the system.
 
   SMBIOS Specification v3.5.0 Type 1
