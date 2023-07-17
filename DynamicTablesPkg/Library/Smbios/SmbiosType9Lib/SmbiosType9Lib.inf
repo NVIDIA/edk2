@@ -1,0 +1,33 @@
+## @file
+#  SMBIOS Type9 Table Generator
+#
+#  Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#  Copyright (c) 2019 - 2021, Arm Limited. All rights reserved.<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x0001001B
+  BASE_NAME      = SmbiosType9Lib
+  FILE_GUID      = a98d40a8-f74b-4097-ad2d-f3aca6824327
+  VERSION_STRING = 1.0
+  MODULE_TYPE    = DXE_DRIVER
+  LIBRARY_CLASS  = NULL|DXE_DRIVER
+  CONSTRUCTOR    = SmbiosType9LibConstructor
+  DESTRUCTOR     = SmbiosType9LibDestructor
+
+[Sources]
+  SmbiosType9Generator.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  EmbeddedPkg/EmbeddedPkg.dec
+  ArmPlatformPkg/ArmPlatformPkg.dec
+  DynamicTablesPkg/DynamicTablesPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  SmbiosStringTableLib
