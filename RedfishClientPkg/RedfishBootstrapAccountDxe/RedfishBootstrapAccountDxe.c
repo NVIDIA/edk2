@@ -211,7 +211,7 @@ RedfishBootstrapAccountUnload (
 
   Status = gBS->UninstallProtocolInterface (
                   mBootstrapPrivate->ImageHandle,
-                  &gEdkIIRedfishETagProtocolGuid,
+                  &gEdkIIRedfishConfigHandlerProtocolGuid,
                   (VOID *)&mBootstrapPrivate->Protocol
                   );
   if (EFI_ERROR (Status)) {
