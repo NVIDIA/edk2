@@ -12,6 +12,16 @@
 #include <Include/StandardNameSpaceObjects.h>
 #include <SmbiosTableDispatcher.h>
 
+extern
+EFI_STATUS
+EFIAPI
+BuildAndInstallSmbiosTable (
+   IN CONST EDKII_DYNAMIC_TABLE_FACTORY_PROTOCOL  *CONST  TableFactoryProtocol,
+   IN CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL  *CONST  CfgMgrProtocol,
+   IN       EFI_SMBIOS_PROTOCOL                           *SmbiosProtocol,
+   IN       CM_STD_OBJ_SMBIOS_TABLE_INFO          *CONST  SmbiosTableInfo
+);
+
 /**
   The SMBIOS dispatcher state table.
 
