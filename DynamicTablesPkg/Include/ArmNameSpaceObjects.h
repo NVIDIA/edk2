@@ -1,6 +1,6 @@
 /** @file
 
-  Copyright (c) 2017 - 2022, Arm Limited. All rights reserved.<BR>
+  Copyright (c) 2017 - 2023, Arm Limited. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -71,9 +71,10 @@ typedef enum ArmObjectID {
   EArmObjPccSubspaceType3Info,                                 ///< 46 - Pcc Subspace Type 3 Info
   EArmObjPccSubspaceType4Info,                                 ///< 47 - Pcc Subspace Type 4 Info
   EArmObjPccSubspaceType5Info,                                 ///< 48 - Pcc Subspace Type 5 Info
-  EArmObjMscNodeInfo,                                          ///< 49 - Msc Memory System Controller Node Info
-  EArmObjResNodeInfo,                                          ///< 50 - Res Resource Node Info
-  EArmObjFuncDepInfo,                                          ///< 51 - Func Dep Info
+  EArmObjEtInfo,                                               ///< 49 - Embedded Trace Extension/Module Info
+  EArmObjMscNodeInfo,                                          ///< 50 - Msc Memory System Controller Node Info
+  EArmObjResNodeInfo,                                          ///< 51 - Res Resource Node Info
+  EArmObjFuncDepInfo,                                          ///< 52 - Func Dep Info
   EArmObjTpm2InterfaceInfo,                                    ///< 53 - TPM Interface Info
   EArmObjMax
 } EARM_OBJECT_ID;
@@ -214,6 +215,12 @@ typedef struct CmArmGicCInfo {
       generating MADT revision 5 or lower.
   */
   UINT16             TrbeInterrupt;
+
+  /** Optional field: Reference Token for the Embedded Trace device info for
+      this processing element.
+      i.e. a token referencing a CM_ARM_ET_INFO object.
+  */
+  CM_OBJECT_TOKEN    EtToken;
 } CM_ARM_GICC_INFO;
 
 /** A structure that describes the
@@ -1307,6 +1314,22 @@ typedef struct CmArmPccSubspaceType5Info {
   /// The WriteMask field is not used.
   PCC_MAILBOX_REGISTER_INFO    ErrorStatusReg;
 } CM_ARM_PCC_SUBSPACE_TYPE5_INFO;
+
+/** An enum describing the Arm Embedded Trace device type.
+*/
+typedef enum ArmEtType {
+  ArmEtTypeEtm,   ///< Embedded Trace module.
+  ArmEtTypeEte,   ///< Embedded Trace Extension.
+  ArmEtTypeMax
+} ARM_ET_TYPE;
+
+/** A structure that describes the Embedded Trace Extension/Module.
+
+    ID: EArmObjEtInfo
+*/
+typedef struct CmArmEtInfo {
+  ARM_ET_TYPE    EtType;
+} CM_ARM_ET_INFO;
 
 /** A structure that describes Memory System Controller Node.
 
