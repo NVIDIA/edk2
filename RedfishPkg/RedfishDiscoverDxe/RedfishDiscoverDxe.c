@@ -196,13 +196,17 @@ Tcp4GetSubnetInfo (
   Tcp4Option.EnableNagle       = TRUE;
   Status                       = Tcp4->Configure (Tcp4, &Tcp4CfgData);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Can't get subnet information\n", __FUNCTION__));
+    if (Status == EFI_NO_MAPPING) {
+      return EFI_SUCCESS;
+    }
+
+    DEBUG ((DEBUG_ERROR, "%a: Can't get subnet information: %r\n", __FUNCTION__, Status));
     return Status;
   }
 
   Status = Tcp4->GetModeData (Tcp4, NULL, NULL, &IpModedata, NULL, NULL);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Can't get IP mode data information\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: Can't get IP mode data information: %r\n", __FUNCTION__, Status));
     return Status;
   }
 
@@ -265,7 +269,7 @@ Tcp6GetSubnetInfo (
   ZeroMem ((VOID *)&IpModedata, sizeof (EFI_IP6_MODE_DATA));
   Status = Tcp6->GetModeData (Tcp6, NULL, NULL, &IpModedata, NULL, NULL);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Can't get IP mode data information\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: Can't get IP mode data information: %r\n", __FUNCTION__, Status));
     return Status;
   }
 
@@ -988,13 +992,13 @@ NetworkInterfaceGetSubnetInfo (
                                                Instance
                                                );
     if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a:Faile to get Subnet infomation.\n", __FUNCTION__));
+      DEBUG ((DEBUG_ERROR, "%a:Failed to get Subnet information.\n", __FUNCTION__));
       return Status;
     } else {
       DEBUG ((DEBUG_INFO, "%a:MAC address: %s\n", __FUNCTION__, Instance->StrMacAddr));
       if (CheckIsIpVersion6 (Instance)) {
         if (Instance->SubnetAddrInfoIPv6Number == 0) {
-          DEBUG ((DEBUG_ERROR, "%a: There is no Subnet infomation for IPv6 network interface.\n", __FUNCTION__));
+          DEBUG ((DEBUG_WARN, "%a: There is no Subnet information for IPv6 network interface.\n", __FUNCTION__));
           return EFI_NOT_FOUND;
         }
 
@@ -1526,7 +1530,7 @@ TestForRequiredProtocols (
                       );
       if (EFI_ERROR (Status)) {
         if (Index == ListCount - 1) {
-          DEBUG ((DEBUG_ERROR, "%a: all required protocols are found on this controller handle: %p.\n", __FUNCTION__, ControllerHandle));
+          DEBUG ((DEBUG_INFO, "%a: all required protocols are found on this controller handle: %p.\n", __FUNCTION__, ControllerHandle));
           return EFI_SUCCESS;
         }
       }
