@@ -21,10 +21,14 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/RedfishHttpCacheLib.h>
 #include <Library/RedfishDebugLib.h>
+#include <Library/ReportStatusCodeLib.h>
+#include <Library/PrintLib.h>
 
 #define REDFISH_HTTP_CACHE_LIST_SIZE   0x0F
 #define REDFISH_HTTP_GET_RETRY_MAX     0x0F
 #define REDFISH_HTTP_RETRY_WAIT        (2 * 1000000U)  ///< 1 second
+#define REDFISH_ERROR_MSG_MAX          128
+#define REDFISH_HTTP_ERROR_REPORT      "Redfish HTTP failure(0x%x): %a"
 #define REDFISH_HTTP_CACHE_DEBUG       DEBUG_VERBOSE
 #define REDFISH_HTTP_CACHE_DEBUG_DUMP  DEBUG_VERBOSE
 

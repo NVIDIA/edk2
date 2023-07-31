@@ -40,6 +40,8 @@
   RedfishLib
   UefiLib
   RedfishDebugLib
+  ReportStatusCodeLib
+  PrintLib
 
 [depex]
   TRUE

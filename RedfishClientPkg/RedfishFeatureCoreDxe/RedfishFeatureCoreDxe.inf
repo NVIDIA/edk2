@@ -45,6 +45,7 @@
   UefiRuntimeServicesTableLib
   UefiDriverEntryPoint
   UefiLib
+  ReportStatusCodeLib
 
 [Protocols]
   gEdkIIRedfishFeatureProtocolGuid    ## BY_START
