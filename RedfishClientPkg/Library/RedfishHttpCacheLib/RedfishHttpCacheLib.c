@@ -540,6 +540,39 @@ DumpHttpCacheList (
 }
 
 /**
+  Report HTTP communication error via report status code.
+
+  @param[in]  Uri            The URI which has failure.
+  @param[in]  HttpStatusCode HTTP status code.
+
+**/
+VOID
+ReportHttpError (
+  IN  CHAR8                 *Uri,
+  IN  EFI_HTTP_STATUS_CODE  *HttpStatusCode  OPTIONAL
+  )
+{
+  CHAR8  ErrorMsg[REDFISH_ERROR_MSG_MAX];
+
+  if (IS_EMPTY_STRING (Uri)) {
+    DEBUG ((DEBUG_ERROR, "%a: no URI to report error status\n", __func__));
+    return;
+  }
+
+  //
+  // Report failure of URI and HTTP status code.
+  //
+  AsciiSPrint (ErrorMsg, sizeof (ErrorMsg), REDFISH_HTTP_ERROR_REPORT, (HttpStatusCode == NULL ? HTTP_STATUS_UNSUPPORTED_STATUS : *HttpStatusCode), Uri);
+
+  REPORT_STATUS_CODE_WITH_EXTENDED_DATA (
+    EFI_ERROR_CODE | EFI_ERROR_MAJOR,
+    EFI_COMPUTING_UNIT_MANAGEABILITY | EFI_MANAGEABILITY_EC_REDFISH_COMMUNICATION_ERROR,
+    ErrorMsg,
+    AsciiStrSize (ErrorMsg)
+    );
+}
+
+/**
   Get redfish resource from given resource URI with cache mechanism
   supported. It's caller's responsibility to Response by calling
   RedfishFreeResponse ().
@@ -637,6 +670,11 @@ RedfishHttpGetResource (
   } while (TRUE);
 
   if (EFI_ERROR (Status)) {
+    //
+    // Report status code for Redfish failure
+    //
+    ReportHttpError (AsciiUri, Response->StatusCode);
+
     DEBUG ((DEBUG_ERROR, "%a: get %a failed (%d/%d): %r\n", __func__, AsciiUri, RetryCount, REDFISH_HTTP_GET_RETRY_MAX, Status));
     if (Response->Payload != NULL) {
       RedfishFreeResponse (
