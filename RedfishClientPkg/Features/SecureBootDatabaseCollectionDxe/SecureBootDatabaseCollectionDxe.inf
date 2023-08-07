@@ -1,0 +1,57 @@
+## @file
+#
+#  Redfish Secure boot database collection driver.
+#
+#  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+
+[Defines]
+  INF_VERSION               = 0x00010005
+  BASE_NAME                 = SecureBootDatabaseCollectionDxe
+  FILE_GUID                 = 4C941021-6438-4D23-9DBC-812CFC8FE1F1
+  MODULE_TYPE               = DXE_DRIVER
+  VERSION_STRING            = 1.0
+  ENTRY_POINT               = RedfishCollectionEntryPoint
+  UNLOAD_IMAGE              = RedfishCollectionUnload
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  RedfishPkg/RedfishPkg.dec
+  RedfishClientPkg/RedfishClientPkg.dec
+
+[Sources]
+  SecureBootDatabaseCollectionDxe.h
+  SecureBootDatabaseCollectionDxe.c
+
+[LibraryClasses]
+  DebugLib
+  BaseMemoryLib
+  ConverterCommonLib
+  MemoryAllocationLib
+  RedfishFeatureUtilityLib
+  RedfishLib
+  UefiLib
+  UefiDriverEntryPoint
+  UefiBootServicesTableLib
+  EdkIIRedfishResourceConfigLib
+  RedfishVersionLib
+  RedfishHttpCacheLib
+
+[Protocols]
+  gEdkIIRedfishConfigHandlerProtocolGuid    ## CONSUMED
+  gEfiRestJsonStructureProtocolGuid         ## CONSUMED
+  gEdkIIRedfishFeatureProtocolGuid          ## CONSUMED
+
+[Guids]
+
+[Pcd]
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdMaxRedfishSchemaStringSize
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdMaxRedfishSchemaVersionSize
+
+[Depex]
+  TRUE
