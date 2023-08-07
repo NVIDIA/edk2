@@ -1,0 +1,55 @@
+## @file
+#
+#  (C) Copyright 2020-2022 Hewlett Packard Enterprise Development LP<BR>
+#  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+
+[Defines]
+  INF_VERSION               = 0x00010005
+  BASE_NAME                 = SecureBootDatabaseDxe
+  FILE_GUID                 = B33C81B6-133F-4685-94EF-819961E75DAC
+  MODULE_TYPE               = DXE_DRIVER
+  VERSION_STRING            = 1.0
+  ENTRY_POINT               = RedfishResourceEntryPoint
+  UNLOAD_IMAGE              = RedfishResourceUnload
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  RedfishPkg/RedfishPkg.dec
+  RedfishClientPkg/RedfishClientPkg.dec
+
+[Sources]
+  ../Common/SecureBootDatabaseCommon.h
+  ../Common/SecureBootDatabaseCommon.c
+  SecureBootDatabaseDxe.c
+
+[LibraryClasses]
+  BaseMemoryLib
+  DebugLib
+  EdkIIRedfishResourceConfigLib
+  RedfishLib
+  RedfishFeatureUtilityLib
+  RedfishSecureBootKeysLib
+  UefiLib
+  UefiDriverEntryPoint
+  RedfishHttpCacheLib
+  RedfishDebugLib
+  ConverterCommonLib
+
+[Protocols]
+  gEdkIIRedfishConfigHandlerProtocolGuid          ## PRODUCED
+  gEfiRestJsonStructureProtocolGuid               ## CONSUMED
+  gEdkIIRedfishResourceConfigProtocolGuid         ## PRODUCED
+  gEdkIIRedfishTaskProtocolGuid                   ## CONSUMED
+
+[Pcd]
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdMaxRedfishSchemaStringSize
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdMaxRedfishSchemaVersionSize
+
+[Depex]
+  TRUE
