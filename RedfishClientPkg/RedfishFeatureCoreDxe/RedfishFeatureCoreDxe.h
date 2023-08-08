@@ -29,11 +29,13 @@
 #define MaxNodeNameLength             64
 #define MaxParentUriLength            512
 #define NodeSeperator                 L'/'
+#define NodeSeparatorStr              L"/"
 #define UriSeperator                  L';'
 #define NodeIsCollectionLeftBracket   L'{'
 #define NodeIsCollectionRightBracket  L'}'
 #define NodeIsCollectionSymbol        L"/{}"
 #define REDFISH_FEATURE_CORE_TPL      TPL_CALLBACK
+#define REDFISH_TASK_SERVICE_URI      L"TaskService"
 #define REDFISH_INTERNAL_ERROR        "Redfish service failure. Configuration at BMC may not be update-to-date."
 #define REDFISH_COMMUNICATION_ERROR   "Redfish communication failure. Configuration at BMC may not be update-to-date."
 #define REDFISH_CONFIG_CHANGED        "System configuration is changed from RESTful interface. System reboot."

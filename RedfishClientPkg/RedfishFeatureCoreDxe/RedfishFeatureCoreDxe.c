@@ -14,6 +14,7 @@
 EFI_EVENT                        mEdkIIRedfishFeatureDriverStartupEvent;
 REDFISH_FEATURE_STARTUP_CONTEXT  mFeatureDriverStartupContext;
 REDFISH_FEATURE_INTERNAL_DATA    *ResourceUriNodeList;
+REDFISH_FEATURE_INTERNAL_DATA    *mTaskServiceNode;
 RESOURCE_INFORMATION_EXCHANGE    *mInformationExchange;
 
 /**
@@ -63,7 +64,7 @@ SetupExchangeInformationInfo (
     ThisList->InformationExchange->SendInformation.ParentUri
     );
   if (StrLen (ThisList->InformationExchange->SendInformation.FullUri) != 0) {
-    StrCatS (ThisList->InformationExchange->SendInformation.FullUri, MaxParentUriLength, L"/");
+    StrCatS (ThisList->InformationExchange->SendInformation.FullUri, MaxParentUriLength, NodeSeparatorStr);
   }
 
   StrCatS (ThisList->InformationExchange->SendInformation.FullUri, MaxParentUriLength, ThisList->InformationExchange->SendInformation.PropertyName);
@@ -111,7 +112,7 @@ DestroryExchangeInformation (
 }
 
 /**
-  Startup child feature drivers and it's sibing feature drivers.
+  Startup child feature drivers and it's sibling feature drivers.
 
   @param[in]  ThisFeatureDriverList    This feature driver list.
   @param[in]  CurrentConfigLanguageUri The current parent configure language URI.
@@ -121,7 +122,7 @@ DestroryExchangeInformation (
 VOID
 StartUpFeatureDriver (
   IN REDFISH_FEATURE_INTERNAL_DATA    *ThisFeatureDriverList,
-  IN EFI_STRING                       CurrentConfigLanguageUri,
+  IN EFI_STRING                       CurrentConfigLanguageUri OPTIONAL,
   IN REDFISH_FEATURE_STARTUP_CONTEXT  *StartupContext
   )
 {
@@ -130,6 +131,10 @@ StartUpFeatureDriver (
   REDFISH_FEATURE_INTERNAL_DATA                *ThisList;
   REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG_LIST  ConfigLangList;
   EFI_STRING                                   NextParentUri;
+
+  if ((ThisFeatureDriverList == NULL) || (StartupContext == NULL)) {
+    return;
+  }
 
   NextParentUri = (EFI_STRING)AllocateZeroPool (MaxParentUriLength * sizeof (CHAR16));
   if (NextParentUri == NULL) {
@@ -212,6 +217,7 @@ StartUpFeatureDriver (
           return;
         }
       } else {
+        StrCatS (NextParentUri, MaxParentUriLength, NodeSeparatorStr);
         StrCatS (NextParentUri, MaxParentUriLength, ThisList->NodeName);
         StartUpFeatureDriver (ThisList->ChildList, NextParentUri, StartupContext);
       }
@@ -312,6 +318,11 @@ RedfishFeatureDriverStartup (
   PcdSetBoolS (PcdHttpTlsHostVerifyDisabled, TRUE);
 
   //
+  // Invoke task service callback before invoking other callback.
+  //
+  StartUpFeatureDriver (mTaskServiceNode, NULL, StartupContext);
+
+  //
   // Invoke the callback by the hierarchy level
   //
   StartUpFeatureDriver (ResourceUriNodeList, NULL, StartupContext);
@@ -402,7 +413,7 @@ NewInternalInstance (
   REDFISH_FEATURE_INTERNAL_DATA  *NewInternalData;
 
   if ((PtrToNewInternalData == NULL) || (NodeName == NULL)) {
-    DEBUG ((DEBUG_ERROR, "%a: Inproper given parameters\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: Improper given parameters\n", __FUNCTION__));
     return EFI_INVALID_PARAMETER;
   }
 
@@ -429,7 +440,7 @@ NewInternalInstance (
   Insert the URI node into internal data structure
 
   @param[in]        HeadEntryToInsert  The head entry to start the searching.
-  @param[in]        PrevisouEntry      Previsou entry.
+  @param[in]        PrevisouEntry      Previous entry.
   @param[in]        NodeName           Name of URI node.
   @param[in]        NodeIsCollection   TRUE means the node to add is the collection node.
                                        Otherwise it is a resource node.
@@ -539,7 +550,7 @@ InsertRedfishFeatureUriNode (
                                    on Redfish resource which is managed by this Redfish
                                    feature driver.
   @param[in]   Context             The context of the registering feature driver. The pointer
-                                   to the conext is delivered through callback function.
+                                   to the context is delivered through callback function.
   @retval EFI_SUCCESS              Redfish feature driver is registered successfully.
   @retval EFI_SUCCESS              Redfish feature driver is registered successfully.
   @retval EFI_INVALID_PARAMETER    Improper given parameters or fail to register
@@ -572,6 +583,25 @@ RedfishFeatureRegister (
   if ((FeatureManagedUri == NULL) || (Callback == NULL)) {
     DEBUG ((DEBUG_ERROR, "%a: The given parameter is invalid\n", __FUNCTION__));
     return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Task service is special service which will be launched before other feature
+  // drivers.
+  //
+  if (StrCmp (REDFISH_TASK_SERVICE_URI, FeatureManagedUri) == 0) {
+    if (mTaskServiceNode == NULL) {
+      Status = NewInternalInstance (&mTaskServiceNode, REDFISH_TASK_SERVICE_URI, FALSE);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a: failed to register task service: %r\n", __func__, Status));
+        return Status;
+      }
+    }
+
+    mTaskServiceNode->Context  = Context;
+    mTaskServiceNode->Callback = Callback;
+
+    return EFI_SUCCESS;
   }
 
   //
@@ -625,7 +655,7 @@ RedfishFeatureRegister (
 
       if (NewUri || ((Index + 1) >= UriLength)) {
         //
-        // Setup the callabck and restart the searching for the
+        // Setup the callback and restart the searching for the
         // next URI.
         //
         if (MatchNodeEntry != NULL) {
@@ -695,7 +725,7 @@ EDKII_REDFISH_FEATURE_PROTOCOL  mRedfishFeatureProtocol = {
   @param[in] ImageHandle     Image handle this driver.
   @param[in] SystemTable     Pointer to SystemTable.
 
-  @retval EFI_SUCESS     This function always complete successfully.
+  @retval EFI_SUCCESS     This function always complete successfully.
 
 **/
 EFI_STATUS
@@ -711,6 +741,7 @@ RedfishFeatureCoreEntryPoint (
 
   Handle              = NULL;
   ResourceUriNodeList = NULL;
+  mTaskServiceNode    = NULL;
   EventGuid           = (EFI_GUID *)PcdGetPtr (PcdEdkIIRedfishFeatureDriverStartupEventGuid);
 
   ZeroMem ((VOID *)&mFeatureDriverStartupContext, sizeof (REDFISH_FEATURE_STARTUP_CONTEXT));
