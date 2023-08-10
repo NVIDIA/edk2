@@ -28,6 +28,7 @@
   RedfishVersionLib|Include/Library/RedfishVersionLib.h
   RedfishClientDebugLib|Include/Library/RedfishClientDebugLib.h
   RedfishHttpCacheLib|Include/Library/RedfishHttpCacheLib.h
+  RedfishJsonBlobLib|Include/Library/RedfishJsonBlobLib.h
 
 [LibraryClasses.Common.Private]
   ##  @libraryclass Redfish Helper Library
