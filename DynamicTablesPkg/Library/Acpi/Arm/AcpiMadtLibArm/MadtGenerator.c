@@ -155,7 +155,7 @@ AddGICC (
   } else {
     // Setting TrbeInterrupt to 0 ensures backward compatibility with
     // ACPI 6.4
-    Gicc->SpeOverflowInterrupt = 0;
+    Gicc->TrbeInterrupt = 0;
   }
 }
 
