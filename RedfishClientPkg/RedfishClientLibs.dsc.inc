@@ -41,3 +41,4 @@
   RedfishAddendumLib|RedfishClientPkg/Library/RedfishAddendumLib/RedfishAddendumLib.inf
   RedfishHttpCacheLib|RedfishClientPkg/Library/RedfishHttpCacheLib/RedfishHttpCacheLib.inf
   RedfishJsonBlobLib|RedfishClientPkg/Library/RedfishJsonBlobLib/RedfishJsonBlobLib.inf
+  RedfishSecureBootKeysLib|RedfishClientPkg/Library/RedfishSecureBootKeysLib/RedfishSecureBootKeysLib.inf

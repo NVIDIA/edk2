@@ -1,0 +1,42 @@
+## @file
+#
+#  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = RedfishSecureBootKeysLib
+  FILE_GUID                      = DFD1683A-8CDF-48A5-A146-B8EFB97E3F16
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = RedfishSecureBootKeysLib| DXE_DRIVER UEFI_DRIVER
+  CONSTRUCTOR                    = RedfishSecureBootKeysLibConstructor
+  DESTRUCTOR                     = RedfishSecureBootKeysLibDestructor
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 EBC
+#
+
+[Sources]
+  RedfishSecureBootKeysLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  RedfishPkg/RedfishPkg.dec
+  RedfishClientPkg/RedfishClientPkg.dec
+
+[LibraryClasses]
+  UefiLib
+  UefiBootServicesTableLib
+
+[Guids]
+
+[Protocols]
+  gEdkIIRedfishSecureBootKeysProtocolGuid  ## CONSUMED
+
+[Depex]
+  TRUE
