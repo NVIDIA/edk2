@@ -29,6 +29,7 @@
   RedfishClientDebugLib|Include/Library/RedfishClientDebugLib.h
   RedfishHttpCacheLib|Include/Library/RedfishHttpCacheLib.h
   RedfishJsonBlobLib|Include/Library/RedfishJsonBlobLib.h
+  RedfishSecureBootKeysLib|Include/Library/RedfishSecureBootKeysLib.h
 
 [LibraryClasses.Common.Private]
   ##  @libraryclass Redfish Helper Library
@@ -50,6 +51,8 @@
   gEdkIIRedfishResourceAddendumProtocolGuid = { 0xda36b12b, 0xaad4, 0x4e90, { 0xba, 0xcb, 0xe3, 0xb5, 0x3b, 0x08, 0xbc, 0x54 } }
   ## Include/Protocol/EdkIIRedfishOverrideProtocol.h
   gEdkiiRedfishOverrideProtocolGuid         = { 0xb55bef20, 0xf7c8, 0x4ae9, { 0xa7, 0xca, 0x8b, 0xba, 0x9f, 0x7b, 0xbf, 0x9c } }
+  ## Include/Protocol/EdkIIRedfishSecureBootKeysProtocol.h
+  gEdkIIRedfishSecureBootKeysProtocolGuid   = { 0xea459862, 0x9b22, 0x475f, {0xb7, 0xcf, 0x22, 0xa6, 0x61, 0x6d, 0x82, 0x49 } }
 
 [Guids]
   ## Include/Guid/RedfishClientPkgTokenSpace.h

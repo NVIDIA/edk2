@@ -1,0 +1,77 @@
+## @file
+#
+#  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x0001000b
+  BASE_NAME                      = RedfishSecureBootKeysDxe
+  FILE_GUID                      = EE5E23C5-8B9B-4C77-B30F-736BD0CCA274
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = RedfishSecureBootKeysEntryPoint
+  UNLOAD_IMAGE                   = RedfishSecureBootKeysUnload
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 EBC
+#
+
+[Sources]
+  RedfishSecureBootData.h
+  RedfishSecureBootData.c
+  RedfishSecureBootKeyOp.h
+  RedfishSecureBootKeyOp.c
+  RedfishSecureBootKeysDxe.h
+  RedfishSecureBootKeysDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  SecurityPkg/SecurityPkg.dec
+  RedfishPkg/RedfishPkg.dec
+  RedfishClientPkg/RedfishClientPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  UefiLib
+  PrintLib
+  JsonLib
+  MemoryAllocationLib
+  PlatformPKProtectionLib
+  RedfishJsonBlobLib
+  SecureBootVariableLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  UefiRuntimeServicesTableLib
+
+[Guids]
+  gEfiGlobalVariableGuid
+  gEfiImageSecurityDatabaseGuid
+  gEfiRedfishClientVariableGuid
+  gEfiCertX509Guid
+  gEfiHashAlgorithmSha256Guid
+  gEfiCertSha256Guid
+  gEfiCertRsa2048Guid
+  gEfiCertRsa2048Sha256Guid
+  gEfiCertSha1Guid
+  gEfiCertRsa2048Sha1Guid
+  gEfiCertX509Guid
+  gEfiCertSha224Guid
+  gEfiCertSha384Guid
+  gEfiCertSha512Guid
+  gEfiCertX509Sha256Guid
+  gEfiCertX509Sha384Guid
+  gEfiCertX509Sha512Guid
+
+[Protocols]
+  gEfiHash2ProtocolGuid                   ## CONSUMED
+  gEfiHash2ServiceBindingProtocolGuid     ## CONSUMED
+  gEdkIIRedfishSecureBootKeysProtocolGuid ## PRODUCED
+
+[Depex]
+  TRUE
