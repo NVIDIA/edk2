@@ -1290,6 +1290,87 @@ DeleteResourceByUri (
 
 /**
 
+  Post redfish resource by given resource URI.
+
+  @param[in]  Service       Redfish service instance to make query.
+  @param[in]  ResourceUri   Target resource URI.
+  @param[in]  Json          Pointer to JSON context.
+  @param[out] Location      Returned location string from Redfish service.
+  @param[out] Etag          Returned ETAG string from Redfish service.
+
+  @retval     EFI_SUCCESS     Resrouce is returned successfully.
+  @retval     Others          Errors occur.
+
+**/
+EFI_STATUS
+PostResourceByUri (
+  IN  REDFISH_SERVICE  *Service,
+  IN  EFI_STRING       ResourceUri,
+  IN  CHAR8            *Json,
+  OUT EFI_STRING       *Location,
+  OUT CHAR8            **Etag OPTIONAL
+  )
+{
+  EFI_STATUS        Status;
+  CHAR8             *AsciiResourceUri;
+  REDFISH_RESPONSE  PostResponse;
+
+  if ((Service == NULL) || (Location == NULL) || IS_EMPTY_STRING (ResourceUri) || IS_EMPTY_STRING (Json)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  AsciiResourceUri = StrUnicodeToAscii (ResourceUri);
+  if (AsciiResourceUri == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  //
+  // Post resource to redfish service.
+  //
+  ZeroMem (&PostResponse, sizeof (REDFISH_RESPONSE));
+  Status = RedfishPostToUri (
+             Service,
+             AsciiResourceUri,
+             Json,
+             0,
+             NULL,
+             &PostResponse
+             );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: RedfishPostToUri to %a failed: %r\n", __FUNCTION__, AsciiResourceUri, Status));
+    DEBUG_CODE_BEGIN ();
+    DEBUG ((DEBUG_ERROR, "%a: Response:\n", __FUNCTION__));
+    DumpRedfishResponse (__FUNCTION__, DEBUG_ERROR, &PostResponse);
+    DEBUG_CODE_END ();
+    goto ON_RELEASE;
+  }
+
+  //
+  // per Redfish spec. the URL of new resource will be returned in "Location" header.
+  //
+  Status = GetEtagAndLocation (&PostResponse, Etag, Location);
+  if (EFI_ERROR (Status)) {
+    Status = EFI_DEVICE_ERROR;
+  }
+
+  RedfishFreeResponse (
+    PostResponse.StatusCode,
+    PostResponse.HeaderCount,
+    PostResponse.Headers,
+    PostResponse.Payload
+    );
+
+ON_RELEASE:
+
+  if (AsciiResourceUri != NULL) {
+    FreePool (AsciiResourceUri);
+  }
+
+  return Status;
+}
+
+/**
+
   Check if this is the Redpath array. Usually the Redpath array represents
   the collection member. Return
 
@@ -1945,7 +2026,7 @@ GetEtagAndLocation (
     //
     // No header is returned. Search payload for location.
     //
-    if ((*Location == NULL) && (Response->Payload != NULL) && (*(Response->StatusCode) != HTTP_STATUS_204_NO_CONTENT)) {
+    if ((AsciiLocation == NULL) && (Response->Payload != NULL) && (*(Response->StatusCode) != HTTP_STATUS_204_NO_CONTENT)) {
       JsonValue = RedfishJsonInPayload (Response->Payload);
       if (JsonValue != NULL) {
         OdataValue = JsonObjectGetValue (JsonValueGetObject (JsonValue), "@odata.id");
@@ -2173,7 +2254,7 @@ CreatePayloadToPostResource (
   ZeroMem (&PostResponse, sizeof (REDFISH_RESPONSE));
   Status = RedfishPostToPayload (TargetPayload, Payload, &PostResponse);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a:%d Failed to POST payload to Redfish service.\n", __FUNCTION__, __LINE__));
+    DEBUG ((DEBUG_ERROR, "%a: Failed to POST payload to Redfish service: %r\n", __FUNCTION__, Status));
 
     DEBUG_CODE_BEGIN ();
     DEBUG ((DEBUG_ERROR, "%a: Request:\n", __FUNCTION__));

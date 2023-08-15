@@ -1352,7 +1352,7 @@ postUriFromServiceEx (
     return NULL;
   }
 
-  DEBUG ((DEBUG_INFO, "libredfish: postUriFromService(): %a\n", url));
+  DEBUG ((DEBUG_INFO, "libredfish: postUriFromServiceEx(): %a\n", url));
 
   if (contentLength == 0) {
     contentLength = strlen (content);
@@ -1433,7 +1433,12 @@ postUriFromServiceEx (
   //
   Status = service->RestEx->SendReceive (service->RestEx, RequestMsg, &ResponseMsg);
   if (EFI_ERROR (Status)) {
-    goto ON_EXIT;
+    //
+    // If there is no response to handle, go to error exit.
+    //
+    if (ResponseMsg.Data.Response == NULL) {
+      goto ON_EXIT;
+    }
   }
 
   //
@@ -1460,10 +1465,11 @@ postUriFromServiceEx (
   }
 
   //
-  // Step 6: Parsing the HttpHeader to retrive the X-Auth-Token if the HTTP StatusCode is correct.
+  // Step 6: Parsing the HttpHeader to retrieve the X-Auth-Token if the HTTP StatusCode is correct.
   //
-  if ((ResponseMsg.Data.Response->StatusCode == HTTP_STATUS_200_OK) ||
-      (ResponseMsg.Data.Response->StatusCode == HTTP_STATUS_204_NO_CONTENT))
+  if ((ResponseMsg.Data.Response != NULL) &&
+      ((ResponseMsg.Data.Response->StatusCode == HTTP_STATUS_200_OK) ||
+       (ResponseMsg.Data.Response->StatusCode == HTTP_STATUS_204_NO_CONTENT)))
   {
     HttpHeader = HttpFindHeader (ResponseMsg.HeaderCount, ResponseMsg.Headers, "X-Auth-Token");
     if (HttpHeader != NULL) {
@@ -1473,19 +1479,6 @@ postUriFromServiceEx (
 
       service->sessionToken = AllocateCopyPool (AsciiStrSize (HttpHeader->FieldValue), HttpHeader->FieldValue);
     }
-
-    /*
-    //
-    // Below opeation seems to be unnecessary.
-    // Besides, the FieldValue for the Location is the full HTTP URI (Http://0.0.0.0:5000/XXX), so we can't use it as the
-    // parameter of getUriFromService () directly.
-    //
-    HttpHeader = HttpFindHeader (ResponseMsg.HeaderCount, ResponseMsg.Headers, "Location");
-    if (HttpHeader != NULL) {
-      ret = getUriFromService(service, HttpHeader->FieldValue);
-      goto ON_EXIT;
-    }
-    */
   }
 
 ON_EXIT:
