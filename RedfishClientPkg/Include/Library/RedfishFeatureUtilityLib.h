@@ -58,6 +58,29 @@ DeleteResourceByUri (
 
 /**
 
+  Post redfish resource by given resource URI.
+
+  @param[in]  Service       Redfish service instance to make query.
+  @param[in]  ResourceUri   Target resource URI.
+  @param[in]  Json          Pointer to JSON context.
+  @param[out] Location      Returned location string from Redfish service.
+  @param[out] Etag          Returned ETAG string from Redfish service.
+
+  @retval     EFI_SUCCESS     Resrouce is returned successfully.
+  @retval     Others          Errors occur.
+
+**/
+EFI_STATUS
+PostResourceByUri (
+  IN  REDFISH_SERVICE  *Service,
+  IN  EFI_STRING       ResourceUri,
+  IN  CHAR8            *Json,
+  OUT EFI_STRING       *Location,
+  OUT CHAR8            **Etag OPTIONAL
+  );
+
+/**
+
   Check if this is the Redpath array. Usually the Redpath array represents
   the collection member. Return
 
