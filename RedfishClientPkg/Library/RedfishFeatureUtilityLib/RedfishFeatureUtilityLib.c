@@ -3734,14 +3734,20 @@ ValidateRedfishStringArrayValues (
   )
 {
   UINTN                 Index;
+  UINTN                 InputArrayCount;
   RedfishCS_char_Array  *CharArrayBuffer;
 
   if ((Head == NULL) || (StringArray == NULL) || (ArraySize == 0)) {
     return FALSE;
   }
 
+  //
+  // Check to see if string from Redfish can be found in string array
+  // returned by HII or not. If not, the input from Redfish is invalid.
+  //
   CharArrayBuffer = Head;
   Index           = 0;
+  InputArrayCount = 0;
   while (CharArrayBuffer != NULL) {
     for (Index = 0; Index < ArraySize; Index++) {
       if (AsciiStrCmp (StringArray[Index], CharArrayBuffer->ArrayValue) == 0) {
@@ -3750,10 +3756,22 @@ ValidateRedfishStringArrayValues (
     }
 
     if (Index == ArraySize) {
+      DEBUG ((DEBUG_ERROR, "%a: input string: %a is not found in HII string list\n", __func__, CharArrayBuffer->ArrayValue));
       return FALSE;
     }
 
-    CharArrayBuffer = CharArrayBuffer->Next;
+    InputArrayCount += 1;
+    CharArrayBuffer  = CharArrayBuffer->Next;
+  }
+
+  //
+  // Check to see if the number of string from Redfish equals to the
+  // number of string returned by HII. HII only accepts the same
+  // number of string array due to the design or HII ordered list.
+  //
+  if (InputArrayCount != ArraySize) {
+    DEBUG ((DEBUG_ERROR, "%a: input string size: %d is not the same as HII string list size: %d\n", __func__, InputArrayCount, ArraySize));
+    return FALSE;
   }
 
   return TRUE;
