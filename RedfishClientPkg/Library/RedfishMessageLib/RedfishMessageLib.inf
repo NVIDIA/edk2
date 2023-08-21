@@ -1,0 +1,41 @@
+## @file
+#
+#  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = RedfishMessageLib
+  FILE_GUID                      = 3B20DEFC-FC42-41D4-AA73-1B9D55F25F63
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = RedfishMessageLib| DXE_DRIVER UEFI_DRIVER
+  CONSTRUCTOR                    = RedfishMessageConstructor
+  DESTRUCTOR                     = RedfishMessageDestructor
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 EBC
+#
+
+[Sources]
+  RedfishMessageInternal.h
+  RedfishMessageLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  RedfishPkg/RedfishPkg.dec
+  RedfishClientPkg/RedfishClientPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  UefiLib
+  MemoryAllocationLib
+
+[Depex]
+  TRUE
