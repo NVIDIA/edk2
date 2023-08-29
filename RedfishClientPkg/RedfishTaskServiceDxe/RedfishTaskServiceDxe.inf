@@ -1,0 +1,64 @@
+## @file
+#  RedfishTaskServiceDxe is the DXE driver which provides
+#  EdkIIRedfishTaskProtocol to EDK2 Redfish Feature
+#  drivers for the registration.
+#
+#  (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP<BR>
+#  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x0001000b
+  BASE_NAME                      = RedfishTaskServiceDxe
+  FILE_GUID                      = 067D39E4-3AA0-42DB-ACC6-D329E4247380
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = RedfishTaskServiceEntryPoint
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 ARM AARCH64 RISCV64
+#
+
+[Sources]
+  RedfishTaskServiceData.c
+  RedfishTaskServiceData.h
+  RedfishTaskServiceJson.c
+  RedfishTaskServiceJson.h
+  RedfishTaskServiceDxe.c
+  RedfishTaskServiceDxe.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  NetworkPkg/NetworkPkg.dec
+  RedfishPkg/RedfishPkg.dec
+  RedfishClientPkg/RedfishClientPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  MemoryAllocationLib
+  PrintLib
+  RedfishFeatureUtilityLib
+  RedfishMessageLib
+  RedfishEventLib
+  RedfishLib
+  RedfishHttpCacheLib
+  RedfishVersionLib
+  RedfishTaskLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  UefiLib
+  JsonLib
+
+[Protocols]
+  gEdkIIRedfishTaskProtocolGuid             ## PRODUCED
+  gEdkIIRedfishConfigHandlerProtocolGuid    ## CONSUMED
+  gEdkIIRedfishFeatureProtocolGuid          ## CONSUMED
+
+[Depex]
+  TRUE
