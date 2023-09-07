@@ -35,6 +35,7 @@
 
 #include <Protocol/EdkIIRedfishConfigHandler.h>
 #include <Protocol/EdkIIRedfishCredential.h>
+#include <Protocol/RestEx.h>
 
 #define REDFISH_BOOTSTRAP_ACCOUNT_DEBUG         DEBUG_VERBOSE
 #define REDFISH_MANAGER_ACCOUNT_COLLECTION_URI  L"AccountService/Accounts"
@@ -45,6 +46,7 @@
 //
 typedef struct {
   EFI_HANDLE                               ImageHandle;
+  EFI_HANDLE                               RestExHandle;
   REDFISH_SERVICE                          RedfishService;
   EFI_EVENT                                RedfishEvent;
   EDKII_REDFISH_CONFIG_HANDLER_PROTOCOL    Protocol;

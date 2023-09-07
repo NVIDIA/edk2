@@ -47,6 +47,7 @@
 [Protocols]
   gEdkIIRedfishConfigHandlerProtocolGuid  ## CONSUMES ##
   gEdkIIRedfishCredentialProtocolGuid     ## CONSUMES ##
+  gEfiRestExProtocolGuid                  ## CONSUMES ##
 
 [Depex]
   gEdkIIRedfishCredentialProtocolGuid

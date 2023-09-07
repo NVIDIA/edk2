@@ -14,6 +14,41 @@
 REDFISH_BOOTSTRAP_ACCOUNT_PRIVATE  *mBootstrapPrivate = NULL;
 
 /**
+  Close Redfish service instance by calling RestEx protocol to release instance.
+
+  @param[in]  RestExHandle      Handle of RestEx protocol.
+
+  @retval EFI_SUCCESS           The Redfish service is closed successfully.
+  @retval EFI_INVALID_PARAMETER RestExHandle is NULL.
+  @retval Others                Error occurs.
+
+**/
+EFI_STATUS
+CloseRedfishService (
+  IN EFI_HANDLE  RestExHandle
+  )
+{
+  EFI_REST_EX_PROTOCOL  *RestEx;
+  EFI_STATUS            Status;
+
+  if (RestExHandle == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Status = gBS->HandleProtocol (
+                  RestExHandle,
+                  &gEfiRestExProtocolGuid,
+                  (VOID **)&RestEx
+                  );
+  if (!EFI_ERROR (Status)) {
+    Status = RestEx->Configure (RestEx, NULL);
+    DEBUG ((REDFISH_BOOTSTRAP_ACCOUNT_DEBUG, "%a: release RestEx instance: %r\n", __func__, Status));
+  }
+
+  return Status;
+}
+
+/**
   Callback function executed when the AfterProvisioning event group is signaled.
 
   @param[in]   Event    Event whose notification function is being invoked.
@@ -115,6 +150,15 @@ RedfishBootstrapAccountOnRedfishAfterProvisioning (
   ZeroMem (AccountName, AsciiStrSize (AccountName));
   ZeroMem (AccountCredential, AsciiStrSize (AccountCredential));
 
+  //
+  // Since the bootstrap account is deleted at BMC, the Redfish service instance is no longer usable.
+  // Close Redfish service instance to release the HTTP connection between BIOS and BMC.
+  //
+  Status = CloseRedfishService (Private->RestExHandle);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: cannot close Redfish service instance: %r\n", __func__, Status));
+  }
+
   return;
 }
 
@@ -148,6 +192,8 @@ RedfishBootstrapAccountInit (
   if (Private->RedfishService == NULL) {
     return EFI_DEVICE_ERROR;
   }
+
+  Private->RestExHandle = RedfishConfigServiceInfo->RedfishServiceRestExHandle;
 
   return EFI_SUCCESS;
 }
