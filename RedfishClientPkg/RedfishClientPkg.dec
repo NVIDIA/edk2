@@ -26,7 +26,6 @@
   EdkIIRedfishResourceConfigLib|Include/Library/EdkIIRedfishResourceConfigLib.h
   RedfishEventLib|Include/Library/RedfishEventLib.h
   RedfishVersionLib|Include/Library/RedfishVersionLib.h
-  RedfishClientDebugLib|Include/Library/RedfishClientDebugLib.h
   RedfishHttpCacheLib|Include/Library/RedfishHttpCacheLib.h
   RedfishJsonBlobLib|Include/Library/RedfishJsonBlobLib.h
   RedfishSecureBootKeysLib|Include/Library/RedfishSecureBootKeysLib.h

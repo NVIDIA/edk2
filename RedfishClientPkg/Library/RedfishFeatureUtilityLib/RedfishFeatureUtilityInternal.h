@@ -29,7 +29,7 @@
 #include <Library/UefiLib.h>
 #include <Library/PrintLib.h>
 #include <Library/HttpLib.h>
-#include <Library/RedfishClientDebugLib.h>
+#include <Library/RedfishDebugLib.h>
 
 #include <Guid/VariableFormat.h>
 
