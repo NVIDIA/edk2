@@ -1782,15 +1782,10 @@ RedfishPlatformConfigSetStatementCommon (
     //
     if ((TargetStatement->HiiStatement->Operand == EFI_IFR_ONE_OF_OP) && (StatementValue->Type == EFI_IFR_TYPE_STRING)) {
       //
-      // Make a copy of input buffer to TempBuffer because StatementValue will be
+      // Keep input buffer to TempBuffer because StatementValue will be
       // assigned in HiiStringToOneOfOptionValue().
       //
-      TempBuffer = AllocateCopyPool (StrSize ((EFI_STRING)StatementValue->Buffer), StatementValue->Buffer);
-      if (TempBuffer == NULL) {
-        return EFI_OUT_OF_RESOURCES;
-      }
-
-      FreePool (StatementValue->Buffer);
+      TempBuffer                = (EFI_STRING)StatementValue->Buffer;
       StatementValue->Buffer    = NULL;
       StatementValue->BufferLen = 0;
 
