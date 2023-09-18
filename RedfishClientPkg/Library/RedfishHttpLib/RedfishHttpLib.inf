@@ -1,0 +1,44 @@
+## @file
+#  Redfish HTTP library is wrapper library for application to call Redfish
+#  HTTP protocol easily.
+#
+#  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = RedfishHttpLib
+  FILE_GUID                      = 76FD14A1-D404-4FA9-8F3C-384FC8C09A82
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = RedfishHttpLib| DXE_DRIVER UEFI_DRIVER
+  CONSTRUCTOR                    = RedfishHttpConstructor
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 EBC
+#
+
+[Sources]
+  RedfishHttpLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  RedfishPkg/RedfishPkg.dec
+  RedfishClientPkg/RedfishClientPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  UefiLib
+  UefiBootServicesTableLib
+
+[Protocols]
+  gEdkIIRedfishHttpProtocolGuid   ## CONSUMES ##
+
+[depex]
+  TRUE
+

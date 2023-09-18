@@ -50,7 +50,7 @@
 
   RedfishClientPkg/Library/RedfishFeatureUtilityLib/RedfishFeatureUtilityLib.inf
   RedfishClientPkg/PrivateLibrary/RedfishLib/RedfishLib.inf
-  RedfishClientPkg/Library/RedfishHttpCacheLib/RedfishHttpCacheLib.inf
+  RedfishClientPkg/Library/RedfishHttpLib/RedfishHttpLib.inf
   RedfishClientPkg/Library/RedfishJsonBlobLib/RedfishJsonBlobLib.inf
   RedfishClientPkg/Library/RedfishSecureBootKeysLib/RedfishSecureBootKeysLib.inf
   RedfishClientPkg/Library/RedfishMessageLib/RedfishMessageLib.inf
