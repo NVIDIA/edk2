@@ -3766,10 +3766,10 @@ error_handler:
   return Status;
 }
 
-/** AML code generation to add a string to the package in a named node.
+/** AML code generation to add a NameString to the package in a named node.
 
 
-  @param [in]  Name           String to add
+  @param [in]  NameString     NameString to add
   @param [in]  NamedNode      Node to add the string to the included package.
 
   @retval EFI_SUCCESS             Success.
@@ -3778,8 +3778,8 @@ error_handler:
 **/
 EFI_STATUS
 EFIAPI
-AmlAddStringToNamedPackage (
-  IN CHAR8                   *String,
+AmlAddNameStringToNamedPackage (
+  IN CHAR8                   *NameString,
   IN AML_OBJECT_NODE_HANDLE  NamedNode
   )
 {
@@ -3811,7 +3811,7 @@ AmlAddStringToNamedPackage (
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = ConvertAslNameToAmlName (String, &AmlNameString);
+  Status = ConvertAslNameToAmlName (NameString, &AmlNameString);
   if (EFI_ERROR (Status)) {
     ASSERT (0);
     return Status;
@@ -3838,7 +3838,9 @@ AmlAddStringToNamedPackage (
              (AML_NODE_HANDLE)PackageNode,
              (AML_NODE_HANDLE)DataNode
              );
-  ASSERT_EFI_ERROR (Status);
+  if (EFI_ERROR (Status)) {
+    AmlDeleteTree ((AML_NODE_HANDLE)DataNode);
+  }
 
 exit_handler:
   if (AmlNameString != NULL) {
