@@ -2018,8 +2018,9 @@ AmlCodeGenReturnNameStringIntegerArgument (
   UINT32           AmlNameStringSize;
   AML_OBJECT_NODE  *ObjectNode;
 
-  DataNode = NULL;
-  IntNode  = NULL;
+  DataNode   = NULL;
+  IntNode    = NULL;
+  ObjectNode = NULL;
 
   Status = ConvertAslNameToAmlName (NameString, &AmlNameString);
   if (EFI_ERROR (Status)) {
@@ -2033,6 +2034,12 @@ AmlCodeGenReturnNameStringIntegerArgument (
     goto exit_handler;
   }
 
+  Status = AmlCodeGenInteger (Integer, &IntNode);
+  if (EFI_ERROR (Status)) {
+    ASSERT (0);
+    goto exit_handler;
+  }
+
   Status = AmlCreateDataNode (
              EAmlNodeDataTypeNameString,
              (UINT8 *)AmlNameString,
@@ -2041,13 +2048,7 @@ AmlCodeGenReturnNameStringIntegerArgument (
              );
   if (EFI_ERROR (Status)) {
     ASSERT (0);
-    goto exit_handler;
-  }
-
-  Status = AmlCodeGenInteger (Integer, &IntNode);
-  if (EFI_ERROR (Status)) {
-    ASSERT (0);
-    return Status;
+    goto exit_handler1;
   }
 
   // AmlCodeGenReturn() deletes DataNode if error.
@@ -2056,19 +2057,32 @@ AmlCodeGenReturnNameStringIntegerArgument (
              ParentNode,
              &ObjectNode
              );
-  ASSERT_EFI_ERROR (Status);
+  if (EFI_ERROR (Status)) {
+    ASSERT (0);
+    goto exit_handler1;
+  }
 
   Status = AmlVarListAddTail (
              (AML_NODE_HANDLE)ObjectNode,
              (AML_NODE_HANDLE)IntNode
              );
   if (EFI_ERROR (Status)) {
+    // ObjectNode is already attached to ParentNode in AmlCodeGenReturn(),
+    // so no need to free it here, it will be deleted when deleting the
+    // ParentNode tree
     ASSERT (0);
-    return Status;
+    goto exit_handler1;
   }
 
   if (NewObjectNode != 0) {
     *NewObjectNode = ObjectNode;
+  }
+
+  goto exit_handler;
+
+exit_handler1:
+  if (IntNode != NULL) {
+    AmlDeleteTree ((AML_NODE_HANDLE)IntNode);
   }
 
 exit_handler:
