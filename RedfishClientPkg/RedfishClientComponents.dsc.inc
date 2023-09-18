@@ -18,6 +18,7 @@
   RedfishClientPkg/RedfishConfigLangMapDxe/RedfishConfigLangMapDxe.inf
   RedfishClientPkg/RedfishSecureBootKeysDxe/RedfishSecureBootKeysDxe.inf
   RedfishClientPkg/RedfishTaskServiceDxe/RedfishTaskServiceDxe.inf
+  RedfishClientPkg/RedfishHttpDxe/RedfishHttpDxe.inf
 !endif
   #
   # Below two modules should be pulled in by build tool.
