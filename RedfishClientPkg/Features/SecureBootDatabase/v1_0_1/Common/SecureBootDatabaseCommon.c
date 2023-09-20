@@ -70,12 +70,7 @@ RedfishGetCollectionCount (
 
 ON_RELEASE:
 
-  RedfishFreeResponse (
-    Response.StatusCode,
-    Response.HeaderCount,
-    Response.Headers,
-    Response.Payload
-    );
+  RedfishHttpFreeResource (&Response);
 
   return Status;
 }
@@ -167,30 +162,19 @@ RedfishClearCollection (
     if (MemberUri != NULL) {
       DEBUG ((REDFISH_SECURE_BOOT_DATABASE_DEBUG, "%a: delete %s\n", __func__, MemberUri));
       ZeroMem (&DelResponse, sizeof (DelResponse));
-      Status = DeleteResourceByUri (RedfishService, MemberUri, &DelResponse);
+      Status = RedfishHttpDeleteResource (RedfishService, MemberUri, &DelResponse);
       if (EFI_ERROR (Status)) {
         DEBUG ((DEBUG_ERROR, "%a: delete %s failed: %r\n", __func__, MemberUri, Status));
       }
 
-      RedfishFreeResponse (
-        DelResponse.StatusCode,
-        DelResponse.HeaderCount,
-        DelResponse.Headers,
-        DelResponse.Payload
-        );
-
+      RedfishHttpFreeResource (&DelResponse);
       FreePool (MemberUri);
     }
   }
 
 ON_RELEASE:
 
-  RedfishFreeResponse (
-    Response.StatusCode,
-    Response.HeaderCount,
-    Response.Headers,
-    Response.Payload
-    );
+  RedfishHttpFreeResource (&Response);
 
   return Status;
 }
@@ -275,6 +259,7 @@ RedfishPostSecureBootKey (
   EDKII_JSON_VALUE  RegistryType;
   CHAR8             *Json;
   CHAR8             *JsonParsed;
+  REDFISH_RESPONSE  Response;
 
   if ((RedfishService == NULL) || (KeyRecord == NULL) || IS_EMPTY_STRING (Uri) || (Location == NULL)) {
     return EFI_INVALID_PARAMETER;
@@ -288,6 +273,7 @@ RedfishPostSecureBootKey (
   RegistryType = NULL;
   Json         = NULL;
   JsonParsed   = NULL;
+  ZeroMem (&Response, sizeof (Response));
 
   DEBUG ((REDFISH_SECURE_BOOT_DATABASE_DEBUG, "%a: Post key %d to: %s\n", __func__, KeyRecord->Id, Uri));
 
@@ -368,10 +354,19 @@ RedfishPostSecureBootKey (
     }
   }
 
-  Status = PostResourceByUri (RedfishService, Uri, (PostCertificate ? JsonParsed : Json), Location, NULL);
+  Status = RedfishHttpPostResource (RedfishService, Uri, (PostCertificate ? JsonParsed : Json), &Response);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: post secure boot key failed: %r\n", __func__, Status));
     DumpJsonValue (DEBUG_ERROR, KeyValue);
+    goto ON_RELEASE;
+  }
+
+  //
+  // per Redfish spec. the URL of new resource will be returned in "Location" header.
+  //
+  Status = GetEtagAndLocation (&Response, NULL, Location);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: cannot find new location: %r\n", __FUNCTION__, Status));
     goto ON_RELEASE;
   }
 
@@ -402,6 +397,8 @@ ON_RELEASE:
   if (JsonParsed != NULL) {
     FreePool (JsonParsed);
   }
+
+  RedfishHttpFreeResource (&Response);
 
   return Status;
 }
@@ -441,20 +438,14 @@ RedfishDeleteKey (
   }
 
   ZeroMem (&Response, sizeof (Response));
-  Status = DeleteResourceByUri (RedfishService, KeyUri, &Response);
+  Status = RedfishHttpDeleteResource (RedfishService, KeyUri, &Response);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: delete %s failed: %r\n", __func__, KeyUri, Status));
   }
 
   DEBUG ((REDFISH_SECURE_BOOT_DATABASE_DEBUG, "%a: key is deleted: %s\n", __func__, KeyUri));
 
-  RedfishFreeResponse (
-    Response.StatusCode,
-    Response.HeaderCount,
-    Response.Headers,
-    Response.Payload
-    );
-
+  RedfishHttpFreeResource (&Response);
   FreePool (KeyUri);
 
   return EFI_SUCCESS;

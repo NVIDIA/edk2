@@ -364,15 +364,22 @@ RedfishProvisioningResourceCommon (
   IN     BOOLEAN                          ResourceExist
   )
 {
-  CHAR8       *Json;
-  CHAR8       *JsonWithAddendum;
-  EFI_STATUS  Status;
-  EFI_STRING  NewResourceLocation;
-  EFI_STRING  BootOptionName;
+  CHAR8             *Json;
+  CHAR8             *JsonWithAddendum;
+  EFI_STATUS        Status;
+  EFI_STRING        NewResourceLocation;
+  EFI_STRING        BootOptionName;
+  REDFISH_RESPONSE  Response;
 
   if (Private == NULL) {
     return EFI_INVALID_PARAMETER;
   }
+
+  Json                = NULL;
+  JsonWithAddendum    = NULL;
+  NewResourceLocation = NULL;
+  BootOptionName      = NULL;
+  ZeroMem (&Response, sizeof (REDFISH_RESPONSE));
 
   if (ResourceExist) {
     DEBUG ((DEBUG_ERROR, "%a: dose not support the exist boot option resource\n"));
@@ -441,13 +448,20 @@ RedfishProvisioningResourceCommon (
     JsonWithAddendum = NULL;
   }
 
-  Status = CreatePayloadToPostResource (Private->RedfishService, Private->Payload, Json, &NewResourceLocation, NULL);
+  Status = RedfishHttpPostResource (Private->RedfishService, Private->Uri, Json, &Response);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: post BootOption resource for %s failed: %r\n", __func__, BootOptionName, Status));
     goto RELEASE_RESOURCE;
   }
 
-  ASSERT (NewResourceLocation != NULL);
+  //
+  // per Redfish spec. the URL of new resource will be returned in "Location" header.
+  //
+  Status = GetEtagAndLocation (&Response, NULL, &NewResourceLocation);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: cannot find new location: %r\n", __FUNCTION__, Status));
+    goto RELEASE_RESOURCE;
+  }
 
   //
   // Keep location of new resource.
@@ -466,6 +480,8 @@ RELEASE_RESOURCE:
   if (Json != NULL) {
     FreePool (Json);
   }
+
+  RedfishHttpFreeResource (&Response);
 
   return Status;
 }
@@ -502,6 +518,7 @@ RedfishCheckResourceCommon (
     return EFI_INVALID_PARAMETER;
   }
 
+  ZeroMem (&Response, sizeof (REDFISH_RESPONSE));
   DevicePathString       = NULL;
   DevicePathAsciiString  = NULL;
   DeleteResourceRequired = FALSE;
@@ -569,7 +586,7 @@ RedfishCheckResourceCommon (
   //
   if (DeleteResourceRequired) {
     DEBUG ((REDFISH_BOOT_OPTION_DEBUG_TRACE, "%a: boot option %s is deleted in system. Delete %s\n", __func__, BootOptionName, Private->Uri));
-    Status = DeleteResourceByUri (Private->RedfishService, Private->Uri, &Response);
+    Status = RedfishHttpDeleteResource (Private->RedfishService, Private->Uri, &Response);
     if (EFI_ERROR (Status)) {
       DEBUG ((DEBUG_ERROR, "%a: can not delete %s: %r\n", __func__, Private->Uri, Status));
     }
@@ -600,14 +617,7 @@ ON_RELEASE:
   //
   // Release resource
   //
-  if (Response.Payload != NULL) {
-    RedfishFreeResponse (
-      Response.StatusCode,
-      Response.HeaderCount,
-      Response.Headers,
-      Response.Payload
-      );
-  }
+  RedfishHttpFreeResource (&Response);
 
   //
   // Release resource.
@@ -640,10 +650,11 @@ RedfishUpdateResourceCommon (
   IN     CHAR8                            *InputJson
   )
 {
-  EFI_STATUS  Status;
-  CHAR8       *Json;
-  CHAR8       *JsonWithAddendum;
-  EFI_STRING  ConfigureLang;
+  EFI_STATUS        Status;
+  CHAR8             *Json;
+  CHAR8             *JsonWithAddendum;
+  EFI_STRING        ConfigureLang;
+  REDFISH_RESPONSE  Response;
 
   if ((Private == NULL) || IS_EMPTY_STRING (InputJson)) {
     return EFI_INVALID_PARAMETER;
@@ -651,6 +662,7 @@ RedfishUpdateResourceCommon (
 
   Json          = NULL;
   ConfigureLang = NULL;
+  ZeroMem (&Response, sizeof (REDFISH_RESPONSE));
 
   ConfigureLang = RedfishGetConfigLanguage (Private->Uri);
   if (ConfigureLang == NULL) {
@@ -711,9 +723,9 @@ RedfishUpdateResourceCommon (
   DEBUG ((REDFISH_BOOT_OPTION_DEBUG_TRACE, "%a: update resource for %s\n", __func__, ConfigureLang));
 
   //
-  // PUT back to instance
+  // PATCH back to instance
   //
-  Status = CreatePayloadToPatchResource (Private->RedfishService, Private->Payload, Json, NULL);
+  Status = RedfishHttpPatchResource (Private->RedfishService, Private->Uri, Json, &Response);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: patch resource for %s failed: %r\n", __func__, ConfigureLang, Status));
   }
@@ -727,6 +739,8 @@ ON_RELEASE:
   if (ConfigureLang != NULL) {
     FreePool (ConfigureLang);
   }
+
+  RedfishHttpFreeResource (&Response);
 
   return Status;
 }

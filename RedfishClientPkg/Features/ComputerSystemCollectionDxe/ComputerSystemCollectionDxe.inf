@@ -41,7 +41,7 @@
   UefiBootServicesTableLib
   EdkIIRedfishResourceConfigLib
   RedfishVersionLib
-  RedfishHttpCacheLib
+  RedfishHttpLib
 
 [Protocols]
   gEdkIIRedfishConfigHandlerProtocolGuid    ## CONSUMED

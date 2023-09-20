@@ -41,6 +41,7 @@ RedfishResourceProvisioningResource (
     return EFI_INVALID_PARAMETER;
   }
 
+  ZeroMem (&Response, sizeof (Response));
   Private = REDFISH_RESOURCE_COMMON_PRIVATE_DATA_FROM_RESOURCE_PROTOCOL (This);
 
   if (Private->RedfishService == NULL) {
@@ -66,12 +67,7 @@ RedfishResourceProvisioningResource (
   // Release resource
   //
   if (Private->Payload != NULL) {
-    RedfishFreeResponse (
-      Response.StatusCode,
-      Response.HeaderCount,
-      Response.Headers,
-      Response.Payload
-      );
+    RedfishHttpFreeResource (&Response);
     Private->Payload = NULL;
   }
 

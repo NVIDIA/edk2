@@ -14,7 +14,7 @@
 
 #include <Library/UefiBootManagerLib.h>
 #include <Library/DevicePathLib.h>
-#include <Library/RedfishHttpCacheLib.h>
+#include <Library/RedfishHttpLib.h>
 #include <RedfishJsonStructure/BootOptionCollection/EfiBootOptionCollection.h>
 #include <RedfishCollectionCommon.h>
 

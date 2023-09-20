@@ -38,7 +38,7 @@
   UefiLib
   UefiDriverEntryPoint
   RedfishAddendumLib
-  RedfishHttpCacheLib
+  RedfishHttpLib
 
 [Protocols]
   gEdkIIRedfishConfigHandlerProtocolGuid          ## PRODUCED
