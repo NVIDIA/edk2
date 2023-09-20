@@ -32,7 +32,7 @@
 #include <Library/RedfishResourceIdentifyLib.h>
 #include <Library/EdkIIRedfishResourceConfigLib.h>
 #include <Library/RedfishAddendumLib.h>
-#include <Library/RedfishHttpCacheLib.h>
+#include <Library/RedfishHttpLib.h>
 
 //
 // Protocols

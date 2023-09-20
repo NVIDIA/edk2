@@ -269,12 +269,7 @@ ReleaseCollectionResource (
   // Release resource
   //
   if (Private->Response.Payload != NULL) {
-    RedfishFreeResponse (
-      Private->Response.StatusCode,
-      Private->Response.HeaderCount,
-      Private->Response.Headers,
-      Private->Response.Payload
-      );
+    RedfishHttpFreeResource (&Private->Response);
     Private->Response.StatusCode  = NULL;
     Private->Response.HeaderCount = 0;
     Private->Response.Headers     = NULL;

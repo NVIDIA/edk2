@@ -147,7 +147,7 @@ HandleResource (
 **/
 EFI_STATUS
 MarkBootOptionProcessed (
-  IN REDFISH_SERVICE               *RedfishService,
+  IN REDFISH_SERVICE               RedfishService,
   IN EFI_BOOT_MANAGER_LOAD_OPTION  *BootOptions,
   IN UINTN                         BootOptionCount,
   IN EFI_STRING                    Uri
@@ -155,8 +155,8 @@ MarkBootOptionProcessed (
 {
   UINTN             Index;
   REDFISH_RESPONSE  Response;
-  EDKII_JSON_VALUE  *JsonValue;
-  EDKII_JSON_VALUE  *BootOptionReference;
+  EDKII_JSON_VALUE  JsonValue;
+  EDKII_JSON_VALUE  BootOptionReference;
   EFI_STATUS        Status;
   CONST CHAR8       *BootReferenceString;
   UINTN             OptionNumber;
@@ -168,6 +168,7 @@ MarkBootOptionProcessed (
   //
   // Get boot option reference attribute
   //
+  ZeroMem (&Response, sizeof (REDFISH_RESPONSE));
   Status = RedfishHttpGetResource (RedfishService, Uri, &Response, TRUE);
   if (EFI_ERROR (Status) || (Response.Payload == NULL)) {
     DEBUG ((DEBUG_ERROR, "%a: failed to get resource from %s: %r", __func__, Uri, Status));
@@ -211,12 +212,7 @@ MarkBootOptionProcessed (
 
 ON_RELEASE:
 
-  RedfishFreeResponse (
-    Response.StatusCode,
-    Response.HeaderCount,
-    Response.Headers,
-    Response.Payload
-    );
+  RedfishHttpFreeResource (&Response);
 
   return Status;
 }
@@ -436,12 +432,7 @@ ReleaseCollectionResource (
   // Release resource
   //
   if (Private->Response.Payload != NULL) {
-    RedfishFreeResponse (
-      Private->Response.StatusCode,
-      Private->Response.HeaderCount,
-      Private->Response.Headers,
-      Private->Response.Payload
-      );
+    RedfishHttpFreeResource (&Private->Response);
     Private->Response.StatusCode  = NULL;
     Private->Response.HeaderCount = 0;
     Private->Response.Headers     = NULL;

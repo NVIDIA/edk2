@@ -274,18 +274,19 @@ ProvisioningBiosResource (
   IN  EFI_STRING                       ConfigureLang
   )
 {
-  CHAR8       *Json;
-  CHAR8       *JsonWithAddendum;
-  EFI_STATUS  Status;
-  EFI_STRING  NewResourceLocation;
-  CHAR8       *EtagStr;
-  CHAR8       ResourceId[16];
+  CHAR8             *Json;
+  CHAR8             *JsonWithAddendum;
+  EFI_STATUS        Status;
+  EFI_STRING        NewResourceLocation;
+  CHAR8             ResourceId[16];
+  REDFISH_RESPONSE  Response;
 
   if (IS_EMPTY_STRING (ConfigureLang) || (Private == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  EtagStr = NULL;
+  ZeroMem (&Response, sizeof (REDFISH_RESPONSE));
+  NewResourceLocation = NULL;
   AsciiSPrint (ResourceId, sizeof (ResourceId), "%d", Index);
 
   Status = ProvisioningBiosProperties (
@@ -333,13 +334,20 @@ ProvisioningBiosResource (
     JsonWithAddendum = NULL;
   }
 
-  Status = CreatePayloadToPostResource (Private->RedfishService, Private->Payload, Json, &NewResourceLocation, &EtagStr);
+  Status = RedfishHttpPostResource (Private->RedfishService, Private->Uri, Json, &Response);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: post Bios resource for %s failed: %r\n", __FUNCTION__, ConfigureLang, Status));
     goto RELEASE_RESOURCE;
   }
 
-  ASSERT (NewResourceLocation != NULL);
+  //
+  // per Redfish spec. the URL of new resource will be returned in "Location" header.
+  //
+  Status = GetEtagAndLocation (&Response, NULL, &NewResourceLocation);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: cannot find new location: %r\n", __FUNCTION__, Status));
+    goto RELEASE_RESOURCE;
+  }
 
   //
   // Keep location of new resource.
@@ -357,6 +365,8 @@ RELEASE_RESOURCE:
   if (Json != NULL) {
     FreePool (Json);
   }
+
+  RedfishHttpFreeResource (&Response);
 
   return Status;
 }
@@ -400,19 +410,19 @@ ProvisioningBiosExistResource (
   IN  REDFISH_RESOURCE_COMMON_PRIVATE  *Private
   )
 {
-  EFI_STATUS  Status;
-  EFI_STRING  ConfigureLang;
-  CHAR8       *EtagStr;
-  CHAR8       *Json;
-  CHAR8       *JsonWithAddendum;
+  EFI_STATUS        Status;
+  EFI_STRING        ConfigureLang;
+  CHAR8             *Json;
+  CHAR8             *JsonWithAddendum;
+  REDFISH_RESPONSE  Response;
 
   if (Private == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
-  EtagStr       = NULL;
   Json          = NULL;
   ConfigureLang = NULL;
+  ZeroMem (&Response, sizeof (REDFISH_RESPONSE));
 
   ConfigureLang = RedfishGetConfigLanguage (Private->Uri);
   if (ConfigureLang == NULL) {
@@ -475,7 +485,7 @@ ProvisioningBiosExistResource (
   //
   // PUT back to instance
   //
-  Status = CreatePayloadToPutResource (Private->RedfishService, Private->Payload, Json, &EtagStr);
+  Status = RedfishHttpPutResource (Private->RedfishService, Private->Uri, Json, &Response);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: put resource for %s failed: %r\n", __FUNCTION__, ConfigureLang, Status));
   }
@@ -489,6 +499,8 @@ ON_RELEASE:
   if (ConfigureLang != NULL) {
     FreePool (ConfigureLang);
   }
+
+  RedfishHttpFreeResource (&Response);
 
   return Status;
 }
@@ -609,19 +621,19 @@ RedfishUpdateResourceCommon (
   IN     CHAR8                            *InputJson
   )
 {
-  EFI_STATUS  Status;
-  CHAR8       *Json;
-  CHAR8       *JsonWithAddendum;
-  EFI_STRING  ConfigureLang;
-  CHAR8       *EtagStr;
+  EFI_STATUS        Status;
+  CHAR8             *Json;
+  CHAR8             *JsonWithAddendum;
+  EFI_STRING        ConfigureLang;
+  REDFISH_RESPONSE  Response;
 
   if ((Private == NULL) || IS_EMPTY_STRING (InputJson)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  EtagStr       = NULL;
   Json          = NULL;
   ConfigureLang = NULL;
+  ZeroMem (&Response, sizeof (REDFISH_RESPONSE));
 
   ConfigureLang = RedfishGetConfigLanguage (Private->Uri);
   if (ConfigureLang == NULL) {
@@ -683,7 +695,7 @@ RedfishUpdateResourceCommon (
   //
   // PUT back to instance
   //
-  Status = CreatePayloadToPutResource (Private->RedfishService, Private->Payload, Json, &EtagStr);
+  Status = RedfishHttpPutResource (Private->RedfishService, Private->Uri, Json, &Response);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: put resource for %s failed: %r\n", __FUNCTION__, ConfigureLang, Status));
   }
@@ -697,6 +709,8 @@ ON_RELEASE:
   if (ConfigureLang != NULL) {
     FreePool (ConfigureLang);
   }
+
+  RedfishHttpFreeResource (&Response);
 
   return Status;
 }
