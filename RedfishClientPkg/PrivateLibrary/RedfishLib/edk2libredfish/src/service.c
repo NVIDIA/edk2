@@ -280,9 +280,9 @@ DecodeResponseContent (
 **/
 EFI_STATUS
 RedfishBuildUrl (
-  IN  REDFISH_CONFIG_SERVICE_INFORMATION *RedfishConfigServiceInfo,
-  IN  CHAR16 *RelativePath, OPTIONAL
-  OUT CHAR16                        **HttpUrl
+  IN  REDFISH_CONFIG_SERVICE_INFORMATION  *RedfishConfigServiceInfo,
+  IN  CHAR16                              *RelativePath    OPTIONAL,
+  OUT CHAR16                              **HttpUrl
   )
 {
   CHAR16  *Url;
@@ -576,7 +576,7 @@ getUriFromServiceEx (
       //
       Status = DecodeResponseContent (ContentEncodedHeader->FieldValue, &ResponseMsg.Body, &ResponseMsg.BodyLength);
       if (EFI_ERROR (Status)) {
-        DEBUG ((DEBUG_ERROR, "%a: Failed to decompress the response content %r\n.", __FUNCTION__, Status));
+        DEBUG ((DEBUG_ERROR, "%a: Failed to decompress the response content %r\n.", __func__, Status));
         ret = NULL;
         goto ON_EXIT;
       }
@@ -732,7 +732,7 @@ getUriFromService (
       //
       Status = DecodeResponseContent (ContentEncodedHeader->FieldValue, &ResponseMsg.Body, &ResponseMsg.BodyLength);
       if (EFI_ERROR (Status)) {
-        DEBUG ((DEBUG_ERROR, "%a: Failed to decompress the response content %r\n.", __FUNCTION__, Status));
+        DEBUG ((DEBUG_ERROR, "%a: Failed to decompress the response content %r\n.", __func__, Status));
         ret = NULL;
         goto ON_EXIT;
       }
@@ -773,6 +773,8 @@ putUriFromServiceEx (
   redfishService        *service,
   const char            *uri,
   const char            *content,
+  size_t                contentLength,
+  const char            *contentType,
   EFI_HTTP_HEADER       **Headers,
   UINTN                 *HeaderCount,
   EFI_HTTP_STATUS_CODE  **StatusCode
@@ -796,16 +798,20 @@ putUriFromServiceEx (
   *StatusCode = NULL;
 
   url = makeUrlForService (service, uri);
-  if (!url) {
+  if (url == NULL) {
     return NULL;
   }
 
-  DEBUG ((DEBUG_INFO, "libredfish: patchUriFromService(): %a\n", url));
+  DEBUG ((DEBUG_INFO, "%a: putUriFromServiceEx(): %a\n", __func__, url));
+
+  if (contentLength == 0) {
+    contentLength = strlen (content);
+  }
 
   //
   // Step 1: Create HTTP request message with 4 headers:
   //
-  HttpIoHeader = HttpIoCreateHeader ((service->sessionToken || service->basicAuthStr) ? 9 : 8);
+  HttpIoHeader = HttpIoCreateHeader ((service->sessionToken != NULL || service->basicAuthStr != NULL) ? 9 : 8);
   if (HttpIoHeader == NULL) {
     ret = NULL;
     goto ON_EXIT;
@@ -816,6 +822,14 @@ putUriFromServiceEx (
     ASSERT_EFI_ERROR (Status);
   } else if (service->basicAuthStr) {
     Status = HttpIoSetHeader (HttpIoHeader, "Authorization", service->basicAuthStr);
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  if (contentType == NULL) {
+    Status = HttpIoSetHeader (HttpIoHeader, "Content-Type", "application/json");
+    ASSERT_EFI_ERROR (Status);
+  } else {
+    Status = HttpIoSetHeader (HttpIoHeader, "Content-Type", (CHAR8 *)contentType);
     ASSERT_EFI_ERROR (Status);
   }
 
@@ -834,7 +848,7 @@ putUriFromServiceEx (
     ContentLengthStr,
     sizeof (ContentLengthStr),
     "%lu",
-    (UINT64)strlen (content)
+    (UINT64)contentLength
     );
   Status = HttpIoSetHeader (HttpIoHeader, "Content-Length", ContentLengthStr);
   ASSERT_EFI_ERROR (Status);
@@ -863,13 +877,13 @@ putUriFromServiceEx (
   }
 
   EncodedContent    = (CHAR8 *)content;
-  EncodedContentLen = strlen (content);
+  EncodedContentLen = contentLength;
   //
   // We currently only support gzip Content-Encoding.
   //
   Status = EncodeRequestContent ((CHAR8 *)HTTP_CONTENT_ENCODING_GZIP, (CHAR8 *)content, (VOID **)&EncodedContent, &EncodedContentLen);
   if (Status == EFI_INVALID_PARAMETER) {
-    DEBUG ((DEBUG_ERROR, "%a: Error to encode content.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: Error to encode content.\n", __func__));
     ret = NULL;
     goto ON_EXIT;
   } else if (Status == EFI_UNSUPPORTED) {
@@ -985,7 +999,7 @@ patchUriFromServiceEx (
     return NULL;
   }
 
-  DEBUG ((DEBUG_INFO, "libredfish: patchUriFromService(): %a\n", url));
+  DEBUG ((DEBUG_INFO, "%a: patchUriFromServiceEx(): %a\n", __func__, url));
 
   //
   // Step 1: Create HTTP request message with 4 headers:
@@ -1054,7 +1068,7 @@ patchUriFromServiceEx (
   //
   Status = EncodeRequestContent ((CHAR8 *)HTTP_CONTENT_ENCODING_GZIP, (CHAR8 *)content, (VOID **)&EncodedContent, &EncodedContentLen);
   if (Status == EFI_INVALID_PARAMETER) {
-    DEBUG ((DEBUG_ERROR, "%a: Error to encode content.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: Error to encode content.\n", __func__));
     ret = NULL;
     goto ON_EXIT;
   } else if (Status == EFI_UNSUPPORTED) {
@@ -1237,7 +1251,7 @@ patchUriFromService (
   //
   Status = EncodeRequestContent ((CHAR8 *)HTTP_CONTENT_ENCODING_GZIP, (CHAR8 *)content, (VOID **)&EncodedContent, &EncodedContentLen);
   if (Status == EFI_INVALID_PARAMETER) {
-    DEBUG ((DEBUG_ERROR, "%a: Error to encode content.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: Error to encode content.\n", __func__));
     ret = NULL;
     goto ON_EXIT;
   } else if (Status == EFI_UNSUPPORTED) {
@@ -2230,6 +2244,10 @@ makeUrlForService (
   }
 
   url = (char *)malloc (strlen (service->host)+strlen (uri)+1);
+  if (url == NULL) {
+    return NULL;
+  }
+
   strcpy (url, service->host);
   strcat (url, uri);
   return url;

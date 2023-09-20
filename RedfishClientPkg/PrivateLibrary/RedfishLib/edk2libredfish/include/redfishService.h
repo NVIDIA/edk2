@@ -159,6 +159,8 @@ putUriFromServiceEx (
   redfishService        *service,
   const char            *uri,
   const char            *content,
+  size_t                contentLength,
+  const char            *contentType,
   EFI_HTTP_HEADER       **Headers,
   UINTN                 *HeaderCount,
   EFI_HTTP_STATUS_CODE  **StatusCode

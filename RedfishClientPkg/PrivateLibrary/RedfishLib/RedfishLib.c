@@ -269,7 +269,7 @@ RedfishBuildPathWithSystemUuid (
                                       from the root node.
   @param[out]   RedResponse           Pointer to the Redfish response data.
 
-  @retval EFI_SUCCESS             The opeartion is successful, indicates the HTTP StatusCode is not
+  @retval EFI_SUCCESS             The operation is successful, indicates the HTTP StatusCode is not
                                   NULL and the value is 2XX. The corresponding redfish resource has
                                   been returned in Payload within RedResponse.
   @retval EFI_INVALID_PARAMETER   RedfishService, RedPath, or RedResponse is NULL.
@@ -329,7 +329,7 @@ RedfishGetByService (
   @param[in]    Uri               String to address a resource.
   @param[out]   RedResponse       Pointer to the Redfish response data.
 
-  @retval EFI_SUCCESS             The opeartion is successful, indicates the HTTP StatusCode is not
+  @retval EFI_SUCCESS             The operation is successful, indicates the HTTP StatusCode is not
                                   NULL and the value is 2XX. The corresponding redfish resource has
                                   been returned in Payload within RedResponse.
   @retval EFI_INVALID_PARAMETER   RedfishService, RedPath, or RedResponse is NULL.
@@ -392,7 +392,7 @@ RedfishGetByUri (
   @param[in]    RedPath           Relative RedPath string to address a resource inside Payload.
   @param[out]   RedResponse       Pointer to the Redfish response data.
 
-  @retval EFI_SUCCESS             The opeartion is successful:
+  @retval EFI_SUCCESS             The operation is successful:
                                   1. The HTTP StatusCode is NULL and the returned Payload in
                                   RedResponse is not NULL, indicates the Redfish resource has
                                   been parsed from the input payload directly.
@@ -465,7 +465,7 @@ RedfishGetByPayload (
   @param[in]    Content               JSON represented properties to be update.
   @param[out]   RedResponse           Pointer to the Redfish response data.
 
-  @retval EFI_SUCCESS             The opeartion is successful, indicates the HTTP StatusCode is not
+  @retval EFI_SUCCESS             The operation is successful, indicates the HTTP StatusCode is not
                                   NULL and the value is 2XX. The Redfish resource will be returned
                                   in Payload within RedResponse if server send it back in the HTTP
                                   response message body.
@@ -498,10 +498,12 @@ RedfishPatchToUri (
 
   ZeroMem (RedResponse, sizeof (REDFISH_RESPONSE));
 
-  JsonValue = (EDKII_JSON_VALUE)patchUriFromService (
+  JsonValue = (EDKII_JSON_VALUE)patchUriFromServiceEx (
                                   RedfishService,
                                   Uri,
                                   Content,
+                                  &(RedResponse->Headers),
+                                  &(RedResponse->HeaderCount),
                                   &(RedResponse->StatusCode)
                                   );
 
@@ -540,77 +542,6 @@ ON_EXIT:
 }
 
 /**
-  Use HTTP PUT to perform updates on target payload. Patch to odata.id in Payload directly.
-
-  This function uses the Payload to patch the Target. Changes to one or more properties
-  within the target resource are represented in the input Payload, properties not specified
-  in Payload won't be changed by this request. The corresponding redfish response will
-  returned, including HTTP StatusCode, Headers and Payload which record any HTTP response
-  messages.
-
-  Callers are responsible for freeing the HTTP StatusCode, Headers and Payload returned in
-  redfish response data.
-
-  @param[in]    Target           The target payload to be updated.
-  @param[in]    Payload          Palyoad with properties to be changed.
-  @param[out]   RedResponse      Pointer to the Redfish response data.
-
-  @retval EFI_SUCCESS             The opeartion is successful, indicates the HTTP StatusCode is not
-                                  NULL and the value is 2XX. The Redfish resource will be returned
-                                  in Payload within RedResponse if server send it back in the HTTP
-                                  response message body.
-  @retval EFI_INVALID_PARAMETER   Target, Payload, or RedResponse is NULL.
-  @retval EFI_DEVICE_ERROR        An unexpected system or network error occurred. Callers can get
-                                  more error info from returned HTTP StatusCode, Headers and Payload
-                                  within RedResponse:
-                                  1. If the returned StatusCode is NULL, indicates any error happen.
-                                  2. If the returned StatusCode is not NULL and the value is not 2XX,
-                                     indicates any error happen.
-**/
-EFI_STATUS
-EFIAPI
-RedfishPutToPayload (
-  IN     REDFISH_PAYLOAD   Target,
-  IN     REDFISH_PAYLOAD   Payload,
-  OUT    REDFISH_RESPONSE  *RedResponse
-  )
-{
-  if ((Target == NULL) || (Payload == NULL) || (RedResponse == NULL)) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  ZeroMem (RedResponse, sizeof (REDFISH_RESPONSE));
-
-  RedResponse->Payload = (REDFISH_PAYLOAD)putPayloadEx (
-                                            Target,
-                                            Payload,
-                                            &RedResponse->Headers,
-                                            &RedResponse->HeaderCount,
-                                            &(RedResponse->StatusCode)
-                                            );
-
-  //
-  // 1. If the returned StatusCode is NULL, indicates any error happen.
-  //
-  if (RedResponse->StatusCode == NULL) {
-    return EFI_DEVICE_ERROR;
-  }
-
-  //
-  // 2. If the returned StatusCode is not NULL and the value is not 2XX, indicates any error happen.
-  //    NOTE: If there is any error message returned from server, it will be returned in
-  //          Payload within RedResponse.
-  //
-  if ((*(RedResponse->StatusCode) < HTTP_STATUS_200_OK) || \
-      (*(RedResponse->StatusCode) > HTTP_STATUS_206_PARTIAL_CONTENT))
-  {
-    return EFI_DEVICE_ERROR;
-  }
-
-  return EFI_SUCCESS;
-}
-
-/**
   Use HTTP PATCH to perform updates on target payload. Patch to odata.id in Payload directly.
 
   This function uses the Payload to patch the Target. Changes to one or more properties
@@ -623,10 +554,10 @@ RedfishPutToPayload (
   redfish response data.
 
   @param[in]    Target           The target payload to be updated.
-  @param[in]    Payload          Palyoad with properties to be changed.
+  @param[in]    Payload          Payload with properties to be changed.
   @param[out]   RedResponse      Pointer to the Redfish response data.
 
-  @retval EFI_SUCCESS             The opeartion is successful, indicates the HTTP StatusCode is not
+  @retval EFI_SUCCESS             The operation is successful, indicates the HTTP StatusCode is not
                                   NULL and the value is 2XX. The Redfish resource will be returned
                                   in Payload within RedResponse if server send it back in the HTTP
                                   response message body.
@@ -699,7 +630,7 @@ RedfishPatchToPayload (
   @param[in]    ContentType           Type of the Content to be send to Redfish service
   @param[out]   RedResponse           Pointer to the Redfish response data.
 
-  @retval EFI_SUCCESS             The opeartion is successful, indicates the HTTP StatusCode is not
+  @retval EFI_SUCCESS             The operation is successful, indicates the HTTP StatusCode is not
                                   NULL and the value is 2XX. The Redfish resource will be returned
                                   in Payload within RedResponse if server send it back in the HTTP
                                   response message body.
@@ -717,8 +648,8 @@ RedfishPostToUri (
   IN     REDFISH_SERVICE   RedfishService,
   IN     CONST CHAR8       *Uri,
   IN     CONST CHAR8       *Content,
-  IN     UINTN             ContentSize,
-  IN     CONST CHAR8       *ContentType,
+  IN     UINTN             ContentSize OPTIONAL,
+  IN     CONST CHAR8       *ContentType OPTIONAL,
   OUT    REDFISH_RESPONSE  *RedResponse
   )
 {
@@ -794,7 +725,7 @@ ON_EXIT:
   @param[in]    Payload         The new resource to be created.
   @param[out]   RedResponse     Pointer to the Redfish response data.
 
-  @retval EFI_SUCCESS             The opeartion is successful, indicates the HTTP StatusCode is not
+  @retval EFI_SUCCESS             The operation is successful, indicates the HTTP StatusCode is not
                                   NULL and the value is 2XX. The Redfish resource will be returned
                                   in Payload within RedResponse if server send it back in the HTTP
                                   response message body.
@@ -864,7 +795,7 @@ RedfishPostToPayload (
   @param[in]    Uri                   Relative path to address the resource.
   @param[out]   RedResponse           Pointer to the Redfish response data.
 
-  @retval EFI_SUCCESS             The opeartion is successful, indicates the HTTP StatusCode is not
+  @retval EFI_SUCCESS             The operation is successful, indicates the HTTP StatusCode is not
                                   NULL and the value is 2XX, the Redfish resource has been removed.
                                   If there is any message returned from server, it will be returned
                                   in Payload within RedResponse.
@@ -1072,7 +1003,7 @@ RedfishFreeResponse (
   Check if the "@odata.type" in Payload is valid or not.
 
   @param[in]  Payload                  The Redfish payload to be checked.
-  @param[in]  OdataTypeName            OdataType will be retrived from mapping list.
+  @param[in]  OdataTypeName            OdataType will be retrieved from mapping list.
   @param[in]  OdataTypeMappingList     The list of OdataType.
   @param[in]  OdataTypeMappingListSize The number of mapping list
 
@@ -1139,7 +1070,7 @@ RedfishIsPayloadCollection (
   @param[in]  Payload         The Redfish collection payload
   @param[in]  CollectionSize  Size of this collection
 
-  @return EFI_SUCCESS              Coolection size is returned in CollectionSize
+  @return EFI_SUCCESS              Collection size is returned in CollectionSize
   @return EFI_INVALID_PARAMETER    The payload is not a collection.
 **/
 EFI_STATUS
@@ -1228,4 +1159,104 @@ RedfishCheckIfRedpathExist (
   }
 
   return EFI_SUCCESS;
+}
+
+/**
+  Use HTTP PUT to create new Redfish resource in the Resource Collection.
+
+  This function uses the RedfishService to put a Redfish resource addressed by
+  Uri (only the relative path is required). Changes to one or more properties within
+  the target resource are represented in the input Content, properties not specified
+  in Content won't be changed by this request. The corresponding redfish response will
+  returned, including HTTP StatusCode, Headers and Payload which record any HTTP response
+  messages.
+
+  Callers are responsible for freeing the HTTP StatusCode, Headers and Payload returned in
+  redfish response data.
+
+  @param[in]    RedfishService        The Service to access the Redfish resources.
+  @param[in]    Uri                   Relative path to address the resource.
+  @param[in]    Content               JSON represented properties to be update.
+  @param[in]    ContentSize           Size of the Content to be send to Redfish service
+  @param[in]    ContentType           Type of the Content to be send to Redfish service
+  @param[out]   RedResponse           Pointer to the Redfish response data.
+
+  @retval EFI_SUCCESS             The operation is successful, indicates the HTTP StatusCode is not
+                                  NULL and the value is 2XX. The Redfish resource will be returned
+                                  in Payload within RedResponse if server send it back in the HTTP
+                                  response message body.
+  @retval EFI_INVALID_PARAMETER   RedfishService, Uri, Content, or RedResponse is NULL.
+  @retval EFI_DEVICE_ERROR        An unexpected system or network error occurred. Callers can get
+                                  more error info from returned HTTP StatusCode, Headers and Payload
+                                  within RedResponse:
+                                  1. If the returned StatusCode is NULL, indicates any error happen.
+                                  2. If the returned StatusCode is not NULL and the value is not 2XX,
+                                     indicates any error happen.
+**/
+EFI_STATUS
+EFIAPI
+RedfishPutToUri (
+  IN     REDFISH_SERVICE   RedfishService,
+  IN     CONST CHAR8       *Uri,
+  IN     CONST CHAR8       *Content,
+  IN     UINTN             ContentSize OPTIONAL,
+  IN     CONST CHAR8       *ContentType OPTIONAL,
+  OUT    REDFISH_RESPONSE  *RedResponse
+  )
+{
+  EFI_STATUS        Status;
+  EDKII_JSON_VALUE  JsonValue;
+
+  Status    = EFI_SUCCESS;
+  JsonValue = NULL;
+
+  if ((RedfishService == NULL) || (Uri == NULL) || (Content == NULL) || (RedResponse == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  ZeroMem (RedResponse, sizeof (REDFISH_RESPONSE));
+
+  JsonValue = (EDKII_JSON_VALUE)putUriFromServiceEx (
+                                  RedfishService,
+                                  Uri,
+                                  Content,
+                                  ContentSize,
+                                  ContentType,
+                                  &(RedResponse->Headers),
+                                  &(RedResponse->HeaderCount),
+                                  &(RedResponse->StatusCode)
+                                  );
+
+  //
+  // 1. If the returned StatusCode is NULL, indicates any error happen.
+  //
+  if (RedResponse->StatusCode == NULL) {
+    Status = EFI_DEVICE_ERROR;
+    goto ON_EXIT;
+  }
+
+  //
+  // 2. If the returned StatusCode is not NULL and the value is not 2XX, indicates any error happen.
+  //    NOTE: If there is any error message returned from server, it will be returned in
+  //          Payload within RedResponse.
+  //
+  if ((*(RedResponse->StatusCode) < HTTP_STATUS_200_OK) || \
+      (*(RedResponse->StatusCode) > HTTP_STATUS_206_PARTIAL_CONTENT))
+  {
+    Status = EFI_DEVICE_ERROR;
+  }
+
+ON_EXIT:
+  if (JsonValue != NULL) {
+    RedResponse->Payload = createRedfishPayload (JsonValue, RedfishService);
+    if (RedResponse->Payload == NULL) {
+      //
+      // Ignore the error when create RedfishPayload, just free the JsonValue since it's not what
+      // we care about if the returned StatusCode is 2XX.
+      //
+      JsonValueFree (JsonValue);
+    }
+  }
+
+  return Status;
 }
