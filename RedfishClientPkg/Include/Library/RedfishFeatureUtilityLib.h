@@ -11,73 +11,12 @@
 #ifndef REDFISH_FEATURE_UTILITY_LIB_H_
 #define REDFISH_FEATURE_UTILITY_LIB_H_
 
-#include <Library/RedfishLib.h>
 #include <Protocol/EdkIIRedfishPlatformConfig.h>
 #include <Protocol/EdkIIRedfishInterchangeData.h>
 #include <RedfishJsonStructure/RedfishCsCommon.h>
+#include <Library/RedfishHttpLib.h>
 
 #define REDFISH_ENABLE_SYSTEM_REBOOT()  PcdSetBoolS(PcdSystemRebootRequired, TRUE)
-
-/**
-
-  Read redfish resource by given resource URI.
-
-  @param[in]  Service       Redfish service instance to make query.
-  @param[in]  ResourceUri   Target resource URI.
-  @param[out] Response      HTTP response from redfish service.
-
-  @retval     EFI_SUCCESS     Resrouce is returned successfully.
-  @retval     Others          Errors occur.
-
-**/
-EFI_STATUS
-GetResourceByUri (
-  IN  REDFISH_SERVICE   *Service,
-  IN  EFI_STRING        ResourceUri,
-  OUT REDFISH_RESPONSE  *Response
-  );
-
-/**
-
-  Delete redfish resource by given resource URI.
-
-  @param[in]  Service       Redfish service instance to make query.
-  @param[in]  ResourceUri   Target resource URI.
-  @param[out] Response      HTTP response from redfish service.
-
-  @retval     EFI_SUCCESS     Resrouce is returned successfully.
-  @retval     Others          Errors occur.
-
-**/
-EFI_STATUS
-DeleteResourceByUri (
-  IN  REDFISH_SERVICE   *Service,
-  IN  EFI_STRING        ResourceUri,
-  OUT REDFISH_RESPONSE  *Response
-  );
-
-/**
-
-  Post redfish resource by given resource URI.
-
-  @param[in]  Service       Redfish service instance to make query.
-  @param[in]  ResourceUri   Target resource URI.
-  @param[in]  Json          Pointer to JSON context.
-  @param[out] Location      Returned location string from Redfish service.
-  @param[out] Etag          Returned ETAG string from Redfish service.
-
-  @retval     EFI_SUCCESS     Resrouce is returned successfully.
-  @retval     Others          Errors occur.
-
-**/
-EFI_STATUS
-PostResourceByUri (
-  IN  REDFISH_SERVICE  *Service,
-  IN  EFI_STRING       ResourceUri,
-  IN  CHAR8            *Json,
-  OUT EFI_STRING       *Location,
-  OUT CHAR8            **Etag OPTIONAL
-  );
 
 /**
 
@@ -410,71 +349,6 @@ ApplyFeatureSettingsBooleanArrayType (
   IN  CHAR8                 *Version,
   IN  EFI_STRING            ConfigureLang,
   IN  RedfishCS_bool_Array  *ArrayHead
-  );
-
-/**
-
-  Create HTTP payload and send them to redfish service with POST method.
-
-  @param[in]  Service         Redfish service.
-  @param[in]  TargetPayload   Target payload
-  @param[in]  Json            Data in JSON format.
-  @param[out] Location        Returned location string from Redfish service.
-  @param[out] Etag            Returned ETAG string from Redfish service.
-
-  @retval     EFI_SUCCESS     Data is sent to redfish service successfully.
-  @retval     Others          Errors occur.
-
-**/
-EFI_STATUS
-CreatePayloadToPostResource (
-  IN  REDFISH_SERVICE  *Service,
-  IN  REDFISH_PAYLOAD  *TargetPayload,
-  IN  CHAR8            *Json,
-  OUT EFI_STRING       *Location,
-  OUT CHAR8            **Etag OPTIONAL
-  );
-
-/**
-
-  Create HTTP payload and send them to redfish service with PATCH method.
-
-  @param[in]  Service         Redfish service.
-  @param[in]  TargetPayload   Target payload
-  @param[in]  Json            Data in JSON format.
-  @param[out] Etag            Returned ETAG string from Redfish service.
-
-  @retval     EFI_SUCCESS     Data is sent to redfish service successfully.
-  @retval     Others          Errors occur.
-
-**/
-EFI_STATUS
-CreatePayloadToPatchResource (
-  IN  REDFISH_SERVICE  *Service,
-  IN  REDFISH_PAYLOAD  *TargetPayload,
-  IN  CHAR8            *Json,
-  OUT CHAR8            **Etag OPTIONAL
-  );
-
-/**
-
-  Create HTTP payload and send them to redfish service with PUT method.
-
-  @param[in]  Service         Redfish service.
-  @param[in]  TargetPayload   Target payload
-  @param[in]  Json            Data in JSON format.
-  @param[out] Etag            Returned ETAG string from Redfish service.
-
-  @retval     EFI_SUCCESS     Data is sent to redfish service successfully.
-  @retval     Others          Errors occur.
-
-**/
-EFI_STATUS
-CreatePayloadToPutResource (
-  IN  REDFISH_SERVICE  *Service,
-  IN  REDFISH_PAYLOAD  *TargetPayload,
-  IN  CHAR8            *Json,
-  OUT CHAR8            **Etag
   );
 
 /**

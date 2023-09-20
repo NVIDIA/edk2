@@ -28,6 +28,7 @@
 #include <Library/RedfishFeatureUtilityLib.h>
 #include <Library/RedfishDebugLib.h>
 #include <Library/RedfishVersionLib.h>
+#include <Library/RedfishHttpLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiDriverEntryPoint.h>
 #include <Library/UefiLib.h>

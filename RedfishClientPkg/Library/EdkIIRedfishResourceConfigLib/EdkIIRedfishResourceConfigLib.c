@@ -16,7 +16,7 @@
 #include <Library/EdkIIRedfishResourceConfigLib.h>
 #include <Library/RedfishFeatureUtilityLib.h>
 #include <Library/RedfishPlatformConfigLib.h>
-#include <Library/RedfishHttpCacheLib.h>
+#include <Library/RedfishHttpLib.h>
 
 EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL           *mRedfishResourceConfigProtocol = NULL;
 EFI_HANDLE                                       mCachedHandle;
@@ -92,12 +92,7 @@ GetRedfishSchemaInfo (
   // Release resource.
   //
   if (Response.Payload != NULL) {
-    RedfishFreeResponse (
-      Response.StatusCode,
-      Response.HeaderCount,
-      Response.Headers,
-      Response.Payload
-      );
+    RedfishHttpFreeResource (&Response);
   }
 
   JsonStructProtocol->DestoryStructure (JsonStructProtocol, Header);
