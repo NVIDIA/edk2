@@ -18,7 +18,7 @@
 #include <Library/JsonLib.h>
 #include <Library/DebugLib.h>
 #include <Library/RedfishLib.h>
-#include <Library/RedfishHttpCacheLib.h>
+#include <Library/RedfishHttpLib.h>
 #include <Protocol/EdkIIRedfishTaskProtocol.h>
 
 #define REDFISH_TASK_ID_ATTRIBUTE              "Id"

@@ -47,7 +47,7 @@
   RedfishMessageLib
   RedfishEventLib
   RedfishLib
-  RedfishHttpCacheLib
+  RedfishHttpLib
   RedfishVersionLib
   RedfishTaskLib
   UefiBootServicesTableLib

@@ -18,7 +18,7 @@
 #include <Library/JsonLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/RedfishVersionLib.h>
-#include <Library/RedfishHttpCacheLib.h>
+#include <Library/RedfishHttpLib.h>
 
 #define REDFISH_VERSION_DEFAULT_STRING  L"v1"
 #define REDFISH_ROOT_URI                L"/redfish"
@@ -119,13 +119,6 @@ RedfishGetVersion (
     DEBUG ((DEBUG_ERROR, "%a, RedfishHttpGetResource to %s failed: %r\n", __FUNCTION__, REDFISH_ROOT_URI, Status));
     if (Response.Payload != NULL) {
       RedfishDumpPayload (Response.Payload);
-      RedfishFreeResponse (
-        NULL,
-        0,
-        NULL,
-        Response.Payload
-        );
-      Response.Payload = NULL;
     }
 
     goto ON_ERROR;
@@ -156,12 +149,7 @@ ON_ERROR:
   }
 
   if (Response.Payload != NULL) {
-    RedfishFreeResponse (
-      Response.StatusCode,
-      Response.HeaderCount,
-      Response.Headers,
-      Response.Payload
-      );
+    RedfishHttpFreeResource (&Response);
   }
 
   return AllocateCopyPool (StrSize (VersionString), VersionString);

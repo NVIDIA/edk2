@@ -39,6 +39,7 @@
   RedfishFeatureUtilityLib
   RedfishDebugLib
   RedfishVersionLib
+  RedfishHttpLib
   UefiLib
   UefiBootServicesTableLib
   UefiRuntimeServicesTableLib

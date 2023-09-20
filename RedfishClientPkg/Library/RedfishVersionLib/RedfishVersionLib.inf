@@ -38,7 +38,7 @@
   PcdLib
   RedfishLib
   JsonLib
-  RedfishHttpCacheLib
+  RedfishHttpLib
 
 [Protocols]
 

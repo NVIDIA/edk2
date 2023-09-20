@@ -10,9 +10,11 @@
 #ifndef REDFISH_VERSION_LIB_H_
 #define REDFISH_VERSION_LIB_H_
 
+#include <Library/RedfishLib.h>
+
 /**
   Query HTTP request to BMC with given redfish service and return redfish
-  version information. If there is troulbe to get Redfish version on BMC,
+  version information. If there is trouble to get Redfish version on BMC,
   The value of PcdDefaultRedfishVersion is returned.
 
   It's call responsibility to release returned buffer.

@@ -21,7 +21,6 @@
 #include <Library/DebugLib.h>
 #include <Library/JsonLib.h>
 #include <Library/MemoryAllocationLib.h>
-#include <Library/RedfishLib.h>
 #include <Library/RedfishFeatureUtilityLib.h>
 #include <Library/RedfishPlatformConfigLib.h>
 #include <Library/UefiBootServicesTableLib.h>
