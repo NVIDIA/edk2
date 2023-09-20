@@ -381,45 +381,6 @@ getPayloadForPathString (
 }
 
 redfishPayload *
-putPayloadEx (
-  redfishPayload        *target,
-  redfishPayload        *payload,
-  EFI_HTTP_HEADER       **Headers,
-  UINTN                 *HeaderCount,
-  EFI_HTTP_STATUS_CODE  **StatusCode
-  )
-{
-  json_t  *json;
-  char    *content;
-  char    *uri;
-
-  if (!target || !payload || (StatusCode == NULL)) {
-    return NULL;
-  }
-
-  *StatusCode = NULL;
-
-  json = json_object_get (target->json, "@odata.id");
-  if (json == NULL) {
-    return NULL;
-  }
-
-  uri = strdup (json_string_value (json));
-
-  content = json_dumps (payload->json, 0);
-  json_decref (json);
-
-  json = putUriFromServiceEx (target->service, uri, content, Headers, HeaderCount, StatusCode);
-  free (uri);
-  free (content);
-  if (json == NULL) {
-    return NULL;
-  }
-
-  return createRedfishPayload (json, target->service);
-}
-
-redfishPayload *
 patchPayloadEx (
   redfishPayload        *target,
   redfishPayload        *payload,
