@@ -44,3 +44,4 @@
   RedfishSecureBootKeysLib|RedfishClientPkg/Library/RedfishSecureBootKeysLib/RedfishSecureBootKeysLib.inf
   RedfishMessageLib|RedfishClientPkg/Library/RedfishMessageLib/RedfishMessageLib.inf
   RedfishTaskLib|RedfishClientPkg/Library/RedfishTaskLibNull/RedfishTaskLibNull.inf
+  RedfishProtocolFeaturesLib|RedfishClientPkg/Library/RedfishProtocolFeaturesLib/RedfishProtocolFeaturesLib.inf

@@ -31,6 +31,7 @@
   RedfishSecureBootKeysLib|Include/Library/RedfishSecureBootKeysLib.h
   RedfishMessageLib|Include/Library/RedfishMessageLib.h
   RedfishTaskLib|Include/Library/RedfishTaskLib.h
+  RedfishProtocolFeaturesLib|Include/Library/RedfishProtocolFeaturesLib.h
 
 [LibraryClasses.Common.Private]
   ##  @libraryclass Redfish Helper Library
@@ -96,6 +97,9 @@
   gEfiRedfishClientPkgTokenSpaceGuid.PcdHttpRetryWaitInSecond|1|UINT16|0x20000008
   ## This is used to disable Redfish HTTP cache function and every request will be sent to Redfish service.
   gEfiRedfishClientPkgTokenSpaceGuid.PcdHttpCacheDisabled|FALSE|BOOLEAN|0x20000009
+  # This is used to disable Redfish HTTP query by using "$expand" parameter even when
+  # Redfish service supports this query parameter.
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdHttpExpandQueryDisabled|FALSE|BOOLEAN|0x2000000A
 
 [PcdsDynamicEx]
   ## The flag used to indicate that system reboot is required due to system configuration change

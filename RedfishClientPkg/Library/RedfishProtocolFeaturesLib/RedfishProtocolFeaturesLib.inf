@@ -1,0 +1,46 @@
+## @file
+#
+#  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010006
+  BASE_NAME                      = RedfishProtocolFeaturesLib
+  FILE_GUID                      = B487F280-8817-4C40-A560-F6D2DAA43AFF
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = RedfishProtocolFeaturesLib| DXE_DRIVER
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 EBC
+#
+
+[Sources]
+  RedfishProtocolFeaturesInternal.h
+  RedfishProtocolFeaturesLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  RedfishPkg/RedfishPkg.dec
+  RedfishClientPkg/RedfishClientPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  MemoryAllocationLib
+  JsonLib
+  PcdLib
+  RedfishHttpLib
+  RedfishVersionLib
+  RedfishDebugLib
+
+[Pcd]
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdHttpExpandQueryDisabled
+
+[Depex]
+  TRUE
