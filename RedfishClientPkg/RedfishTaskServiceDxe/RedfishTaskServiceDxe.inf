@@ -50,6 +50,7 @@
   RedfishHttpLib
   RedfishVersionLib
   RedfishTaskLib
+  RedfishProtocolFeaturesLib
   UefiBootServicesTableLib
   UefiDriverEntryPoint
   UefiLib

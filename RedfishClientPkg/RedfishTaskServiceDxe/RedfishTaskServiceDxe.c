@@ -411,12 +411,9 @@ RedfishTaskServiceDispatch (
   EDKII_JSON_ARRAY  TaskArray;
   EDKII_JSON_VALUE  Value;
   UINTN             Index;
-
- #if !REDFISH_PARAMETER_EXPAND_ENABLED
   EDKII_JSON_VALUE  OdataId;
   EDKII_JSON_VALUE  TaskObj;
   EFI_STRING        TaskUri;
- #endif
 
   if ((Private == NULL) || IS_EMPTY_STRING (Uri)) {
     return EFI_INVALID_PARAMETER;
@@ -457,32 +454,33 @@ RedfishTaskServiceDispatch (
   // Go through task array
   //
   EDKII_JSON_ARRAY_FOREACH (TaskArray, Index, Value) {
- #if REDFISH_PARAMETER_EXPAND_ENABLED
-    Status = RedfishTaskHandler (Private, Value);
- #else
-    OdataId = JsonObjectGetValue (JsonValueGetObject (Value), REDFISH_ATTRIBUTE_ODATA_ID);
-    if (OdataId == NULL) {
-      continue;
+    if (RedfishNoLinksSupported (Private->RedfishService)) {
+      Status = RedfishTaskHandler (Private, Value);
+    } else {
+      OdataId = JsonObjectGetValue (JsonValueGetObject (Value), REDFISH_ATTRIBUTE_ODATA_ID);
+      if (OdataId == NULL) {
+        continue;
+      }
+
+      TaskUri = JsonValueGetUnicodeString (OdataId);
+      if (TaskUri == NULL) {
+        continue;
+      }
+
+      TaskObj = RedfishTaskGetObjectFromUri (Private->RedfishService, TaskUri);
+      if (TaskObj == NULL) {
+        continue;
+      }
+
+      Status = RedfishTaskHandler (Private, TaskObj);
+
+      //
+      // Release resource
+      //
+      FreePool (TaskUri);
+      JsonValueFree (TaskObj);
     }
 
-    TaskUri = JsonValueGetUnicodeString (OdataId);
-    if (TaskUri == NULL) {
-      continue;
-    }
-
-    TaskObj = RedfishTaskGetObjectFromUri (Private->RedfishService, TaskUri);
-    if (TaskObj == NULL) {
-      continue;
-    }
-
-    Status = RedfishTaskHandler (Private, TaskObj);
-
-    //
-    // Release resource
-    //
-    FreePool (TaskUri);
-    JsonValueFree (TaskObj);
- #endif
     if (EFI_ERROR (Status)) {
       if (Status != EFI_UNSUPPORTED) {
         DEBUG ((DEBUG_ERROR, "%a: Redfish task handler failure: %r\n", __func__, Status));
@@ -561,11 +559,15 @@ RedfishTaskServiceFeatureCallback (
     goto ON_RELEASE;
   }
 
- #if REDFISH_PARAMETER_EXPAND_ENABLED
-  UnicodeSPrint (ResourceUri, BufferSize, L"%s%s/%s%s", RedfishVersion, InformationExchange->SendInformation.FullUri, REDFISH_TASK_COLLECTION_URI, REDFISH_EXPAND_PARAMETER);
- #else
-  UnicodeSPrint (ResourceUri, BufferSize, L"%s%s/%s", RedfishVersion, InformationExchange->SendInformation.FullUri, REDFISH_TASK_COLLECTION_URI);
- #endif
+  //
+  // If BMC supports $expand parameter, use this parameter for our query.
+  //
+  if (RedfishNoLinksSupported (Private->RedfishService)) {
+    UnicodeSPrint (ResourceUri, BufferSize, L"%s%s/%s%s", RedfishVersion, InformationExchange->SendInformation.FullUri, REDFISH_TASK_COLLECTION_URI, REDFISH_EXPAND_PARAMETER);
+  } else {
+    UnicodeSPrint (ResourceUri, BufferSize, L"%s%s/%s", RedfishVersion, InformationExchange->SendInformation.FullUri, REDFISH_TASK_COLLECTION_URI);
+  }
+
   Status = RedfishTaskServiceDispatch (Private, ResourceUri);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: Fail to dispatch Redfish tasks: %r\n", __func__, Status));

@@ -27,19 +27,18 @@
 #include <Library/RedfishVersionLib.h>
 #include <Library/RedfishLib.h>
 #include <Library/RedfishTaskLib.h>
+#include <Library/RedfishProtocolFeaturesLib.h>
 #include <Library/JsonLib.h>
 
 #include <Protocol/EdkIIRedfishTaskProtocol.h>
 #include <Protocol/EdkIIRedfishConfigHandler.h>
 #include <Protocol/EdkIIRedfishFeature.h>
 
-#define REDFISH_TASK_DEBUG                DEBUG_VERBOSE
-#define REDFISH_PARAMETER_EXPAND_ENABLED  0x00
-#define REDFISH_TASK_SERVICE_URI          L"TaskService"
-#define REDFISH_TASK_COLLECTION_URI       L"Tasks"
-#define REDFISH_EXPAND_PARAMETER          L"?$expand=."
-#define MAX_URI_LENGTH                    256
-#define REDFISH_ATTRIBUTE_MEMBERS         "Members"
+#define REDFISH_TASK_DEBUG           DEBUG_VERBOSE
+#define REDFISH_TASK_SERVICE_URI     L"TaskService"
+#define REDFISH_TASK_COLLECTION_URI  L"Tasks"
+#define MAX_URI_LENGTH               256
+#define REDFISH_ATTRIBUTE_MEMBERS    "Members"
 
 ///
 /// Definition of REDFISH_TASK_SERVICE_PRIVATE
