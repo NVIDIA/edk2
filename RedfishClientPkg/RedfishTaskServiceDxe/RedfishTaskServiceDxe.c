@@ -716,6 +716,7 @@ RedfishTaskServiceOnRedfishAfterProvisioning (
   OUT VOID       *Context
   )
 {
+  EFI_STATUS                     Status;
   LIST_ENTRY                     *Node;
   LIST_ENTRY                     *NextNode;
   REDFISH_TASK_REGISTERED_ENTRY  *RegisteredEntry;
@@ -731,14 +732,19 @@ RedfishTaskServiceOnRedfishAfterProvisioning (
   //
   // Release all resources.
   //
-  gBS->UninstallMultipleProtocolInterfaces (
-         &mRedfishTaskServicePrivate->ImageHandle,
-         &gEdkIIRedfishTaskProtocolGuid,
-         &mRedfishTaskServicePrivate->TaskProtocol,
-         &gEdkIIRedfishConfigHandlerProtocolGuid,
-         &mRedfishTaskServicePrivate->ConfigHandler,
-         NULL
-         );
+  mRedfishTaskServicePrivate->ConfigHandler.Stop (&mRedfishTaskServicePrivate->ConfigHandler);
+  Status = gBS->UninstallMultipleProtocolInterfaces (
+                  &mRedfishTaskServicePrivate->ImageHandle,
+                  &gEdkIIRedfishTaskProtocolGuid,
+                  &mRedfishTaskServicePrivate->TaskProtocol,
+                  &gEdkIIRedfishConfigHandlerProtocolGuid,
+                  &mRedfishTaskServicePrivate->ConfigHandler,
+                  NULL
+                  );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: cannot uninstall protocols: %r\n", __func__, Status));
+    return;
+  }
 
   if (!IsListEmpty (&mRedfishTaskServicePrivate->RegisteredList)) {
     Node = GetFirstNode (&mRedfishTaskServicePrivate->RegisteredList);
