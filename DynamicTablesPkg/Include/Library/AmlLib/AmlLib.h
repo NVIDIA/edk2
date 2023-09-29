@@ -59,6 +59,39 @@ typedef void *AML_DATA_NODE_HANDLE;
 
 #endif // AML_HANDLE
 
+/** Cacheable parameter values
+
+  Possible values are:
+    0-The memory is non-cacheable
+    1-The memory is cacheable
+    2-The memory is cacheable and supports
+      write combining
+    3-The memory is cacheable and prefetchable
+
+**/
+typedef enum {
+  AML_MEMORY_NONCACHEABLE = 0,
+  AML_MEMORY_CACHEABLE    = 1,
+  AML_MEMORY_CACHEABLE_WC = 2,
+  AML_MEMORY_CACHEABLE_PF = 3
+} AML_MEMORY_CACHEABILITY;
+
+/** MemoryRangeType parameter values
+
+  Possible values are:
+    0-AddressRangeMemory
+    1-AddressRangeReserved
+    2-AddressRangeACPI
+    3-AddressRangeNVS
+
+**/
+typedef enum {
+  AML_MEMORY_RANGE_TYPE_MEMORY   = 0,
+  AML_MEMORY_RANGE_TYPE_RESERVED = 1,
+  AML_MEMORY_RANGE_TYPE_ACPI     = 2,
+  AML_MEMORY_RANGE_TYPE_NVS      = 3
+} AML_MEMORY_RANGE_TYPE;
+
 /** Parse the definition block.
 
   The function parses the whole AML blob. It starts with the ACPI DSDT/SSDT
