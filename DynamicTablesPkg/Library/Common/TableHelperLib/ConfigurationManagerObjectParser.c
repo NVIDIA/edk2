@@ -767,6 +767,10 @@ STATIC CONST CM_OBJ_PARSER_ARRAY  ArmNamespaceObjectParser[] = {
     ARRAY_SIZE (CmArmPccSubspaceType5InfoParser) },
   { "EArmObjEtInfo",                       CmArmEtInfo,
     ARRAY_SIZE (CmArmEtInfo) },
+  { "EArmObjMscNodeInfo",                  NULL,                                  0                                },
+  { "EArmObjResNodeInfo",                  NULL,                                  0                                },
+  { "EArmObjFuncDepInfo",                  NULL,                                  0                                },
+  { "EArmObjTpm2InterfaceInfo",            NULL,                                  0                                },
   { "EArmObjMax",                          NULL,                                  0                                },
 };
 
@@ -792,6 +796,7 @@ STATIC CONST CM_OBJ_PARSER  StdObjAcpiTableInfoParser[] = {
 /** A parser for EStdObjSmbiosTableList.
 */
 STATIC CONST CM_OBJ_PARSER  StdObjSmbiosTableInfoParser[] = {
+  { "Type",             sizeof (SMBIOS_TABLE_TYPE),         "0x%u", NULL },
   { "TableGeneratorId", sizeof (SMBIOS_TABLE_GENERATOR_ID), "0x%x", NULL },
   { "SmbiosTableData",  sizeof (SMBIOS_STRUCTURE *),        "0x%p", NULL }
 };
@@ -805,7 +810,34 @@ STATIC CONST CM_OBJ_PARSER_ARRAY  StdNamespaceObjectParser[] = {
     ARRAY_SIZE (StdObjAcpiTableInfoParser) },
   { "EStdObjSmbiosTableList", StdObjSmbiosTableInfoParser,
     ARRAY_SIZE (StdObjSmbiosTableInfoParser) },
-  { "EStdObjMax",             NULL,                       0}
+  { "EStdObjIpmiDeviceInfo",  NULL,                       0  },
+  { "EStdObjMax",             NULL,                       0  }
+};
+
+/** A parser for SMBIOS namespace objects.
+*/
+STATIC CONST CM_OBJ_PARSER_ARRAY  SmbiosNamespaceObjectParser[] = {
+  { "ESmbiosObjReserved",                 NULL, 0 },
+  { "ESmbiosObjBaseboardInfo",            NULL, 0 },
+  { "ESmbiosObjSystemSlotInfo",           NULL, 0 },
+  { "ESmbiosObjSystemInfo",               NULL, 0 },
+  { "ESmbiosObjTpmDeviceInfo",            NULL, 0 },
+  { "ESmbiosObjOemStrings",               NULL, 0 },
+  { "ESmbiosObjPortConnectorInfo",        NULL, 0 },
+  { "ESmbiosObjBiosInfo",                 NULL, 0 },
+  { "ESmbiosObjOnboardDeviceExInfo",      NULL, 0 },
+  { "ESmbiosObjGroupAssociations",        NULL, 0 },
+  { "ESmbiosObjBiosLanguageInfo",         NULL, 0 },
+  { "ESmbiosObjEnclosureInfo",            NULL, 0 },
+  { "ESmbiosObjMemoryDeviceInfo",         NULL, 0 },
+  { "ESmbiosObjSystemBootInfo",           NULL, 0 },
+  { "ESmbiosObjPhysicalMemoryArray",      NULL, 0 },
+  { "ESmbiosObjMemoryArrayMappedAddress", NULL, 0 },
+  { "ESmbiosObjPowerSupplyInfo",          NULL, 0 },
+  { "ESmbiosObjFirmwareInventoryInfo",    NULL, 0 },
+  { "ESmbiosObjProcessorInfo",            NULL, 0 },
+  { "ESmbiosObjCacheInfo",                NULL, 0 },
+  { "ESmbiosObjMax",                      NULL, 0 }
 };
 
 /** Print string data.
@@ -1098,6 +1130,20 @@ ParseCmObjDesc (
       }
 
       ParserArray = &ArmNamespaceObjectParser[ObjId];
+      break;
+    case EObjNameSpaceSmbios:
+      if (ObjId >= ESmbiosObjMax) {
+        ASSERT (0);
+        return;
+      }
+
+      if (ObjId >= ARRAY_SIZE (SmbiosNamespaceObjectParser)) {
+        DEBUG ((DEBUG_ERROR, "ObjId 0x%x is missing from the SmbiosNamespaceObjectParser array\n", ObjId));
+        ASSERT (0);
+        return;
+      }
+
+      ParserArray = &SmbiosNamespaceObjectParser[ObjId];
       break;
     default:
       // Not supported
