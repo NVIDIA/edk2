@@ -969,6 +969,7 @@ STATIC CONST CM_OBJ_PARSER  StdObjAcpiTableInfoParser[] = {
 /** A parser for EStdObjSmbiosTableList.
 */
 STATIC CONST CM_OBJ_PARSER  StdObjSmbiosTableInfoParser[] = {
+  { "Type",             sizeof (SMBIOS_TABLE_TYPE),         "0x%u", NULL },
   { "TableGeneratorId", sizeof (SMBIOS_TABLE_GENERATOR_ID), "0x%x", NULL },
   { "SmbiosTableData",  sizeof (SMBIOS_STRUCTURE *),        "0x%p", NULL }
 };
@@ -980,6 +981,33 @@ STATIC CONST CM_OBJ_PARSER_ARRAY  StdNamespaceObjectParser[] = {
   CM_PARSER_ADD_OBJECT (EStdObjAcpiTableList,   StdObjAcpiTableInfoParser),
   CM_PARSER_ADD_OBJECT (EStdObjSmbiosTableList, StdObjSmbiosTableInfoParser),
   CM_PARSER_ADD_OBJECT_RESERVED (EStdObjMax)
+};
+
+/** A parser for SMBIOS namespace objects.
+*/
+STATIC CONST CM_OBJ_PARSER_ARRAY  SmbiosNamespaceObjectParser[] = {
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjReserved),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjBaseboardInfo),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjSystemSlotInfo),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjSystemInfo),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjTpmDeviceInfo),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjOemStrings),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjPortConnectorInfo),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjBiosInfo),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjOnboardDeviceExInfo),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjGroupAssociations),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjBiosLanguageInfo),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjEnclosureInfo),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjMemoryDeviceInfo),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjSystemBootInfo),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjPhysicalMemoryArray),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjMemoryArrayMappedAddress),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjPowerSupplyInfo),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjFirmwareInventoryInfo),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjIpmiDeviceInfo),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjProcessorInfo),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjCacheInfo),
+  CM_PARSER_ADD_OBJECT_RESERVED (ESmbiosObjMax)
 };
 
 /** Print string data.
@@ -1298,6 +1326,21 @@ ParseCmObjDesc (
       }
 
       ParserArray = &X64NamespaceObjectParser[ObjId];
+      break;
+
+    case EObjNameSpaceSmbios:
+      if (ObjId >= ESmbiosObjMax) {
+        ASSERT (0);
+        return;
+      }
+
+      if (ObjId >= ARRAY_SIZE (SmbiosNamespaceObjectParser)) {
+        DEBUG ((DEBUG_ERROR, "ObjId 0x%x is missing from the SmbiosNamespaceObjectParser array\n", ObjId));
+        ASSERT (0);
+        return;
+      }
+
+      ParserArray = &SmbiosNamespaceObjectParser[ObjId];
       break;
 
     default:
