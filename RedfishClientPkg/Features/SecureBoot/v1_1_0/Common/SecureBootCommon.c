@@ -772,7 +772,7 @@ HandleResource (
 
   DEBUG ((REDFISH_DEBUG_TRACE, "%a: process resource for: %s\n", __func__, Uri));
 
-  Status = GetRedfishSchemaInfo (Private->RedfishService, Private->JsonStructProtocol, Uri, &SchemaInfo);
+  Status = GetRedfishSchemaInfo (Private->RedfishService, Private->JsonStructProtocol, Uri, NULL, &SchemaInfo);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: failed to get schema information from: %s %r\n", __func__, Uri, Status));
     return Status;
@@ -785,7 +785,7 @@ HandleResource (
   DEBUG ((REDFISH_DEBUG_TRACE, "%a: Identify for %s\n", __func__, Uri));
   ConfigLang = RedfishGetConfigLanguage (Uri);
   if (ConfigLang == NULL) {
-    Status = EdkIIRedfishResourceConfigIdentify (&SchemaInfo, Uri, Private->InformationExchange);
+    Status = EdkIIRedfishResourceConfigIdentify (&SchemaInfo, Uri, NULL, Private->InformationExchange);
     if (EFI_ERROR (Status)) {
       if (Status == EFI_UNSUPPORTED) {
         DEBUG ((REDFISH_DEBUG_TRACE, "%a: \"%s\" is not handled by us\n", __func__, Uri));
@@ -808,7 +808,7 @@ HandleResource (
   // If not, we sill do provision.
   //
   DEBUG ((REDFISH_DEBUG_TRACE, "%a Check for %s\n", __func__, Uri));
-  Status = EdkIIRedfishResourceConfigCheck (&SchemaInfo, Uri);
+  Status = EdkIIRedfishResourceConfigCheck (&SchemaInfo, Uri, NULL);
   if (EFI_ERROR (Status)) {
     if (Status == EFI_UNSUPPORTED) {
       DEBUG ((REDFISH_DEBUG_TRACE, "%a: \"%s\" is not handled by us\n", __func__, Uri));
@@ -819,7 +819,7 @@ HandleResource (
     // The target property does not exist, do the provision to create property.
     //
     DEBUG ((REDFISH_DEBUG_TRACE, "%a provision for %s\n", __func__, Uri));
-    Status = EdkIIRedfishResourceConfigProvisionging (&SchemaInfo, Uri, Private->InformationExchange, FALSE);
+    Status = EdkIIRedfishResourceConfigProvisioning (&SchemaInfo, Uri, NULL, Private->InformationExchange, FALSE);
     if (EFI_ERROR (Status)) {
       DEBUG ((DEBUG_ERROR, "%a: failed to provision with GET mode: %r\n", __func__, Status));
     }
@@ -833,7 +833,7 @@ HandleResource (
   // Consume first.
   //
   DEBUG ((REDFISH_DEBUG_TRACE, "%a consume for %s\n", __func__, Uri));
-  Status = EdkIIRedfishResourceConfigConsume (&SchemaInfo, Uri);
+  Status = EdkIIRedfishResourceConfigConsume (&SchemaInfo, Uri, NULL);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: failed to consume resource for: %s: %r\n", __func__, Uri, Status));
   }
@@ -842,7 +842,7 @@ HandleResource (
   // Patch.
   //
   DEBUG ((REDFISH_DEBUG_TRACE, "%a update for %s\n", __func__, Uri));
-  Status = EdkIIRedfishResourceConfigUpdate (&SchemaInfo, Uri);
+  Status = EdkIIRedfishResourceConfigUpdate (&SchemaInfo, Uri, NULL);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: failed to update resource for: %s: %r\n", __func__, Uri, Status));
   }

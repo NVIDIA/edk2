@@ -48,7 +48,7 @@ HandleResource (
   // The target property does not exist, do the provision to create property.
   //
   DEBUG ((REDFISH_DEBUG_TRACE, "%a provision for %s\n", __func__, Uri));
-  Status = EdkIIRedfishResourceConfigProvisionging (&SchemaInfo, Uri, Private->InformationExchange, FALSE);
+  Status = EdkIIRedfishResourceConfigProvisioning (&SchemaInfo, Uri, NULL, Private->InformationExchange, FALSE);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: failed to provision with GET mode: %r\n", __func__, Status));
   }

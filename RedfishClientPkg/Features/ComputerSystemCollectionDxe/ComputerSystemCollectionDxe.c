@@ -36,7 +36,7 @@ HandleResource (
 
   DEBUG ((REDFISH_DEBUG_TRACE, "%a: process resource for: %s\n", __FUNCTION__, Uri));
 
-  Status = GetRedfishSchemaInfo (Private->RedfishService, Private->JsonStructProtocol, Uri, &SchemaInfo);
+  Status = GetRedfishSchemaInfo (Private->RedfishService, Private->JsonStructProtocol, Uri, NULL, &SchemaInfo);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: failed to get schema information from: %s %r\n", __FUNCTION__, Uri, Status));
     return Status;
@@ -50,7 +50,7 @@ HandleResource (
   SystemRestDetected = FALSE;
   ConfigLang         = RedfishGetConfigLanguage (Uri);
   if (ConfigLang == NULL) {
-    Status = EdkIIRedfishResourceConfigIdentify (&SchemaInfo, Uri, Private->InformationExchange);
+    Status = EdkIIRedfishResourceConfigIdentify (&SchemaInfo, Uri, NULL, Private->InformationExchange);
     if (EFI_ERROR (Status)) {
       if (Status == EFI_UNSUPPORTED) {
         DEBUG ((REDFISH_DEBUG_TRACE, "%a: \"%s\" is not handled by us\n", __FUNCTION__, Uri));
@@ -102,7 +102,7 @@ HandleResource (
   // If not, we sill do provision.
   //
   DEBUG ((REDFISH_DEBUG_TRACE, "%a Check for %s\n", __FUNCTION__, Uri));
-  Status = EdkIIRedfishResourceConfigCheck (&SchemaInfo, Uri);
+  Status = EdkIIRedfishResourceConfigCheck (&SchemaInfo, Uri, NULL);
   if (EFI_ERROR (Status)) {
     if (Status == EFI_UNSUPPORTED) {
       DEBUG ((REDFISH_DEBUG_TRACE, "%a: \"%s\" is not handled by us\n", __FUNCTION__, Uri));
@@ -113,7 +113,7 @@ HandleResource (
     // The target property does not exist, do the provision to create property.
     //
     DEBUG ((REDFISH_DEBUG_TRACE, "%a provision for %s\n", __FUNCTION__, Uri));
-    Status = EdkIIRedfishResourceConfigProvisionging (&SchemaInfo, Uri, Private->InformationExchange, FALSE);
+    Status = EdkIIRedfishResourceConfigProvisioning (&SchemaInfo, Uri, NULL, Private->InformationExchange, FALSE);
     if (EFI_ERROR (Status)) {
       DEBUG ((DEBUG_ERROR, "%a: failed to provision with GET mode: %r\n", __FUNCTION__, Status));
     }
@@ -128,7 +128,7 @@ HandleResource (
     DEBUG ((REDFISH_DEBUG_TRACE, "%a system has been reset to default setting. ignore pending settings because they may be stale values\n", __FUNCTION__));
   } else {
     DEBUG ((REDFISH_DEBUG_TRACE, "%a consume for %s\n", __FUNCTION__, Uri));
-    Status = EdkIIRedfishResourceConfigConsume (&SchemaInfo, Uri);
+    Status = EdkIIRedfishResourceConfigConsume (&SchemaInfo, Uri, NULL);
     if (EFI_ERROR (Status)) {
       DEBUG ((DEBUG_ERROR, "%a: failed to consume resource for: %s: %r\n", __FUNCTION__, Uri, Status));
     }
@@ -138,7 +138,7 @@ HandleResource (
   // Patch.
   //
   DEBUG ((REDFISH_DEBUG_TRACE, "%a update for %s\n", __FUNCTION__, Uri));
-  Status = EdkIIRedfishResourceConfigUpdate (&SchemaInfo, Uri);
+  Status = EdkIIRedfishResourceConfigUpdate (&SchemaInfo, Uri, NULL);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: failed to update resource for: %s: %r\n", __FUNCTION__, Uri, Status));
   }
@@ -248,7 +248,7 @@ CreateCollectionResource (
 
   DEBUG ((REDFISH_DEBUG_TRACE, "%a: supported schema: %a %a.%a.%a\n", __FUNCTION__, SchemaInfo.Schema, SchemaInfo.Major, SchemaInfo.Minor, SchemaInfo.Errata));
 
-  Status = EdkIIRedfishResourceConfigProvisionging (&SchemaInfo, Private->CollectionUri, Private->InformationExchange, TRUE);
+  Status = EdkIIRedfishResourceConfigProvisioning (&SchemaInfo, Private->CollectionUri, NULL, Private->InformationExchange, TRUE);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: failed to create resource for: %s: %r\n", __FUNCTION__, Private->CollectionUri, Status));
   }
