@@ -22,6 +22,7 @@
 #
 
 [Sources]
+  EdkIIRedfishResourceConfigInternal.h
   EdkIIRedfishResourceConfigLib.c
 
 [Packages]
@@ -42,8 +43,9 @@
   RedfishHttpLib
 
 [Protocols]
-  gEdkIIRedfishResourceConfigProtocolGuid   ## CONSUMES ##
+  gEdkIIRedfishResourceConfigProtocolGuid         ## CONSUMES ##
   gEdkIIRedfishFeatureInterchangeDataProtocolGuid ## CONSUMES ##
+  gEdkIIRedfishResourceConfig2ProtocolGuid        ## CONSUEMS ##
 
 [Pcd]
   gEfiRedfishClientPkgTokenSpaceGuid.PcdMaxRedfishSchemaStringSize

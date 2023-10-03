@@ -7,32 +7,23 @@
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
-#include <RedfishBase.h>
-#include <Library/BaseLib.h>
-#include <Library/DebugLib.h>
-#include <Library/BaseMemoryLib.h>
-#include <Library/MemoryAllocationLib.h>
-#include <Library/UefiBootServicesTableLib.h>
-#include <Library/EdkIIRedfishResourceConfigLib.h>
-#include <Library/RedfishFeatureUtilityLib.h>
-#include <Library/RedfishPlatformConfigLib.h>
-#include <Library/RedfishHttpLib.h>
 
-EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL           *mRedfishResourceConfigProtocol = NULL;
-EFI_HANDLE                                       mCachedHandle;
+#include "EdkIIRedfishResourceConfigInternal.h"
+
+REDFISH_CONFIG_PROTOCOL_CACHE                    *mRedfishResourceConfigCache  = NULL;
+REDFISH_CONFIG_PROTOCOL_CACHE                    *mRedfishResourceConfig2Cache = NULL;
 EDKII_REDFISH_FEATURE_INTERCHANGE_DATA_PROTOCOL  mRedfishFeatureInterchangeData;
-REDFISH_SCHEMA_INFO                              mSchemaInfoCache;
-
-#define SCHEMA_NAME_PREFIX         "x-uefi-redfish-"
-#define SCHEMA_NAME_PREFIX_OFFSET  (AsciiStrLen (SCHEMA_NAME_PREFIX))
 
 /**
 
-  Get schema information by given protocol and service instance.
+  Get schema information by given protocol and service instance if JsonText
+  is NULL or empty. When JsonText is provided by caller, this function read
+  schema information from JsonText.
 
   @param[in]  RedfishService      Pointer to Redfish service instance.
   @param[in]  JsonStructProtocol  Json Structure protocol instance.
   @param[in]  Uri                 Target URI.
+  @param[in]  JsonText            Redfish data in JSON format. This is optional.
   @param[out] SchemaInfo          Returned schema information.
 
   @retval     EFI_SUCCESS         Schema information is returned successfully.
@@ -40,34 +31,45 @@ REDFISH_SCHEMA_INFO                              mSchemaInfoCache;
 
 **/
 EFI_STATUS
+EFIAPI
 GetRedfishSchemaInfo (
   IN  REDFISH_SERVICE                   *RedfishService,
   IN  EFI_REST_JSON_STRUCTURE_PROTOCOL  *JsonStructProtocol,
   IN  EFI_STRING                        Uri,
+  IN  CHAR8                             *JsonText OPTIONAL,
   OUT REDFISH_SCHEMA_INFO               *SchemaInfo
   )
 {
   EFI_STATUS                      Status;
   REDFISH_RESPONSE                Response;
-  REDFISH_PAYLOAD                 Payload;
-  CHAR8                           *JsonText;
+  CHAR8                           *JsonData;
   EFI_REST_JSON_STRUCTURE_HEADER  *Header;
 
   if ((RedfishService == NULL) || (JsonStructProtocol == NULL) || IS_EMPTY_STRING (Uri) || (SchemaInfo == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = RedfishHttpGetResource (RedfishService, Uri, &Response, TRUE);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: failed to get resource from %s: %r", __FUNCTION__, Uri, Status));
-    return Status;
+  JsonData = NULL;
+  Header   = NULL;
+  ZeroMem (&Response, sizeof (Response));
+  if (IS_EMPTY_STRING (JsonText)) {
+    Status = RedfishHttpGetResource (RedfishService, Uri, &Response, TRUE);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: failed to get resource from %s: %r", __func__, Uri, Status));
+      return Status;
+    }
+
+    if (Response.Payload != NULL) {
+      JsonData = JsonDumpString (RedfishJsonInPayload (Response.Payload), EDKII_JSON_COMPACT);
+    }
+  } else {
+    JsonData = AllocateCopyPool (AsciiStrSize (JsonText), JsonText);
   }
 
-  Payload = Response.Payload;
-  ASSERT (Payload != NULL);
-
-  JsonText = JsonDumpString (RedfishJsonInPayload (Payload), EDKII_JSON_COMPACT);
-  ASSERT (JsonText != NULL);
+  if (IS_EMPTY_STRING (JsonData)) {
+    Status = EFI_NOT_FOUND;
+    goto ON_RELEASE;
+  }
 
   //
   // Convert JSON text to C structure.
@@ -75,12 +77,12 @@ GetRedfishSchemaInfo (
   Status = JsonStructProtocol->ToStructure (
                                  JsonStructProtocol,
                                  NULL,
-                                 JsonText,
+                                 JsonData,
                                  &Header
                                  );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: ToStructure() failed: %r\n", __FUNCTION__, Status));
-    return Status;
+    DEBUG ((DEBUG_ERROR, "%a: ToStructure() failed: %r\n", __func__, Status));
+    goto ON_RELEASE;
   }
 
   AsciiStrCpyS (SchemaInfo->Schema, REDFISH_SCHEMA_STRING_SIZE, Header->JsonRsrcIdentifier.NameSpace.ResourceTypeName);
@@ -88,6 +90,7 @@ GetRedfishSchemaInfo (
   AsciiStrCpyS (SchemaInfo->Minor, REDFISH_SCHEMA_VERSION_SIZE, Header->JsonRsrcIdentifier.NameSpace.MinorVersion);
   AsciiStrCpyS (SchemaInfo->Errata, REDFISH_SCHEMA_VERSION_SIZE, Header->JsonRsrcIdentifier.NameSpace.ErrataVersion);
 
+ON_RELEASE:
   //
   // Release resource.
   //
@@ -95,10 +98,13 @@ GetRedfishSchemaInfo (
     RedfishHttpFreeResource (&Response);
   }
 
-  JsonStructProtocol->DestoryStructure (JsonStructProtocol, Header);
-  FreePool (JsonText);
+  if (JsonData != NULL) {
+    FreePool (JsonData);
+  }
 
-  return EFI_SUCCESS;
+  JsonStructProtocol->DestoryStructure (JsonStructProtocol, Header);
+
+  return Status;
 }
 
 /**
@@ -113,6 +119,7 @@ GetRedfishSchemaInfo (
 
 **/
 EFI_STATUS
+EFIAPI
 GetSupportedSchemaVersion (
   IN   CHAR8                *Schema,
   OUT  REDFISH_SCHEMA_INFO  *SchemaInfo
@@ -254,17 +261,17 @@ GetRedfishResourceConfigProtocol (
     return NULL;
   }
 
-  if (mRedfishResourceConfigProtocol != NULL) {
-    if ((AsciiStrCmp (Schema->Schema, mSchemaInfoCache.Schema) == 0) &&
-        (AsciiStrCmp (Schema->Major, mSchemaInfoCache.Major) == 0) &&
-        (AsciiStrCmp (Schema->Minor, mSchemaInfoCache.Minor) == 0) &&
-        (AsciiStrCmp (Schema->Errata, mSchemaInfoCache.Errata) == 0))
+  if ((mRedfishResourceConfigCache != NULL) && (mRedfishResourceConfigCache->RedfishResourceConfig.ConfigProtocol != NULL)) {
+    if ((AsciiStrCmp (Schema->Schema, mRedfishResourceConfigCache->SchemaInfoCache.Schema) == 0) &&
+        (AsciiStrCmp (Schema->Major, mRedfishResourceConfigCache->SchemaInfoCache.Major) == 0) &&
+        (AsciiStrCmp (Schema->Minor, mRedfishResourceConfigCache->SchemaInfoCache.Minor) == 0) &&
+        (AsciiStrCmp (Schema->Errata, mRedfishResourceConfigCache->SchemaInfoCache.Errata) == 0))
     {
       if (Handle != NULL) {
-        *Handle = mCachedHandle;
+        *Handle = mRedfishResourceConfigCache->CachedHandle;
       }
 
-      return mRedfishResourceConfigProtocol;
+      return mRedfishResourceConfigCache->RedfishResourceConfig.ConfigProtocol;
     }
   }
 
@@ -307,9 +314,116 @@ GetRedfishResourceConfigProtocol (
   }
 
   if (Found) {
-    mCachedHandle                  = HandleBuffer[Index];
-    mRedfishResourceConfigProtocol = Protocol;
-    CopyMem (&mSchemaInfoCache, Schema, sizeof (REDFISH_SCHEMA_INFO));
+    if (mRedfishResourceConfigCache != NULL) {
+      mRedfishResourceConfigCache->CachedHandle                         = HandleBuffer[Index];
+      mRedfishResourceConfigCache->RedfishResourceConfig.ConfigProtocol = Protocol;
+      CopyMem (&mRedfishResourceConfigCache->SchemaInfoCache, Schema, sizeof (REDFISH_SCHEMA_INFO));
+    }
+
+    if (Handle != NULL) {
+      *Handle = HandleBuffer[Index];
+    }
+  }
+
+  FreePool (HandleBuffer);
+
+  return (Found ? Protocol : NULL);
+}
+
+/**
+
+  Find Redfish Resource Config2 Protocol that supports given schema and version.
+
+  @param[in]  Schema      Schema name.
+  @param[out] Handle      Pointer to receive the handle that has EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL
+                          installed on it.
+
+  @retval     EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL *    Pointer to protocol
+  @retval     NULL                                         No protocol found.
+
+**/
+EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL  *
+GetRedfishResourceConfig2Protocol (
+  IN  REDFISH_SCHEMA_INFO  *Schema,
+  OUT EFI_HANDLE           *Handle OPTIONAL
+  )
+{
+  EFI_STATUS                               Status;
+  EFI_HANDLE                               *HandleBuffer;
+  UINTN                                    NumberOfHandles;
+  UINTN                                    Index;
+  EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL  *Protocol;
+  REDFISH_SCHEMA_INFO                      SchemaInfo;
+  BOOLEAN                                  Found;
+
+  if (IS_EMPTY_STRING (Schema->Schema) ||
+      IS_EMPTY_STRING (Schema->Major) ||
+      IS_EMPTY_STRING (Schema->Minor) ||
+      IS_EMPTY_STRING (Schema->Errata)
+      )
+  {
+    return NULL;
+  }
+
+  if ((mRedfishResourceConfig2Cache != NULL) && (mRedfishResourceConfig2Cache->RedfishResourceConfig.Config2Protocol != NULL)) {
+    if ((AsciiStrCmp (Schema->Schema, mRedfishResourceConfig2Cache->SchemaInfoCache.Schema) == 0) &&
+        (AsciiStrCmp (Schema->Major, mRedfishResourceConfig2Cache->SchemaInfoCache.Major) == 0) &&
+        (AsciiStrCmp (Schema->Minor, mRedfishResourceConfig2Cache->SchemaInfoCache.Minor) == 0) &&
+        (AsciiStrCmp (Schema->Errata, mRedfishResourceConfig2Cache->SchemaInfoCache.Errata) == 0))
+    {
+      if (Handle != NULL) {
+        *Handle = mRedfishResourceConfig2Cache->CachedHandle;
+      }
+
+      return mRedfishResourceConfig2Cache->RedfishResourceConfig.Config2Protocol;
+    }
+  }
+
+  Status = gBS->LocateHandleBuffer (
+                  ByProtocol,
+                  &gEdkIIRedfishResourceConfig2ProtocolGuid,
+                  NULL,
+                  &NumberOfHandles,
+                  &HandleBuffer
+                  );
+  if (EFI_ERROR (Status)) {
+    return NULL;
+  }
+
+  Found = FALSE;
+
+  for (Index = 0; Index < NumberOfHandles; Index++) {
+    Status = gBS->HandleProtocol (
+                    HandleBuffer[Index],
+                    &gEdkIIRedfishResourceConfig2ProtocolGuid,
+                    (VOID **)&Protocol
+                    );
+    if (EFI_ERROR (Status)) {
+      continue;
+    }
+
+    Status = Protocol->GetInfo (Protocol, &SchemaInfo);
+    if (EFI_ERROR (Status)) {
+      continue;
+    }
+
+    if ((AsciiStrCmp (Schema->Schema, SchemaInfo.Schema) == 0) &&
+        (AsciiStrCmp (Schema->Major, SchemaInfo.Major) == 0) &&
+        (AsciiStrCmp (Schema->Minor, SchemaInfo.Minor) == 0) &&
+        (AsciiStrCmp (Schema->Errata, SchemaInfo.Errata) == 0))
+    {
+      Found = TRUE;
+      break;
+    }
+  }
+
+  if (Found) {
+    if (mRedfishResourceConfig2Cache != NULL) {
+      mRedfishResourceConfig2Cache->CachedHandle                          = HandleBuffer[Index];
+      mRedfishResourceConfig2Cache->RedfishResourceConfig.Config2Protocol = Protocol;
+      CopyMem (&mRedfishResourceConfig2Cache->SchemaInfoCache, Schema, sizeof (REDFISH_SCHEMA_INFO));
+    }
+
     if (Handle != NULL) {
       *Handle = HandleBuffer[Index];
     }
@@ -376,6 +490,7 @@ InstallInterchangeDataProtocol (
 
 **/
 EFI_STATUS
+EFIAPI
 EdkIIRedfishResourceSetConfigureLang (
   IN EFI_HANDLE                                   ImageHandle,
   IN REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG_LIST  *ConfigLangList
@@ -399,7 +514,7 @@ EdkIIRedfishResourceSetConfigureLang (
                   (VOID **)&Interface
                   );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: EDKII_REDFISH_FEATURE_INTERCHANGE_DATA_PROTOCOL is not installed on %p: %r\n", __FUNCTION__, ImageHandle, Status));
+    DEBUG ((DEBUG_ERROR, "%a: EDKII_REDFISH_FEATURE_INTERCHANGE_DATA_PROTOCOL is not installed on %p: %r\n", __func__, ImageHandle, Status));
     return Status;
   }
 
@@ -408,7 +523,7 @@ EdkIIRedfishResourceSetConfigureLang (
   Interface->ResourceInformationExchage->ReturnedInformation.ConfigureLanguageList.List  =
     AllocateZeroPool (sizeof (REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG) * ConfigLangList->Count);
   if (Interface->ResourceInformationExchage->ReturnedInformation.ConfigureLanguageList.List == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a: Fail to allocate memory for REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: Fail to allocate memory for REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG.\n", __func__));
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -435,6 +550,7 @@ EdkIIRedfishResourceSetConfigureLang (
 
 **/
 EFI_STATUS
+EFIAPI
 EdkIIRedfishResourceSetConfigureLangString (
   IN EFI_HANDLE  ImageHandle,
   IN EFI_STRING  ConfigLangString,
@@ -455,13 +571,13 @@ EdkIIRedfishResourceSetConfigureLangString (
                   (VOID **)&Interface
                   );
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: EDKII_REDFISH_FEATURE_INTERCHANGE_DATA_PROTOCOL is not installed on %p: %r\n", __FUNCTION__, ImageHandle, Status));
+    DEBUG ((DEBUG_ERROR, "%a: EDKII_REDFISH_FEATURE_INTERCHANGE_DATA_PROTOCOL is not installed on %p: %r\n", __func__, ImageHandle, Status));
     return Status;
   }
 
   ConfigLang = AllocateZeroPool (sizeof (REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG));
   if (ConfigLang == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a: Fail to allocate memory for REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG.\n", __FUNCTION__));
+    DEBUG ((DEBUG_ERROR, "%a: Fail to allocate memory for REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG.\n", __func__));
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -479,10 +595,11 @@ EdkIIRedfishResourceSetConfigureLangString (
 }
 
 /**
-  Provising redfish resource by given URI.
+  Provision redfish resource by given URI.
 
   @param[in]   Schema              Redfish schema information.
   @param[in]   Uri                 Target URI to create resource.
+  @param[in]   JsonText            The JSON data in ASCII string format. This is optional.
   @param[in]   InformationExchange Pointer to RESOURCE_INFORMATION_EXCHANGE.
   @param[in]   HttpPostMode        TRUE if resource does not exist, HTTP POST method is used.
                                    FALSE if the resource exist but some of properties are missing,
@@ -493,18 +610,41 @@ EdkIIRedfishResourceSetConfigureLangString (
 
 **/
 EFI_STATUS
-EdkIIRedfishResourceConfigProvisionging (
+EFIAPI
+EdkIIRedfishResourceConfigProvisioning (
   IN     REDFISH_SCHEMA_INFO            *Schema,
   IN     EFI_STRING                     Uri,
+  IN     CHAR8                          *JsonText OPTIONAL,
   IN     RESOURCE_INFORMATION_EXCHANGE  *InformationExchange,
   IN     BOOLEAN                        HttpPostMode
   )
 {
-  EFI_HANDLE                              Handle;
-  EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL  *protocol;
+  EFI_HANDLE                               Handle;
+  EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL   *ConfigProtocol;
+  EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL  *Config2Protocol;
 
-  protocol = GetRedfishResourceConfigProtocol (Schema, &Handle);
-  if ((protocol == NULL) || (Handle == NULL)) {
+  //
+  // Initialization.
+  //
+  Handle          = NULL;
+  ConfigProtocol  = NULL;
+  Config2Protocol = NULL;
+
+  //
+  // Try to use config2 protocol first.
+  //
+  Config2Protocol = GetRedfishResourceConfig2Protocol (Schema, &Handle);
+  if ((Config2Protocol != NULL) && (Handle != NULL)) {
+    //
+    // Install EDKII_REDFISH_FEATURE_INTERCHANGE_DATA_PROTOCOL on the child
+    // feature driver handle.
+    //
+    InstallInterchangeDataProtocol (Handle, InformationExchange);
+    return Config2Protocol->Provisioning (Config2Protocol, Uri, JsonText, HttpPostMode);
+  }
+
+  ConfigProtocol = GetRedfishResourceConfigProtocol (Schema, &Handle);
+  if ((ConfigProtocol == NULL) || (Handle == NULL)) {
     return EFI_DEVICE_ERROR;
   }
 
@@ -513,7 +653,7 @@ EdkIIRedfishResourceConfigProvisionging (
   // feature driver handle.
   //
   InstallInterchangeDataProtocol (Handle, InformationExchange);
-  return protocol->Provisioning (protocol, Uri, HttpPostMode);
+  return ConfigProtocol->Provisioning (ConfigProtocol, Uri, HttpPostMode);
 }
 
 /**
@@ -521,25 +661,43 @@ EdkIIRedfishResourceConfigProvisionging (
 
   @param[in]   Schema              Redfish schema information.
   @param[in]   Uri                 The target URI to consume.
+  @param[in]   JsonText            The JSON data in ASCII string format. This is optional.
 
   @retval EFI_SUCCESS              Value is returned successfully.
   @retval Others                   Some error happened.
 
 **/
 EFI_STATUS
+EFIAPI
 EdkIIRedfishResourceConfigConsume (
   IN     REDFISH_SCHEMA_INFO  *Schema,
-  IN     EFI_STRING           Uri
+  IN     EFI_STRING           Uri,
+  IN     CHAR8                *JsonText OPTIONAL
   )
 {
-  EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL  *protocol;
+  EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL   *ConfigProtocol;
+  EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL  *Config2Protocol;
 
-  protocol = GetRedfishResourceConfigProtocol (Schema, NULL);
-  if (protocol == NULL) {
+  //
+  // Initialization.
+  //
+  ConfigProtocol  = NULL;
+  Config2Protocol = NULL;
+
+  //
+  // Try to use config2 protocol first.
+  //
+  Config2Protocol = GetRedfishResourceConfig2Protocol (Schema, NULL);
+  if (Config2Protocol != NULL) {
+    return Config2Protocol->Consume (Config2Protocol, Uri, JsonText);
+  }
+
+  ConfigProtocol = GetRedfishResourceConfigProtocol (Schema, NULL);
+  if (ConfigProtocol == NULL) {
     return EFI_DEVICE_ERROR;
   }
 
-  return protocol->Consume (protocol, Uri);
+  return ConfigProtocol->Consume (ConfigProtocol, Uri);
 }
 
 /**
@@ -547,51 +705,86 @@ EdkIIRedfishResourceConfigConsume (
 
   @param[in]   Schema              Redfish schema information.
   @param[in]   Uri                 The target URI to consume.
+  @param[in]   JsonText            The JSON data in ASCII string format. This is optional.
 
   @retval EFI_SUCCESS              Value is returned successfully.
   @retval Others                   Some error happened.
 
 **/
 EFI_STATUS
+EFIAPI
 EdkIIRedfishResourceConfigUpdate (
   IN     REDFISH_SCHEMA_INFO  *Schema,
-  IN     EFI_STRING           Uri
+  IN     EFI_STRING           Uri,
+  IN     CHAR8                *JsonText OPTIONAL
   )
 {
-  EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL  *protocol;
+  EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL   *ConfigProtocol;
+  EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL  *Config2Protocol;
 
-  protocol = GetRedfishResourceConfigProtocol (Schema, NULL);
-  if (protocol == NULL) {
+  //
+  // Initialization.
+  //
+  ConfigProtocol  = NULL;
+  Config2Protocol = NULL;
+
+  //
+  // Try to use config2 protocol first.
+  //
+  Config2Protocol = GetRedfishResourceConfig2Protocol (Schema, NULL);
+  if (Config2Protocol != NULL) {
+    return Config2Protocol->Update (Config2Protocol, Uri, JsonText);
+  }
+
+  ConfigProtocol = GetRedfishResourceConfigProtocol (Schema, NULL);
+  if (ConfigProtocol == NULL) {
     return EFI_DEVICE_ERROR;
   }
 
-  return protocol->Update (protocol, Uri);
+  return ConfigProtocol->Update (ConfigProtocol, Uri);
 }
 
 /**
   Check resource on given URI.
 
-  @param[in]   Schema              Redfish schema information.
   @param[in]   Uri                 The target URI to consume.
+  @param[in]   JsonText            The JSON data in ASCII string format. This is optional.
 
   @retval EFI_SUCCESS              Value is returned successfully.
   @retval Others                   Some error happened.
 
 **/
 EFI_STATUS
+EFIAPI
 EdkIIRedfishResourceConfigCheck (
   IN     REDFISH_SCHEMA_INFO  *Schema,
-  IN     EFI_STRING           Uri
+  IN     EFI_STRING           Uri,
+  IN     CHAR8                *JsonText OPTIONAL
   )
 {
-  EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL  *protocol;
+  EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL   *ConfigProtocol;
+  EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL  *Config2Protocol;
 
-  protocol = GetRedfishResourceConfigProtocol (Schema, NULL);
-  if (protocol == NULL) {
+  //
+  // Initialization.
+  //
+  ConfigProtocol  = NULL;
+  Config2Protocol = NULL;
+
+  //
+  // Try to use config2 protocol first.
+  //
+  Config2Protocol = GetRedfishResourceConfig2Protocol (Schema, NULL);
+  if (Config2Protocol != NULL) {
+    return Config2Protocol->Check (Config2Protocol, Uri, JsonText);
+  }
+
+  ConfigProtocol = GetRedfishResourceConfigProtocol (Schema, NULL);
+  if (ConfigProtocol == NULL) {
     return EFI_DEVICE_ERROR;
   }
 
-  return protocol->Check (protocol, Uri);
+  return ConfigProtocol->Check (ConfigProtocol, Uri);
 }
 
 /**
@@ -599,6 +792,7 @@ EdkIIRedfishResourceConfigCheck (
 
   @param[in]   Schema              Redfish schema information.
   @param[in]   Uri                 The target URI to consume.
+  @param[in]   JsonText            The JSON data in ASCII string format. This is optional.
   @param[in]   InformationExchange Pointer to RESOURCE_INFORMATION_EXCHANGE.
 
   @retval EFI_SUCCESS              This is target resource which we want to handle.
@@ -607,17 +801,40 @@ EdkIIRedfishResourceConfigCheck (
 
 **/
 EFI_STATUS
+EFIAPI
 EdkIIRedfishResourceConfigIdentify (
   IN     REDFISH_SCHEMA_INFO            *Schema,
   IN     EFI_STRING                     Uri,
+  IN     CHAR8                          *JsonText OPTIONAL,
   IN     RESOURCE_INFORMATION_EXCHANGE  *InformationExchange
   )
 {
-  EFI_HANDLE                              Handle;
-  EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL  *protocol;
+  EFI_HANDLE                               Handle;
+  EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL   *ConfigProtocol;
+  EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL  *Config2Protocol;
 
-  protocol = GetRedfishResourceConfigProtocol (Schema, &Handle);
-  if (protocol == NULL) {
+  //
+  // Initialization.
+  //
+  Handle          = NULL;
+  ConfigProtocol  = NULL;
+  Config2Protocol = NULL;
+
+  //
+  // Try to use config2 protocol first.
+  //
+  Config2Protocol = GetRedfishResourceConfig2Protocol (Schema, &Handle);
+  if ((Config2Protocol != NULL) && (Handle != NULL)) {
+    //
+    // Install EDKII_REDFISH_FEATURE_INTERCHANGE_DATA_PROTOCOL on the child
+    // feature driver handle.
+    //
+    InstallInterchangeDataProtocol (Handle, InformationExchange);
+    return Config2Protocol->Identify (Config2Protocol, Uri, JsonText);
+  }
+
+  ConfigProtocol = GetRedfishResourceConfigProtocol (Schema, &Handle);
+  if (ConfigProtocol == NULL) {
     return EFI_DEVICE_ERROR;
   }
 
@@ -626,17 +843,17 @@ EdkIIRedfishResourceConfigIdentify (
   // feature driver handle.
   //
   InstallInterchangeDataProtocol (Handle, InformationExchange);
-  return protocol->Identify (protocol, Uri);
+  return ConfigProtocol->Identify (ConfigProtocol, Uri);
 }
 
 /**
 
-  Initial resource config library instace.
+  Initial resource config library instance.
 
   @param[in] ImageHandle     The image handle.
   @param[in] SystemTable     The system table.
 
-  @retval  EFI_SUCEESS  Install Boot manager menu success.
+  @retval  EFI_SUCCESS  Install Boot manager menu success.
   @retval  Other        Return error status.
 
 **/
@@ -647,8 +864,17 @@ RedfishResourceConfigConstructor (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  mRedfishResourceConfigProtocol = NULL;
-  ZeroMem (&mSchemaInfoCache, sizeof (REDFISH_SCHEMA_INFO));
+  mRedfishResourceConfigCache = AllocateZeroPool (sizeof (REDFISH_CONFIG_PROTOCOL_CACHE));
+  if (mRedfishResourceConfigCache == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  mRedfishResourceConfig2Cache = AllocateZeroPool (sizeof (REDFISH_CONFIG_PROTOCOL_CACHE));
+  if (mRedfishResourceConfig2Cache == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  ZeroMem (&mRedfishFeatureInterchangeData, sizeof (mRedfishFeatureInterchangeData));
 
   return EFI_SUCCESS;
 }
@@ -669,7 +895,15 @@ RedfishResourceConfigDestructor (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  mRedfishResourceConfigProtocol = NULL;
+  if (mRedfishResourceConfigCache != NULL) {
+    FreePool (mRedfishResourceConfigCache);
+    mRedfishResourceConfigCache = NULL;
+  }
+
+  if (mRedfishResourceConfig2Cache != NULL) {
+    FreePool (mRedfishResourceConfig2Cache);
+    mRedfishResourceConfig2Cache = NULL;
+  }
 
   return EFI_SUCCESS;
 }
