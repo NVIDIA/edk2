@@ -27,3 +27,4 @@
 
 [LibraryClasses]
   BaseLib
+  TpmMeasurementLib
