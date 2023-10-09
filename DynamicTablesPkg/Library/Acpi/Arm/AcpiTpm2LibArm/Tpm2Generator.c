@@ -18,6 +18,7 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/TpmMeasurementLib.h>
 #include <Protocol/AcpiTable.h>
 
 // Module specific include files.
@@ -27,6 +28,7 @@
 #include <Library/TableHelperLib.h>
 #include <Protocol/ConfigurationManagerProtocol.h>
 #include <IndustryStandard/Tpm2Acpi.h>
+#include <IndustryStandard/UefiTcgPlatform.h>
 
 #pragma pack(1)
 
@@ -192,20 +194,35 @@ BuildTpm2Table (
     goto error_handler;
   }
 
-  Tpm2->AddressOfControlArea = TpmInfo->AddressOfControlArea;
-  Tpm2->StartMethod          = TpmInfo->StartMethod;
-
+  Tpm2->StartMethod = TpmInfo->StartMethod;
   if (AcpiTableInfo->AcpiTableRevision == EFI_TPM2_ACPI_TABLE_REVISION_4) {
     Tpm2->PlatformClass = TpmInfo->PlatformClass;
-    if (TableSize == sizeof (EFI_TPM2_ACPI_TABLE_V4)) {
-      CopyMem (
-        Tpm2->StartMethodParameters,
-        TpmInfo->StartMethodParameters,
-        sizeof (Tpm2->StartMethodParameters)
-        );
-      Tpm2->Laml = TpmInfo->Laml;
-      Tpm2->Lasa = TpmInfo->Lasa;
-    }
+  }
+
+  //
+  // Measure to PCR[0] with event EV_POST_CODE ACPI DATA.
+  // The measurement has to be done before any update.
+  // Otherwise, the PCR record would be different after event log update
+  // or the PCD configuration change.
+  //
+  TpmMeasureAndLogData (
+    0,
+    EV_POST_CODE,
+    EV_POSTCODE_INFO_ACPI_DATA,
+    ACPI_DATA_LEN,
+    Tpm2,
+    Tpm2->Header.Length
+    );
+
+  Tpm2->AddressOfControlArea = TpmInfo->AddressOfControlArea;
+  if (TableSize == sizeof (EFI_TPM2_ACPI_TABLE_V4)) {
+    CopyMem (
+      Tpm2->StartMethodParameters,
+      TpmInfo->StartMethodParameters,
+      sizeof (Tpm2->StartMethodParameters)
+      );
+    Tpm2->Laml = TpmInfo->Laml;
+    Tpm2->Lasa = TpmInfo->Lasa;
   }
 
   return EFI_SUCCESS;
