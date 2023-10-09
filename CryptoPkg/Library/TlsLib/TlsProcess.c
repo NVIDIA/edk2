@@ -81,7 +81,6 @@ TlsDoHandshake (
   TLS_CONNECTION  *TlsConn;
   UINTN           PendingBufferSize;
   INTN            Ret;
-  UINTN           ErrorCode;
 
   TlsConn           = (TLS_CONNECTION *)Tls;
   PendingBufferSize = 0;
@@ -127,12 +126,14 @@ TlsDoHandshake (
       DEBUG ((
         DEBUG_ERROR,
         "%a SSL_HANDSHAKE_ERROR State=0x%x SSL_ERROR_%a\n",
-        __FUNCTION__,
+        __func__,
         SSL_get_state (TlsConn->Ssl),
         Ret == SSL_ERROR_SSL ? "SSL" : Ret == SSL_ERROR_SYSCALL ? "SYSCALL" : "ZERO_RETURN"
         ));
       DEBUG_CODE_BEGIN ();
       while (TRUE) {
+        unsigned long  ErrorCode;
+
         ErrorCode = ERR_get_error ();
         if (ErrorCode == 0) {
           break;
@@ -140,11 +141,10 @@ TlsDoHandshake (
 
         DEBUG ((
           DEBUG_ERROR,
-          "%a ERROR 0x%x=L%x:F%x:R%x\n",
-          __FUNCTION__,
+          "%a ERROR 0x%x=L%x:R%x\n",
+          __func__,
           ErrorCode,
           ERR_GET_LIB (ErrorCode),
-          ERR_GET_FUNC (ErrorCode),
           ERR_GET_REASON (ErrorCode)
           ));
       }
@@ -460,4 +460,36 @@ TlsWrite (
   // Write bytes to the specified TLS connection.
   //
   return SSL_write (TlsConn->Ssl, Buffer, (UINT32)BufferSize);
+}
+
+/**
+  Shutdown a TLS connection.
+
+  Shutdown the TLS connection without releasing the resources, meaning a new
+  connection can be started without calling TlsNew() and without setting
+  certificates etc.
+
+  @param[in]       Tls            Pointer to the TLS object to shutdown.
+
+  @retval EFI_SUCCESS             The TLS is shutdown successfully.
+  @retval EFI_INVALID_PARAMETER   Tls is NULL.
+  @retval EFI_PROTOCOL_ERROR      Some other error occurred.
+**/
+EFI_STATUS
+EFIAPI
+TlsShutdown (
+  IN     VOID  *Tls
+  )
+{
+  TLS_CONNECTION  *TlsConn;
+
+  TlsConn = (TLS_CONNECTION *)Tls;
+
+  if ((TlsConn == NULL) || ((TlsConn->Ssl) == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  SSL_set_quiet_shutdown (TlsConn->Ssl, 1);
+  SSL_shutdown (TlsConn->Ssl);
+  return SSL_clear (TlsConn->Ssl) == 1 ? EFI_SUCCESS : EFI_PROTOCOL_ERROR;
 }

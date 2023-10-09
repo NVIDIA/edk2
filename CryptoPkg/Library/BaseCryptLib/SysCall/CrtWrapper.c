@@ -275,6 +275,15 @@ strcpy (
   return strDest;
 }
 
+int
+strcmp (
+  const char  *s1,
+  const char  *s2
+  )
+{
+  return (int)AsciiStrCmp (s1, s2);
+}
+
 //
 // -- Character Classification Routines --
 //
@@ -467,31 +476,6 @@ fwrite (
   size_t      size,
   size_t      count,
   FILE        *stream
-  )
-{
-  return 0;
-}
-
-//
-//  -- Dummy OpenSSL Support Routines --
-//
-
-int
-BIO_printf (
-  void        *bio,
-  const char  *format,
-  ...
-  )
-{
-  return 0;
-}
-
-int
-BIO_snprintf (
-  char        *buf,
-  size_t      n,
-  const char  *format,
-  ...
   )
 {
   return 0;
