@@ -131,6 +131,7 @@ StartUpFeatureDriver (
   REDFISH_FEATURE_INTERNAL_DATA                *ThisList;
   REDFISH_FEATURE_ARRAY_TYPE_CONFIG_LANG_LIST  ConfigLangList;
   EFI_STRING                                   NextParentUri;
+  CHAR8                                        *AsciiUri;
 
   if ((ThisFeatureDriverList == NULL) || (StartupContext == NULL)) {
     return;
@@ -152,12 +153,20 @@ StartUpFeatureDriver (
       ThisList->InformationExchange = mInformationExchange;
       Status                        = SetupExchangeInformationInfo (ThisList, NextParentUri);
       if (!EFI_ERROR (Status)) {
+        AsciiUri = StrUnicodeToAscii (ThisList->NodeName);
+        PERF_START (&gEfiCallerIdGuid, AsciiUri, NULL, 0);
+
         Status = ThisList->Callback (
                              StartupContext->This,
                              StartupContext->Action,
                              ThisList->Context,
                              ThisList->InformationExchange
                              );
+
+        PERF_END (&gEfiCallerIdGuid, AsciiUri, NULL, 0);
+        if (AsciiUri != NULL) {
+          FreePool (AsciiUri);
+        }
       }
 
       if (EFI_ERROR (Status)) {

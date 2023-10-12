@@ -39,6 +39,7 @@
   DebugLib
   MemoryAllocationLib
   PrintLib
+  PerformanceLib
   RedfishEventLib
   RedfishFeatureUtilityLib
   UefiBootServicesTableLib
