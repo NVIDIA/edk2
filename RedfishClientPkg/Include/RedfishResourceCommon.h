@@ -40,24 +40,26 @@
 #include <Protocol/EdkIIRedfishFeature.h>
 #include <Protocol/EdkIIRedfishConfigHandler.h>
 #include <Protocol/EdkIIRedfishResourceConfigProtocol.h>
+#include <Protocol/EdkIIRedfishResourceConfig2Protocol.h>
 #include <Protocol/RestJsonStructure.h>
 #include <Protocol/RestEx.h>
 
 typedef struct _REDFISH_RESOURCE_COMMON_PRIVATE {
-  REDFISH_SERVICE                           RedfishService;
-  EFI_REST_JSON_STRUCTURE_PROTOCOL          *JsonStructProtocol;
-  EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL    RedfishResourceConfig;
-  EDKII_REDFISH_CONFIG_HANDLER_PROTOCOL     ConfigHandler;
-  EFI_EVENT                                 Event;
-  EFI_STRING                                Uri;
-  CHAR8                                     *Json;
-  REDFISH_PAYLOAD                           Payload;
+  REDFISH_SERVICE                            RedfishService;
+  EFI_REST_JSON_STRUCTURE_PROTOCOL           *JsonStructProtocol;
+  EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL     RedfishResourceConfig;
+  EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL    RedfishResourceConfig2;
+  EDKII_REDFISH_CONFIG_HANDLER_PROTOCOL      ConfigHandler;
+  EFI_EVENT                                  Event;
+  EFI_STRING                                 Uri;
+  CHAR8                                      *Json;
+  REDFISH_PAYLOAD                            Payload;
   //
   //  Below are used for the external resource.
   //
-  EDKII_REDFISH_FEATURE_PROTOCOL            *FeatureProtocol;
-  RESOURCE_INFORMATION_EXCHANGE             *InformationExchange;
-  EFI_STRING                                RedfishVersion;
+  EDKII_REDFISH_FEATURE_PROTOCOL             *FeatureProtocol;
+  RESOURCE_INFORMATION_EXCHANGE              *InformationExchange;
+  EFI_STRING                                 RedfishVersion;
 } REDFISH_RESOURCE_COMMON_PRIVATE;
 
 #define REDFISH_RESOURCE_COMMON_PRIVATE_DATA_FROM_CONFIG_PROTOCOL(This) \
@@ -65,6 +67,9 @@ typedef struct _REDFISH_RESOURCE_COMMON_PRIVATE {
 
 #define REDFISH_RESOURCE_COMMON_PRIVATE_DATA_FROM_RESOURCE_PROTOCOL(This) \
           BASE_CR ((This), REDFISH_RESOURCE_COMMON_PRIVATE, RedfishResourceConfig)
+
+#define REDFISH_RESOURCE_COMMON_PRIVATE_DATA_FROM_RESOURCE2_PROTOCOL(This) \
+          BASE_CR ((This), REDFISH_RESOURCE_COMMON_PRIVATE, RedfishResourceConfig2)
 
 /**
   Consume resource from given URI.

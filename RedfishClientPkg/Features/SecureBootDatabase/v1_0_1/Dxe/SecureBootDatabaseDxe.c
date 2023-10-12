@@ -11,16 +11,18 @@
 #include "../Common/SecureBootDatabaseCommon.h"
 
 extern REDFISH_RESOURCE_COMMON_PRIVATE  *mRedfishResourcePrivate;
-extern EFI_HANDLE                       mRedfishResourceConfigProtocolHandle;
+extern EFI_HANDLE                       mRedfishResourceConfig2ProtocolHandle;
 extern EDKII_REDFISH_TASK_PROTOCOL      *mRedfishTaskProtocol;
 
 /**
   Provision redfish resource by given URI.
 
-  @param[in]   This                Pointer to EFI_HP_REDFISH_HII_PROTOCOL instance.
+  @param[in]   This                Pointer to EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL instance.
   @param[in]   Uri                 Target URI to create resource.
-  @param[in]   PostMode            TRUE if the resource does not exist, post method is used.
-                                   FALSE if the resource exist but property is missing, put method is used.
+  @param[in]   JsonText            The JSON data in ASCII string format. This is optional.
+  @param[in]   HttpPostMode        TRUE if resource does not exist, HTTP POST method is used.
+                                   FALSE if the resource exist but some of properties are missing,
+                                   HTTP PUT method is used.
 
   @retval EFI_SUCCESS              Value is returned successfully.
   @retval Others                   Some error happened.
@@ -28,9 +30,10 @@ extern EDKII_REDFISH_TASK_PROTOCOL      *mRedfishTaskProtocol;
 **/
 EFI_STATUS
 RedfishResourceProvisioningResource (
-  IN     EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL  *This,
-  IN     EFI_STRING                              Uri,
-  IN     BOOLEAN                                 PostMode
+  IN     EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL  *This,
+  IN     EFI_STRING                               Uri,
+  IN     CHAR8                                    *JsonText OPTIONAL,
+  IN     BOOLEAN                                  HttpPostMode
   )
 {
   REDFISH_RESOURCE_COMMON_PRIVATE  *Private;
@@ -42,23 +45,34 @@ RedfishResourceProvisioningResource (
   }
 
   ZeroMem (&Response, sizeof (Response));
-  Private = REDFISH_RESOURCE_COMMON_PRIVATE_DATA_FROM_RESOURCE_PROTOCOL (This);
+  Private = REDFISH_RESOURCE_COMMON_PRIVATE_DATA_FROM_RESOURCE2_PROTOCOL (This);
 
   if (Private->RedfishService == NULL) {
     return EFI_NOT_READY;
   }
 
-  Status = RedfishHttpGetResource (Private->RedfishService, Uri, &Response, TRUE);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: get resource from: %s failed\n", __func__, Uri));
-    return Status;
+  Private->Uri = Uri;
+  if (IS_EMPTY_STRING (JsonText)) {
+    Status = RedfishHttpGetResource (Private->RedfishService, Uri, &Response, TRUE);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: get resource from: %s failed\n", __func__, Uri));
+      return Status;
+    }
+
+    Private->Payload = Response.Payload;
+    if (Private->Payload != NULL) {
+      Private->Json = JsonDumpString (RedfishJsonInPayload (Private->Payload), EDKII_JSON_COMPACT);
+    }
+  } else {
+    Private->Payload = NULL;
+    Private->Json    = AllocateCopyPool (AsciiStrSize (JsonText), JsonText);
   }
 
-  Private->Uri     = Uri;
-  Private->Payload = Response.Payload;
-  ASSERT (Private->Payload != NULL);
+  if (IS_EMPTY_STRING (Private->Json)) {
+    return EFI_OUT_OF_RESOURCES;
+  }
 
-  Status = RedfishProvisioningResourceCommon (Private, !PostMode);
+  Status = RedfishProvisioningResourceCommon (Private, !HttpPostMode);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: failed to provision resource to: %s: %r\n", __func__, Uri, Status));
   }
@@ -69,6 +83,11 @@ RedfishResourceProvisioningResource (
   if (Private->Payload != NULL) {
     RedfishHttpFreeResource (&Response);
     Private->Payload = NULL;
+  }
+
+  if (Private->Json != NULL) {
+    FreePool (Private->Json);
+    Private->Json = NULL;
   }
 
   return Status;
@@ -89,8 +108,8 @@ RedfishResourceProvisioningResource (
 **/
 EFI_STATUS
 RedfishResourceGetInfo (
-  IN     EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL  *This,
-  OUT    REDFISH_SCHEMA_INFO                     *Info
+  IN     EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL  *This,
+  OUT    REDFISH_SCHEMA_INFO                      *Info
   )
 {
   if ((This == NULL) || (Info == NULL)) {
@@ -108,8 +127,9 @@ RedfishResourceGetInfo (
 /**
   Consume resource from given URI.
 
-  @param[in]   This                Pointer to EFI_HP_REDFISH_HII_PROTOCOL instance.
+  @param[in]   This                Pointer to EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL instance.
   @param[in]   Uri                 The target URI to consume.
+  @param[in]   JsonText            The JSON data in ASCII string format. This is optional.
 
   @retval EFI_SUCCESS              Value is returned successfully.
   @retval Others                   Some error happened.
@@ -117,8 +137,9 @@ RedfishResourceGetInfo (
 **/
 EFI_STATUS
 RedfishResourceConsumeResource (
-  IN     EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL  *This,
-  IN     EFI_STRING                              Uri
+  IN     EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL  *This,
+  IN     EFI_STRING                               Uri,
+  IN     CHAR8                                    *JsonText OPTIONAL
   )
 {
   return EFI_UNSUPPORTED;
@@ -127,8 +148,9 @@ RedfishResourceConsumeResource (
 /**
   Update resource to given URI.
 
-  @param[in]   This                Pointer to EFI_HP_REDFISH_HII_PROTOCOL instance.
+  @param[in]   This                Pointer to EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL instance.
   @param[in]   Uri                 The target URI to consume.
+  @param[in]   JsonText            The JSON data in ASCII string format. This is optional.
 
   @retval EFI_SUCCESS              Value is returned successfully.
   @retval Others                   Some error happened.
@@ -136,8 +158,9 @@ RedfishResourceConsumeResource (
 **/
 EFI_STATUS
 RedfishResourceUpdate (
-  IN     EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL  *This,
-  IN     EFI_STRING                              Uri
+  IN     EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL  *This,
+  IN     EFI_STRING                               Uri,
+  IN     CHAR8                                    *JsonText OPTIONAL
   )
 {
   return EFI_UNSUPPORTED;
@@ -146,8 +169,9 @@ RedfishResourceUpdate (
 /**
   Check resource on given URI.
 
-  @param[in]   This                Pointer to EFI_HP_REDFISH_HII_PROTOCOL instance.
+  @param[in]   This                Pointer to EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL instance.
   @param[in]   Uri                 The target URI to consume.
+  @param[in]   JsonText            The JSON data in ASCII string format. This is optional.
 
   @retval EFI_SUCCESS              Value is returned successfully.
   @retval Others                   Some error happened.
@@ -155,8 +179,9 @@ RedfishResourceUpdate (
 **/
 EFI_STATUS
 RedfishResourceCheck (
-  IN     EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL  *This,
-  IN     EFI_STRING                              Uri
+  IN     EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL  *This,
+  IN     EFI_STRING                               Uri,
+  IN     CHAR8                                    *JsonText OPTIONAL
   )
 {
   return EFI_UNSUPPORTED;
@@ -165,8 +190,9 @@ RedfishResourceCheck (
 /**
   Identify resource on given URI.
 
-  @param[in]   This                Pointer to EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL instance.
+  @param[in]   This                Pointer to EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL instance.
   @param[in]   Uri                 The target URI to consume.
+  @param[in]   JsonText            The JSON data in ASCII string format. This is optional.
 
   @retval EFI_SUCCESS              This is target resource which we want to handle.
   @retval EFI_UNSUPPORTED          This is not the target resource.
@@ -175,14 +201,16 @@ RedfishResourceCheck (
 **/
 EFI_STATUS
 RedfishResourceIdentify (
-  IN     EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL  *This,
-  IN     EFI_STRING                              Uri
+  IN     EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL  *This,
+  IN     EFI_STRING                               Uri,
+  IN     CHAR8                                    *JsonText OPTIONAL
   )
 {
   return EFI_SUCCESS;
 }
 
-EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL  mRedfishResourceConfig = {
+EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL  mRedfishResourceConfig2 = {
+  EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL_REVISION,
   RedfishResourceProvisioningResource,
   RedfishResourceConsumeResource,
   RedfishResourceUpdate,
@@ -402,8 +430,8 @@ RedfishResourceUnload (
                   ImageHandle,
                   &gEdkIIRedfishConfigHandlerProtocolGuid,
                   ConfigHandler,
-                  &gEdkIIRedfishResourceConfigProtocolGuid,
-                  &mRedfishResourcePrivate->RedfishResourceConfig,
+                  &gEdkIIRedfishResourceConfig2ProtocolGuid,
+                  &mRedfishResourcePrivate->RedfishResourceConfig2,
                   NULL
                   );
 
@@ -439,7 +467,7 @@ RedfishResourceEntryPoint (
     return EFI_ALREADY_STARTED;
   }
 
-  mRedfishResourceConfigProtocolHandle = ImageHandle;
+  mRedfishResourceConfig2ProtocolHandle = ImageHandle;
 
   mRedfishResourcePrivate = AllocateZeroPool (sizeof (REDFISH_RESOURCE_COMMON_PRIVATE));
   if (mRedfishResourcePrivate == NULL) {
@@ -447,7 +475,7 @@ RedfishResourceEntryPoint (
   }
 
   CopyMem (&mRedfishResourcePrivate->ConfigHandler, &mRedfishConfigHandler, sizeof (EDKII_REDFISH_CONFIG_HANDLER_PROTOCOL));
-  CopyMem (&mRedfishResourcePrivate->RedfishResourceConfig, &mRedfishResourceConfig, sizeof (EDKII_REDFISH_RESOURCE_CONFIG_PROTOCOL));
+  CopyMem (&mRedfishResourcePrivate->RedfishResourceConfig2, &mRedfishResourceConfig2, sizeof (EDKII_REDFISH_RESOURCE_CONFIG2_PROTOCOL));
 
   //
   // Publish config handler protocol and resource protocol.
@@ -456,8 +484,8 @@ RedfishResourceEntryPoint (
                   &ImageHandle,
                   &gEdkIIRedfishConfigHandlerProtocolGuid,
                   &mRedfishResourcePrivate->ConfigHandler,
-                  &gEdkIIRedfishResourceConfigProtocolGuid,
-                  &mRedfishResourcePrivate->RedfishResourceConfig,
+                  &gEdkIIRedfishResourceConfig2ProtocolGuid,
+                  &mRedfishResourcePrivate->RedfishResourceConfig2,
                   NULL
                   );
   if (EFI_ERROR (Status)) {

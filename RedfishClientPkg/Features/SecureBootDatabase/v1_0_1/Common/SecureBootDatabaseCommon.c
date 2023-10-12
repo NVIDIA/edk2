@@ -10,9 +10,9 @@
 
 #include "SecureBootDatabaseCommon.h"
 
-REDFISH_RESOURCE_COMMON_PRIVATE  *mRedfishResourcePrivate             = NULL;
-EFI_HANDLE                       mRedfishResourceConfigProtocolHandle = NULL;
-EDKII_REDFISH_TASK_PROTOCOL      *mRedfishTaskProtocol                = NULL;
+REDFISH_RESOURCE_COMMON_PRIVATE  *mRedfishResourcePrivate              = NULL;
+EFI_HANDLE                       mRedfishResourceConfig2ProtocolHandle = NULL;
+EDKII_REDFISH_TASK_PROTOCOL      *mRedfishTaskProtocol                 = NULL;
 
 /**
   This function return the "Members@odata.count" in given collection URI.
@@ -693,11 +693,6 @@ RedfishProvisioningResourceCommon (
     return EFI_INVALID_PARAMETER;
   }
 
-  Private->Json = JsonDumpString (RedfishJsonInPayload (Private->Payload), EDKII_JSON_COMPACT);
-  if (IS_EMPTY_STRING (Private->Json)) {
-    return EFI_OUT_OF_RESOURCES;
-  }
-
   RedfishSecureBootKey = NULL;
   SecureBootKeyName    = NULL;
   SecureBootDatabase   = NULL;
@@ -771,10 +766,6 @@ ON_RELEASE:
                                    Private->JsonStructProtocol,
                                    (EFI_REST_JSON_STRUCTURE_HEADER *)SecureBootDatabase
                                    );
-  }
-
-  if (Private->Json != NULL) {
-    FreePool (Private->Json);
   }
 
   if (SecureBootKeyName != NULL) {

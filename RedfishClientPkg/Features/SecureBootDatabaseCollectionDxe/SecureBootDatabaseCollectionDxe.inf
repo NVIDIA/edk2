@@ -41,6 +41,7 @@
   EdkIIRedfishResourceConfigLib
   RedfishVersionLib
   RedfishHttpLib
+  RedfishProtocolFeaturesLib
 
 [Protocols]
   gEdkIIRedfishConfigHandlerProtocolGuid    ## CONSUMED

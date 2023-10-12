@@ -28,6 +28,7 @@
 #include <Library/EdkIIRedfishResourceConfigLib.h>
 #include <Library/RedfishVersionLib.h>
 #include <Library/RedfishHttpLib.h>
+#include <Library/RedfishProtocolFeaturesLib.h>
 
 //
 // Protocols

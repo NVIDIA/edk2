@@ -44,7 +44,7 @@
 [Protocols]
   gEdkIIRedfishConfigHandlerProtocolGuid          ## PRODUCED
   gEfiRestJsonStructureProtocolGuid               ## CONSUMED
-  gEdkIIRedfishResourceConfigProtocolGuid         ## PRODUCED
+  gEdkIIRedfishResourceConfig2ProtocolGuid        ## PRODUCED
   gEdkIIRedfishTaskProtocolGuid                   ## CONSUMED
 
 [Pcd]

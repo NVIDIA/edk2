@@ -18,6 +18,7 @@ REDFISH_COLLECTION_PRIVATE  *mRedfishCollectionPrivate = NULL;
 
   @param[in]     Private           Pointer to private instance
   @param[in]     Uri               The secure boot database URI.
+  @param[in]     JsonText          Json text data.
 
   @retval EFI_SUCCESS              Secure boot database resource is processed.
   @retval Others                   Some errors happened.
@@ -26,7 +27,8 @@ REDFISH_COLLECTION_PRIVATE  *mRedfishCollectionPrivate = NULL;
 EFI_STATUS
 HandleResource (
   IN  REDFISH_COLLECTION_PRIVATE  *Private,
-  IN  EFI_STRING                  Uri
+  IN  EFI_STRING                  Uri,
+  IN  CHAR8                       *JsonText OPTIONAL
   )
 {
   EFI_STATUS           Status;
@@ -38,7 +40,7 @@ HandleResource (
 
   DEBUG ((REDFISH_DEBUG_TRACE, "%a: process resource for: %s\n", __func__, Uri));
 
-  Status = GetRedfishSchemaInfo (Private->RedfishService, Private->JsonStructProtocol, Uri, &SchemaInfo);
+  Status = GetRedfishSchemaInfo (Private->RedfishService, Private->JsonStructProtocol, Uri, JsonText, &SchemaInfo);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: failed to get schema information from: %s %r\n", __func__, Uri, Status));
     return Status;
@@ -48,7 +50,7 @@ HandleResource (
   // The target property does not exist, do the provision to create property.
   //
   DEBUG ((REDFISH_DEBUG_TRACE, "%a provision for %s\n", __func__, Uri));
-  Status = EdkIIRedfishResourceConfigProvisioning (&SchemaInfo, Uri, NULL, Private->InformationExchange, FALSE);
+  Status = EdkIIRedfishResourceConfigProvisioning (&SchemaInfo, Uri, JsonText, Private->InformationExchange, FALSE);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: failed to provision with GET mode: %r\n", __func__, Status));
   }
@@ -77,7 +79,10 @@ HandleCollectionResource (
   RedfishCS_Link                               *List;
   RedfishCS_Header                             *Header;
   RedfishCS_Type_Uri_Data                      *UriData;
+  RedfishCS_Type_JSON_Data                     *JsonData;
   EFI_STRING                                   MemberUri;
+  EDKII_JSON_VALUE                             JsonValue;
+  EDKII_JSON_VALUE                             OdataId;
 
   if (Private == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -115,20 +120,36 @@ HandleCollectionResource (
 
   List = GetFirstLink (&CollectionCs->Members);
   while (TRUE) {
-    Header = (RedfishCS_Header *)List;
+    Header    = (RedfishCS_Header *)List;
+    MemberUri = NULL;
+    JsonData  = NULL;
+    UriData   = NULL;
     if (Header->ResourceType == RedfishCS_Type_Uri) {
       UriData   = (RedfishCS_Type_Uri_Data *)Header;
-      MemberUri = NULL;
       MemberUri = StrAsciiToUnicode (UriData->Uri);
       ASSERT (MemberUri != NULL);
-      if (MemberUri != NULL) {
-        Status = HandleResource (Private, MemberUri);
-        if (EFI_ERROR (Status)) {
-          DEBUG ((DEBUG_ERROR, "%a: process resource: %a failed: %r\n", __func__, UriData->Uri, Status));
+    } else if (Header->ResourceType == RedfishCS_Type_JSON) {
+      JsonData  = (RedfishCS_Type_JSON_Data *)Header;
+      JsonValue = JsonLoadString (JsonData->JsonText, 0, NULL);
+      if (JsonValueIsObject (JsonValue)) {
+        OdataId = JsonObjectGetValue (JsonValueGetObject (JsonValue), "@odata.id");
+        if (JsonValueIsString (OdataId)) {
+          MemberUri = JsonValueGetUnicodeString (OdataId);
         }
 
-        FreePool (MemberUri);
+        JsonValueFree (JsonValue);
+      } else {
+        DEBUG ((DEBUG_ERROR, "%a: malformat JSON text\n", __func__));
       }
+    }
+
+    if (MemberUri != NULL) {
+      Status = HandleResource (Private, MemberUri, (JsonData == NULL ? NULL : JsonData->JsonText));
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a: process resource: %s failed: %r\n", __func__, MemberUri, Status));
+      }
+
+      FreePool (MemberUri);
     }
 
     if (IsLinkAtEnd (&CollectionCs->Members, List)) {
@@ -208,6 +229,7 @@ CollectionHandler (
   )
 {
   EFI_STATUS  Status;
+  CHAR16      UriExpand[MAX_URI_LENGTH];
 
   if (Private == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -216,9 +238,18 @@ CollectionHandler (
   DEBUG ((REDFISH_DEBUG_TRACE, "%a: collection handler for %s\n", __func__, Private->CollectionUri));
 
   //
+  // If BMC supports $expand parameter, use this parameter for our query.
+  //
+  if (RedfishNoLinksSupported (Private->RedfishService)) {
+    UnicodeSPrint (UriExpand, MAX_URI_LENGTH * sizeof (CHAR16), L"%s%s", Private->CollectionUri, REDFISH_EXPAND_PARAMETER);
+  } else {
+    StrCpyS (UriExpand, MAX_URI_LENGTH, Private->CollectionUri);
+  }
+
+  //
   // Query collection from Redfish service.
   //
-  Status = RedfishHttpGetResource (Private->RedfishService, Private->CollectionUri, &Private->Response, TRUE);
+  Status = RedfishHttpGetResource (Private->RedfishService, UriExpand, &Private->Response, TRUE);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: unable to get resource from: %s :%r\n", __func__, Private->CollectionUri, Status));
     goto ON_RELEASE;
