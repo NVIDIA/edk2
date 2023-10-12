@@ -1565,6 +1565,7 @@ WriteSections64 (
             Offset = (Sym->st_value - (Rel->r_offset & ~0xfff)) >> 12;
 
             *(UINT32 *)Targ &= 0x9000001f;
+            *(UINT32 *)Targ |= 0x90000000;
             *(UINT32 *)Targ |= ((Offset & 0x1ffffc) << (5 - 2)) | ((Offset & 0x3) << 29);
 
             /* fall through */
