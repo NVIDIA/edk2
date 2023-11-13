@@ -402,13 +402,7 @@ RfSecureBootDeleteVariable (
 
   switch (VarInfo->Type) {
     case RedfishSecureBootKeyPk:
-      Status = DisablePKProtection ();
-      if (!EFI_ERROR (Status)) {
-        Status = DeletePlatformKey ();
-      } else {
-        DEBUG ((DEBUG_ERROR, "%a: DisablePKProtection: %r\n", __func__, Status));
-      }
-
+      Status = DeletePlatformKey ();
       break;
     case RedfishSecureBootKeyKek:
       Status = DeleteKEK ();
@@ -1022,11 +1016,7 @@ RedfishSecureBootDeleteKey (
   // There is only one key in PK. Remove PK variable
   //
   if (VarInfo->Type == RedfishSecureBootKeyPk) {
-    Status = DisablePKProtection ();
-    if (!EFI_ERROR (Status)) {
-      Status = DeletePlatformKey ();
-    }
-
+    Status = DeletePlatformKey ();
     goto ON_RELEASE;
   }
 

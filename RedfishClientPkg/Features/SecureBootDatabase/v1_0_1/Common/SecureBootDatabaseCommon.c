@@ -1233,6 +1233,11 @@ RedfishTaskCallback (
 
     ReportTaskFailure (TaskId, REDFISH_TASK_FAILURE_GENERIC_MESSAGE);
     DEBUG ((DEBUG_ERROR, "%a: perform request: 0x%x to %s failed: %r\n", __func__, TaskRequest.RequestType, TaskRequest.KeyName, Status));
+  } else {
+    //
+    // Request is done successfully. Request system reboot.
+    //
+    REDFISH_ENABLE_SYSTEM_REBOOT ();
   }
 
 ON_RELEASE:

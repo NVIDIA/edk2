@@ -50,6 +50,7 @@
 [Pcd]
   gEfiRedfishClientPkgTokenSpaceGuid.PcdMaxRedfishSchemaStringSize
   gEfiRedfishClientPkgTokenSpaceGuid.PcdMaxRedfishSchemaVersionSize
+  gEfiRedfishClientPkgTokenSpaceGuid.PcdSystemRebootRequired
 
 [Depex]
   TRUE
