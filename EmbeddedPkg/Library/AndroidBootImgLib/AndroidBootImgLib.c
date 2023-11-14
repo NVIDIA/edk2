@@ -321,13 +321,13 @@ AndroidBootImgGetFdt (
 
 EFI_STATUS
 AndroidBootImgUpdateArgs (
-  IN  VOID    *BootImg,
-  OUT VOID    *KernelArgs,
-  IN  UINT32  KernelArgsSize
+  IN  VOID  *BootImg,
+  OUT VOID  **KernelArgs
   )
 {
   CHAR8       ImageKernelArgs[ANDROID_BOOTIMG_KERNEL_ARGS_SIZE];
   EFI_STATUS  Status;
+  UINT32      NewKernelArgSize;
 
   // Get kernel arguments from Android boot image
   Status = AndroidBootImgGetKernelArgs (BootImg, ImageKernelArgs);
@@ -335,16 +335,23 @@ AndroidBootImgUpdateArgs (
     return Status;
   }
 
+  NewKernelArgSize = ANDROID_BOOTIMG_KERNEL_ARGS_SIZE + PcdGet32 (PcdAndroidKernelCommandLineOverflow);
+  *KernelArgs      = AllocateZeroPool (sizeof (CHAR16) * NewKernelArgSize);
+  if (*KernelArgs == NULL) {
+    DEBUG ((DEBUG_ERROR, "Fail to allocate memory\n"));
+    return EFI_OUT_OF_RESOURCES;
+  }
+
   AsciiStrToUnicodeStrS (
     ImageKernelArgs,
-    KernelArgs,
-    KernelArgsSize
+    *KernelArgs,
+    NewKernelArgSize
     );
   // Append platform kernel arguments
   if (mAndroidBootImg->AppendArgs) {
     Status = mAndroidBootImg->AppendArgs (
-                                KernelArgs,
-                                KernelArgsSize
+                                *KernelArgs,
+                                NewKernelArgSize
                                 );
   }
 
@@ -612,7 +619,6 @@ AndroidBootImgBoot (
   MEMORY_DEVICE_PATH         KernelDevicePath;
   EFI_HANDLE                 ImageHandle;
   VOID                       *NewKernelArg;
-  UINT32                     NewKernelArgSize;
   EFI_LOADED_IMAGE_PROTOCOL  *ImageInfo;
   VOID                       *RamdiskData;
   UINTN                      RamdiskSize;
@@ -643,15 +649,7 @@ AndroidBootImgBoot (
     goto Exit;
   }
 
-  NewKernelArgSize = ANDROID_BOOTIMG_KERNEL_ARGS_SIZE + PcdGet32 (PcdAndroidKernelCommandLineOverflow);
-  NewKernelArg     = AllocateZeroPool (sizeof (CHAR16) * NewKernelArgSize);
-  if (NewKernelArg == NULL) {
-    DEBUG ((DEBUG_ERROR, "Fail to allocate memory\n"));
-    Status = EFI_OUT_OF_RESOURCES;
-    goto Exit;
-  }
-
-  Status = AndroidBootImgUpdateArgs (Buffer, NewKernelArg, NewKernelArgSize);
+  Status = AndroidBootImgUpdateArgs (Buffer, &NewKernelArg);
   if (EFI_ERROR (Status)) {
     goto Exit;
   }
