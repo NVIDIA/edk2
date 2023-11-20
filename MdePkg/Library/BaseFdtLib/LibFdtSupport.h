@@ -68,6 +68,19 @@ fdt_strrchr    (
   int
   );
 
+char *
+fdt_strrchr    (
+  const char *,
+  int
+  );
+
+unsigned long
+fdt_strtoul     (
+  const char *,
+  char **,
+  int
+  );
+
 unsigned long
 fdt_strtoul     (
   const char *,
