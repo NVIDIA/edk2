@@ -38,6 +38,7 @@
   ArmDisassemblerLib
   SerialPortLib
   UefiBootServicesTableLib
+  DefaultExceptionCallbackLib
 
 [Guids]
   gEfiDebugImageInfoTableGuid
