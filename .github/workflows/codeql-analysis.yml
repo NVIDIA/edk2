@@ -91,7 +91,7 @@ jobs:
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@v3
       with:
         languages: 'cpp'
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
@@ -115,4 +115,4 @@ jobs:
       run: stuart_ci_build -c .pytool/CISettings.py -p ${{ matrix.Package }} -t DEBUG -a ${{ matrix.ArchList }} TOOL_CHAIN_TAG=VS2019
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v3
