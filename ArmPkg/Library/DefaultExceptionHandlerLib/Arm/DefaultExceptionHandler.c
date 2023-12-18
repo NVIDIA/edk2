@@ -305,6 +305,7 @@ DefaultExceptionHandler (
     gST->ConOut->OutputString (gST->ConOut, UnicodeBuffer);
   }
 
+  DefaultExceptionCallback (ExceptionType, SystemContext);
   ASSERT (FALSE);
 
   CpuDeadLoop ();   // may return if executing under a debugger
