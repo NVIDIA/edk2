@@ -22,6 +22,7 @@
 
 #include <Protocol/DebugSupport.h>
 #include <Library/DefaultExceptionHandlerLib.h>
+#include <Library/DefaultExceptionCallbackLib.h>
 
 //
 // Maximum number of characters to print to serial (UINT8s) and to console if
@@ -305,6 +306,7 @@ DefaultExceptionHandler (
     gST->ConOut->OutputString (gST->ConOut, UnicodeBuffer);
   }
 
+  DefaultExceptionCallback (ExceptionType, SystemContext);
   ASSERT (FALSE);
 
   CpuDeadLoop ();   // may return if executing under a debugger

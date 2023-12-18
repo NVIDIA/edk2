@@ -76,6 +76,10 @@
   #
   DefaultExceptionHandlerLib|Include/Library/DefaultExceptionHandlerLib.h
 
+  ##  @libraryclass  Provides a callback from the default exception handler.
+  #
+  DefaultExceptionCallbackLib|Include/Library/DefaultExceptionCallbackLib.h
+
   ##  @libraryclass  Provides an interface to query miscellaneous OEM
   #   information.
   #
