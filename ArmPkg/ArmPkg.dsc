@@ -64,6 +64,7 @@
   SemihostLib|ArmPkg/Library/SemihostLib/SemihostLib.inf
   DxeServicesTableLib|MdePkg/Library/DxeServicesTableLib/DxeServicesTableLib.inf
   DefaultExceptionHandlerLib|ArmPkg/Library/DefaultExceptionHandlerLib/DefaultExceptionHandlerLib.inf
+  DefaultExceptionCallbackLib|ArmPkg/Library/DefaultExceptionCallbackLibNull/DefaultExceptionCallbackLibNull.inf
   CpuExceptionHandlerLib|ArmPkg/Library/ArmExceptionLib/ArmExceptionLib.inf
 
   CpuLib|MdePkg/Library/BaseCpuLib/BaseCpuLib.inf
