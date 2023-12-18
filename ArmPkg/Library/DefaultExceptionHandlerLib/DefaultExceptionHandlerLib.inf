@@ -34,6 +34,7 @@
   PeCoffGetEntryPointLib
   SerialPortLib
   UefiBootServicesTableLib
+  DefaultExceptionCallbackLib
 
 [Guids]
   gEfiDebugImageInfoTableGuid
