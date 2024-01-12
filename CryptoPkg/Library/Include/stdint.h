@@ -17,3 +17,6 @@ typedef UINT32  uint32_t;
 typedef INT64   int64_t;
 typedef UINT64  uint64_t;
 typedef UINTN   uintptr_t;
+
+#define UINTPTR_MAX  MAX_ADDRESS
+#define UINT64_MAX   0xFFFFFFFFFFFFFFFFULL
