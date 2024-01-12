@@ -437,6 +437,12 @@ strcat (
   const char  *strSource
   );
 
+void
+explicit_bzero (
+  void *,
+  size_t
+  );
+
 //
 // Macros that directly map functions to BaseLib, BaseMemoryLib, and DebugLib functions
 //
