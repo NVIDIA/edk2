@@ -10,6 +10,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Base.h>
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
+#include <Library/TimerLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <stdio.h>
 
@@ -93,4 +94,38 @@ mbedtls_free (
     ASSERT (PoolHdr->Signature == CRYPTMEM_HEAD_SIGNATURE);
     FreePool (PoolHdr);
   }
+}
+
+// Clear memory
+void
+explicit_bzero (
+  void    *buf,
+  size_t  size
+  )
+{
+  ZeroMem (buf, size);
+}
+
+/**
+ * \brief   Get time in milliseconds.
+ *
+ * \return Monotonically-increasing current time in milliseconds.
+ *
+ * \note Define MBEDTLS_PLATFORM_MS_TIME_ALT to be able to provide an
+ *       alternative implementation
+ *
+ * \warning This function returns a monotonically-increasing time value from a
+ *          start time that will differ from platform to platform, and possibly
+ *          from run to run of the process.
+ *
+ */
+INT64
+mbedtls_ms_time (
+  void
+  )
+{
+  UINT64  TimeNs;
+
+  TimeNs = GetTimeInNanoSecond (GetPerformanceCounter ());
+  return TimeNs / 1000000;
 }
