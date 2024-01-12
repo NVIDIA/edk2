@@ -436,6 +436,12 @@ strpbrk (
   const char  *accept
   );
 
+void
+explicit_bzero (
+  void *,
+  size_t
+  );
+
 //
 // Macros that directly map functions to BaseLib, BaseMemoryLib, and DebugLib functions
 //

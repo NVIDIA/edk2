@@ -38,6 +38,7 @@ Pkcs7GetAttachedContent (
   OUT UINTN       *ContentSize
   )
 {
+ #if 0
   BOOLEAN             Status;
   UINT8               *SignedData;
   UINTN               SignedDataSize;
@@ -110,4 +111,6 @@ _Exit:
   mbedtls_pkcs7_free (&Pkcs7);
 
   return Status;
+ #endif
+  return FALSE;
 }
