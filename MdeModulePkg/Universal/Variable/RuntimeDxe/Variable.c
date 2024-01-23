@@ -2621,6 +2621,7 @@ VariableServiceSetVariable (
   EFI_PHYSICAL_ADDRESS    Point;
   UINTN                   PayloadSize;
   BOOLEAN                 AuthFormat;
+  EFI_STATUS              PrevStatus;
 
   AuthFormat = mVariableModuleGlobal->VariableGlobal.AuthFormat;
 
@@ -2838,6 +2839,11 @@ VariableServiceSetVariable (
     return Status;
   }
 
+  Status = VarPreSetCallback (VariableName, VendorGuid, Attributes, PayloadSize, (VOID *)((UINTN)Data + DataSize - PayloadSize), mRequestSource);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
   AcquireLockOnlyAtBootTime (&mVariableModuleGlobal->VariableGlobal.VariableServicesLock);
 
   //
@@ -2902,6 +2908,9 @@ Done:
   InterlockedDecrement (&mVariableModuleGlobal->VariableGlobal.ReentrantState);
   ReleaseLockOnlyAtBootTime (&mVariableModuleGlobal->VariableGlobal.VariableServicesLock);
 
+  PrevStatus = Status;
+  Status     = VarPostSetCallback (VariableName, VendorGuid, Attributes, PayloadSize, (VOID *)((UINTN)Data + DataSize - PayloadSize), mRequestSource, PrevStatus);
+  Status     = PrevStatus;
   if (!AtRuntime ()) {
     if (!EFI_ERROR (Status)) {
       SecureBootHook (
