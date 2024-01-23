@@ -33,6 +33,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/VarCheckLib.h>
 #include <Library/VariableFlashInfoLib.h>
 #include <Library/SafeIntLib.h>
+#include <Library/VarSetCallbacksLib.h>
 #include <Guid/GlobalVariable.h>
 #include <Guid/EventGroup.h>
 #include <Guid/VariableFormat.h>

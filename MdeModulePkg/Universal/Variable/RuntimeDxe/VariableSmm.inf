@@ -79,6 +79,7 @@
   SmmMemLib
   AuthVariableLib
   VarCheckLib
+  VarSetCallbacksLib
   UefiBootServicesTableLib
   VariableFlashInfoLib
   VariablePolicyLib
