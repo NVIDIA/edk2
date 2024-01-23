@@ -178,6 +178,10 @@
   #
   HobPrintLib|Include/Library/HobPrintLib.h
 
+  ##  @libraryclass   Provides callback when a variable is set.
+  #
+  VarSetCallbaksLib|Include/Library/VarSetCallbacksLib.h
+
 [Guids]
   ## MdeModule package token space guid
   # Include/Guid/MdeModulePkgTokenSpace.h
