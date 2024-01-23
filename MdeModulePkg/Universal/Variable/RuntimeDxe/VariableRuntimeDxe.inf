@@ -71,6 +71,7 @@
   TpmMeasurementLib
   AuthVariableLib
   VarCheckLib
+  VarSetCallbacksLib
   VariableFlashInfoLib
   VariablePolicyLib
   VariablePolicyHelperLib
