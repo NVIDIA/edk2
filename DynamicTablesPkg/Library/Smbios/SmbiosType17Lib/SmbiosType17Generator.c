@@ -1,7 +1,7 @@
 /** @file
   SMBIOS Type17 Table Generator.
 
-  Copyright (c) 2022 - 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+  Copyright (c) 2022 - 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
   Copyright (c) 2020 - 2021, Arm Limited. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -14,6 +14,7 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/SmbiosStringTableLib.h>
+#include <Library/JedecJep106Lib.h>
 
 // Module specific include files.
 #include <ConfigurationManagerObject.h>
@@ -186,6 +187,8 @@ BuildSmbiosType17TableEx (
   UINT8                         DeviceLocatorRef;
   UINT8                         BankLocatorRef;
   UINT8                         FirmwareVersionRef;
+  UINT8                         ManufacturerNameRef;
+  CHAR8                         *ManufacturerName;
   CHAR8                         *OptionalStrings;
   SMBIOS_TABLE_TYPE17           *SmbiosRecord;
   UINTN                         SmbiosRecordSize;
@@ -249,11 +252,13 @@ BuildSmbiosType17TableEx (
   for (Index = 0; Index < NumMemDevices; Index++) {
     StringTableInitialize (&StrTable, SMBIOS_TYPE17_MAX_STRINGS);
 
-    SerialNumRef       = 0;
-    AssetTagRef        = 0;
-    DeviceLocatorRef   = 0;
-    BankLocatorRef     = 0;
-    FirmwareVersionRef = 0;
+    SerialNumRef        = 0;
+    AssetTagRef         = 0;
+    DeviceLocatorRef    = 0;
+    BankLocatorRef      = 0;
+    FirmwareVersionRef  = 0;
+    ManufacturerNameRef = 0;
+    ManufacturerName    = NULL;
 
     if (MemoryDevicesInfo[Index].DeviceLocator != NULL) {
       Status = StringTableAddString (
@@ -310,6 +315,21 @@ BuildSmbiosType17TableEx (
       }
     }
 
+    ManufacturerName = (CHAR8 *)Jep106GetManufacturerName (
+                                  (MemoryDevicesInfo[Index].ModuleManufacturerId >> 8) & 0xFF,
+                                  MemoryDevicesInfo[Index].ModuleManufacturerId & 0x7F
+                                  );
+    if (ManufacturerName != NULL) {
+      Status = StringTableAddString (
+                 &StrTable,
+                 ManufacturerName,
+                 &ManufacturerNameRef
+                 );
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "Failed to add Manufacturer String %r \n", Status));
+      }
+    }
+
     SmbiosRecordSize = sizeof (SMBIOS_TABLE_TYPE17) +
                        StringTableGetStringSetSize (&StrTable);
     SmbiosRecord = (SMBIOS_TABLE_TYPE17 *)AllocateZeroPool (SmbiosRecordSize);
@@ -347,6 +367,7 @@ BuildSmbiosType17TableEx (
     SmbiosRecord->AssetTag        = AssetTagRef;
     SmbiosRecord->SerialNumber    = SerialNumRef;
     SmbiosRecord->FirmwareVersion = FirmwareVersionRef;
+    SmbiosRecord->Manufacturer    = ManufacturerNameRef;
     OptionalStrings               = (CHAR8 *)(SmbiosRecord + 1);
     // publish the string set
     StringTablePublishStringSet (
