@@ -8,7 +8,7 @@
 
 [Defines]
   INF_VERSION                    = 0x00010005
-  BASE_NAME                      = MockHobLib
+  BASE_NAME                      = MockFdtLib
   FILE_GUID                      = 0f5471bc-fc2c-4cf4-b9f7-c1396d32831c
   MODULE_TYPE                    = HOST_APPLICATION
   VERSION_STRING                 = 1.0
@@ -25,4 +25,4 @@
   GoogleTestLib
 
 [BuildOptions]
-  MSFT:*_*_*_CC_FLAGS = /EHsc
+  MSFT:*_*_*_CC_FLAGS = /EHsc /bigobj
