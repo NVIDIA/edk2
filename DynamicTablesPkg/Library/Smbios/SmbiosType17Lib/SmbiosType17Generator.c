@@ -322,6 +322,7 @@ BuildSmbiosType17TableEx (
     UpdateSmbiosType17Speed (MemoryDevicesInfo[Index].Speed, SmbiosRecord);
     UpdateSmbiosType17Rank (MemoryDevicesInfo[Index].Rank, SmbiosRecord);
 
+    SmbiosRecord->VolatileSize         = MemoryDevicesInfo[Index].Size;
     SmbiosRecord->DeviceSet            = MemoryDevicesInfo[Index].DeviceSet;
     SmbiosRecord->ModuleManufacturerID =
       MemoryDevicesInfo[Index].ModuleManufacturerId;
