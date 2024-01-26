@@ -60,7 +60,7 @@ RfMessageNewRecord (
     return NULL;
   }
 
-  NewRecord = AllocateZeroPool (sizeof (REDFISH_MESSAGE_ENTRY));
+  NewRecord = AllocateZeroPool (sizeof (REDFISH_MESSAGE_RECORD));
   if (NewRecord == NULL) {
     return NULL;
   }
