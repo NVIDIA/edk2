@@ -984,6 +984,7 @@ CreateAmlProcessorContainer (
   @param [in]  IsLeaf           The ProcNode is a leaf.
   @param [in]  NodeToken        NodeToken of the ProcNode.
   @param [in]  ParentNodeToken  Parent NodeToken of the ProcNode.
+  @param [in]  PackageNodeSeen  A parent of the ProcNode has the physical package flag set.
 
   @retval EFI_SUCCESS             Success.
   @retval EFI_INVALID_PARAMETER   Invalid parameter.
@@ -995,23 +996,24 @@ CheckProcNode (
   UINT32           NodeFlags,
   BOOLEAN          IsLeaf,
   CM_OBJECT_TOKEN  NodeToken,
-  CM_OBJECT_TOKEN  ParentNodeToken
+  CM_OBJECT_TOKEN  ParentNodeToken,
+  BOOLEAN          PackageNodeSeen
   )
 {
   BOOLEAN  InvalidFlags;
   BOOLEAN  HasPhysicalPackageBit;
-  BOOLEAN  IsTopLevelNode;
 
   HasPhysicalPackageBit = (NodeFlags & EFI_ACPI_6_3_PPTT_PACKAGE_PHYSICAL) ==
                           EFI_ACPI_6_3_PPTT_PACKAGE_PHYSICAL;
-  IsTopLevelNode = (ParentNodeToken == CM_NULL_TOKEN);
 
-  // A top-level node is a Physical Package and conversely.
-  InvalidFlags = HasPhysicalPackageBit ^ IsTopLevelNode;
+  // Only one Physical Package flag is allowed in the hierarchy
+  InvalidFlags = HasPhysicalPackageBit && PackageNodeSeen;
 
   // Check Leaf specific flags.
   if (IsLeaf) {
     InvalidFlags |= ((NodeFlags & PPTT_LEAF_MASK) != PPTT_LEAF_MASK);
+    // Must have Physical Package flag somewhere in the hierarchy
+    InvalidFlags |= !(HasPhysicalPackageBit || PackageNodeSeen);
   } else {
     InvalidFlags |= ((NodeFlags & PPTT_LEAF_MASK) != 0);
   }
@@ -1042,6 +1044,7 @@ CheckProcNode (
                                       node to.
   @param [in,out] ProcContainerIndex  Pointer to the current processor container
                                       index to be used as UID.
+  @param [in]  PackageNodeSeen        A parent of the ProcNode has the physical package flag set.
 
   @retval EFI_SUCCESS             Success.
   @retval EFI_INVALID_PARAMETER   Invalid parameter.
@@ -1055,7 +1058,8 @@ CreateAmlCpuTopologyTree (
   IN  CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL  *CONST  CfgMgrProtocol,
   IN        CM_OBJECT_TOKEN                               NodeToken,
   IN        AML_NODE_HANDLE                               ParentNode,
-  IN OUT    UINT32                                        *ProcContainerIndex
+  IN OUT    UINT32                                        *ProcContainerIndex,
+  IN        BOOLEAN                                       PackageNodeSeen
   )
 {
   EFI_STATUS              Status;
@@ -1065,6 +1069,7 @@ CreateAmlCpuTopologyTree (
   AML_OBJECT_NODE_HANDLE  ProcContainerNode;
   UINT32                  Uid;
   UINT16                  Name;
+  BOOLEAN                 HasPhysicalPackageBit;
 
   ASSERT (Generator != NULL);
   ASSERT (Generator->ProcNodeList != NULL);
@@ -1087,7 +1092,8 @@ CreateAmlCpuTopologyTree (
                    Generator->ProcNodeList[Index].Flags,
                    TRUE,
                    Generator->ProcNodeList[Index].Token,
-                   NodeToken
+                   NodeToken,
+                   PackageNodeSeen
                    );
         if (EFI_ERROR (Status)) {
           ASSERT (0);
@@ -1120,7 +1126,8 @@ CreateAmlCpuTopologyTree (
                    Generator->ProcNodeList[Index].Flags,
                    FALSE,
                    Generator->ProcNodeList[Index].Token,
-                   NodeToken
+                   NodeToken,
+                   PackageNodeSeen
                    );
         if (EFI_ERROR (Status)) {
           ASSERT (0);
@@ -1161,13 +1168,17 @@ CreateAmlCpuTopologyTree (
           ProcContainerName++;
         }
 
+        HasPhysicalPackageBit = (Generator->ProcNodeList[Index].Flags & EFI_ACPI_6_3_PPTT_PACKAGE_PHYSICAL) ==
+                                EFI_ACPI_6_3_PPTT_PACKAGE_PHYSICAL;
+
         // Recursively continue creating an AML tree.
         Status = CreateAmlCpuTopologyTree (
                    Generator,
                    CfgMgrProtocol,
                    Generator->ProcNodeList[Index].Token,
                    ProcContainerNode,
-                   ProcContainerIndex
+                   ProcContainerIndex,
+                   (PackageNodeSeen || HasPhysicalPackageBit)
                    );
         if (EFI_ERROR (Status)) {
           ASSERT (0);
@@ -1223,7 +1234,8 @@ CreateTopologyFromProcHierarchy (
              CfgMgrProtocol,
              CM_NULL_TOKEN,
              ScopeNode,
-             &ProcContainerIndex
+             &ProcContainerIndex,
+             FALSE
              );
   if (EFI_ERROR (Status)) {
     ASSERT (0);
