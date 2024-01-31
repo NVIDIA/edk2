@@ -983,6 +983,7 @@ CreateAmlProcessorContainer (
   @param [in]  NodeFlags        Flags of the ProcNode to check.
   @param [in]  IsLeaf           The ProcNode is a leaf.
   @param [in]  NodeToken        NodeToken of the ProcNode.
+  @param [in]  ParentNodeToken  Parent NodeToken of the ProcNode.
 
   @retval EFI_SUCCESS             Success.
   @retval EFI_INVALID_PARAMETER   Invalid parameter.
@@ -993,16 +994,26 @@ EFIAPI
 CheckProcNode (
   UINT32           NodeFlags,
   BOOLEAN          IsLeaf,
-  CM_OBJECT_TOKEN  NodeToken
+  CM_OBJECT_TOKEN  NodeToken,
+  CM_OBJECT_TOKEN  ParentNodeToken
   )
 {
   BOOLEAN  InvalidFlags;
+  BOOLEAN  HasPhysicalPackageBit;
+  BOOLEAN  IsTopLevelNode;
+
+  HasPhysicalPackageBit = (NodeFlags & EFI_ACPI_6_3_PPTT_PACKAGE_PHYSICAL) ==
+                          EFI_ACPI_6_3_PPTT_PACKAGE_PHYSICAL;
+  IsTopLevelNode = (ParentNodeToken == CM_NULL_TOKEN);
+
+  // A top-level node is a Physical Package and conversely.
+  InvalidFlags = HasPhysicalPackageBit ^ IsTopLevelNode;
 
   // Check Leaf specific flags.
   if (IsLeaf) {
-    InvalidFlags = ((NodeFlags & PPTT_LEAF_MASK) != PPTT_LEAF_MASK);
+    InvalidFlags |= ((NodeFlags & PPTT_LEAF_MASK) != PPTT_LEAF_MASK);
   } else {
-    InvalidFlags = ((NodeFlags & PPTT_LEAF_MASK) != 0);
+    InvalidFlags |= ((NodeFlags & PPTT_LEAF_MASK) != 0);
   }
 
   if (InvalidFlags) {
@@ -1075,7 +1086,8 @@ CreateAmlCpuTopologyTree (
         Status = CheckProcNode (
                    Generator->ProcNodeList[Index].Flags,
                    TRUE,
-                   Generator->ProcNodeList[Index].Token
+                   Generator->ProcNodeList[Index].Token,
+                   NodeToken
                    );
         if (EFI_ERROR (Status)) {
           ASSERT (0);
@@ -1107,7 +1119,8 @@ CreateAmlCpuTopologyTree (
         Status = CheckProcNode (
                    Generator->ProcNodeList[Index].Flags,
                    FALSE,
-                   Generator->ProcNodeList[Index].Token
+                   Generator->ProcNodeList[Index].Token,
+                   NodeToken
                    );
         if (EFI_ERROR (Status)) {
           ASSERT (0);
