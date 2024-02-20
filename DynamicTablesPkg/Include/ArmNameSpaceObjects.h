@@ -13,6 +13,7 @@
 #ifndef ARM_NAMESPACE_OBJECTS_H_
 #define ARM_NAMESPACE_OBJECTS_H_
 
+#include <IndustryStandard/AcpiAml.h>
 #include <AcpiObjects.h>
 #include <StandardNameSpaceObjects.h>
 
@@ -77,6 +78,7 @@ typedef enum ArmObjectID {
   EArmObjResNodeInfo,                                          ///< 52 - Res Resource Node Info
   EArmObjFuncDepInfo,                                          ///< 53 - Func Dep Info
   EArmObjTpm2InterfaceInfo,                                    ///< 54 - TPM Interface Info
+  EArmObjDbg2DeviceInfo,                                       ///< 55 - Generic DBG2 devices
   EArmObjMax
 } EARM_OBJECT_ID;
 
@@ -1458,6 +1460,31 @@ typedef struct CmArmTpm2InterfaceInfo {
   /** Log Area Start Address */
   UINT64    Lasa;
 } CM_ARM_TPM2_INTERFACE_INFO;
+
+/** A structure that describes a generic device to add a DBG2 device node from.
+
+  ID: EArmObjDbg2DeviceInfo,
+*/
+typedef struct CmArmDbg2DeviceInfo {
+  /// The physical base address for the device
+  UINT64    BaseAddress;
+
+  /// The Base address length
+  UINT64    BaseAddressLength;
+
+  /// The DBG2 port type
+  UINT16    PortType;
+
+  /// The DBG2 port subtype
+  UINT16    PortSubtype;
+
+  /// Access Size
+  UINT8     AccessSize;
+
+  /** ASCII Null terminated string that will be appended to \_SB_. for the full path.
+  */
+  CHAR8     ObjectName[AML_NAME_SEG_SIZE + 1];
+} CM_ARM_DBG2_DEVICE_INFO;
 
 #pragma pack()
 
