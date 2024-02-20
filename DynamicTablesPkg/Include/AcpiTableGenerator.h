@@ -111,6 +111,7 @@ typedef enum StdAcpiTableId {
   EStdAcpiTableIdHpet,                          ///< HPET Generator
   EStdAcpiTableIdSsdtHpet,                      ///< SSDT HPET Generator
   EStdAcpiTableIdSpmi,                          ///< SPMI Generator
+  EStdAcpiTableIdSsdtGenericDevice,             ///< SSDT Generic Device Generator
   EStdAcpiTableIdMax
 } ESTD_ACPI_TABLE_ID;
 
