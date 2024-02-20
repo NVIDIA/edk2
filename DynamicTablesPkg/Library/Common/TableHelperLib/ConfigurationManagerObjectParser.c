@@ -687,6 +687,21 @@ STATIC CONST CM_OBJ_PARSER  CmArmDbg2DeviceInfoParser[] = {
   { "ObjectName",        AML_NAME_SEG_SIZE + 1, NULL,     PrintString }
 };
 
+/** A parser for EArmObjGenericDeviceInfo.
+*/
+STATIC CONST CM_OBJ_PARSER  CmArmGenericDeviceInfoParser[] = {
+  { "Name",                   AML_NAME_SEG_SIZE + 1,    NULL,   PrintString },
+  { "Hid",                    8+1,                      NULL,   PrintString },
+  { "CidValid",               1,                        "%d",   NULL        },
+  { "Cid",                    8+1,                      NULL,   PrintString },
+  { "Uid",                    4,                        "0x%x", NULL        },
+  { "HrvValid",               1,                        "%d",   NULL        },
+  { "Hrv",                    4,                        "0x%x", NULL        },
+  { "Cca",                    1,                        "%d",   NULL        },
+  { "AddressResourceToken",   sizeof (CM_OBJECT_TOKEN), "0x%p", NULL        },
+  { "InterruptResourceToken", sizeof (CM_OBJECT_TOKEN), "0x%p", NULL        }
+};
+
 /** A parser for Arm namespace objects.
 */
 STATIC CONST CM_OBJ_PARSER_ARRAY  ArmNamespaceObjectParser[] = {
@@ -792,6 +807,10 @@ STATIC CONST CM_OBJ_PARSER_ARRAY  ArmNamespaceObjectParser[] = {
     ARRAY_SIZE (CmArmTpm2InterfaceInfo) },
   { "EArmObjDbg2DeviceInfo",               CmArmDbg2DeviceInfoParser,
     ARRAY_SIZE (CmArmDbg2DeviceInfoParser) },
+  { "EArmObjGenericDeviceInfo",            CmArmGenericDeviceInfoParser,
+    ARRAY_SIZE (CmArmGenericDeviceInfoParser) },
+  { "EArmObjGenericInterrupt",             CmArmGenericInterruptParser,
+    ARRAY_SIZE (CmArmGenericInterruptParser) },
   { "EArmObjMax",                          NULL,                                  0                                },
 };
 

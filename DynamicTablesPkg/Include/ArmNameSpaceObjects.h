@@ -78,6 +78,8 @@ typedef enum ArmObjectID {
   EArmObjFuncDepInfo,                                          ///< 52 - Func Dep Info
   EArmObjTpm2InterfaceInfo,                                    ///< 53 - TPM Interface Info
   EArmObjDbg2DeviceInfo,                                       ///< 54 - Generic DBG2 devices
+  EArmObjGenericDeviceInfo,                                    ///< 55 - Generic Device Info
+  EArmObjGenericInterrupt,                                     ///< 56 - Generic Interrupt
   EArmObjMax
 } EARM_OBJECT_ID;
 
@@ -728,6 +730,8 @@ typedef struct CmArmIdMapping {
 
 /** A structure that describes the Arm
     Generic Interrupts.
+
+    ID: EArmObjGenericInterrupt
 */
 typedef struct CmArmGenericInterrupt {
   /// Interrupt number
@@ -1510,6 +1514,42 @@ typedef struct CmArmDbg2DeviceInfo {
   */
   CHAR8     ObjectName[AML_NAME_SEG_SIZE + 1];
 } CM_ARM_DBG2_DEVICE_INFO;
+
+/** A structure that describes a generic device to create SSDT node from.
+
+  ID: EArmObjGenericDeviceInfo,
+*/
+typedef struct CmArmGenericDeviceInfo {
+  /// ACPI device name
+  CHAR8              Name[AML_NAME_SEG_SIZE + 1];
+
+  /// Hardware ID
+  CHAR8              Hid[8+1];
+
+  /// Compatible ID
+  BOOLEAN            CidValid;
+  CHAR8              Cid[8+1];
+
+  /// Unique Id
+  UINT32             Uid;
+
+  /// Hardware revision
+  BOOLEAN            HrvValid;
+  UINT32             Hrv;
+
+  /// Cache Coherency Attribute
+  BOOLEAN            Cca;
+
+  /// References used to create _CRS method.
+
+  /// Optional field: Reference Token for address resources.
+  /// Token identifying an array of CM_ARM_MEMORY_RANGE_DESCRIPTOR objects
+  CM_OBJECT_TOKEN    AddressResourceToken;
+
+  /// Optional field: Reference Token for interrupt resources.
+  /// Token identifying an array of CM_ARM_GENERIC_INTERRUPT objects
+  CM_OBJECT_TOKEN    InterruptResourceToken;
+} CM_ARM_GENERIC_DEVICE_INFO;
 
 #pragma pack()
 
