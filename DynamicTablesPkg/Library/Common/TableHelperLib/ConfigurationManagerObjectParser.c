@@ -676,6 +676,17 @@ STATIC CONST CM_OBJ_PARSER  CmArmTpm2InterfaceInfo[] = {
   { "Lasa",                  sizeof (UINT64), "0x%llx", NULL    },
 };
 
+/** A parser for EArmObjDbg2DeviceInfo.
+*/
+STATIC CONST CM_OBJ_PARSER  CmArmDbg2DeviceInfoParser[] = {
+  { "BaseAddress",       8,                     "0x%llx", NULL        },
+  { "BaseAddressLength", 8,                     "0x%llx", NULL        },
+  { "PortType",          2,                     "0x%x",   NULL        },
+  { "PortSubtype",       2,                     "0x%x",   NULL        },
+  { "AccessSize",        1,                     "0x%x",   NULL        },
+  { "ObjectName",        AML_NAME_SEG_SIZE + 1, NULL,     PrintString }
+};
+
 /** A parser for Arm namespace objects.
 */
 STATIC CONST CM_OBJ_PARSER_ARRAY  ArmNamespaceObjectParser[] = {
@@ -779,6 +790,8 @@ STATIC CONST CM_OBJ_PARSER_ARRAY  ArmNamespaceObjectParser[] = {
   { "EArmObjFuncDepInfo",                  NULL,                                  0                                },
   { "EArmObjTpm2InterfaceInfo",            CmArmTpm2InterfaceInfo,
     ARRAY_SIZE (CmArmTpm2InterfaceInfo) },
+  { "EArmObjDbg2DeviceInfo",               CmArmDbg2DeviceInfoParser,
+    ARRAY_SIZE (CmArmDbg2DeviceInfoParser) },
   { "EArmObjMax",                          NULL,                                  0                                },
 };
 
