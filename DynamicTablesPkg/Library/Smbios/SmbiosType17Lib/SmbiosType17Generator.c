@@ -189,6 +189,7 @@ BuildSmbiosType17TableEx (
   UINT8                         FirmwareVersionRef;
   UINT8                         ManufacturerNameRef;
   CHAR8                         *ManufacturerName;
+  UINT8                         PartNumRef;
   CHAR8                         *OptionalStrings;
   SMBIOS_TABLE_TYPE17           *SmbiosRecord;
   UINTN                         SmbiosRecordSize;
@@ -258,6 +259,7 @@ BuildSmbiosType17TableEx (
     BankLocatorRef      = 0;
     FirmwareVersionRef  = 0;
     ManufacturerNameRef = 0;
+    PartNumRef          = 0;
     ManufacturerName    = NULL;
 
     if (MemoryDevicesInfo[Index].DeviceLocator != NULL) {
@@ -315,6 +317,17 @@ BuildSmbiosType17TableEx (
       }
     }
 
+    if (MemoryDevicesInfo[Index].PartNum != NULL) {
+      Status = StringTableAddString (
+                 &StrTable,
+                 MemoryDevicesInfo[Index].PartNum,
+                 &PartNumRef
+                 );
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "Failed to PartNum String %r \n", Status));
+      }
+    }
+
     ManufacturerName = (CHAR8 *)Jep106GetManufacturerName (
                                   (MemoryDevicesInfo[Index].ModuleManufacturerId >> 8) & 0xFF,
                                   MemoryDevicesInfo[Index].ModuleManufacturerId & 0x7F
@@ -368,6 +381,7 @@ BuildSmbiosType17TableEx (
     SmbiosRecord->SerialNumber    = SerialNumRef;
     SmbiosRecord->FirmwareVersion = FirmwareVersionRef;
     SmbiosRecord->Manufacturer    = ManufacturerNameRef;
+    SmbiosRecord->PartNumber      = PartNumRef;
     OptionalStrings               = (CHAR8 *)(SmbiosRecord + 1);
     // publish the string set
     StringTablePublishStringSet (

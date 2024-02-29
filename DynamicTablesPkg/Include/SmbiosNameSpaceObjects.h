@@ -1,6 +1,6 @@
 /** @file
 
-  Copyright (c) 2023 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+  Copyright (c) 2023 - 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -81,6 +81,9 @@ typedef struct CmSmbiosMemoryDeviceInfo {
 
   /** Firmware version of the memory device */
   CHAR8                        *FirmwareVersion;
+
+  /** Part number of the memory device */
+  CHAR8                        *PartNum;
 
   /** Manufacturer Id.
    2 byte Manufacturer Id as per JEDEC Standard JEP106AV
