@@ -2,6 +2,7 @@
 # Plugin to located any host-based unit tests in the output directory and execute them.
 ##
 # Copyright (c) Microsoft Corporation.
+# Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -110,9 +111,16 @@ class HostBasedUnitTestRunner(IUefiBuildPlugin):
                 if ret != 0:
                     logging.error("UnitTest Execution Error: " +
                                   os.path.basename(test))
+                    # This indicates we were unable to run the executable or
+                    # test executable is reporting a test failure via its
+                    # return code.  Either way, be sure we pass the failure on.
+                    failure_count += 1
                 else:
                     logging.info("UnitTest Completed: " +
                                  os.path.basename(test))
+                    # Check the test results for failures.  The executable may
+                    # have exited with a 0 return code, but reported test
+                    # failures.  If so, we want to pass those failures on.
                     file_match_pattern = test + ".*." + arch + ".result.xml"
                     xml_results_list = glob.glob(file_match_pattern)
                     for xml_result_file in xml_results_list:
