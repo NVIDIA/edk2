@@ -178,9 +178,7 @@ BuildSmbiosType7TableEx (
       return Status;
     }
 
-    if (CacheInfo[Index].SocketDesignation != NULL) {
-      STRING_TABLE_ADD_STRING (StrTable, CacheInfo[Index].SocketDesignation, SocketDesignationRef);
-    }
+    STRING_TABLE_ADD_STRING (StrTable, CacheInfo[Index].SocketDesignation, SocketDesignationRef);
 
     SmbiosRecordSize = sizeof (SMBIOS_TABLE_TYPE7) +
                        StringTableGetStringSetSize (&StrTable);

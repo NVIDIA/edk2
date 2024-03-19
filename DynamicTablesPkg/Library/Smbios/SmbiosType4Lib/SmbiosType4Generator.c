@@ -227,29 +227,12 @@ BuildSmbiosType4TableEx (
       return Status;
     }
 
-    if (ProcessorInfo[Index].SocketDesignation != NULL) {
-      STRING_TABLE_ADD_STRING (StrTable, ProcessorInfo[Index].SocketDesignation, SocketDesignationRef);
-    }
-
-    if (ProcessorInfo[Index].ProcessorManufacturer != NULL) {
-      STRING_TABLE_ADD_STRING (StrTable, ProcessorInfo[Index].ProcessorManufacturer, ProcessorManufacturerRef);
-    }
-
-    if (ProcessorInfo[Index].ProcessorVersion != NULL) {
-      STRING_TABLE_ADD_STRING (StrTable, ProcessorInfo[Index].ProcessorVersion, ProcessorVersionRef);
-    }
-
-    if (ProcessorInfo[Index].SerialNumber != NULL) {
-      STRING_TABLE_ADD_STRING (StrTable, ProcessorInfo[Index].SerialNumber, SerialNumberRef);
-    }
-
-    if (ProcessorInfo[Index].AssetTag != NULL) {
-      STRING_TABLE_ADD_STRING (StrTable, ProcessorInfo[Index].AssetTag, AssetTagRef);
-    }
-
-    if (ProcessorInfo[Index].PartNumber != NULL) {
-      STRING_TABLE_ADD_STRING (StrTable, ProcessorInfo[Index].PartNumber, PartNumberRef);
-    }
+    STRING_TABLE_ADD_STRING (StrTable, ProcessorInfo[Index].SocketDesignation, SocketDesignationRef);
+    STRING_TABLE_ADD_STRING (StrTable, ProcessorInfo[Index].ProcessorManufacturer, ProcessorManufacturerRef);
+    STRING_TABLE_ADD_STRING (StrTable, ProcessorInfo[Index].ProcessorVersion, ProcessorVersionRef);
+    STRING_TABLE_ADD_STRING (StrTable, ProcessorInfo[Index].SerialNumber, SerialNumberRef);
+    STRING_TABLE_ADD_STRING (StrTable, ProcessorInfo[Index].AssetTag, AssetTagRef);
+    STRING_TABLE_ADD_STRING (StrTable, ProcessorInfo[Index].PartNumber, PartNumberRef);
 
     SmbiosRecordSize = sizeof (SMBIOS_TABLE_TYPE4) +
                        StringTableGetStringSetSize (&StrTable);
