@@ -2,6 +2,7 @@
   DBG2 Table Generator
 
   Copyright (c) 2017 - 2022, Arm Limited. All rights reserved.<BR>
+  Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved. <BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -12,7 +13,9 @@
 
 #include <IndustryStandard/AcpiAml.h>
 #include <IndustryStandard/DebugPort2Table.h>
+#include <IndustryStandard/Pci.h>
 #include <Library/AcpiLib.h>
+#include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/PL011UartLib.h>
@@ -81,10 +84,10 @@ typedef struct {
   EFI_ACPI_DBG2_DEBUG_DEVICE_INFORMATION_STRUCT    Dbg2Device;
 
   /// The base address register for the serial port
-  EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE           BaseAddressRegister;
+  EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE           BaseAddressRegister[PCI_MAX_BAR];
 
   /// The address size
-  UINT32                                           AddressSize;
+  UINT32                                           AddressSize[PCI_MAX_BAR];
 
   /// The debug port name string
   CHAR8                                            NameSpaceString[DBG2_NAMESPACESTRING_FIELD_SIZE];
@@ -238,9 +241,11 @@ PopulateDbg2Device (
   IN CM_ARM_DBG2_DEVICE_INFO        *DeviceInfo
   )
 {
+  UINTN  Index;
+
   Dbg2Device->Dbg2Device.Revision                        = EFI_ACPI_DBG2_DEBUG_DEVICE_INFORMATION_STRUCT_REVISION;
   Dbg2Device->Dbg2Device.Length                          = sizeof (DBG2_DEBUG_DEVICE_INFORMATION);
-  Dbg2Device->Dbg2Device.NumberofGenericAddressRegisters = DBG2_NUMBER_OF_GENERIC_ADDRESS_REGISTERS;
+  Dbg2Device->Dbg2Device.NumberofGenericAddressRegisters = DeviceInfo->NumberOfAddresses;
   Dbg2Device->Dbg2Device.NameSpaceStringLength           = DBG2_NAMESPACESTRING_FIELD_SIZE;
   Dbg2Device->Dbg2Device.NameSpaceStringOffset           = OFFSET_OF (DBG2_DEBUG_DEVICE_INFORMATION, NameSpaceString);
   Dbg2Device->Dbg2Device.OemDataLength                   = 0;
@@ -249,13 +254,23 @@ PopulateDbg2Device (
   Dbg2Device->Dbg2Device.PortSubtype                     = DeviceInfo->PortSubtype;
   Dbg2Device->Dbg2Device.BaseAddressRegisterOffset       = OFFSET_OF (DBG2_DEBUG_DEVICE_INFORMATION, BaseAddressRegister);
   Dbg2Device->Dbg2Device.AddressSizeOffset               = OFFSET_OF (DBG2_DEBUG_DEVICE_INFORMATION, AddressSize);
-  Dbg2Device->BaseAddressRegister.AddressSpaceId         = EFI_ACPI_6_3_SYSTEM_MEMORY;
-  Dbg2Device->BaseAddressRegister.RegisterBitWidth       = 32;
-  Dbg2Device->BaseAddressRegister.RegisterBitOffset      = 0;
-  Dbg2Device->BaseAddressRegister.AccessSize             = DeviceInfo->AccessSize;
-  Dbg2Device->BaseAddressRegister.Address                = DeviceInfo->BaseAddress;
-  Dbg2Device->AddressSize                                = DeviceInfo->BaseAddressLength;
-  AsciiSPrint (Dbg2Device->NameSpaceString, DBG2_NAMESPACESTRING_FIELD_SIZE, "%a%a", SB_SCOPE, DeviceInfo->ObjectName);
+  for (Index = 0; Index < DeviceInfo->NumberOfAddresses; Index++) {
+    Dbg2Device->BaseAddressRegister[Index].AddressSpaceId    = EFI_ACPI_6_3_SYSTEM_MEMORY;
+    Dbg2Device->BaseAddressRegister[Index].RegisterBitWidth  = 32;
+    Dbg2Device->BaseAddressRegister[Index].RegisterBitOffset = 0;
+    Dbg2Device->BaseAddressRegister[Index].AccessSize        = DeviceInfo->AccessSize;
+    Dbg2Device->BaseAddressRegister[Index].Address           = DeviceInfo->BaseAddress[Index];
+    Dbg2Device->AddressSize[Index]                           = DeviceInfo->BaseAddressLength[Index];
+  }
+
+  if (DeviceInfo->ObjectName[0] == '\0') {
+    // If device string is empty then use "." as the name per the DBG2 specification.
+    AsciiSPrint (Dbg2Device->NameSpaceString, DBG2_NAMESPACESTRING_FIELD_SIZE, ".");
+  } else {
+    // Construct the namespace string for the device (e.g. \_SB_.COM1)
+    AsciiSPrint (Dbg2Device->NameSpaceString, DBG2_NAMESPACESTRING_FIELD_SIZE, "%a%a", SB_SCOPE, DeviceInfo->ObjectName);
+  }
+
   return EFI_SUCCESS;
 }
 
@@ -465,10 +480,11 @@ BuildDbg2TableEx (
       Uid++;
     }
 
-    SerialPortDeviceInfo.BaseAddress       = SerialPortInfo[Index].BaseAddress;
-    SerialPortDeviceInfo.BaseAddressLength = SerialPortInfo[Index].BaseAddressLength;
-    SerialPortDeviceInfo.PortType          = EFI_ACPI_DBG2_PORT_TYPE_SERIAL;
-    SerialPortDeviceInfo.PortSubtype       = SerialPortInfo[Index].PortSubtype;
+    SerialPortDeviceInfo.NumberOfAddresses    = 1;
+    SerialPortDeviceInfo.BaseAddress[0]       = SerialPortInfo[Index].BaseAddress;
+    SerialPortDeviceInfo.BaseAddressLength[0] = SerialPortInfo[Index].BaseAddressLength;
+    SerialPortDeviceInfo.PortType             = EFI_ACPI_DBG2_PORT_TYPE_SERIAL;
+    SerialPortDeviceInfo.PortSubtype          = SerialPortInfo[Index].PortSubtype;
     // Set the access size
     if (SerialPortInfo[Index].AccessSize >= EFI_ACPI_6_3_QWORD) {
       Status = EFI_INVALID_PARAMETER;
