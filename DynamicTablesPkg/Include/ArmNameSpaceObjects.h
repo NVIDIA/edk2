@@ -1,6 +1,7 @@
 /** @file
 
   Copyright (c) 2017 - 2023, Arm Limited. All rights reserved.<BR>
+  Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved. <BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -14,6 +15,7 @@
 #define ARM_NAMESPACE_OBJECTS_H_
 
 #include <IndustryStandard/AcpiAml.h>
+#include <IndustryStandard/Pci.h>
 #include <AmlCpcInfo.h>
 #include <StandardNameSpaceObjects.h>
 
@@ -1495,11 +1497,14 @@ typedef struct CmArmTpm2InterfaceInfo {
   ID: EArmObjDbg2DeviceInfo,
 */
 typedef struct CmArmDbg2DeviceInfo {
-  /// The physical base address for the device
-  UINT64    BaseAddress;
+  /// The number of addresses in the device
+  UINT8     NumberOfAddresses;
 
-  /// The Base address length
-  UINT64    BaseAddressLength;
+  /// The physical base address array for the device
+  UINT64    BaseAddress[PCI_MAX_BAR];
+
+  /// The Base address length array
+  UINT64    BaseAddressLength[PCI_MAX_BAR];
 
   /// The DBG2 port type
   UINT16    PortType;
