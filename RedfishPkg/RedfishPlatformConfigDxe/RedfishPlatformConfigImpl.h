@@ -28,7 +28,7 @@
 
 #define IS_EMPTY_STRING(a)  (a == NULL || a[0] == L'\0')
 #define ENGLISH_LANGUAGE_CODE  "en-US"
-#define X_UEFI_SCHEMA_PREFIX   "x-uefi-redfish-"
+#define X_UEFI_SCHEMA_PREFIX   "x-UEFI-redfish-"
 
 //
 // Definition of REDFISH_PLATFORM_CONFIG_PRIVATE.

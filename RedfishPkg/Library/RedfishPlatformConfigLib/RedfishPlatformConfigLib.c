@@ -191,7 +191,7 @@ RedfishPlatformConfigGetConfigureLang (
   Get the list of supported Redfish schema from platform configuration.
 
   @param[out]  SupportedSchema     The supported schema list which is separated by ';'.
-                                   For example: "x-uefi-redfish-Memory.v1_7_1;x-uefi-redfish-Boot.v1_0_1"
+                                   For example: "x-UEFI-redfish-Memory.v1_7_1;x-UEFI-redfish-Boot.v1_0_1"
                                    The SupportedSchema is allocated by the callee. It's caller's
                                    responsibility to free this buffer using FreePool().
 
