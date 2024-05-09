@@ -1,7 +1,7 @@
 /** @file
   Configuration Manager Object parser.
 
-  Copyright (c) 2021 - 2023, ARM Limited. All rights reserved.<BR>
+  Copyright (c) 2021 - 2024, ARM Limited. All rights reserved.<BR>
   Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved. <BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -686,6 +686,44 @@ STATIC CONST CM_OBJ_PARSER  CmArmPsdInfoParser[] = {
   { "NumProc",   4, "0x%x", NULL },
 };
 
+/** A parser for EArmObjMscNodeInfo.
+*/
+STATIC CONST CM_OBJ_PARSER  CmArmMscNodeInfoParser[] = {
+  { "Token",                    sizeof (CM_OBJECT_TOKEN), "0x%p",  NULL },
+  { "Identifier",               4,                        "0x%x",  NULL },
+  { "BaseAddress",              8,                        "0x%lx", NULL },
+  { "MmioSize",                 4,                        "0x%x",  NULL },
+  { "OverflowInterrupt",        4,                        "0x%x",  NULL },
+  { "OverflowInterruptFlags",   4,                        "0x%x",  NULL },
+  { "OverflowInterruptAff",     4,                        "0x%x",  NULL },
+  { "ErrorInterrupt",           4,                        "0x%x",  NULL },
+  { "ErrorInterruptFlags",      4,                        "0x%x",  NULL },
+  { "ErrorInterruptAff",        4,                        "0x%x",  NULL },
+  { "MaxNRdyUsec",              4,                        "0x%x",  NULL },
+  { "LinkedDeviceHwId",         8,                        "0x%lx", NULL },
+  { "LinkedDeviceInstanceHwId", 4,                        "0x%x",  NULL },
+  { "NumResourceNodes",         4,                        "0x%x",  NULL }
+};
+
+/** A parser for EArmObjResNodeInfo.
+*/
+STATIC CONST CM_OBJ_PARSER  CmArmResNodeInfoParser[] = {
+  { "Token",       sizeof (CM_OBJECT_TOKEN), "0x%p",  NULL },
+  { "Identifier",  4,                        "0x%x",  NULL },
+  { "RisIndex",    1,                        "0x%x",  NULL },
+  { "LocatorType", 1,                        "0x%x",  NULL },
+  { "Locator1",    8,                        "0x%lx", NULL },
+  { "Locator2",    4,                        "0x%x",  NULL },
+  { "NumFuncDep",  4,                        "0x%x",  NULL }
+};
+
+/** A parser for EArmObjFuncDepInfo.
+*/
+STATIC CONST CM_OBJ_PARSER  CmArmFuncDepInfoParser[] = {
+  { "Token",    sizeof (CM_OBJECT_TOKEN), "0x%p", NULL },
+  { "Producer", 4,                        "0x%x", NULL }
+};
+
 /** A parser for EArmObjTpm2InterfaceInfo.
 */
 STATIC CONST CM_OBJ_PARSER  CmArmTpm2InterfaceInfo[] = {
@@ -824,9 +862,12 @@ STATIC CONST CM_OBJ_PARSER_ARRAY  ArmNamespaceObjectParser[] = {
     ARRAY_SIZE (CmArmEtInfo) },
   { "EArmObjPsdInfo",                      CmArmPsdInfoParser,
     ARRAY_SIZE (CmArmPsdInfoParser) },
-  { "EArmObjMscNodeInfo",                  NULL,                                  0                                },
-  { "EArmObjResNodeInfo",                  NULL,                                  0                                },
-  { "EArmObjFuncDepInfo",                  NULL,                                  0                                },
+  { "EArmObjMscNodeInfo",                  CmArmMscNodeInfoParser,
+    ARRAY_SIZE (CmArmMscNodeInfoParser) },
+  { "EArmObjResNodeInfo",                  CmArmResNodeInfoParser,
+    ARRAY_SIZE (CmArmResNodeInfoParser) },
+  { "EArmObjFuncDepInfo",                  CmArmFuncDepInfoParser,
+    ARRAY_SIZE (CmArmFuncDepInfoParser) },
   { "EArmObjTpm2InterfaceInfo",            CmArmTpm2InterfaceInfo,
     ARRAY_SIZE (CmArmTpm2InterfaceInfo) },
   { "EArmObjDbg2DeviceInfo",               CmArmDbg2DeviceInfoParser,
