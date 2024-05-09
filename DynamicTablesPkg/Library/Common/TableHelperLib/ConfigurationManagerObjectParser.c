@@ -666,6 +666,44 @@ STATIC CONST CM_OBJ_PARSER  CmArmEtInfo[] = {
   { "EtType", sizeof (ARM_ET_TYPE), "0x%x", NULL }
 };
 
+/** A parser for EArmObjMscNodeInfo.
+*/
+STATIC CONST CM_OBJ_PARSER  CmArmMscNodeInfoParser[] = {
+  { "Token",                    sizeof (CM_OBJECT_TOKEN), "0x%p",  NULL },
+  { "Identifier",               4,                        "0x%x",  NULL },
+  { "BaseAddress",              8,                        "0x%lx", NULL },
+  { "MmioSize",                 4,                        "0x%x",  NULL },
+  { "OverflowInterrupt",        4,                        "0x%x",  NULL },
+  { "OverflowInterruptFlags",   4,                        "0x%x",  NULL },
+  { "OverflowInterruptAff",     4,                        "0x%x",  NULL },
+  { "ErrorInterrupt",           4,                        "0x%x",  NULL },
+  { "ErrorInterruptFlags",      4,                        "0x%x",  NULL },
+  { "ErrorInterruptAff",        4,                        "0x%x",  NULL },
+  { "MaxNRdyUsec",              4,                        "0x%x",  NULL },
+  { "LinkedDeviceHwId",         8,                        "0x%lx", NULL },
+  { "LinkedDeviceInstanceHwId", 4,                        "0x%x",  NULL },
+  { "NumResourceNodes",         4,                        "0x%x",  NULL }
+};
+
+/** A parser for EArmObjResNodeInfo.
+*/
+STATIC CONST CM_OBJ_PARSER  CmArmResNodeInfoParser[] = {
+  { "Token",       sizeof (CM_OBJECT_TOKEN), "0x%p",  NULL },
+  { "Identifier",  4,                        "0x%x",  NULL },
+  { "RisIndex",    1,                        "0x%x",  NULL },
+  { "LocatorType", 1,                        "0x%x",  NULL },
+  { "Locator1",    8,                        "0x%lx", NULL },
+  { "Locator2",    4,                        "0x%x",  NULL },
+  { "NumFuncDep",  4,                        "0x%x",  NULL }
+};
+
+/** A parser for EArmObjFuncDepInfo.
+*/
+STATIC CONST CM_OBJ_PARSER  CmArmFuncDepInfoParser[] = {
+  { "Token",    sizeof (CM_OBJECT_TOKEN), "0x%p", NULL },
+  { "Producer", 4,                        "0x%x", NULL }
+};
+
 /** A parser for EArchCommonObjPsdInfo.
 */
 STATIC CONST CM_OBJ_PARSER  CmArchCommonPsdInfoParser[] = {
@@ -797,6 +835,9 @@ STATIC CONST CM_OBJ_PARSER_ARRAY  ArmNamespaceObjectParser[] = {
   CM_PARSER_ADD_OBJECT (EArmObjGenericDeviceInfo,          CmArmGenericDeviceInfoParser),
   CM_PARSER_ADD_OBJECT (EArmObjGenericInterrupt,           CmArchCommonGenericInterruptParser),
   CM_PARSER_ADD_OBJECT (EArmObjDbg2DeviceInfo,             CmArmDbg2DeviceInfoParser),
+  CM_PARSER_ADD_OBJECT (EArmObjMscNodeInfo,                CmArmMscNodeInfoParser),
+  CM_PARSER_ADD_OBJECT (EArmObjResNodeInfo,                CmArmResNodeInfoParser),
+  CM_PARSER_ADD_OBJECT (EArmObjFuncDepInfo,                CmArmFuncDepInfoParser),
   CM_PARSER_ADD_OBJECT_RESERVED (EArmObjMax)
 };
 
