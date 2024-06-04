@@ -2,6 +2,7 @@
   SMBIOS String Table Helper
 
   Copyright (c) 2022, Arm Limited. All rights reserved.<BR>
+  SPDX-FileCopyrightText: copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -224,4 +225,29 @@ StringTableFree (
   FreePool (StrTable->Elements);
   ZeroMem (StrTable, sizeof (STRING_TABLE));
   return EFI_SUCCESS;
+}
+
+/** Get the total memory size of all strings in a SMBIOS table. Including the double-zero end.
+
+  @param[in] Hdr                 Pointer to the SMBIOS table
+
+  @return UINTN                  The size of strings.
+**/
+UINTN
+GetSmbiosTableStringsSize (
+  IN EFI_SMBIOS_TABLE_HEADER  *Hdr
+  )
+{
+  UINT8  *p;
+  UINTN  StringSize;
+
+  p          = (UINT8 *)Hdr + Hdr->Length;
+  StringSize = 0;
+
+  while ((*p != 0) || (*(p + 1) != 0)) {
+    p++;
+    StringSize++;
+  }
+
+  return (UINTN)(StringSize + 2);
 }
