@@ -10,6 +10,8 @@
 #ifndef SMBIOS_STRING_TABLE_H_
 #define SMBIOS_STRING_TABLE_H_
 
+#include <Protocol/Smbios.h>
+
 /** A structure representing a string in the string table.
 */
 typedef struct StringElement {
@@ -116,6 +118,17 @@ EFI_STATUS
 EFIAPI
 StringTableFree (
   IN STRING_TABLE *CONST  StrTable
+  );
+
+/** Get the total memory size of all strings in a SMBIOS table. Including the double-zero end.
+
+  @param[in] Hdr                 Pointer to the SMBIOS table
+
+  @return UINTN                  The size of strings.
+**/
+UINTN
+GetSmbiosTableStringsSize (
+  IN EFI_SMBIOS_TABLE_HEADER  *Hdr
   );
 
 /** STRING_TABLE_ADD_STRING macro is the wrapper over StringTableAddString().
