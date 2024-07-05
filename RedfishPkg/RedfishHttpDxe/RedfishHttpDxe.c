@@ -194,18 +194,13 @@ ReportHttpError (
   //
   AsciiSPrint (ErrorMsg, sizeof (ErrorMsg), REDFISH_HTTP_ERROR_REPORT, HttpMethodToString (Method), (HttpStatusCode == NULL ? HTTP_STATUS_UNSUPPORTED_STATUS : *HttpStatusCode), Uri);
   DEBUG ((DEBUG_ERROR, "%a\n", ErrorMsg));
-  //
-  // TODO:
-  // Below PI status code is approved by PIWG and wait for specification published.
-  // We will uncomment below report status code after PI status code get published.
-  // REF: https://bugzilla.tianocore.org/show_bug.cgi?id=4483
-  //
-  // REPORT_STATUS_CODE_WITH_EXTENDED_DATA (
-  //  EFI_ERROR_CODE | EFI_ERROR_MAJOR,
-  //  EFI_COMPUTING_UNIT_MANAGEABILITY | EFI_MANAGEABILITY_EC_REDFISH_COMMUNICATION_ERROR,
-  //  ErrorMsg,
-  //  AsciiStrSize (ErrorMsg)
-  //  );
+
+  REPORT_STATUS_CODE_WITH_EXTENDED_DATA (
+    EFI_ERROR_CODE | EFI_ERROR_MAJOR,
+    EFI_COMPUTING_UNIT_MANAGEABILITY | EFI_MANAGEABILITY_EC_REDFISH_COMMUNICATION_ERROR,
+    ErrorMsg,
+    AsciiStrSize (ErrorMsg)
+    );
 }
 
 /**
