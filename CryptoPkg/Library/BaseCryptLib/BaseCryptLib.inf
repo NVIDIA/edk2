@@ -66,6 +66,8 @@
   SysCall/TimerWrapper.c
   SysCall/BaseMemAllocation.c
 
+  CryptFncIfx/CryptFncIfx.c
+
 [Sources.Ia32]
   Rand/CryptRandTsc.c
 
