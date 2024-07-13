@@ -38,6 +38,10 @@
   ##
   BaseCryptLib|Include/Library/BaseCryptLib.h
 
+  ##  @libraryclass  Provides additional basic library functions for cryptographic primitives.
+  #
+  BaseCryptLib|Include/Library/CryptFncIfx.h
+
   ##  @libraryclass  Provides TLS library functions for EFI TLS protocol.
   ##
   TlsLib|Include/Library/TlsLib.h
