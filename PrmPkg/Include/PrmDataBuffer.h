@@ -3,6 +3,7 @@
   Definitions for the Platform Runtime Mechanism (PRM) data buffer structures.
 
   Copyright (c) Microsoft Corporation
+  SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA Corporation. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
