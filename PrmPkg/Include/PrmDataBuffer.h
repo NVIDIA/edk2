@@ -3,6 +3,7 @@
   Definitions for the Platform Runtime Mechanism (PRM) data buffer structures.
 
   Copyright (c) Microsoft Corporation
+  SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA Corporation. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -12,7 +13,7 @@
 
 #include <Uefi.h>
 
-#define PRM_DATA_BUFFER_HEADER_SIGNATURE  SIGNATURE_32('P','R','M','D')
+#define PRM_DATA_BUFFER_HEADER_SIGNATURE  SIGNATURE_32('P','R','M','S')
 
 #pragma pack(push, 1)
 
