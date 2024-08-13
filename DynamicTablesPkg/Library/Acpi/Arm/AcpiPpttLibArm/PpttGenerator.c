@@ -486,6 +486,7 @@ AddProcHierarchyNodes (
   PPTT_NODE_INDEXER  *ProcNodeIterator;
   UINT32             NodeCount;
   UINT32             Length;
+  UINT32             ProcContainerIndex;
 
   ASSERT (
     (Generator != NULL) &&
@@ -513,6 +514,7 @@ AddProcHierarchyNodes (
   }
 
   UniqueGicCRefCount = 0;
+  ProcContainerIndex = 0;
 
   while (NodeCount-- != 0) {
     ProcInfoNode = (CM_ARM_PROC_HIERARCHY_INFO *)ProcNodeIterator->Object;
@@ -603,17 +605,28 @@ AddProcHierarchyNodes (
       // Default invalid ACPI Processor ID to 0
       ProcStruct->AcpiProcessorId = 0;
     } else if (ProcInfoNode->GicCToken == CM_NULL_TOKEN) {
-      Status = EFI_INVALID_PARAMETER;
-      DEBUG ((
-        DEBUG_ERROR,
-        "ERROR: PPTT: The 'ACPI Processor ID valid' flag is set but no GICC " \
-        "structure token was provided. GicCToken = %p. RequestorToken = %p. " \
-        "Status = %r\n",
-        ProcInfoNode->GicCToken,
-        ProcInfoNode->Token,
-        Status
-        ));
-      return Status;
+      if (IS_PROC_NODE_LEAF (ProcInfoNode)) {
+        Status = EFI_INVALID_PARAMETER;
+        DEBUG ((
+          DEBUG_ERROR,
+          "ERROR: PPTT: The 'ACPI Processor ID valid' flag is set but no GICC " \
+          "structure token was provided. GicCToken = %p. RequestorToken = %p. " \
+          "Status = %r\n",
+          ProcInfoNode->GicCToken,
+          ProcInfoNode->Token,
+          Status
+          ));
+        return Status;
+      }
+
+      // Node is a ProcContainer with a valid ID
+
+      if (ProcInfoNode->OverrideNameUidEnabled) {
+        ProcStruct->AcpiProcessorId = ProcInfoNode->OverrideUid;
+      } else {
+        // Note: This value MUST match the value assigned to the _UID in SsdtCpuTopologyGenerator.c
+        ProcStruct->AcpiProcessorId = ProcContainerIndex++;
+      }
     } else {
       Status = GetEArmObjGicCInfo (
                  CfgMgrProtocol,
