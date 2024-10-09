@@ -29,6 +29,7 @@
   AcpiHelperLib
   BaseLib
   Tpm2DeviceTableLib
+  TpmMeasurementLib
 
 [FixedPcd]
   gEdkiiDynamicTablesPkgTokenSpaceGuid.PcdGenTpm2DeviceTable
