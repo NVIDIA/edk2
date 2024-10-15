@@ -171,6 +171,8 @@ BuildSmbiosType11Table (
   Status         = EFI_SUCCESS;
 
 exit:
+  // free string table
+  StringTableFree (&StrTable);
   return Status;
 }
 
