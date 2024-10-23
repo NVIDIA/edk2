@@ -917,7 +917,7 @@ ReleaseCredentialPrivate (
       mCredentialPrivate->AccountName = NULL;
     }
 
-    ClearRedfishServiceList (mCredentialPrivate);
+    ClearRedfishServiceList ();
   }
 
   return EFI_SUCCESS;
