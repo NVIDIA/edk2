@@ -429,8 +429,6 @@ CpuDxeInitialize (
                   &CpuHandle,
                   &gEfiCpuArchProtocolGuid,
                   &mCpu,
-                  &gEfiMemoryAttributeProtocolGuid,
-                  &mMemoryAttribute,
                   NULL
                   );
   if (EFI_ERROR (Status)) {
