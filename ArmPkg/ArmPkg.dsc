@@ -69,7 +69,6 @@
 
   CpuLib|MdePkg/Library/BaseCpuLib/BaseCpuLib.inf
   ArmGicLib|ArmPkg/Drivers/ArmGic/ArmGicLib.inf
-  ArmGicArchLib|ArmPkg/Library/ArmGicArchLib/ArmGicArchLib.inf
   ArmGenericTimerCounterLib|ArmPkg/Library/ArmGenericTimerPhyCounterLib/ArmGenericTimerPhyCounterLib.inf
   ArmSmcLib|ArmPkg/Library/ArmSmcLib/ArmSmcLib.inf
   ArmDisassemblerLib|ArmPkg/Library/ArmDisassemblerLib/ArmDisassemblerLib.inf
@@ -138,8 +137,6 @@
 
   ArmPkg/Drivers/ArmPciCpuIo2Dxe/ArmPciCpuIo2Dxe.inf
   ArmPkg/Library/ArmArchTimerLib/ArmArchTimerLib.inf
-  ArmPkg/Library/ArmGicArchLib/ArmGicArchLib.inf
-  ArmPkg/Library/ArmGicArchSecLib/ArmGicArchSecLib.inf
   ArmPkg/Library/ArmLib/ArmBaseLib.inf
   ArmPkg/Library/ArmMtlNullLib/ArmMtlNullLib.inf
   ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
