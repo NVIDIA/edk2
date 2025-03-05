@@ -3,7 +3,7 @@
 
   (C) Copyright 2020 Hewlett Packard Enterprise Development LP<BR>
   Copyright (C) 2022 Advanced Micro Devices, Inc. All rights reserved.<BR>
-  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+  Copyright (c) 2023 - 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -76,7 +76,7 @@ RedfishPlatformHostInterfaceNotification (
   );
 
 /**
-  Get USB Virtual Serial Number.
+  Get USB Serial Number.
 
   @param[OUT] SerialNumber      Pointer to retrieve complete serial number.
 
@@ -84,7 +84,7 @@ RedfishPlatformHostInterfaceNotification (
   @retval Others              Failed to get the serial number
 **/
 EFI_STATUS
-RedfishPlatformHostInterfaceUSBSerialNumber (
+RedfishPlatformHostInterfaceSerialNumber (
   OUT CHAR8  **SerialNumber
   );
 
