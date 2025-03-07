@@ -3,7 +3,7 @@
 
   Copyright (c) 2021 - 2023, ARM Limited. All rights reserved.<BR>
   Copyright (C) 2024 - 2025 Advanced Micro Devices, Inc. All rights reserved.
-  Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.<BR>
+  Copyright (c) 2024 - 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -13,7 +13,6 @@
 #include <ConfigurationManagerObject.h>
 #include "ArchCommonNameSpaceObjects.h"
 #include "ConfigurationManagerObjectParser.h"
-#include "IndustryStandard/Pci22.h"
 
 STATIC
 VOID
@@ -46,15 +45,6 @@ STATIC
 VOID
 EFIAPI
 HexDump (
-  CONST CHAR8  *Format,
-  UINT8        *Ptr,
-  UINT32       Length
-  );
-
-STATIC
-VOID
-EFIAPI
-PrintUint64Array (
   CONST CHAR8  *Format,
   UINT8        *Ptr,
   UINT32       Length
@@ -946,18 +936,6 @@ STATIC CONST CM_OBJ_PARSER  CmArmGenericDeviceInfoParser[] = {
   { "InterruptResourceToken", sizeof (CM_OBJECT_TOKEN), "0x%p", NULL        }
 };
 
-/** A parser for EArmObjDbg2DeviceInfo.
-*/
-STATIC CONST CM_OBJ_PARSER  CmArmDbg2DeviceInfoParser[] = {
-  { "NumberOfAddresses", sizeof (UINT8),                "0x%x",   NULL             },
-  { "BaseAddress",       sizeof (UINT64) * PCI_MAX_BAR, "0x%llx", PrintUint64Array },
-  { "BaseAddressLength", sizeof (UINT64) * PCI_MAX_BAR, "0x%llx", PrintUint64Array },
-  { "PortType",          sizeof (UINT16),               "0x%x",   NULL             },
-  { "PortSubtype",       sizeof (UINT16),               "0x%x",   NULL             },
-  { "AccessSize",        sizeof (UINT8),                "0x%x",   NULL             },
-  { "ObjectName",        AML_NAME_SEG_SIZE + 1,         NULL,     PrintString      }
-};
-
 /** A parser for Arm namespace objects.
 */
 STATIC CONST CM_OBJ_PARSER_ARRAY  ArmNamespaceObjectParser[] = {
@@ -987,7 +965,6 @@ STATIC CONST CM_OBJ_PARSER_ARRAY  ArmNamespaceObjectParser[] = {
   CM_PARSER_ADD_OBJECT (EArmObjEtInfo,                     CmArmEtInfo),
   CM_PARSER_ADD_OBJECT (EArmObjGenericDeviceInfo,          CmArmGenericDeviceInfoParser),
   CM_PARSER_ADD_OBJECT (EArmObjGenericInterrupt,           CmArchCommonGenericInterruptParser),
-  CM_PARSER_ADD_OBJECT (EArmObjDbg2DeviceInfo,             CmArmDbg2DeviceInfoParser),
   CM_PARSER_ADD_OBJECT (EArmObjMscNodeInfo,                CmArmMscNodeInfoParser),
   CM_PARSER_ADD_OBJECT (EArmObjResNodeInfo,                CmArmResNodeInfoParser),
   CM_PARSER_ADD_OBJECT (EArmObjFuncDepInfo,                CmArmFuncDepInfoParser),
@@ -1366,29 +1343,6 @@ HexDump (
   for (Index = 0; Index < Length; Index++) {
     DEBUG ((DEBUG_INFO, "0x%02x ", *Ptr++));
   }
-}
-
-STATIC
-VOID
-EFIAPI
-PrintUint64Array (
-  CONST CHAR8  *Format,
-  UINT8        *Ptr,
-  UINT32       Length
-  )
-{
-  UINT32  Index;
-
-  DEBUG ((DEBUG_INFO, "[ "));
-  for (Index = 0; Index < (Length/sizeof (UINT64)); Index++) {
-    if ((Index != 0) && ((Index % 5) == 0)) {
-      DEBUG ((DEBUG_INFO, "\r\n"));
-    }
-
-    DEBUG ((DEBUG_INFO, "0x%08llx ", ((UINT64 *)Ptr)[Index]));
-  }
-
-  DEBUG ((DEBUG_INFO, "]"));
 }
 
 /** Print fields of the objects.

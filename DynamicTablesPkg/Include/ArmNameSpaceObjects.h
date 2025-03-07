@@ -1,7 +1,7 @@
 /** @file
 
   Copyright (c) 2017 - 2024, Arm Limited. All rights reserved.<BR>
-  Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved. <BR>
+  Copyright (c) 2024 - 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved. <BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -57,10 +57,9 @@ typedef enum ArmObjectID {
   EArmObjEtInfo,                                               ///< 23 - Embedded Trace Extension/Module Info
   EArmObjGenericDeviceInfo,                                    ///< 24 - Generic Device Info
   EArmObjGenericInterrupt,                                     ///< 25 - Generic Interrupt
-  EArmObjDbg2DeviceInfo,                                       ///< 26 - Generic DBG2 devices
-  EArmObjMscNodeInfo,                                          ///< 27 - Msc Memory System Controller Node Info
-  EArmObjResNodeInfo,                                          ///< 28 - Res Resource Node Info
-  EArmObjFuncDepInfo,                                          ///< 29 - Func Dep Info
+  EArmObjMscNodeInfo,                                          ///< 26 - Msc Memory System Controller Node Info
+  EArmObjResNodeInfo,                                          ///< 27 - Res Resource Node Info
+  EArmObjFuncDepInfo,                                          ///< 28 - Func Dep Info
   EArmObjMax
 } EARM_OBJECT_ID;
 

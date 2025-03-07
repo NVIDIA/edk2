@@ -1,8 +1,8 @@
 /** @file
 
   Copyright (c) 2024, Arm Limited. All rights reserved.<BR>
-  Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.<BR>
-  Copyright (c) 2024 Advanced Micro Devices, Inc. All rights reserved.
+  Copyright (c) 2024 - 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.<BR>
+  Copyright (C) 2024 - 2025, Advanced Micro Devices, Inc. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -18,6 +18,7 @@
 #include <AcpiObjects.h>
 #include <StandardNameSpaceObjects.h>
 
+#include <IndustryStandard/AcpiAml.h>
 #include <IndustryStandard/Tpm2Acpi.h>
 
 typedef UINT32  AML_PSS_INFO;
