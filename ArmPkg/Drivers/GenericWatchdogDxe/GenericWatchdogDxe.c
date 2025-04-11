@@ -2,6 +2,7 @@
 *
 *  Copyright (c) 2023, Ampere Computing LLC. All rights reserved.<BR>
 *  Copyright (c) 2013-2018, ARM Limited. All rights reserved.
+*  Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 *
 *  SPDX-License-Identifier: BSD-2-Clause-Patent
 *
@@ -360,6 +361,8 @@ GenericWatchdogEntry (
   EFI_STATUS  Status;
   EFI_HANDLE  Handle;
 
+  WatchdogDisable ();
+
   Status = gBS->LocateProtocol (
                   &gHardwareInterrupt2ProtocolGuid,
                   NULL,
@@ -372,6 +375,15 @@ GenericWatchdogEntry (
      This will avoid conflicts with the universal watchdog */
   ASSERT_PROTOCOL_ALREADY_INSTALLED (NULL, &gEfiWatchdogTimerArchProtocolGuid);
 
+  Status = mInterruptProtocol->SetTriggerType (
+                                 mInterruptProtocol,
+                                 PcdGet32 (PcdGenericWatchdogEl2IntrNum),
+                                 EFI_HARDWARE_INTERRUPT2_TRIGGER_EDGE_RISING
+                                 );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
   // Install interrupt handler
   Status = mInterruptProtocol->RegisterInterruptSource (
                                  mInterruptProtocol,
@@ -380,15 +392,6 @@ GenericWatchdogEntry (
                                  );
   if (EFI_ERROR (Status)) {
     return Status;
-  }
-
-  Status = mInterruptProtocol->SetTriggerType (
-                                 mInterruptProtocol,
-                                 PcdGet32 (PcdGenericWatchdogEl2IntrNum),
-                                 EFI_HARDWARE_INTERRUPT2_TRIGGER_EDGE_RISING
-                                 );
-  if (EFI_ERROR (Status)) {
-    goto UnregisterHandler;
   }
 
   // Install the Timer Architectural Protocol onto a new handle
@@ -412,8 +415,6 @@ GenericWatchdogEntry (
                   &mEfiExitBootServicesEvent
                   );
   ASSERT_EFI_ERROR (Status);
-
-  WatchdogDisable ();
 
   return EFI_SUCCESS;
 
