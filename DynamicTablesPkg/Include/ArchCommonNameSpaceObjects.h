@@ -53,6 +53,16 @@ typedef enum ArchCommonObjectID {
   EArchCommonObjTpm2InterfaceInfo,              ///< 26 - TPM Interface Info
   EArchCommonObjSpmiInterfaceInfo,              ///< 27 - SPMI Interface Info
   EArchCommonObjSpmiInterruptDeviceInfo,        ///< 28 - SPMI Interrupt and Device Info
+  EArchCommonObjCstInfo,                        ///< 29 - C-State Info
+  EArchCommonObjCsdInfo,                        ///< 30 - C-State Dependency (CSD) Info
+  EArchCommonObjPctInfo,                        ///< 31 - P-State control (PCT) Info
+  EArchCommonObjPssInfo,                        ///< 32 - P-State status (PSS) Info
+  EArchCommonObjPpcInfo,                        ///< 33 - P-State control (PPC) Info
+  EArchCommonObjStaInfo,                        ///< 34 - _STA (Device Status) Info
+  EArchCommonObjMemoryRangeDescriptor,          ///< 35 - Memory Range Descriptor
+  EArchCommonObjGenericDbg2DeviceInfo,          ///< 36 - Generic DBG2 Device Info
+  EArchCommonObjCxlHostBridgeInfo,              ///< 37 - CXL Host Bridge Info
+  EArchCommonObjCxlFixedMemoryWindowInfo,       ///< 38 - CXL Fixed Memory Window Info
   EArchCommonObjMax
 } EARCH_COMMON_OBJECT_ID;
 
@@ -728,6 +738,174 @@ typedef struct CmArchCommonObjSpmiInterruptDeviceInfo {
   /** Uid of the device */
   UINT32    DeviceId;
 } CM_ARCH_COMMON_SPMI_INTERRUPT_DEVICE_INFO;
+
+/** A structure that describes the Cst information.
+
+  Processor power state (C-state) is described in DSDT/SSDT and associated
+  to cpus/clusters in the cpu topology.
+
+  Unsupported Optional registers should be encoded with NULL resource
+  Register {(SystemMemory, 0, 0, 0, 0)}
+
+  For values that support Integer or Buffer, integer will be used
+  if buffer is NULL resource.
+  If resource is not NULL then Integer must be 0
+
+  Cf. ACPI 6.5, s8.4.1.1 _CST (C states)
+
+  ID: EArchCommonObjCstInfo
+*/
+typedef AML_CST_INFO CM_ARCH_COMMON_CST_INFO;
+
+/** A structure that describes the C-State Dependency (CSD) Info.
+
+    Cf. ACPI 6.5, s8.4.1.2 _CSD (C-State Dependency).
+
+    ID: EArchCommonObjCsdInfo
+*/
+typedef struct CmArchCommonObjCsdInfo {
+  /// The revision of the C-State dependency table.
+  UINT8              Revision;
+
+  /// The domain ID.
+  UINT32             Domain;
+
+  /// The coordination type.
+  UINT32             CoordType;
+
+  /// The number of processors in the domain.
+  UINT32             NumProcessors;
+
+  /// Token referencing the CST package of the CM object
+  CM_OBJECT_TOKEN    CstPkgRefToken;
+} CM_ARCH_COMMON_CSD_INFO;
+
+/** A structure that describes the P-State _PCT.
+
+    Cf. ACPI 6.5, s8.4.5.1 Processor Performance Control
+
+    ID: EArchCommonObjPctInfo
+*/
+typedef AML_PCT_INFO CM_ARCH_COMMON_PCT_INFO;
+
+/** A structure that describes the P-State _PSS.
+
+    Cf. ACPI 6.5, s8.4.5.2 Processor Performance Control
+
+    ID: EArchCommonObjPssInfo
+*/
+typedef AML_PSS_INFO CM_ARCH_COMMON_PSS_INFO;
+
+/** A structure that describes the P-State _PPC.
+
+    Cf. ACPI 6.5, s8.4.5.3 Processor Performance Control
+
+    ID: EArchCommonObjPpcInfo
+*/
+typedef struct CmArchCommonObjPpcInfo {
+  /// The number of performance states supported by the processor.
+  UINT32    PstateCount;
+} CM_ARCH_COMMON_PPC_INFO;
+
+/** A structure that describes the _STA (Device Status) Info.
+
+    ID: EArchCommonObjStaInfo
+*/
+typedef struct CmArchCommonStaInfo {
+  /// Device Status
+  UINT32    DeviceStatus;
+} CM_ARCH_COMMON_STA_INFO;
+
+/** A structure that describes the
+    Memory Range descriptor.
+
+    ID: EArchCommonObjMemoryRangeDescriptor
+*/
+typedef struct CmArchCommonMemoryRangeDescriptor {
+  /// Base address of Memory Range,
+  UINT64    BaseAddress;
+
+  /// Length of the Memory Range.
+  UINT64    Length;
+} CM_ARCH_COMMON_MEMORY_RANGE_DESCRIPTOR;
+
+/** A structure that describes a generic device to add a DBG2 device node from.
+
+  ID: EArchCommonObjGenericDbg2DeviceInfo,
+*/
+typedef struct CmArchCommonDbg2DeviceInfo {
+  /// Token identifying an array of CM_ARCH_COMMON_MEMORY_RANGE_DESCRIPTOR objects
+  CM_OBJECT_TOKEN    AddressResourceToken;
+
+  /// The DBG2 port type
+  UINT16             PortType;
+
+  /// The DBG2 port subtype
+  UINT16             PortSubtype;
+
+  /// Access Size
+  UINT8              AccessSize;
+
+  /** ASCII Null terminated string that will be appended to \_SB_. for the full path.
+  */
+  CHAR8              ObjectName[AML_NAME_SEG_SIZE + 1];
+} CM_ARCH_COMMON_DBG2_DEVICE_INFO;
+
+/** A structure that describes a CXL Host Bridge Structure (Type 0).
+
+  ID: EArchCommonObjCxlHostBridgeInfo
+*/
+
+typedef struct CmArchCommonCxlHostBridgeInfo {
+  /// Token to identify this object.
+  CM_OBJECT_TOKEN    Token;
+
+  /// Unique id to associate with a host bridge instance.
+  UINT32             Uid;
+
+  /// CXL version.
+  UINT32             Version;
+
+  /// Base address of the component registers.
+  UINT64             ComponentRegisterBase;
+} CM_ARCH_COMMON_CXL_HOST_BRIDGE_INFO;
+
+// Maximum interleave ways is defined in the CXL spec section 8.2.4.19.7.
+#define CFMWS_MAX_INTERLEAVE_WAYS  (16)
+
+/** A structure that describes the CXL Fixed Memory Window Structure (Type 1).
+
+    ID: EArchCommonObjCxlFixedMemoryWindowInfo
+*/
+typedef struct CmArchCommonCxlFixedMemoryWindowInfo {
+  /// Base host physical address. Should be 256 MB aligned.
+  UINT64             BaseHostPhysicalAddress;
+
+  /// Size of the window in bytes. Should be 256 MB aligned.
+  UINT64             WindowSizeBytes;
+
+  /// Number of ways the memory region is interleaved.
+  UINT8              NumberOfInterleaveWays;
+
+  /// Interleave arithmetic method.
+  UINT8              InterleaveArithmetic;
+
+  /// Number of consecutive bytes per interleave.
+  UINT32             HostBridgeInterleaveGranularity;
+
+  /// Bit vector of window restriction settings.
+  UINT16             WindowRestrictions;
+
+  /// ID of Quality of Service Throttling Group for this window.
+  UINT16             QtgId;
+
+  /// Host bridge UIDs that are part of the interleave configuration.
+  /// The number of InterleaveTargetTokens is equal to NumberOfInterleaveWays.
+  /// Each array element identifies a CM_ARCH_COMMON_CXL_HOST_BRIDGE_INFO
+  /// structure via token matching.
+  CM_OBJECT_TOKEN    InterleaveTargetTokens[CFMWS_MAX_INTERLEAVE_WAYS];
+} CM_ARCH_COMMON_CXL_FIXED_MEMORY_WINDOW_INFO;
+
 #pragma pack()
 
 #endif // ARCH_COMMON_NAMESPACE_OBJECTS_H_

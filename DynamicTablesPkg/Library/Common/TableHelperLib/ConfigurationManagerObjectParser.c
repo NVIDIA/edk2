@@ -11,6 +11,7 @@
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
 #include <ConfigurationManagerObject.h>
+#include "ArchCommonNameSpaceObjects.h"
 #include "ConfigurationManagerObjectParser.h"
 #include "IndustryStandard/Pci22.h"
 
@@ -743,6 +744,131 @@ STATIC CONST CM_OBJ_PARSER  CmArchCommonSpmiInterruptDeviceInfoParser[] = {
   { "DeviceId",              sizeof (UINT32), "0x%x", NULL }
 };
 
+STATIC CONST CM_OBJ_PARSER  CmArchCommonCstInfoParser[] = {
+  { "Register",
+    sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE),
+    NULL,
+    NULL,
+    AcpiGenericAddressParser,
+    ARRAY_SIZE (AcpiGenericAddressParser) },
+  { "Type",    1,  "0x%x", NULL },
+  { "Latency", 2,  "0x%x", NULL },
+  { "Power",   4,  "0x%x", NULL }
+};
+
+/** A parser for EArchCommonObjCsdInfo.
+*/
+STATIC CONST CM_OBJ_PARSER  CmArchCommonCsdInfoParser[] = {
+  { "Revision",       1,                        "0x%x", NULL },
+  { "Domain",         4,                        "0x%x", NULL },
+  { "CoordType",      4,                        "0x%x", NULL },
+  { "NumProcessors",  4,                        "0x%x", NULL },
+  { "CstPkgRefToken", sizeof (CM_OBJECT_TOKEN), "0x%p", NULL }
+};
+
+/** A parser for EArchCommonObjPctInfo.
+*/
+STATIC CONST CM_OBJ_PARSER  CmArchCommonPctInfoParser[] = {
+  { "ControlRegister",
+    sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE),
+    NULL,
+    NULL,
+    AcpiGenericAddressParser,
+    ARRAY_SIZE (AcpiGenericAddressParser) },
+  { "StatusRegister",
+    sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE),
+    NULL,
+    NULL,
+    AcpiGenericAddressParser,
+    ARRAY_SIZE (AcpiGenericAddressParser) }
+};
+
+/** A parser for EArchCommonObjPssInfo.
+*/
+STATIC CONST CM_OBJ_PARSER  CmArchCommonPssInfoParser[] = {
+  { "CoreFrequency",    4, "0x%x", NULL },
+  { "Power",            4, "0x%x", NULL },
+  { "Latency",          4, "0x%x", NULL },
+  { "BusMasterLatency", 4, "0x%x", NULL },
+  { "Control",          4, "0x%x", NULL },
+  { "Status",           4, "0x%x", NULL }
+};
+
+/** A parser for EArchCommonObjPpcInfo.
+*/
+STATIC CONST CM_OBJ_PARSER  CmArchCommonPpcInfoParser[] = {
+  { "PstateCount", 4, "0x%x", NULL }
+};
+
+/** A parser for EArchCommonObjStaInfo.
+*/
+STATIC CONST CM_OBJ_PARSER  CmArchCommonStaInfoParser[] = {
+  { "DeviceStatus", 4, "0x%x", NULL }
+};
+
+/** A parser for EArchCommonObjMemoryRangeDescriptor.
+*/
+STATIC CONST CM_OBJ_PARSER  CmArchCommonObjMemoryRangeDescriptor[] = {
+  { "BaseAddress", sizeof (UINT64), "0x%llx", NULL },
+  { "Length",      sizeof (UINT64), "0x%llx", NULL },
+};
+
+/** A parser for EArchCommonObjGenericDbg2DeviceInfo.
+*/
+STATIC CONST CM_OBJ_PARSER  CmArchCommonObjDbg2DeviceInfo[] = {
+  { "AddressResourceToken", sizeof (CM_OBJECT_TOKEN), "0x%p", NULL        },
+  { "PortType",             sizeof (UINT16),          "0x%x", NULL        },
+  { "PortSubtype",          sizeof (UINT16),          "0x%x", NULL        },
+  { "AccessSize",           sizeof (UINT8),           "0x%x", NULL        },
+  { "ObjectName",           AML_NAME_SEG_SIZE + 1,    NULL,   PrintString }
+};
+
+/** A parser for EArchCommonObjCxlHostBridgeInfo.
+*/
+STATIC CONST CM_OBJ_PARSER  CmArchCommonObjCxlHostBridgeInfo[] = {
+  { "Token",                 sizeof (CM_OBJECT_TOKEN), "0x%p",   NULL },
+  { "Uid",                   sizeof (UINT32),          "0x%x",   NULL },
+  { "Version",               sizeof (UINT32),          "0x%x",   NULL },
+  { "ComponentRegisterBase", sizeof (UINT64),          "0x%llx", NULL },
+};
+
+STATIC CONST CM_OBJ_PARSER  CmArchCommonObjInterleaveTargetTokenParser[] = {
+  { "InterleaveTargetToken[0]",  sizeof (CM_OBJECT_TOKEN), "0x%p", NULL },
+  { "InterleaveTargetToken[1]",  sizeof (CM_OBJECT_TOKEN), "0x%p", NULL },
+  { "InterleaveTargetToken[2]",  sizeof (CM_OBJECT_TOKEN), "0x%p", NULL },
+  { "InterleaveTargetToken[3]",  sizeof (CM_OBJECT_TOKEN), "0x%p", NULL },
+  { "InterleaveTargetToken[4]",  sizeof (CM_OBJECT_TOKEN), "0x%p", NULL },
+  { "InterleaveTargetToken[5]",  sizeof (CM_OBJECT_TOKEN), "0x%p", NULL },
+  { "InterleaveTargetToken[6]",  sizeof (CM_OBJECT_TOKEN), "0x%p", NULL },
+  { "InterleaveTargetToken[7]",  sizeof (CM_OBJECT_TOKEN), "0x%p", NULL },
+  { "InterleaveTargetToken[8]",  sizeof (CM_OBJECT_TOKEN), "0x%p", NULL },
+  { "InterleaveTargetToken[9]",  sizeof (CM_OBJECT_TOKEN), "0x%p", NULL },
+  { "InterleaveTargetToken[10]", sizeof (CM_OBJECT_TOKEN), "0x%p", NULL },
+  { "InterleaveTargetToken[11]", sizeof (CM_OBJECT_TOKEN), "0x%p", NULL },
+  { "InterleaveTargetToken[12]", sizeof (CM_OBJECT_TOKEN), "0x%p", NULL },
+  { "InterleaveTargetToken[13]", sizeof (CM_OBJECT_TOKEN), "0x%p", NULL },
+  { "InterleaveTargetToken[14]", sizeof (CM_OBJECT_TOKEN), "0x%p", NULL },
+  { "InterleaveTargetToken[15]", sizeof (CM_OBJECT_TOKEN), "0x%p", NULL },
+};
+
+/** A parser for EArchCommonObjCxlFixedMemoryWindowInfo
+*/
+STATIC CONST CM_OBJ_PARSER  CmArchCommonObjCxlFixedMemoryWindowInfo[] = {
+  { "BaseHostPhysicalAddress",         sizeof (UINT64), "0x%llx", NULL },
+  { "WindowSizeBytes",                 sizeof (UINT64), "0x%llx", NULL },
+  { "NumberOfInterleaveWays",          sizeof (UINT8),  "%d",     NULL },
+  { "InterleaveArithmetic",            sizeof (UINT8),  "%d",     NULL },
+  { "HostBridgeInterleaveGranularity", sizeof (UINT32), "0x%x",   NULL },
+  { "WindowRestrictions",              sizeof (UINT16), "0x%x",   NULL },
+  { "QtgId",                           sizeof (UINT16), "%d",     NULL },
+  { "InterleaveTargetTokens",
+    sizeof (CM_OBJECT_TOKEN) * CFMWS_MAX_INTERLEAVE_WAYS,
+    NULL,
+    NULL,
+    CmArchCommonObjInterleaveTargetTokenParser,
+    ARRAY_SIZE (CmArchCommonObjInterleaveTargetTokenParser) },
+};
+
 /** A parser for Arch Common namespace objects.
 */
 STATIC CONST CM_OBJ_PARSER_ARRAY  ArchCommonNamespaceObjectParser[] = {
@@ -775,6 +901,16 @@ STATIC CONST CM_OBJ_PARSER_ARRAY  ArchCommonNamespaceObjectParser[] = {
   CM_PARSER_ADD_OBJECT (EArchCommonObjTpm2InterfaceInfo,           CmArchCommonTpm2InterfaceInfo),
   CM_PARSER_ADD_OBJECT (EArchCommonObjSpmiInterfaceInfo,           CmArchCommonSpmiInterfaceInfoParser),
   CM_PARSER_ADD_OBJECT (EArchCommonObjSpmiInterruptDeviceInfo,     CmArchCommonSpmiInterruptDeviceInfoParser),
+  CM_PARSER_ADD_OBJECT (EArchCommonObjCstInfo,                     CmArchCommonCstInfoParser),
+  CM_PARSER_ADD_OBJECT (EArchCommonObjCsdInfo,                     CmArchCommonCsdInfoParser),
+  CM_PARSER_ADD_OBJECT (EArchCommonObjPctInfo,                     CmArchCommonPctInfoParser),
+  CM_PARSER_ADD_OBJECT (EArchCommonObjPssInfo,                     CmArchCommonPssInfoParser),
+  CM_PARSER_ADD_OBJECT (EArchCommonObjPpcInfo,                     CmArchCommonPpcInfoParser),
+  CM_PARSER_ADD_OBJECT (EArchCommonObjStaInfo,                     CmArchCommonStaInfoParser),
+  CM_PARSER_ADD_OBJECT (EArchCommonObjMemoryRangeDescriptor,       CmArchCommonObjMemoryRangeDescriptor),
+  CM_PARSER_ADD_OBJECT (EArchCommonObjGenericDbg2DeviceInfo,       CmArchCommonObjDbg2DeviceInfo),
+  CM_PARSER_ADD_OBJECT (EArchCommonObjCxlHostBridgeInfo,           CmArchCommonObjCxlHostBridgeInfo),
+  CM_PARSER_ADD_OBJECT (EArchCommonObjCxlFixedMemoryWindowInfo,    CmArchCommonObjCxlFixedMemoryWindowInfo),
   CM_PARSER_ADD_OBJECT_RESERVED (EArchCommonObjMax)
 };
 
