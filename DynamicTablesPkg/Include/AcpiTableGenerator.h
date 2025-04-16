@@ -80,6 +80,8 @@ The Dynamic Tables Framework implements the following ACPI table generators:
             Configuration Manager and builds the SPMI table.
   - FACS  : The FACS generator collates the FACS information from the
             Configuration Manager and builds the FACS table.
+  - CEDT  : The CEDT generator collates the CEDT information from the
+            Configuration Manager and builds the CEDT table.
 */
 
 /** The ACPI_TABLE_GENERATOR_ID type describes ACPI table generator ID.
@@ -116,6 +118,7 @@ typedef enum StdAcpiTableId {
   EStdAcpiTableIdFacs,                          ///< FACS Generator
   EStdAcpiTableIdSsdtGenericDevice,             ///< SSDT Generic Device Generator
   EStdAcpiTableIdMpam,                          ///< MPAM Generator
+  EStdAcpiTableIdCedt,                          ///< CEDT Generator
   EStdAcpiTableIdMax
 } ESTD_ACPI_TABLE_ID;
 
