@@ -3,6 +3,7 @@
 
   Copyright (c) 2008 - 2010, Apple Inc. All rights reserved.<BR>
   Copyright (c) 2012 - 2021, Arm Ltd. All rights reserved.<BR>
+  Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -11,7 +12,6 @@
 #include <Uefi.h>
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
-#include <Library/PeCoffGetEntryPointLib.h>
 #include <Library/PrintLib.h>
 #include <Library/SerialPortLib.h>
 #include <Library/UefiBootServicesTableLib.h>
@@ -22,6 +22,7 @@
 #include <Protocol/DebugSupport.h>
 #include <Library/DefaultExceptionHandlerLib.h>
 #include <Library/DefaultExceptionCallbackLib.h>
+#include <Library/ImageInfoLib.h>
 
 //
 // Maximum number of characters to print to serial (UINT8s) and to console if
@@ -53,13 +54,6 @@ STATIC CONST CPSR_CHAR  mCpsrChar[] = {
   { 5,  't' },
   { 0,  '?' }
 };
-
-CHAR8 *
-GetImageName (
-  IN  UINTN  FaultAddress,
-  OUT UINTN  *ImageBase,
-  OUT UINTN  *PeCoffSizeOfHeaders
-  );
 
 /**
   Convert the Current Program Status Register (CPSR) to a string. The string is
@@ -226,11 +220,11 @@ DefaultExceptionHandler (
   UnicodeSPrintAsciiFormat (UnicodeBuffer, MAX_PRINT_CHARS, Buffer);
 
   DEBUG_CODE_BEGIN ();
-  CHAR8   *Pdb;
-  UINT32  ImageBase;
-  UINT32  PeCoffSizeOfHeader;
-  UINT32  Offset;
-  CHAR8   CpsrStr[CPSR_STRING_SIZE];
+  CHAR8  *Pdb;
+  UINTN  ImageBase;
+  UINTN  PeCoffSizeOfHeader;
+  UINTN  Offset;
+  CHAR8  CpsrStr[CPSR_STRING_SIZE];
 
   CpsrString (SystemContext.SystemContextArm->CPSR, CpsrStr);
   DEBUG ((DEBUG_ERROR, "%a\n", CpsrStr));
@@ -248,7 +242,7 @@ DefaultExceptionHandler (
     // you need to subtract out the size of the PE/COFF header to get
     // get the offset that matches the link map.
     //
-    DEBUG ((DEBUG_ERROR, "loaded at 0x%08x (PE/COFF offset) 0x%x (ELF or Mach-O offset) 0x%x", ImageBase, Offset, Offset - PeCoffSizeOfHeader));
+    DEBUG ((DEBUG_ERROR, "loaded at 0x%08x (PE/COFF offset) 0x%lx (ELF or Mach-O offset) 0x%lx", ImageBase, Offset, Offset - PeCoffSizeOfHeader));
   }
 
   DEBUG_CODE_END ();

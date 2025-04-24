@@ -2,6 +2,7 @@
 #
 #  Copyright (c) 2008, Apple Inc. All rights reserved.<BR>
 #  Copyright (c) 2011 - 2013, ARM Ltd. All rights reserved.<BR>
+#  Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -15,9 +16,6 @@
   MODULE_TYPE                    = BASE
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = DefaultExceptionHandlerLib|DXE_CORE DXE_DRIVER
-
-[Sources.common]
-  DefaultExceptionHandlerUefi.c
 
 [Sources.ARM]
   Arm/DefaultExceptionHandler.c
@@ -34,10 +32,7 @@
   BaseLib
   PrintLib
   DebugLib
-  PeCoffGetEntryPointLib
   SerialPortLib
   UefiBootServicesTableLib
   DefaultExceptionCallbackLib
-
-[Guids]
-  gEfiDebugImageInfoTableGuid
+  ImageInfoLib

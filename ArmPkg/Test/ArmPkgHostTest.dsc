@@ -16,9 +16,13 @@
   BUILD_TARGETS           = NOOPT
   SKUID_IDENTIFIER        = DEFAULT
 
-# Commented until the first test is added.
-#!include UnitTestFrameworkPkg/UnitTestFrameworkPkgHost.dsc.inc
+!include UnitTestFrameworkPkg/UnitTestFrameworkPkgHost.dsc.inc
 
 [LibraryClasses]
 
 [Components]
+  ArmPkg/Library/ImageInfoLib/GoogleTest/ImageInfoLibGoogleTest.inf {
+    <LibraryClasses>
+      ImageInfoLib|ArmPkg/Library/ImageInfoLib/ImageInfoLib.inf
+      PeCoffGetEntryPointLib|ArmPkg/Library/ImageInfoLib/GoogleTest/PeCoffGetEntryPointStubLib.inf
+  }

@@ -1,0 +1,26 @@
+## @file
+# Unit test suite for the ImageInfoLib using GoogleTest
+#
+# Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION         = 0x00010017
+  BASE_NAME           = ImageInfoLibGoogleTest
+  FILE_GUID           = b7b3d02e-4dc5-476e-815d-a4c6b13fc41c
+  VERSION_STRING      = 1.0
+  MODULE_TYPE         = HOST_APPLICATION
+
+[Sources]
+  ImageInfoLibGoogleTest.cpp
+
+[Packages]
+  ArmPkg/ArmPkg.dec
+  MdePkg/MdePkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+
+[LibraryClasses]
+  GoogleTestLib
+  ImageInfoLib

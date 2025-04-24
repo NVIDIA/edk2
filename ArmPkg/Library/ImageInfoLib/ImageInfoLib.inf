@@ -1,0 +1,33 @@
+## @file
+#  Instance of ImageInfoLib that depends on the SystemTable to retrieve
+#  information about loaded images.
+#
+#  Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = ImageInfoLib
+  FILE_GUID                      = 92929c54-acf8-460f-b6dd-21d9c6fc1b5c
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = ImageInfoLib|DXE_CORE DXE_DRIVER DXE_RUNTIME_DRIVER UEFI_DRIVER UEFI_APPLICATION
+
+[Sources]
+  ImageInfoLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ArmPkg/ArmPkg.dec
+
+[LibraryClasses]
+  BaseMemoryLib
+  PeCoffGetEntryPointLib
+  DebugLib
+  UefiBootServicesTableLib
+
+[Guids]
+  gEfiDebugImageInfoTableGuid
