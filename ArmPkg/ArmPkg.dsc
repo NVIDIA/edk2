@@ -6,6 +6,7 @@
 # Copyright (c) 2016, Linaro Ltd. All rights reserved.<BR>
 # Copyright (c) Microsoft Corporation.<BR>
 # Copyright (c) 2021, Ampere Computing LLC. All rights reserved.
+# Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #
 #    SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -64,6 +65,7 @@
   SemihostLib|ArmPkg/Library/SemihostLib/SemihostLib.inf
   DxeServicesTableLib|MdePkg/Library/DxeServicesTableLib/DxeServicesTableLib.inf
   DefaultExceptionHandlerLib|ArmPkg/Library/DefaultExceptionHandlerLib/DefaultExceptionHandlerLib.inf
+  ImageInfoLib|ArmPkg/Library/ImageInfoLib/ImageInfoLib.inf
   DefaultExceptionCallbackLib|ArmPkg/Library/DefaultExceptionCallbackLibNull/DefaultExceptionCallbackLibNull.inf
   CpuExceptionHandlerLib|ArmPkg/Library/ArmExceptionLib/ArmExceptionLib.inf
 
@@ -115,6 +117,7 @@
   ArmPkg/Library/DebugAgentSymbolsBaseLib/DebugAgentSymbolsBaseLib.inf
   ArmPkg/Library/DebugPeCoffExtraActionLib/DebugPeCoffExtraActionLib.inf
   ArmPkg/Library/DefaultExceptionHandlerLib/DefaultExceptionHandlerLib.inf
+  ArmPkg/Library/ImageInfoLib/ImageInfoLib.inf
   ArmPkg/Library/DefaultExceptionCallbackLibNull/DefaultExceptionCallbackLibNull.inf
   ArmPkg/Library/SemiHostingDebugLib/SemiHostingDebugLib.inf
   ArmPkg/Library/SemiHostingSerialPortLib/SemiHostingSerialPortLib.inf

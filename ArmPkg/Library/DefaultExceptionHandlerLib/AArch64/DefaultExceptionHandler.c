@@ -3,6 +3,7 @@
 
   Copyright (c) 2008 - 2010, Apple Inc. All rights reserved.<BR>
   Copyright (c) 2011 - 2014, ARM Ltd. All rights reserved.<BR>
+  Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -12,7 +13,7 @@
 #include <Library/UefiLib.h>
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
-#include <Library/PeCoffGetEntryPointLib.h>
+#include <Library/ImageInfoLib.h>
 #include <Library/PrintLib.h>
 #include <Library/SerialPortLib.h>
 #include <Library/UefiBootServicesTableLib.h>
@@ -36,13 +37,6 @@ STATIC CHAR8  *gExceptionTypeString[] = {
 };
 
 STATIC BOOLEAN  mRecursiveException;
-
-CHAR8 *
-GetImageName (
-  IN  UINTN  FaultAddress,
-  OUT UINTN  *ImageBase,
-  OUT UINTN  *PeCoffSizeOfHeaders
-  );
 
 STATIC
 VOID
