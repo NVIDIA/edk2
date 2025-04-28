@@ -33,6 +33,11 @@
   PrintLib|MdePkg/Library/BasePrintLib/BasePrintLib.inf
   UefiBootServicesTableLib|MdePkg/Library/UefiBootServicesTableLib/UefiBootServicesTableLib.inf
   UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
+  UefiLib|MdePkg/Library/UefiLib/UefiLib.inf
+  DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
+  UefiRuntimeServicesTableLib|MdePkg/Library/UefiRuntimeServicesTableLib/UefiRuntimeServicesTableLib.inf
+  TpmMeasurementLib|MdeModulePkg/Library/TpmMeasurementLibNull/TpmMeasurementLibNull.inf
+
 
 [LibraryClasses.ARM, LibraryClasses.AARCH64]
   NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
@@ -47,6 +52,27 @@
   DynamicTablesPkg/Library/Common/TableHelperLib/TableHelperLib.inf
   DynamicTablesPkg/Library/Common/DynamicPlatRepoLib/DynamicPlatRepoLib.inf
   DynamicTablesPkg/Library/Common/SmbiosStringTableLib/SmbiosStringTableLib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType16Lib/SmbiosType16Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType41Lib/SmbiosType41Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType45Lib/SmbiosType45Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType13Lib/SmbiosType13Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType0Lib/SmbiosType0Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType4Lib/SmbiosType4Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType19Lib/SmbiosType19Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType17Lib/SmbiosType17Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType32Lib/SmbiosType32Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType43Lib/SmbiosType43Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType11Lib/SmbiosType11Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType14Lib/SmbiosType14Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType38Lib/SmbiosType38Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType7Lib/SmbiosType7Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType3Lib/SmbiosType3Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType1Lib/SmbiosType1Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType39Lib/SmbiosType39Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType8Lib/SmbiosType8Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType2Lib/SmbiosType2Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType9Lib/SmbiosType9Lib.inf
+  DynamicTablesPkg/Library/Acpi/Arm/AcpiSsdtGenericDeviceLibArm/AcpiSsdtGenericDeviceLibArm.inf
 
 [Components.ARM, Components.AARCH64]
   DynamicTablesPkg/Library/FdtHwInfoParserLib/FdtHwInfoParserLib.inf

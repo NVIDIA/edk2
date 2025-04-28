@@ -213,7 +213,8 @@ BuildSmbiosType8TableEx (
 
     TableListCount++;
   }
-  Status         = EFI_SUCCESS;
+
+  Status = EFI_SUCCESS;
 
 ErrorExit:
   *Table         = TableList;

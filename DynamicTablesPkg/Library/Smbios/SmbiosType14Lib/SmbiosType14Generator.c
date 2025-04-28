@@ -96,7 +96,7 @@ AddReferenceHandle (
       // If there is a generator then create an SmbiosHandle for it.
       Status = gBS->LocateProtocol (&gEfiSmbiosProtocolGuid, NULL, (VOID **)&SmbiosProtocol);
       if (EFI_ERROR (Status)) {
-        DEBUG ((DEBUG_ERROR, "%a: Could not locate SMBIOS protocol.  %r\n", __FUNCTION__, Status, Status));
+        DEBUG ((DEBUG_ERROR, "%a: Could not locate SMBIOS protocol.  %r\n", __FUNCTION__, Status));
         return Status;
       }
 
