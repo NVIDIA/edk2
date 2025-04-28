@@ -564,6 +564,8 @@ class UncrustifyCheck(ICiBuildPlugin):
 
         if self._formatted_file_error_count > 0:
             logging.warning(f'Uncrustify found {self._formatted_file_error_count} files with formatting errors')
+            for formatted_file in formatted_files:
+                logging.warning(f'  {formatted_file.removesuffix(UncrustifyCheck.FORMATTED_FILE_EXTENSION)}')
             self._tc.LogStdError(f"Uncrustify found {self._formatted_file_error_count} files with formatting errors:\n")
             logging.critical(
                 "Visit the following instructions to learn "
