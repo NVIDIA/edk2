@@ -1,0 +1,39 @@
+## @file
+#  Implementation of RedfishPlatformWantedDeviceLibType42.
+#
+#  Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = RedfishPlatformWantedDeviceType42Lib
+  FILE_GUID                      = 7A4A7A13-4338-4900-9C69-0EA3510744F6
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = RedfishPlatformWantedDeviceLib
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 ARM AARCH64 RISCV64
+#
+
+[Sources]
+  RedfishPlatformWantedDeviceType42Lib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  RedfishPkg/RedfishPkg.dec
+  NetworkPkg/NetworkPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  DevicePathLib
+  MemoryAllocationLib
+  UefiLib
+  NetLib
+
+[Protocols]
+  gEfiSmbiosProtocolGuid
