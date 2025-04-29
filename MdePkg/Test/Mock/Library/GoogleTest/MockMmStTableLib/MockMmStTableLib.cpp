@@ -6,14 +6,14 @@
 **/
 #include <GoogleTest/Library/MockMmStTableLib.h>
 
-MOCK_INTERFACE_DEFINITION(MockMmStTableLib);
+MOCK_INTERFACE_DEFINITION (MockMmStTableLib);
 
-MOCK_FUNCTION_DEFINITION(MockMmStTableLib, gMmst_MmLocateProtocol, 3, EFIAPI);
-MOCK_FUNCTION_DEFINITION(MockMmStTableLib, gMmst_MmInstallProtocolInterface, 4, EFIAPI);
-MOCK_FUNCTION_DEFINITION(MockMmStTableLib, gMmst_MmRegisterProtocolNotify, 3, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockMmStTableLib, gMmst_MmLocateProtocol, 3, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockMmStTableLib, gMmst_MmInstallProtocolInterface, 4, EFIAPI);
+MOCK_FUNCTION_DEFINITION (MockMmStTableLib, gMmst_MmRegisterProtocolNotify, 3, EFIAPI);
 
-static EFI_MM_SYSTEM_TABLE localMmSt = {
-  {0},                                // EFI_TABLE_HEADER
+static EFI_MM_SYSTEM_TABLE  localMmSt = {
+  { 0 },                                // EFI_TABLE_HEADER
 
   NULL,                              // MmFirmwareVendor
   0,                                 // MmFirmwareRevision
@@ -45,5 +45,5 @@ static EFI_MM_SYSTEM_TABLE localMmSt = {
 };
 
 extern "C" {
-  EFI_MM_SYSTEM_TABLE* gMmst = &localMmSt;
+  EFI_MM_SYSTEM_TABLE  *gMmst = &localMmSt;
 }
