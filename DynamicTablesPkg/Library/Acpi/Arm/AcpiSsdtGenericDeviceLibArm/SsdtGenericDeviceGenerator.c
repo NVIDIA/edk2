@@ -2,7 +2,7 @@
   Ssdt Generic Device Generator
 
   Copyright (c) 2020 - 2021, Arm Limited. All rights reserved.<BR>
-  Copyright (c) 2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+  Copyright (c) 2024 - 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
@@ -46,7 +46,7 @@ Requirements:
   The following Configuration Manager Object(s) are required by
   this Generator:
   - EArmObjGenericDeviceInfo
-  - EArmObjMemoryRangeDescriptor
+  - EArchCommonObjMemoryRangeDescriptor
   - EArmObjGenericInterrupt
 */
 
@@ -63,9 +63,9 @@ GET_OBJECT_LIST (
     Memory Range Descriptor Array information from the Configuration Manager.
 */
 GET_OBJECT_LIST (
-  EObjNameSpaceArm,
-  EArmObjMemoryRangeDescriptor,
-  CM_ARM_MEMORY_RANGE_DESCRIPTOR
+  EObjNameSpaceArchCommon,
+  EArchCommonObjMemoryRangeDescriptor,
+  CM_ARCH_COMMON_MEMORY_RANGE_DESCRIPTOR
   );
 
 /** This macro expands to a function that retrieves the
@@ -134,17 +134,17 @@ AddGenericDeviceToSsdt (
   IN      CM_ARM_GENERIC_DEVICE_INFO                      *GenericDeviceInfo
   )
 {
-  EFI_STATUS                      Status;
-  AML_OBJECT_NODE_HANDLE          DeviceNode;
-  AML_OBJECT_NODE_HANDLE          CrsNode;
-  BOOLEAN                         DeviceAttached;
-  UINT32                          Index;
-  CM_ARM_MEMORY_RANGE_DESCRIPTOR  *MemoryRanges;
-  UINT32                          MemoryRangesCount;
-  CM_ARM_GENERIC_INTERRUPT        *Interrupts;
-  UINT32                          InterruptsCount;
-  BOOLEAN                         EdgeTriggered;
-  BOOLEAN                         ActiveLow;
+  EFI_STATUS                              Status;
+  AML_OBJECT_NODE_HANDLE                  DeviceNode;
+  AML_OBJECT_NODE_HANDLE                  CrsNode;
+  BOOLEAN                                 DeviceAttached;
+  UINT32                                  Index;
+  CM_ARCH_COMMON_MEMORY_RANGE_DESCRIPTOR  *MemoryRanges;
+  UINT32                                  MemoryRangesCount;
+  CM_ARM_GENERIC_INTERRUPT                *Interrupts;
+  UINT32                                  InterruptsCount;
+  BOOLEAN                                 EdgeTriggered;
+  BOOLEAN                                 ActiveLow;
 
   DeviceAttached = FALSE;
 
@@ -221,7 +221,7 @@ AddGenericDeviceToSsdt (
     }
 
     if (GenericDeviceInfo->AddressResourceToken != CM_NULL_TOKEN) {
-      Status = GetEArmObjMemoryRangeDescriptor (
+      Status = GetEArchCommonObjMemoryRangeDescriptor (
                  CfgMgrProtocol,
                  GenericDeviceInfo->AddressResourceToken,
                  &MemoryRanges,
