@@ -79,8 +79,6 @@ SMBIOS_TABLE_DISPATCHER  mSmBiosDispatcher[MAX_SMBIOS_TABLES] = {
   SMBIOS_TABLE_DEP (SMBIOS_TYPE_STRING_PROPERTY_INFORMATION,          SMTT_NULL,                                  SMTT_NULL,                                  SMTT_NULL,                                  SMTT_NULL, SMTT_NULL)
 };
 
-#if !defined (MDEPKG_NDEBUG)
-
 /**
   A string table describing the SMBIOS dispatcher states.
 */
@@ -90,6 +88,8 @@ CONST CHAR8  *SmbiosTableStateTxt[] = {
   "StPresent",
   "StDispatched"
 };
+
+#if !defined (MDEPKG_NDEBUG)
 
 /**
   Print the SMBIOS Table Dispatcher state information.
