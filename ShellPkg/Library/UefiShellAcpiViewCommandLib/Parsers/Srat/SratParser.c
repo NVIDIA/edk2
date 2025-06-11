@@ -293,6 +293,22 @@ STATIC CONST ACPI_PARSER  SratGenericInitiatorAffinityParser[] = {
 };
 
 /**
+  An ACPI_PARSER array describing the Generic Port Affinity Structure
+**/
+STATIC CONST ACPI_PARSER  SratGenericPortAffinityParser[] = {
+  { L"Type",               1,  0,  L"0x%x", NULL,                 NULL,                           NULL, NULL },
+  { L"Length",             1,  1,  L"0x%x", NULL,                 NULL,                           NULL, NULL },
+
+  { L"Reserved",           1,  2,  L"0x%x", NULL,                 NULL,                           NULL, NULL },
+  { L"Device Handle Type", 1,  3,  L"%d",   NULL,                 (VOID **)&SratDeviceHandleType,
+    ValidateSratDeviceHandleType, NULL },
+  { L"Proximity Domain",   4,  4,  L"0x%x", NULL,                 NULL,                           NULL, NULL },
+  { L"Device Handle",      16, 8,  L"%s",   DumpSratDeviceHandle, NULL,                           NULL, NULL },
+  { L"Flags",              4,  24, L"0x%x", NULL,                 NULL,                           NULL, NULL },
+  { L"Reserved",           4,  28, L"0x%x", NULL,                 NULL,                           NULL, NULL }
+};
+
+/**
   An ACPI_PARSER array describing the Memory Affinity structure.
 **/
 STATIC CONST ACPI_PARSER  SratMemAffinityParser[] = {
@@ -349,8 +365,11 @@ STATIC CONST ACPI_PARSER  SratX2ApciAffinityParser[] = {
   This function parses the following Resource Allocation Structures:
     - Processor Local APIC/SAPIC Affinity Structure
     - Memory Affinity Structure
+    - Generic Initiator Affinity Structure
+    - Generic Port Affinity Structure
     - Processor Local x2APIC Affinity Structure
     - GICC Affinity Structure
+    - GIC ITS Affinity Structure
 
   This function also performs validation of the ACPI table fields.
 
@@ -373,6 +392,7 @@ ParseAcpiSrat (
   UINT32  GicCAffinityIndex;
   UINT32  GicITSAffinityIndex;
   UINT32  GenericInitiatorAffinityIndex;
+  UINT32  GenericPortAffinityIndex;
   UINT32  MemoryAffinityIndex;
   UINT32  ApicSapicAffinityIndex;
   UINT32  X2ApicAffinityIndex;
@@ -381,6 +401,7 @@ ParseAcpiSrat (
   GicCAffinityIndex             = 0;
   GicITSAffinityIndex           = 0;
   GenericInitiatorAffinityIndex = 0;
+  GenericPortAffinityIndex      = 0;
   MemoryAffinityIndex           = 0;
   ApicSapicAffinityIndex        = 0;
   X2ApicAffinityIndex           = 0;
@@ -488,6 +509,23 @@ ParseAcpiSrat (
           ResourcePtr,
           *SratRALength,
           PARSER_PARAMS (SratGenericInitiatorAffinityParser)
+          );
+        break;
+
+      case EFI_ACPI_6_5_GENERIC_PORT_AFFINITY:
+        AsciiSPrint (
+          Buffer,
+          sizeof (Buffer),
+          "Generic Port Affinity Structure [%d]",
+          GenericPortAffinityIndex++
+          );
+        ParseAcpi (
+          TRUE,
+          2,
+          Buffer,
+          ResourcePtr,
+          *SratRALength,
+          PARSER_PARAMS (SratGenericPortAffinityParser)
           );
         break;
 
