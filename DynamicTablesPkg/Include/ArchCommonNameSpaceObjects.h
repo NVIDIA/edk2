@@ -68,6 +68,7 @@ typedef enum ArchCommonObjectID {
   EArchCommonObjCxlHostBridgeInfo,              ///< 37 - CXL Host Bridge Info
   EArchCommonObjCxlFixedMemoryWindowInfo,       ///< 38 - CXL Fixed Memory Window Info
   EArchCommonObjCxlSystemDescriptionInfo,       ///< 39 - CXL System Description Structure Info
+  EArchCommonObjGenericPortAffinityInfo,        ///< 40 - Generic Port Affinity Info
   EArchCommonObjMax
 } EARCH_COMMON_OBJECT_ID;
 
@@ -327,6 +328,24 @@ typedef struct CmArchCommonGenericInitiatorAffinityInfo {
   /// Reference Token for the Device Handle
   CM_OBJECT_TOKEN    DeviceHandleToken;
 } CM_ARCH_COMMON_GENERIC_INITIATOR_AFFINITY_INFO;
+
+/** A structure that describes the Generic Port Affinity structure in SRAT
+
+    ID: EArchCommonObjGenericPortAffinityInfo
+*/
+typedef struct CmArchCommonGenericPortAffinityInfo {
+  /// The proximity domain to which the generic port belongs.
+  UINT32             ProximityDomain;
+
+  /// Flags
+  UINT32             Flags;
+
+  /// Device Handle Type
+  UINT8              DeviceHandleType;
+
+  /// Reference Token for the Device Handle
+  CM_OBJECT_TOKEN    DeviceHandleToken;
+} CM_ARCH_COMMON_GENERIC_PORT_AFFINITY_INFO;
 
 /** A structure that describes the Lpi information.
 
