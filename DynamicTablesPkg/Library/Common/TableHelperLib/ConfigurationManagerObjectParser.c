@@ -396,6 +396,15 @@ STATIC CONST CM_OBJ_PARSER  CmArchCommonGenericInitiatorAffinityInfoParser[] = {
   { "ProximityDomainToken", sizeof (CM_OBJECT_TOKEN), "0x%p", NULL },
 };
 
+/** A parser for EArchCommonObjGenericPortAffinityInfo.
+*/
+STATIC CONST CM_OBJ_PARSER  CmArchCommonGenericPortAffinityInfoParser[] = {
+  { "ProximityDomain",   4,                        "0x%x", NULL },
+  { "Flags",             4,                        "0x%x", NULL },
+  { "DeviceHandleType",  1,                        "0x%x", NULL },
+  { "DeviceHandleToken", sizeof (CM_OBJECT_TOKEN), "0x%p", NULL }
+};
+
 /** A parser for EArmObjCmn600Info.
 */
 STATIC CONST CM_OBJ_PARSER  CmArmCmn600InfoParser[] = {
@@ -977,6 +986,7 @@ STATIC CONST CM_OBJ_PARSER_ARRAY  ArchCommonNamespaceObjectParser[] = {
   CM_PARSER_ADD_OBJECT (EArchCommonObjSpcrInfo,                     CmArchCommonObjSpcrInfoParser),
   CM_PARSER_ADD_OBJECT (EArchCommonObjMcfgPciConfigSpaceInfo,       CmArchCommonPciConfigSpaceInfoParser),
   CM_PARSER_ADD_OBJECT (EArchCommonObjCxlSystemDescriptionInfo,     CmArchCommonObjCxlSystemDescriptionInfo),
+  CM_PARSER_ADD_OBJECT (EArchCommonObjGenericPortAffinityInfo,      CmArchCommonGenericPortAffinityInfoParser),
   CM_PARSER_ADD_OBJECT_RESERVED (EArchCommonObjMax)
 };
 
