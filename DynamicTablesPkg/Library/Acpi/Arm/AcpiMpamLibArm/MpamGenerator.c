@@ -270,9 +270,41 @@ AddMscNodes (
         ResourceNodeArray->RisIndex    = ResourceNodeList->RisIndex;
         ResourceNodeArray->Reserved1   = EFI_ACPI_RESERVED_WORD;
         ResourceNodeArray->LocatorType = ResourceNodeList->LocatorType;
-        if (ResourceNodeArray->LocatorType == EFI_ACPI_MPAM_LOCATION_PROCESSOR_CACHE) {
-          ResourceNodeArray->Locator.CacheLocator.CacheReference = ResourceNodeList->Locator.Descriptor1;
-          ResourceNodeArray->Locator.CacheLocator.Reserved       = ResourceNodeList->Locator.Descriptor2;
+
+        switch (ResourceNodeArray->LocatorType) {
+          case EFI_ACPI_MPAM_LOCATION_PROCESSOR_CACHE:
+            ResourceNodeArray->Locator.CacheLocator.CacheReference = ResourceNodeList->Locator.Descriptor1;
+            break;
+          case EFI_ACPI_MPAM_LOCATION_MEMORY:
+            ResourceNodeArray->Locator.MemoryLocator.ProximityDomain = ResourceNodeList->Locator.Descriptor1;
+            break;
+          case EFI_ACPI_MPAM_LOCATION_SMMU:
+            ResourceNodeArray->Locator.SmmuLocator.SmmuInterface = ResourceNodeList->Locator.Descriptor1;
+            break;
+          case EFI_ACPI_MPAM_LOCATION_MEMORY_CACHE:
+            // uppermost byte of Desriptor1 (8 bytes) needs to be passed
+            ResourceNodeArray->Locator.MemCacheLocator.Level = (UINT8)(ResourceNodeList->Locator.Descriptor1 >> (7 * 8));
+            break;
+          case EFI_ACPI_MPAM_LOCATION_ACPI_DEVICE:
+            ResourceNodeArray->Locator.AcpiLocator.AcpiHardwareId = ResourceNodeList->Locator.Descriptor1;
+            ResourceNodeArray->Locator.AcpiLocator.AcpiUniqueId   = ResourceNodeList->Locator.Descriptor2;
+            break;
+          case EFI_ACPI_MPAM_LOCATION_INTERCONNECT:
+            ResourceNodeArray->Locator.InterconnectIfcLocator.InterconnectDescTblOff = ResourceNodeList->Locator.Descriptor1;
+            // TODO: Descriptor structure needs to be populated correctly using this offset
+
+            break;
+          case EFI_ACPI_MPAM_LOCATION_UNKNOWN:
+            ResourceNodeArray->Locator.GenericLocator.Descriptor1 = ResourceNodeList->Locator.Descriptor1;
+            ResourceNodeArray->Locator.GenericLocator.Descriptor2 = ResourceNodeList->Locator.Descriptor2;
+            break;
+          default:
+            DEBUG ((
+              DEBUG_ERROR,
+              "DEBUG PRINT: MPAM: INVALID RESOURCE NODE LOCATOR TYPE = %d\n",
+              ResourceNodeArray->LocatorType
+              ));
+            break;
         }
 
         ResourceNodeArray->NumFunctionalDependencies = ResourceNodeList->NumFuncDep;
