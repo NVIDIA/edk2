@@ -54,6 +54,23 @@
 #define CEDT_TYPE_RDPAS  0x3
 
 //
+// CEDT CFMWS Interleave arithmetic definitions
+// Compute Express Link Specification Revision 3.0 - Chapter 9.18.1.3
+//
+#define CXL_INTERLEAVE_ARITHMETIC_STANDARD_MODULO  0x00
+#define CXL_INTERLEAVE_ARITHMETIC_MODULO_XOR       0x01
+
+//
+// CEDT CFMWS Window restrictions definitions
+// Compute Express Link Specification Revision 3.0 - Chapter 9.18.1.3
+//
+#define CXL_WINDOW_RESTRICTIONS_DEVICE_COHERENT             BIT0
+#define CXL_WINDOW_RESTRICTIONS_HOST_ONLY_COHERENT          BIT1
+#define CXL_WINDOW_RESTRICTIONS_VOLATILE                    BIT2
+#define CXL_WINDOW_RESTRICTIONS_PERSISTENT                  BIT3
+#define CXL_WINDOW_RESTRICTIONS_FIXED_DEVICE_CONFIGURATION  BIT4
+
+//
 // Ensure proper structure formats
 //
 #pragma pack(1)
