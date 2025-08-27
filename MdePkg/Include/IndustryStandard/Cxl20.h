@@ -114,6 +114,40 @@
 #define CEDT_TYPE_CHBS  0x0
 
 //
+// CEDT CHBS version definitions
+// Compute Express Link Specification Revision 2.0  - Chapter 9.14.1.2
+//
+#define CXL_CEDT_CHBS_VERSION_11  0x00
+#define CXL_CEDT_CHBS_VERSION_20  0x01
+
+//
+// CXL HDM Decoder Interleave Granularity
+// Compute Express Link Specification Revision 2.0 - 8.2.5.12.7
+//
+//
+// Bit0..3: Interleave Granularity (IG)
+//
+#define CXL_INTERLEAVE_GRANULARITY_256B    0x0
+#define CXL_INTERLEAVE_GRANULARITY_512B    0x1
+#define CXL_INTERLEAVE_GRANULARITY_1024B   0x2
+#define CXL_INTERLEAVE_GRANULARITY_2048B   0x3
+#define CXL_INTERLEAVE_GRANULARITY_4096B   0x4
+#define CXL_INTERLEAVE_GRANULARITY_8192B   0x5
+#define CXL_INTERLEAVE_GRANULARITY_16384B  0x6
+
+//
+// CXL HDM Decoder Interleave Ways
+// Compute Express Link Specification Revision 2.0 - 8.2.5.12.7
+//
+//
+// Bit4..7: Interleave Ways (IW)
+//
+#define CXL_HDM_1_WAY_INTERLEAVING  0x0
+#define CXL_HDM_2_WAY_INTERLEAVING  0x1
+#define CXL_HDM_4_WAY_INTERLEAVING  0x2
+#define CXL_HDM_8_WAY_INTERLEAVING  0x3
+
+//
 // Ensure proper structure formats
 //
 #pragma pack(1)
@@ -473,9 +507,6 @@ typedef union {
 // CEDT header
 // Compute Express Link Specification Revision 2.0  - Chapter 9.14.1.1
 //
-typedef struct {
-  EFI_ACPI_DESCRIPTION_HEADER    Header;
-} CXL_EARLY_DISCOVERY_TABLE;
 
 //
 // Node header definition shared by all CEDT structure types
@@ -485,6 +516,19 @@ typedef struct {
   UINT8     Reserved;
   UINT16    Length;
 } CEDT_STRUCTURE;
+
+typedef struct {
+  EFI_ACPI_DESCRIPTION_HEADER    Header;
+  // CedtStructure is a heterogeneous, packed list of any of the following:
+  //   - CXL Host Bridge Structure
+  //   - CXL Fixed Memory Window Structure
+  //   - CXL XOR Interleave Math Structure
+  //   - RCEC Downstream Port Association Structure
+  //   - CXL System Description Structure
+  // The structures share common Type and RecordLength fields that are used to
+  // identify the type of structure and traverse the list.
+  CEDT_STRUCTURE    CedtStructure[];
+} CXL_EARLY_DISCOVERY_TABLE;
 
 //
 // Definition for CXL Host Bridge Structure (CHBS)
