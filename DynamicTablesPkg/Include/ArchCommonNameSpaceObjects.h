@@ -20,6 +20,10 @@
 
 #include <IndustryStandard/Tpm2Acpi.h>
 
+typedef UINT32  AML_PSS_INFO;
+typedef UINT32  AML_PCT_INFO;
+typedef UINT32  AML_CST_INFO;
+
 /** The EARCH_COMMON_OBJECT_ID enum describes the Object IDs
     in the Arch Common Namespace
 */
