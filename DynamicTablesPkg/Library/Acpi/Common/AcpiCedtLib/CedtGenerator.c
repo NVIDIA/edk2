@@ -23,7 +23,6 @@
 #include <Protocol/ConfigurationManagerProtocol.h>
 
 #include <IndustryStandard/Cxl.h>
-#include <IndustryStandard/Acpi64.h>
 #include "Base.h"
 #include "IndustryStandard/Acpi10.h"
 #include "Library/BaseLib.h"
@@ -53,8 +52,8 @@ GET_OBJECT_LIST (
   CM_ARCH_COMMON_CXL_FIXED_MEMORY_WINDOW_INFO
   );
 
-#define EFI_ACPI_CEDT_CXL_VERSION_RCH_LENGTH_BYTES  SIZE_8KB
-#define EFI_ACPI_CEDT_CXL_VERSION_HB_LENGTH_BYTES   SIZE_64KB
+#define CEDT_CXL_VERSION_RCH_LENGTH_BYTES  SIZE_8KB
+#define CEDT_CXL_VERSION_HB_LENGTH_BYTES   SIZE_64KB
 
 #define INVALID_INTERLEAVE_WAYS  (0xFF)
 #define INVALID_GRANULARITY      (0xFF)
@@ -77,26 +76,25 @@ AddCxlHostBridgeList (
   IN       UINT32                               HostBridgeCount
   )
 {
-  EFI_ACPI_6_4_CEDT_CXL_HOST_BRIDGE_STRUCTURE  *Chbs;
-  UINT32                                       Index;
+  CXL_HOST_BRIDGE_STRUCTURE  *Chbs;
+  UINT32                     Index;
 
   ASSERT (WritePointer != NULL);
   ASSERT (*WritePointer != NULL);
 
   for (Index = 0; Index < HostBridgeCount; Index++) {
-    Chbs               = (EFI_ACPI_6_4_CEDT_CXL_HOST_BRIDGE_STRUCTURE *)*WritePointer;
-    Chbs->Type         = EFI_ACPI_6_4_CEDT_STRUCTURE_TYPE_CXL_HOST_BRIDGE_STRUCTURE;
-    Chbs->RecordLength = sizeof (EFI_ACPI_6_4_CEDT_CXL_HOST_BRIDGE_STRUCTURE);
-    Chbs->CxlVersion   = HostBridgeList[Index].Version;
-    Chbs->Uid          = HostBridgeList[Index].Uid;
-    Chbs->Base         = HostBridgeList[Index].ComponentRegisterBase;
-    Chbs->Length       = (Chbs->CxlVersion == EFI_ACPI_6_4_CEDT_CXL_HOST_BRIDGE_STRUCTURE_CXL_VERSION_HB) ?
-                         EFI_ACPI_CEDT_CXL_VERSION_HB_LENGTH_BYTES :
-                         EFI_ACPI_CEDT_CXL_VERSION_RCH_LENGTH_BYTES;
-    Chbs->Reserved0 = EFI_ACPI_RESERVED_BYTE;
-    Chbs->Reserved1 = EFI_ACPI_RESERVED_DWORD;
+    Chbs                = (CXL_HOST_BRIDGE_STRUCTURE *)*WritePointer;
+    Chbs->Header.Type   = CEDT_TYPE_CHBS;
+    Chbs->Header.Length = sizeof (CXL_HOST_BRIDGE_STRUCTURE);
+    Chbs->CxlVersion    = HostBridgeList[Index].Version;
+    Chbs->Uid           = HostBridgeList[Index].Uid;
+    Chbs->Base          = HostBridgeList[Index].ComponentRegisterBase;
+    Chbs->Length        = (Chbs->CxlVersion >= CXL_CEDT_CHBS_VERSION_20) ?
+                          CEDT_CXL_VERSION_HB_LENGTH_BYTES :
+                          CEDT_CXL_VERSION_RCH_LENGTH_BYTES;
+    Chbs->Reserved = 0;
 
-    *WritePointer += Chbs->RecordLength;
+    *WritePointer += Chbs->Header.Length;
   }
 }
 
@@ -113,14 +111,14 @@ GetEncodedNumberOfInterleaveWays (
   )
 {
   switch (NumberOfInterleaveWays) {
-    case 1:  return EFI_ACPI_6_4_CEDT_CXL_FIXED_MEMORY_WINDOW_STRUCTURE_INTERLEAVE_WAYS_NONE;
-    case 2:  return EFI_ACPI_6_4_CEDT_CXL_FIXED_MEMORY_WINDOW_STRUCTURE_INTERLEAVE_WAYS_2_WAY;
-    case 3:  return EFI_ACPI_6_4_CEDT_CXL_FIXED_MEMORY_WINDOW_STRUCTURE_INTERLEAVE_WAYS_3_WAY;
-    case 4:  return EFI_ACPI_6_4_CEDT_CXL_FIXED_MEMORY_WINDOW_STRUCTURE_INTERLEAVE_WAYS_4_WAY;
-    case 6:  return EFI_ACPI_6_4_CEDT_CXL_FIXED_MEMORY_WINDOW_STRUCTURE_INTERLEAVE_WAYS_6_WAY;
-    case 8:  return EFI_ACPI_6_4_CEDT_CXL_FIXED_MEMORY_WINDOW_STRUCTURE_INTERLEAVE_WAYS_8_WAY;
-    case 12: return EFI_ACPI_6_4_CEDT_CXL_FIXED_MEMORY_WINDOW_STRUCTURE_INTERLEAVE_WAYS_12_WAY;
-    case 16: return EFI_ACPI_6_4_CEDT_CXL_FIXED_MEMORY_WINDOW_STRUCTURE_INTERLEAVE_WAYS_16_WAY;
+    case 1:  return CXL_HDM_1_WAY_INTERLEAVING;
+    case 2:  return CXL_HDM_2_WAY_INTERLEAVING;
+    case 3:  return CXL_HDM_3_WAY_INTERLEAVING;
+    case 4:  return CXL_HDM_4_WAY_INTERLEAVING;
+    case 6:  return CXL_HDM_6_WAY_INTERLEAVING;
+    case 8:  return CXL_HDM_8_WAY_INTERLEAVING;
+    case 12: return CXL_HDM_12_WAY_INTERLEAVING;
+    case 16: return CXL_HDM_16_WAY_INTERLEAVING;
     default: return INVALID_INTERLEAVE_WAYS;
   }
 }
@@ -138,13 +136,13 @@ GetEncodedInterleaveGranularity (
   )
 {
   switch (InterleaveGranularity) {
-    case 256:   return EFI_ACPI_6_4_CEDT_CXL_HOST_BRIDGE_INTERLEAVE_GRANULARITY_256B;
-    case 512:   return EFI_ACPI_6_4_CEDT_CXL_HOST_BRIDGE_INTERLEAVE_GRANULARITY_512B;
-    case 1024:  return EFI_ACPI_6_4_CEDT_CXL_HOST_BRIDGE_INTERLEAVE_GRANULARITY_1024B;
-    case 2048:  return EFI_ACPI_6_4_CEDT_CXL_HOST_BRIDGE_INTERLEAVE_GRANULARITY_2048B;
-    case 4096:  return EFI_ACPI_6_4_CEDT_CXL_HOST_BRIDGE_INTERLEAVE_GRANULARITY_4096B;
-    case 8192:  return EFI_ACPI_6_4_CEDT_CXL_HOST_BRIDGE_INTERLEAVE_GRANULARITY_8192B;
-    case 16384: return EFI_ACPI_6_4_CEDT_CXL_HOST_BRIDGE_INTERLEAVE_GRANULARITY_16384B;
+    case 256:   return CXL_INTERLEAVE_GRANULARITY_256B;
+    case 512:   return CXL_INTERLEAVE_GRANULARITY_512B;
+    case 1024:  return CXL_INTERLEAVE_GRANULARITY_1024B;
+    case 2048:  return CXL_INTERLEAVE_GRANULARITY_2048B;
+    case 4096:  return CXL_INTERLEAVE_GRANULARITY_4096B;
+    case 8192:  return CXL_INTERLEAVE_GRANULARITY_8192B;
+    case 16384: return CXL_INTERLEAVE_GRANULARITY_16384B;
     default:    return INVALID_GRANULARITY;
   }
 }
@@ -168,19 +166,19 @@ AddCxlFixedMemoryWindowList (
   IN  CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL  *CONST  CfgMgrProtocol
   )
 {
-  EFI_ACPI_6_4_CEDT_CXL_FIXED_MEMORY_WINDOW_STRUCTURE  *Cfmws;
-  UINT32                                               Index;
-  UINT32                                               InterleaveTargetIndex;
-  UINT64                                               Remainder;
+  CXL_FIXED_MEMORY_WINDOW_STRUCTURE  *Cfmws;
+  UINT32                             Index;
+  UINT32                             InterleaveTargetIndex;
+  UINT64                             Remainder;
 
   ASSERT (WritePointer != NULL);
   ASSERT (*WritePointer != NULL);
 
   for (Index = 0; Index < WindowCount; Index++) {
-    Cfmws               = (EFI_ACPI_6_4_CEDT_CXL_FIXED_MEMORY_WINDOW_STRUCTURE *)*WritePointer;
-    Cfmws->Type         = EFI_ACPI_6_4_CEDT_STRUCTURE_TYPE_CXL_FIXED_MEMORY_WINDOW_STRUCTURE;
-    Cfmws->RecordLength =
-      sizeof (EFI_ACPI_6_4_CEDT_CXL_FIXED_MEMORY_WINDOW_STRUCTURE) +
+    Cfmws                = (CXL_FIXED_MEMORY_WINDOW_STRUCTURE *)*WritePointer;
+    Cfmws->Header.Type   = CEDT_TYPE_CFMWS;
+    Cfmws->Header.Length =
+      sizeof (CXL_FIXED_MEMORY_WINDOW_STRUCTURE) +
       (sizeof (UINT32) * WindowList[Index].NumberOfInterleaveWays);
 
     Cfmws->BaseHpa = WindowList[Index].BaseHostPhysicalAddress;
@@ -213,11 +211,11 @@ AddCxlFixedMemoryWindowList (
       return EFI_INVALID_PARAMETER;
     }
 
-    Cfmws->EncodedNumberOfInterleaveWays =
+    Cfmws->EncodedInterleaveWays =
       GetEncodedNumberOfInterleaveWays (WindowList[Index].NumberOfInterleaveWays);
 
     Cfmws->InterleaveArithmetic = WindowList[Index].InterleaveArithmetic;
-    if (Cfmws->InterleaveArithmetic > EFI_ACPI_6_4_CEDT_CXL_FIXED_MEMORY_WINDOW_STRUCTURE_INTERLEAVE_ARITHMETIC_MODULO_XOR) {
+    if (Cfmws->InterleaveArithmetic > CXL_INTERLEAVE_ARITHMETIC_MODULO_XOR) {
       DEBUG ((
         DEBUG_ERROR,
         "ERROR: CEDT: Invalid interleave arithmetic: 0x%d",
@@ -226,28 +224,27 @@ AddCxlFixedMemoryWindowList (
       return EFI_INVALID_PARAMETER;
     }
 
-    Cfmws->WindowRestrictions = WindowList[Index].WindowRestrictions;
-    if (Cfmws->WindowRestrictions &
-        ~((EFI_ACPI_6_4_CEDT_CXL_FIXED_MEMORY_WINDOW_STRUCTURE_WINDOW_RESTRICTIONS_FIXED_DEVICE_CONFIGURATION << 1)-1))
+    Cfmws->Restrictions = WindowList[Index].WindowRestrictions;
+    if (Cfmws->Restrictions &
+        ~((CXL_WINDOW_RESTRICTIONS_FIXED_DEVICE_CONFIGURATION << 1)-1))
     {
       DEBUG ((
         DEBUG_ERROR,
         "ERROR: CEDT: Invalid window restrictions: 0x%x",
-        Cfmws->WindowRestrictions
+        Cfmws->Restrictions
         ));
       return EFI_INVALID_PARAMETER;
     }
 
-    Cfmws->QtgId                           = WindowList[Index].QtgId;
-    Cfmws->HostBridgeInterleaveGranularity =
+    Cfmws->QtgId       = WindowList[Index].QtgId;
+    Cfmws->Granularity =
       GetEncodedInterleaveGranularity (WindowList[Index].HostBridgeInterleaveGranularity);
-    if (Cfmws->HostBridgeInterleaveGranularity == INVALID_GRANULARITY) {
+    if (Cfmws->Granularity == INVALID_GRANULARITY) {
       return EFI_INVALID_PARAMETER;
     }
 
-    Cfmws->Reserved0 = EFI_ACPI_RESERVED_BYTE;
-    Cfmws->Reserved1 = EFI_ACPI_RESERVED_DWORD;
-    Cfmws->Reserved2 = EFI_ACPI_RESERVED_WORD;
+    Cfmws->Reserved  = 0;
+    Cfmws->Reserved1 = 0;
 
     for (InterleaveTargetIndex = 0;
          InterleaveTargetIndex < WindowList[Index].NumberOfInterleaveWays;
@@ -272,10 +269,10 @@ AddCxlFixedMemoryWindowList (
         return Status;
       }
 
-      Cfmws->InterleaveTargetList[InterleaveTargetIndex] = HostBridge->Uid;
+      Cfmws->TargetList[InterleaveTargetIndex] = HostBridge->Uid;
     }
 
-    *WritePointer += Cfmws->RecordLength;
+    *WritePointer += Cfmws->Header.Length;
   }
 
   return EFI_SUCCESS;
@@ -324,7 +321,7 @@ BuildCedtTable (
   UINT32                                       WindowCount;
   CM_ARCH_COMMON_CXL_FIXED_MEMORY_WINDOW_INFO  *WindowList;
 
-  EFI_ACPI_6_4_CXL_EARLY_DISCOVERY_TABLE  *CedtTable;
+  CXL_EARLY_DISCOVERY_TABLE  *CedtTable;
 
   ASSERT (This != NULL);
   ASSERT (AcpiTableInfo != NULL);
@@ -398,8 +395,8 @@ BuildCedtTable (
 
   // Calculate the CEDT Table Size
   TableSize =
-    sizeof (EFI_ACPI_6_4_CXL_EARLY_DISCOVERY_TABLE) +
-    ((sizeof (EFI_ACPI_6_4_CEDT_CXL_HOST_BRIDGE_STRUCTURE) * HostBridgeCount));
+    sizeof (CXL_EARLY_DISCOVERY_TABLE) +
+    ((sizeof (CXL_HOST_BRIDGE_STRUCTURE) * HostBridgeCount));
 
   // CFMWS does not have a fixed size because the number of InterleaveTargets
   // can vary. Its size is given by 36 + (4*NumberOfInterleaveWays).
@@ -423,7 +420,7 @@ BuildCedtTable (
   }
 
   TableSize += (TotalInterleaveTargets * sizeof (UINT32)) +
-               (WindowCount * sizeof (EFI_ACPI_6_4_CEDT_CXL_FIXED_MEMORY_WINDOW_STRUCTURE));
+               (WindowCount * sizeof (CXL_FIXED_MEMORY_WINDOW_STRUCTURE));
 
   *Table = (EFI_ACPI_DESCRIPTION_HEADER *)AllocateZeroPool (TableSize);
   if (*Table == NULL) {
@@ -439,7 +436,7 @@ BuildCedtTable (
   }
 
   // Add ACPI header.
-  CedtTable = (EFI_ACPI_6_4_CXL_EARLY_DISCOVERY_TABLE *)*Table;
+  CedtTable = (CXL_EARLY_DISCOVERY_TABLE *)*Table;
 
   Status = AddAcpiHeader (
              CfgMgrProtocol,
@@ -545,11 +542,11 @@ ACPI_TABLE_GENERATOR  CedtGenerator = {
   // Generator Description
   L"ACPI.STD.CEDT.GENERATOR",
   // ACPI Table Signature
-  EFI_ACPI_6_4_CXL_EARLY_DISCOVERY_TABLE_SIGNATURE,
+  CXL_EARLY_DISCOVERY_TABLE_SIGNATURE,
   // ACPI Table Revision supported by this Generator
-  EFI_ACPI_6_4_CEDT_CXL_EARLY_DISCOVERY_TABLE_REVISION_01,
+  CXL_EARLY_DISCOVERY_TABLE_REVISION_01,
   // Minimum supported ACPI Table Revision
-  EFI_ACPI_6_4_CEDT_CXL_EARLY_DISCOVERY_TABLE_REVISION_01,
+  CXL_EARLY_DISCOVERY_TABLE_REVISION_01,
   // Creator ID
   TABLE_GENERATOR_CREATOR_ID,
   // Creator Revision
