@@ -869,6 +869,12 @@ STATIC CONST CM_OBJ_PARSER  CmArchCommonObjCxlFixedMemoryWindowInfo[] = {
     ARRAY_SIZE (CmArchCommonObjInterleaveTargetTokenParser) },
 };
 
+/** A parser for EArchCommonObjCxlSystemDescriptionInfo
+*/
+STATIC CONST CM_OBJ_PARSER  CmArchCommonObjCxlSystemDescriptionInfo[] = {
+  { "SystemCapabilities", sizeof (UINT16), "0x%x", NULL },
+};
+
 /** A parser for Arch Common namespace objects.
 */
 STATIC CONST CM_OBJ_PARSER_ARRAY  ArchCommonNamespaceObjectParser[] = {
@@ -911,6 +917,7 @@ STATIC CONST CM_OBJ_PARSER_ARRAY  ArchCommonNamespaceObjectParser[] = {
   CM_PARSER_ADD_OBJECT (EArchCommonObjGenericDbg2DeviceInfo,       CmArchCommonObjDbg2DeviceInfo),
   CM_PARSER_ADD_OBJECT (EArchCommonObjCxlHostBridgeInfo,           CmArchCommonObjCxlHostBridgeInfo),
   CM_PARSER_ADD_OBJECT (EArchCommonObjCxlFixedMemoryWindowInfo,    CmArchCommonObjCxlFixedMemoryWindowInfo),
+  CM_PARSER_ADD_OBJECT (EArchCommonObjCxlSystemDescriptionInfo,    CmArchCommonObjCxlSystemDescriptionInfo),
   CM_PARSER_ADD_OBJECT_RESERVED (EArchCommonObjMax)
 };
 
