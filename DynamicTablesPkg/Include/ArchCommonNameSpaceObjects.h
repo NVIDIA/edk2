@@ -73,6 +73,7 @@ typedef enum ArchCommonObjectID {
   EArchCommonObjSpcrInfo,                       ///< 45 - Serial Terminal and Interrupt Info
   EArchCommonObjTpm2DeviceInfo,                 ///< 46 - TPM2 Device Info
   EArchCommonObjMcfgPciConfigSpaceInfo,         ///< 47 - MCFG PCI Configuration Space Info
+  EArchCommonObjCxlSystemDescriptionInfo,       ///< 48 - CXL System Description Structure Info
   EArchCommonObjMax
 } EARCH_COMMON_OBJECT_ID;
 
@@ -939,6 +940,14 @@ typedef struct CmArchCommonCxlFixedMemoryWindowInfo {
   /// structure via token matching.
   CM_OBJECT_TOKEN    InterleaveTargetTokens[CFMWS_MAX_INTERLEAVE_WAYS];
 } CM_ARCH_COMMON_CXL_FIXED_MEMORY_WINDOW_INFO;
+
+/** A structure that describes a CXL System Description Structure.
+  ID: EArchCommonObjCxlSystemDescriptionInfo
+*/
+typedef struct CmArchCommonCxlSystemDescriptionInfo {
+  /// System Capabilities
+  UINT16    SystemCapabilities;
+} CM_ARCH_COMMON_CXL_SYSTEM_DESCRIPTION_INFO;
 
 /** A structure that describes a proximity domain.
 
