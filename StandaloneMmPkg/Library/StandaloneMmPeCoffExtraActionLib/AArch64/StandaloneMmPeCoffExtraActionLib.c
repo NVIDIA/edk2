@@ -242,9 +242,11 @@ PeCoffLoaderUnloadImageExtraAction (
   IN OUT PE_COFF_LOADER_IMAGE_CONTEXT  *ImageContext
   )
 {
-  UpdatePeCoffPermissions (
-    ImageContext,
-    ArmSetMemoryRegionNoExec,
-    ArmClearMemoryRegionReadOnly
-    );
+  EFI_PHYSICAL_ADDRESS  Base;
+  UINTN                 Size;
+
+  Base = ImageContext->ImageAddress & ~(EFI_PAGE_SIZE - 1);
+  Size = ImageContext->ImageAddress - Base + ImageContext->ImageSize;
+  ArmSetMemoryRegionNoExec (Base, ALIGN_VALUE (Size, EFI_PAGE_SIZE));
+  ArmClearMemoryRegionReadOnly (Base, ALIGN_VALUE (Size, EFI_PAGE_SIZE));
 }
