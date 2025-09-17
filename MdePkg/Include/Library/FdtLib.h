@@ -662,6 +662,7 @@ FdtAddSubnode (
 
  **/
 INT32
+EFIAPI
 FdtDelNode (
   IN VOID   *Fdt,
   IN INT32  NodeOffset
