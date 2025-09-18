@@ -10,7 +10,9 @@
 
 [Defines]
   UNIT_TESTING_CODE_COVERAGE_ENABLE     = TRUE
+!ifndef UNIT_TESTING_ADDRESS_SANITIZER_ENABLE
   UNIT_TESTING_ADDRESS_SANITIZER_ENABLE = TRUE
+!endif
 
 [LibraryClasses.common.HOST_APPLICATION]
   BaseLib|MdePkg/Library/BaseLib/UnitTestHostBaseLib.inf
