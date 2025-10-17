@@ -1,6 +1,7 @@
 /** @file
   Arm Ffa library code for Dxe Driver
 
+  SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
   Copyright (c) 2024, Arm Limited. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -155,4 +156,34 @@ ErrorHandler:
   }
 
   return Status;
+}
+
+/**
+  ArmFfaLib Destructor.
+
+  @param [in]   ImageHandle      Image Handle
+  @param [in]   SystemTable      System Table
+
+  @retval EFI_SUCCESS            Success
+
+**/
+EFI_STATUS
+EFIAPI
+ArmFfaDxeLibDestructor (
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
+  )
+{
+  EFI_HOB_GUID_TYPE  *RxTxBufferHob;
+
+  if (mFfaExitBootServiceEvent != NULL) {
+    gBS->CloseEvent (mFfaExitBootServiceEvent);
+  }
+
+  RxTxBufferHob = GetFirstGuidHob (&gArmFfaRxTxBufferInfoGuid);
+  if (RxTxBufferHob == NULL) {
+    ArmFfaLibRxTxUnmap ();
+  }
+
+  return EFI_SUCCESS;
 }
