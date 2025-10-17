@@ -1,6 +1,7 @@
 ## @file
 #  Provides FF-A ABI Library used in Dxe Driver.
 #
+#  SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #  Copyright (c) 2024, Arm Limited. All rights reserved.<BR>
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -14,6 +15,7 @@
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = ArmFfaLib|DXE_DRIVER DXE_RUNTIME_DRIVER UEFI_APPLICATION UEFI_DRIVER
   CONSTRUCTOR                    = ArmFfaDxeLibConstructor
+  DESTRUCTOR                     = ArmFfaDxeLibDestructor
 
 [Sources]
   ArmFfaCommon.h
