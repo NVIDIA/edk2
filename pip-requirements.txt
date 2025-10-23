@@ -19,3 +19,4 @@ lcov-cobertura==2.1.1
 regex==2024.11.6
 pylibfdt==1.7.2.post1
 pefile
+setuptools<80.9
