@@ -251,6 +251,11 @@ AddCxlFixedMemoryWindowList (
     Cfmws->Granularity =
       GetEncodedInterleaveGranularity (WindowList[Index].HostBridgeInterleaveGranularity);
     if (Cfmws->Granularity == INVALID_GRANULARITY) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "ERROR: CEDT: Invalid interleave granularity: 0x%x",
+        WindowList[Index].HostBridgeInterleaveGranularity
+        ));
       return EFI_INVALID_PARAMETER;
     }
 
@@ -486,7 +491,7 @@ BuildCedtTable (
   // Add CSDS size
   if (AcpiTableInfo->AcpiTableRevision >= CXL_EARLY_DISCOVERY_TABLE_REVISION_02) {
     if (SystemDescription != NULL) {
-      TableSize += sizeof (SystemDescription);
+      TableSize += sizeof (CXL_SYSTEM_DESCRIPTION_STRUCTURE);
     }
   }
 
