@@ -621,7 +621,12 @@ MmCommunication2Initialize (
 
   ASSERT (mNsCommBuffMemRegion.Length != 0);
 
-  Status = gDS->AddMemorySpace (
+  /* The upstream driver adds the NS buffer as a cached memory region.
+     But this isn't working on our platform, change this to be a uncached memory region.
+     and tell the OS that this is device memory. We need a way to investigate this
+     further and either keep this as is and revert the change to make it uncached
+     OR find a way to make it configurable.*/
+  /*Status = gDS->AddMemorySpace (
                   EfiGcdMemoryTypeReserved,
                   mNsCommBuffMemRegion.PhysicalBase,
                   mNsCommBuffMemRegion.Length,
@@ -642,6 +647,19 @@ MmCommunication2Initialize (
                   mNsCommBuffMemRegion.PhysicalBase,
                   mNsCommBuffMemRegion.Length,
                   EFI_MEMORY_WB | EFI_MEMORY_XP | EFI_MEMORY_RUNTIME
+                  );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "MmCommunicateInitialize: "
+      "Failed to set MM-NS Buffer Memory attributes\n"
+      ));
+    goto CleanAddedMemorySpace;
+  }*/
+  Status = gDS->SetMemorySpaceAttributes (
+                  mNsCommBuffMemRegion.PhysicalBase,
+                  mNsCommBuffMemRegion.Length,
+                  EFI_MEMORY_UC | EFI_MEMORY_RUNTIME
                   );
   if (EFI_ERROR (Status)) {
     DEBUG ((
