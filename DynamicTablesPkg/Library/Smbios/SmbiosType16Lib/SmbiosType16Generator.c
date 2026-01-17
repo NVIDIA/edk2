@@ -1,7 +1,7 @@
 /** @file
   SMBIOS Type16 Table Generator.
 
-  Copyright (c) 2024, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+  Copyright (c) 2024 - 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
   Copyright (c) 2020 - 2021, Arm Limited. All rights reserved.<BR>
 
   SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -109,7 +109,7 @@ UpdateSmbiosType16Size (
     SmbiosRecord->MaximumCapacity = SizeKb;
   } else {
     SmbiosRecord->MaximumCapacity         = 0x80000000;
-    SmbiosRecord->ExtendedMaximumCapacity = SizeKb;
+    SmbiosRecord->ExtendedMaximumCapacity = SizeBytes;
   }
 }
 
