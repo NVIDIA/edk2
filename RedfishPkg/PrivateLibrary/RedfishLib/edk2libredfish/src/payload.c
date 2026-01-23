@@ -502,12 +502,12 @@ getOpResult (
   EFI_HTTP_STATUS_CODE  **StatusCode
   )
 {
-  const char      *propStr;
-  json_t          *stringProp;
-  bool            ret = false;
-  redfishPayload  *prop;
-  long long       intVal, intPropVal;
-  json_type       jsonType;
+  const char       *propStr;
+  json_t           *stringProp;
+  bool             ret = false;
+  redfishPayload   *prop;
+  long long        intVal, intPropVal;
+  EDKII_JSON_TYPE  jsonType;
 
   if (isPayloadCollection (payload)) {
     return collectionEvalOp (payload, propName, op, value, StatusCode);
