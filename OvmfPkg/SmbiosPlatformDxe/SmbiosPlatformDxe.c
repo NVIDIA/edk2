@@ -1,6 +1,7 @@
 /** @file
   This driver installs SMBIOS information for OVMF
 
+  Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.<BR>
   Copyright (c) 2011, Bei Guan <gbtju85@gmail.com>
   Copyright (c) 2011 - 2015, Intel Corporation. All rights reserved.<BR>
 
@@ -143,26 +144,26 @@ InstallAllStructures (
     UINTN   VendLen, VersLen, DateLen;
     CHAR8   *Type0;
 
-    VendStr = (CHAR16 *)FixedPcdGetPtr (PcdFirmwareVendor);
-    VendLen = StrLen (VendStr);
-    if (VendLen < 3) {
+    VendStr = (CHAR16 *)PcdGetPtr (PcdFirmwareVendor);
+    if ((VendStr == NULL) || (StrLen (VendStr) < 3)) {
       VendStr = L"unknown";
-      VendLen = StrLen (VendStr);
     }
 
-    VersStr = (CHAR16 *)FixedPcdGetPtr (PcdFirmwareVersionString);
-    VersLen = StrLen (VersStr);
-    if (VersLen < 3) {
+    VendLen = StrLen (VendStr);
+
+    VersStr = (CHAR16 *)PcdGetPtr (PcdFirmwareVersionString);
+    if ((VersStr == NULL) || (StrLen (VersStr) < 3)) {
       VersStr = L"unknown";
-      VersLen = StrLen (VersStr);
     }
 
-    DateStr = (CHAR16 *)FixedPcdGetPtr (PcdFirmwareReleaseDateString);
-    DateLen = StrLen (DateStr);
-    if (DateLen < 3) {
+    VersLen = StrLen (VersStr);
+
+    DateStr = (CHAR16 *)PcdGetPtr (PcdFirmwareReleaseDateString);
+    if ((DateStr == NULL) || (StrLen (DateStr) < 3)) {
       DateStr = L"02/02/2022";
-      DateLen = StrLen (DateStr);
     }
+
+    DateLen = StrLen (DateStr);
 
     DEBUG ((DEBUG_INFO, "FirmwareVendor:            \"%s\" (%d chars)\n", VendStr, VendLen));
     DEBUG ((DEBUG_INFO, "FirmwareVersionString:     \"%s\" (%d chars)\n", VersStr, VersLen));
