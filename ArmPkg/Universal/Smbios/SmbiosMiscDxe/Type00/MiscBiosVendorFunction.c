@@ -1,5 +1,6 @@
 /** @file
 
+  Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.<BR>
   Copyright (c) 2022 - 2023, Ampere Computing LLC. All rights reserved.<BR>
   Copyright (c) 2021, NUVIA Inc. All rights reserved.<BR>
   Copyright (c) 2009, Intel Corporation. All rights reserved.<BR>
@@ -159,8 +160,8 @@ SetBiosVersion (
               );
 
   if (((StrCmp (Version, DefaultVersionString) == 0) || (StrLen (Version) == 0))) {
-    Version = (CHAR16 *)FixedPcdGetPtr (PcdFirmwareVersionString);
-    if (StrLen (Version) > 0) {
+    Version = (CHAR16 *)PcdGetPtr (PcdFirmwareVersionString);
+    if ((Version != NULL) && (StrLen (Version) > 0)) {
       TokenToUpdate = STRING_TOKEN (STR_MISC_BIOS_VERSION);
       HiiSetString (mSmbiosMiscHiiHandle, TokenToUpdate, Version, NULL);
     }
