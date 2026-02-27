@@ -13,6 +13,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Protocol/HiiPopup.h>
 #include <Protocol/RealTimeClock.h>
 #include <Library/BaseCryptLib.h>
+#include <Library/PcdLib.h>
 #include <Library/SecureBootVariableLib.h>
 #include <Library/SecureBootVariableProvisionLib.h>
 
@@ -3403,7 +3404,7 @@ SecureBootExtractConfigFromVariable (
   // Fix Pk and SecureBootEnable inconsistency
   //
   if ((SetupMode != NULL) && ((*SetupMode) == USER_MODE)) {
-    ConfigData->HideSecureBoot = FALSE;
+    ConfigData->HideSecureBoot = FeaturePcdGet (PcdDisableSecureBootOverride);
     if ((SecureBootEnable != NULL) && (*SecureBootEnable == SECURE_BOOT_ENABLE)) {
       ConfigData->AttemptSecureBoot = TRUE;
     }

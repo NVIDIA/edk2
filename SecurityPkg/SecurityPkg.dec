@@ -648,5 +648,11 @@
   # @Prompt Require PK to be self-signed
   gEfiMdeModulePkgTokenSpaceGuid.PcdRequireSelfSignedPk|FALSE|BOOLEAN|0x00010027
 
+  ## Specifies if the platform disables the physical presence secure boot override
+  #   TRUE  - Override for secure boot is disabled.
+  #   FALSE - User with physical presence can disable secure boot.
+  # @Prompt Disable physical presence secure boot override
+  gEfiSecurityPkgTokenSpaceGuid.PcdDisableSecureBootOverride|FALSE|BOOLEAN|0x00010032
+
 [UserExtensions.TianoCore."ExtraFiles"]
   SecurityPkgExtra.uni

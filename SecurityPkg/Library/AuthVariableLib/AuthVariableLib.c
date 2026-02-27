@@ -207,26 +207,31 @@ AuthVariableLibInitialize (
   // If "SecureBootEnable" variable is SECURE_BOOT_ENABLE and in USER_MODE, Set "SecureBoot" variable to SECURE_BOOT_MODE_ENABLE.
   // If "SecureBootEnable" variable is SECURE_BOOT_DISABLE, Set "SecureBoot" variable to SECURE_BOOT_MODE_DISABLE.
   //
-  SecureBootEnable = SECURE_BOOT_DISABLE;
-  Status           = AuthServiceInternalFindVariable (EFI_SECURE_BOOT_ENABLE_NAME, &gEfiSecureBootEnableDisableGuid, (VOID **)&Data, &DataSize);
-  if (!EFI_ERROR (Status)) {
-    if (mPlatformMode == USER_MODE) {
-      SecureBootEnable = *(UINT8 *)Data;
-    }
-  } else if (mPlatformMode == USER_MODE) {
-    //
-    // "SecureBootEnable" not exist, initialize it in USER_MODE.
-    //
+
+  if (FeaturePcdGet (PcdDisableSecureBootOverride)) {
     SecureBootEnable = SECURE_BOOT_ENABLE;
-    Status           = AuthServiceInternalUpdateVariable (
-                         EFI_SECURE_BOOT_ENABLE_NAME,
-                         &gEfiSecureBootEnableDisableGuid,
-                         &SecureBootEnable,
-                         sizeof (UINT8),
-                         EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS
-                         );
-    if (EFI_ERROR (Status)) {
-      return Status;
+  } else {
+    SecureBootEnable = SECURE_BOOT_DISABLE;
+    Status           = AuthServiceInternalFindVariable (EFI_SECURE_BOOT_ENABLE_NAME, &gEfiSecureBootEnableDisableGuid, (VOID **)&Data, &DataSize);
+    if (!EFI_ERROR (Status)) {
+      if (mPlatformMode == USER_MODE) {
+        SecureBootEnable = *(UINT8 *)Data;
+      }
+    } else if (mPlatformMode == USER_MODE) {
+      //
+      // "SecureBootEnable" not exist, initialize it in USER_MODE.
+      //
+      SecureBootEnable = SECURE_BOOT_ENABLE;
+      Status           = AuthServiceInternalUpdateVariable (
+                           EFI_SECURE_BOOT_ENABLE_NAME,
+                           &gEfiSecureBootEnableDisableGuid,
+                           &SecureBootEnable,
+                           sizeof (UINT8),
+                           EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS
+                           );
+      if (EFI_ERROR (Status)) {
+        return Status;
+      }
     }
   }
 

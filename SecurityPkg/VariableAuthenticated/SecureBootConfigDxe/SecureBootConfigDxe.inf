@@ -115,6 +115,9 @@
   gEfiCertX509Sha384Guid                        ## SOMETIMES_PRODUCES  ## GUID  # Unique ID for the type of the certificate.
   gEfiCertX509Sha512Guid                        ## SOMETIMES_PRODUCES  ## GUID  # Unique ID for the type of the certificate.
 
+[FeaturePcd]
+  gEfiSecurityPkgTokenSpaceGuid.PcdDisableSecureBootOverride
+
 [Protocols]
   gEfiHiiConfigAccessProtocolGuid               ## PRODUCES
   gEfiDevicePathProtocolGuid                    ## PRODUCES

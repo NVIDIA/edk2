@@ -997,6 +997,13 @@ ProcessVariable (
     return Status;
   }
 
+  if (  FeaturePcdGet (PcdDisableSecureBootOverride)
+     && CompareGuid (VendorGuid, &gEfiSecureBootEnableDisableGuid)
+     && (StrCmp (VariableName, EFI_SECURE_BOOT_ENABLE_NAME) == 0))
+  {
+    return EFI_WRITE_PROTECTED;
+  }
+
   if (NeedPhysicallyPresent (VariableName, VendorGuid) && !UserPhysicalPresent ()) {
     //
     // This variable is protected, only physical present user could modify its value.

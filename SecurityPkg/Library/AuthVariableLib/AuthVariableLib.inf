@@ -89,3 +89,4 @@
 
 [FeaturePcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdRequireSelfSignedPk
+  gEfiSecurityPkgTokenSpaceGuid.PcdDisableSecureBootOverride
