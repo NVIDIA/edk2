@@ -108,7 +108,7 @@ GetLoadedImageBase (
           (DebugTable->NormalImage->LoadedImageProtocolInstance != NULL))
       {
         if ((Address >= (UINTN)DebugTable->NormalImage->LoadedImageProtocolInstance->ImageBase) &&
-            (Address <= ((UINTN)DebugTable->NormalImage->LoadedImageProtocolInstance->ImageBase + DebugTable->NormalImage->LoadedImageProtocolInstance->ImageSize)))
+            (Address < ((UINTN)DebugTable->NormalImage->LoadedImageProtocolInstance->ImageBase + DebugTable->NormalImage->LoadedImageProtocolInstance->ImageSize)))
         {
           return (UINTN)DebugTable->NormalImage->LoadedImageProtocolInstance->ImageBase;
         }

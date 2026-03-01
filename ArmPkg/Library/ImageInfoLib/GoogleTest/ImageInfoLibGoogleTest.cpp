@@ -313,9 +313,13 @@ TEST_F (ImageInfoLibTest, GetLoadedImageBase_Success) {
   Result = GetLoadedImageBase (0x400042);
   EXPECT_EQ (Result, 0x400000ULL);
 
-  // Check an address at the last byte (inclusive) of the first image.
-  Result = GetLoadedImageBase (0x410000);
+  // Check the last valid byte of the first image.
+  Result = GetLoadedImageBase (0x40FFFF);
   EXPECT_EQ (Result, 0x400000ULL);
+
+  // Check an address immediately after the first image.
+  Result = GetLoadedImageBase (0x410000);
+  EXPECT_EQ (Result, 0ULL);
 
   // Check an address between images.
   Result = GetLoadedImageBase (0x410042);
@@ -333,9 +337,13 @@ TEST_F (ImageInfoLibTest, GetLoadedImageBase_Success) {
   Result = GetLoadedImageBase (0x600100);
   EXPECT_EQ (Result, 0x600000ULL);
 
-  // Check an address at the last byte (inclusive) of the third image.
-  Result = GetLoadedImageBase (0x700000);
+  // Check the last valid byte of the third image.
+  Result = GetLoadedImageBase (0x6FFFFF);
   EXPECT_EQ (Result, 0x600000ULL);
+
+  // Check an address immediately after the third image.
+  Result = GetLoadedImageBase (0x700000);
+  EXPECT_EQ (Result, 0ULL);
 
   // Check an address after the third image.
   Result = GetLoadedImageBase (0x700001);
