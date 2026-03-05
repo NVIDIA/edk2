@@ -364,6 +364,10 @@ InCustomMode (
   VOID        *Data;
   UINTN       DataSize;
 
+  if (PcdGetBool (PcdDisableCustomModeEvaluation)) {
+    return FALSE;
+  }
+
   Status = AuthServiceInternalFindVariable (EFI_CUSTOM_MODE_NAME, &gEfiCustomModeEnableGuid, &Data, &DataSize);
   if (!EFI_ERROR (Status) && (*(UINT8 *)Data == CUSTOM_SECURE_BOOT_MODE)) {
     return TRUE;

@@ -654,5 +654,12 @@
   # @Prompt Disable physical presence secure boot override
   gEfiSecurityPkgTokenSpaceGuid.PcdDisableSecureBootOverride|FALSE|BOOLEAN|0x00010032
 
+  ## Specifies if the platform disables reading and evaluating Custom Mode
+  #   TRUE  - Override for Custom Mode is disabled.
+  #   FALSE - User with physical presence can enable Custom Mode.
+  # @Prompt Disable physical presence secure boot override
+  gEfiSecurityPkgTokenSpaceGuid.PcdDisableCustomModeEvaluation|FALSE|BOOLEAN|0x00010033
+
+
 [UserExtensions.TianoCore."ExtraFiles"]
   SecurityPkgExtra.uni

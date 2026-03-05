@@ -52,10 +52,14 @@ UefiMain (
     return 1;
   }
 
-  Status = SetSecureBootMode (CUSTOM_SECURE_BOOT_MODE);
-  if (EFI_ERROR (Status)) {
-    AsciiPrint ("EnrollFromDefaultKeysApp: Cannot set CUSTOM_SECURE_BOOT_MODE: %r\n", Status);
-    return 1;
+  if (!FeaturePcdGet (PcdDisableCustomModeEvaluation)) {
+    Status = SetSecureBootMode (CUSTOM_SECURE_BOOT_MODE);
+    if (EFI_ERROR (Status)) {
+      AsciiPrint ("EnrollFromDefaultKeysApp: Cannot set CUSTOM_SECURE_BOOT_MODE: %r\n", Status);
+      return 1;
+    }
+  } else {
+    AsciiPrint ("EnrollFromDefaultKeysApp: Skipped - Custom Mode evaluation disabled\n");
   }
 
   Status = EnrollDbFromDefault ();
