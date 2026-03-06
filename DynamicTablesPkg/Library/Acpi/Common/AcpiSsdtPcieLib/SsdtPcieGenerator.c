@@ -842,7 +842,19 @@ GeneratePciDevice (
 
   // Add the template _OSC method.
   Status = AddOscMethod (PciInfo, PciNode);
-  ASSERT_EFI_ERROR (Status);
+  if (EFI_ERROR (Status)) {
+    ASSERT (0);
+    return Status;
+  }
+
+  // Optional platform hook: host-bridge _DSM from template (see AddHostBridgeDsmMethod).
+  Status = AddHostBridgeDsmMethod (PciInfo, PciNode);
+  if (Status == EFI_NOT_FOUND) {
+    Status = EFI_SUCCESS;
+  } else if (EFI_ERROR (Status)) {
+    ASSERT (0);
+    return Status;
+  }
 
   return Status;
 }

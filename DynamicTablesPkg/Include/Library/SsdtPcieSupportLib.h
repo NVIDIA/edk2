@@ -47,6 +47,32 @@ AddOscMethod (
   IN  OUT   AML_OBJECT_NODE_HANDLE                    PciNode
   );
 
+/** Optional hook to amend the PCI host bridge AML node from the platform template.
+
+  Platform library instances may parse the PCI SSDT template AML, locate an
+  object intended for the host bridge, detach it, and attach it under @a PciNode.
+
+  The hook is optional: implementations may return EFI_NOT_FOUND when there is
+  nothing to attach. The SSDT generator maps EFI_NOT_FOUND to EFI_SUCCESS.
+
+  The default stub does not modify the AML tree and returns EFI_SUCCESS.
+
+  @param [in]       PciInfo     Root bridge / segment context (platform-defined).
+  @param [in, out]  PciNode     Host bridge AML device node to amend.
+
+  @retval EFI_SUCCESS             Attached, or stub no-op success.
+  @retval EFI_NOT_FOUND           Nothing to attach (optional; generator maps to success).
+  @retval EFI_NOT_READY           Template not initialized (platform-specific).
+  @retval EFI_INVALID_PARAMETER   Invalid parameter.
+  @retval EFI_OUT_OF_RESOURCES    Could not allocate memory.
+**/
+EFI_STATUS
+EFIAPI
+AddHostBridgeDsmMethod (
+  IN      CONST CM_ARCH_COMMON_PCI_CONFIG_SPACE_INFO  *PciInfo,
+  IN  OUT   AML_OBJECT_NODE_HANDLE                    PciNode
+  );
+
 /** Generate Pci slots devices.
 
   PCI Firmware Specification - Revision 3.3,

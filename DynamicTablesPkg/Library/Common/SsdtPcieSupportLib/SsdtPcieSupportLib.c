@@ -200,3 +200,30 @@ error_handler:
 
   return Status;
 }
+
+/** AddHostBridgeDsmMethod - reference stub.
+
+  @param [in]       PciInfo     Pci device information.
+  @param [in, out]  PciNode     Host bridge AML device node.
+
+  @retval EFI_SUCCESS  Always.
+**/
+EFI_STATUS
+EFIAPI
+AddHostBridgeDsmMethod (
+  IN      CONST CM_ARCH_COMMON_PCI_CONFIG_SPACE_INFO  *PciInfo,
+  IN  OUT   AML_OBJECT_NODE_HANDLE                    PciNode
+  )
+{
+  ASSERT (PciInfo != NULL);
+  ASSERT (PciNode != NULL);
+
+  //
+  // Parameters are unused in this stub; reference them for RELEASE builds
+  // where ASSERT is a no-op (avoids -Wunused-parameter).
+  //
+  (VOID)PciInfo;
+  (VOID)PciNode;
+
+  return EFI_SUCCESS;
+}
