@@ -2,6 +2,7 @@
   String definitions for TCG2 configuration form.
 
 Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -79,6 +80,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #string STR_TPM2_ACPI_REVISION_3           #language en-US "Rev 3"
 #string STR_TPM2_ACPI_REVISION_4           #language en-US "Rev 4"
+#string STR_TPM2_ACPI_REVISION_5           #language en-US "Rev 5"
 
 #string STR_TCG2_PPI_VERSION_1_2           #language en-US "1.2"
 #string STR_TCG2_PPI_VERSION_1_3           #language en-US "1.3"
