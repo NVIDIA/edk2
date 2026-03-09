@@ -2,6 +2,7 @@
   The module entry point for Tcg2 configuration module.
 
 Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -231,6 +232,9 @@ InitializeTcg2VersionInfo (
       break;
     case EFI_TPM2_ACPI_TABLE_REVISION_4:
       HiiSetString (PrivateData->HiiHandle, STRING_TOKEN (STR_TPM2_ACPI_REVISION_STATE_CONTENT), L"Rev 4", NULL);
+      break;
+    case EFI_TPM2_ACPI_TABLE_REVISION_5:
+      HiiSetString (PrivateData->HiiHandle, STRING_TOKEN (STR_TPM2_ACPI_REVISION_STATE_CONTENT), L"Rev 5", NULL);
       break;
     default:
       ASSERT (FALSE);

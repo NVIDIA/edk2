@@ -2,6 +2,7 @@
   Header file for NV data structure definition.
 
 Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -39,6 +40,7 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 
 #define TPM2_ACPI_REVISION_3  3
 #define TPM2_ACPI_REVISION_4  4
+#define TPM2_ACPI_REVISION_5  5
 
 #define TPM_DEVICE_INTERFACE_TIS       0
 #define TPM_DEVICE_INTERFACE_PTP_FIFO  1
