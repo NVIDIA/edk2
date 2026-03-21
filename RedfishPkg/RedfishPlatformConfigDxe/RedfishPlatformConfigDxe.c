@@ -1431,6 +1431,14 @@ HiiValueToRedfishValue (
 
       RedfishValue->Type = RedfishValueTypeString;
       break;
+    case EFI_IFR_GUID_OP:
+      //
+      // GUID IFR extensions include EFI_IFR_GUID_LABEL used by drivers that build
+      // forms dynamically (e.g. label + HiiCreateGuidOpCode). They are not questions
+      // with a Redfish-mappable value; treat like non-value statements.
+      //
+      RedfishValue->Type = RedfishValueTypeUnknown;
+      break;
     default:
       DEBUG ((DEBUG_ERROR, "%a: catch unsupported type: 0x%x! Please contact with author if we need to support this type.\n", __func__, HiiStatement->Operand));
       ASSERT (FALSE);
