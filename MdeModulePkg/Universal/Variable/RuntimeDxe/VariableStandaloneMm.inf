@@ -78,6 +78,7 @@
   StandaloneMmDriverEntryPoint
   SynchronizationLib
   VarCheckLib
+  VarSetCallbacksLib
   VariableFlashInfoLib
   VariablePolicyLib
   VariablePolicyHelperLib
