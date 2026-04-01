@@ -3766,7 +3766,7 @@ ParseHandleDatabaseForChildDevices (
   @param[in] ProtocolGuid The guid of the protocol to get handles for.  If NULL
                           then the function will return all handles.
 
-  @retval NULL            A memory allocation failed.
+  @retval NULL            Could not get handles or memory allocation failed.
   @return                 A NULL terminated list of handles.
 **/
 EFI_HANDLE *
@@ -3775,46 +3775,35 @@ GetHandleListByProtocol (
   IN CONST EFI_GUID  *ProtocolGuid OPTIONAL
   )
 {
-  EFI_HANDLE  *HandleList;
-  UINTN       Size;
+  EFI_HANDLE  *HandleList         = NULL;
+  EFI_HANDLE  *OriginalHandleList = NULL;
+  UINTN       OriginalHandleCount;
   EFI_STATUS  Status;
 
-  Size       = 0;
-  HandleList = NULL;
-
-  //
-  // We cannot use LocateHandleBuffer since we need that NULL item on the ends of the list!
-  //
-  if (ProtocolGuid == NULL) {
-    Status = gBS->LocateHandle (AllHandles, NULL, NULL, &Size, HandleList);
-    if (Status == EFI_BUFFER_TOO_SMALL) {
-      HandleList = AllocateZeroPool (Size + sizeof (EFI_HANDLE));
-      if (HandleList == NULL) {
-        return (NULL);
-      }
-
-      Status                               = gBS->LocateHandle (AllHandles, NULL, NULL, &Size, HandleList);
-      HandleList[Size/sizeof (EFI_HANDLE)] = NULL;
-    }
-  } else {
-    Status = gBS->LocateHandle (ByProtocol, (EFI_GUID *)ProtocolGuid, NULL, &Size, HandleList);
-    if (Status == EFI_BUFFER_TOO_SMALL) {
-      HandleList = AllocateZeroPool (Size + sizeof (EFI_HANDLE));
-      if (HandleList == NULL) {
-        return (NULL);
-      }
-
-      Status                               = gBS->LocateHandle (ByProtocol, (EFI_GUID *)ProtocolGuid, NULL, &Size, HandleList);
-      HandleList[Size/sizeof (EFI_HANDLE)] = NULL;
-    }
+  Status = gBS->LocateHandleBuffer (
+                  (ProtocolGuid == NULL) ? AllHandles : ByProtocol,
+                  (EFI_GUID *)ProtocolGuid,
+                  NULL,
+                  &OriginalHandleCount,
+                  &OriginalHandleList
+                  );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: LocateHandleBuffer %a failed: %r\n", __FUNCTION__, (ProtocolGuid == NULL) ? "AllHandles" : "ByProtocol", Status));
+    return NULL;
   }
 
-  if (EFI_ERROR (Status)) {
-    if (HandleList != NULL) {
-      FreePool (HandleList);
-    }
+  // create new list with one more slot for the NULL terminator
+  HandleList = AllocateZeroPool ((OriginalHandleCount + 1) * sizeof (EFI_HANDLE));
+  if (HandleList == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a: allocate failed\n", __FUNCTION__));
+    goto Done;
+  }
 
-    return (NULL);
+  CopyMem (HandleList, OriginalHandleList, OriginalHandleCount * sizeof (EFI_HANDLE));
+
+Done:
+  if (OriginalHandleList != NULL) {
+    FreePool (OriginalHandleList);
   }
 
   return (HandleList);
