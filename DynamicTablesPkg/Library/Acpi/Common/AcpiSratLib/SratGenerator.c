@@ -36,6 +36,7 @@
     The following Configuration Manager Object(s) are used by this Generator:
     - EArchCommonObjMemoryAffinityInfo (OPTIONAL)
     - EArchCommonObjGenericInitiatorAffinityInfo (OPTIONAL)
+    - EArchCommonObjGenericPortAffinityInfo (OPTIONAL)
     - EArchCommonObjDeviceHandleAcpi (OPTIONAL)
     - EArchCommonObjDeviceHandlePci (OPTIONAL)
 */
@@ -58,6 +59,16 @@ GET_OBJECT_LIST (
   EObjNameSpaceArchCommon,
   EArchCommonObjGenericInitiatorAffinityInfo,
   CM_ARCH_COMMON_GENERIC_INITIATOR_AFFINITY_INFO
+  );
+
+/**
+  This macro expands to a function that retrieves the Generic Port Affinity
+  information from the Configuration Manager.
+*/
+GET_OBJECT_LIST (
+  EObjNameSpaceArchCommon,
+  EArchCommonObjGenericPortAffinityInfo,
+  CM_ARCH_COMMON_GENERIC_PORT_AFFINITY_INFO
   );
 
 /**
@@ -307,6 +318,155 @@ AddGenericInitiatorAffinity (
   return EFI_SUCCESS;
 }
 
+/** Add the Generic Port Affinity Structures in the SRAT Table.
+
+  @param [in]  CfgMgrProtocol   Pointer to the Configuration Manager
+                                Protocol Interface.
+  @param [in]  Srat             Pointer to the SRAT Table.
+  @param [in]  GenPortAffOff    Offset of the Generic Port Affinity
+                                information in the SRAT Table.
+  @param [in]  GenPortAffInfo   Pointer to the Generic Port Affinity
+                                Information list.
+  @param [in]  GenPortAffCount  Count of Generic Port Affinity
+                                objects.
+
+  @retval EFI_SUCCESS           Table generated successfully.
+  @retval EFI_INVALID_PARAMETER A parameter is invalid.
+  @retval EFI_NOT_FOUND         The required object information is not found.
+  @retval EFI_BAD_BUFFER_SIZE   The size returned by the Configuration
+                                Manager is less than the Object size for the
+                                requested object.
+**/
+STATIC
+EFI_STATUS
+AddGenericPortAffinity (
+  IN CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL         *CONST  CfgMgrProtocol,
+  IN EFI_ACPI_6_3_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER *CONST  Srat,
+  IN CONST UINT32                                               GenPortAffOff,
+  IN CONST CM_ARCH_COMMON_GENERIC_PORT_AFFINITY_INFO            *GenPortAffInfo,
+  IN       UINT32                                               GenPortAffCount
+  )
+{
+  EFI_STATUS                                    Status;
+  EFI_ACPI_6_5_GENERIC_PORT_AFFINITY_STRUCTURE  *GenPortAff;
+  CM_ARCH_COMMON_DEVICE_HANDLE_ACPI             *DeviceHandleAcpi;
+  CM_ARCH_COMMON_DEVICE_HANDLE_PCI              *DeviceHandlePci;
+  UINT32                                        DeviceHandleCount;
+
+  ASSERT (Srat != NULL);
+  ASSERT (GenPortAffInfo != NULL);
+
+  GenPortAff = (EFI_ACPI_6_5_GENERIC_PORT_AFFINITY_STRUCTURE *)((UINT8 *)Srat + GenPortAffOff);
+
+  while (GenPortAffCount-- != 0) {
+    DEBUG ((DEBUG_INFO, "SRAT: GenPortAff = 0x%p\n", GenPortAff));
+
+    GenPortAff->Type   = EFI_ACPI_6_5_GENERIC_PORT_AFFINITY;
+    GenPortAff->Length =
+      sizeof (EFI_ACPI_6_5_GENERIC_PORT_AFFINITY_STRUCTURE);
+    GenPortAff->Reserved1        = EFI_ACPI_RESERVED_WORD;
+    GenPortAff->DeviceHandleType = GenPortAffInfo->DeviceHandleType;
+    GenPortAff->ProximityDomain  = GenPortAffInfo->ProximityDomain;
+
+    if (GenPortAffInfo->DeviceHandleToken == CM_NULL_TOKEN) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "ERROR: SRAT: Invalid Device Handle Token.\n"
+        ));
+      ASSERT (0);
+      return EFI_INVALID_PARAMETER;
+    }
+
+    if (GenPortAffInfo->DeviceHandleType == EFI_ACPI_6_5_ACPI_DEVICE_HANDLE) {
+      Status = GetEArchCommonObjDeviceHandleAcpi (
+                 CfgMgrProtocol,
+                 GenPortAffInfo->DeviceHandleToken,
+                 &DeviceHandleAcpi,
+                 &DeviceHandleCount
+                 );
+      if (EFI_ERROR (Status)) {
+        DEBUG ((
+          DEBUG_ERROR,
+          "ERROR: SRAT: Failed to get ACPI Device Handle Inf."
+          " DeviceHandleToken = %p."
+          " Status = %r\n",
+          GenPortAffInfo->DeviceHandleToken,
+          Status
+          ));
+        return Status;
+      }
+
+      // We are expecting only one device handle.
+      ASSERT (DeviceHandleCount == 1);
+
+      // Populate the ACPI device handle information.
+      GenPortAff->DeviceHandle.Acpi.AcpiHid     = DeviceHandleAcpi->Hid;
+      GenPortAff->DeviceHandle.Acpi.AcpiUid     = DeviceHandleAcpi->Uid;
+      GenPortAff->DeviceHandle.Acpi.Reserved[0] = EFI_ACPI_RESERVED_BYTE;
+      GenPortAff->DeviceHandle.Acpi.Reserved[1] = EFI_ACPI_RESERVED_BYTE;
+      GenPortAff->DeviceHandle.Acpi.Reserved[2] = EFI_ACPI_RESERVED_BYTE;
+      GenPortAff->DeviceHandle.Acpi.Reserved[3] = EFI_ACPI_RESERVED_BYTE;
+    } else if (GenPortAffInfo->DeviceHandleType ==
+               EFI_ACPI_6_5_PCI_DEVICE_HANDLE)
+    {
+      Status = GetEArchCommonObjDeviceHandlePci (
+                 CfgMgrProtocol,
+                 GenPortAffInfo->DeviceHandleToken,
+                 &DeviceHandlePci,
+                 &DeviceHandleCount
+                 );
+      if (EFI_ERROR (Status)) {
+        DEBUG ((
+          DEBUG_ERROR,
+          "ERROR: SRAT: Failed to get ACPI Device Handle Inf."
+          " DeviceHandleToken = %p."
+          " Status = %r\n",
+          GenPortAffInfo->DeviceHandleToken,
+          Status
+          ));
+        return Status;
+      }
+
+      // We are expecting only one device handle
+      ASSERT (DeviceHandleCount == 1);
+
+      // Populate the ACPI device handle information.
+      GenPortAff->DeviceHandle.Pci.PciSegment   = DeviceHandlePci->SegmentNumber;
+      GenPortAff->DeviceHandle.Pci.PciBdfNumber = GetBdf (DeviceHandlePci);
+
+      GenPortAff->DeviceHandle.Pci.Reserved[0]  = EFI_ACPI_RESERVED_BYTE;
+      GenPortAff->DeviceHandle.Pci.Reserved[1]  = EFI_ACPI_RESERVED_BYTE;
+      GenPortAff->DeviceHandle.Pci.Reserved[2]  = EFI_ACPI_RESERVED_BYTE;
+      GenPortAff->DeviceHandle.Pci.Reserved[3]  = EFI_ACPI_RESERVED_BYTE;
+      GenPortAff->DeviceHandle.Pci.Reserved[4]  = EFI_ACPI_RESERVED_BYTE;
+      GenPortAff->DeviceHandle.Pci.Reserved[5]  = EFI_ACPI_RESERVED_BYTE;
+      GenPortAff->DeviceHandle.Pci.Reserved[6]  = EFI_ACPI_RESERVED_BYTE;
+      GenPortAff->DeviceHandle.Pci.Reserved[7]  = EFI_ACPI_RESERVED_BYTE;
+      GenPortAff->DeviceHandle.Pci.Reserved[8]  = EFI_ACPI_RESERVED_BYTE;
+      GenPortAff->DeviceHandle.Pci.Reserved[9]  = EFI_ACPI_RESERVED_BYTE;
+      GenPortAff->DeviceHandle.Pci.Reserved[10] = EFI_ACPI_RESERVED_BYTE;
+      GenPortAff->DeviceHandle.Pci.Reserved[11] = EFI_ACPI_RESERVED_BYTE;
+    } else {
+      DEBUG ((
+        DEBUG_ERROR,
+        "ERROR: SRAT: Invalid Device Handle Type.\n"
+        ));
+      ASSERT (0);
+      return EFI_INVALID_PARAMETER;
+    }
+
+    GenPortAff->Flags        = GenPortAffInfo->Flags;
+    GenPortAff->Reserved2[0] = EFI_ACPI_RESERVED_BYTE;
+    GenPortAff->Reserved2[1] = EFI_ACPI_RESERVED_BYTE;
+
+    // Next
+    GenPortAff++;
+    GenPortAffInfo++;
+  }// while
+
+  return EFI_SUCCESS;
+}
+
 /** Construct the SRAT ACPI table.
 
   Called by the Dynamic Table Manager, this function invokes the
@@ -344,12 +504,15 @@ BuildSratTable (
   UINT32      TableSize;
   UINT32      MemAffCount;
   UINT32      GenInitiatorAffCount;
+  UINT32      GenPortCount;
 
   UINT32  MemAffOffset;
   UINT32  GenInitiatorAffOffset;
+  UINT32  GenPortOffset;
 
   CM_ARCH_COMMON_MEMORY_AFFINITY_INFO             *MemAffInfo;
   CM_ARCH_COMMON_GENERIC_INITIATOR_AFFINITY_INFO  *GenInitiatorAffInfo;
+  CM_ARCH_COMMON_GENERIC_PORT_AFFINITY_INFO       *GenPortAffInfo;
 
   EFI_ACPI_6_3_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER  *Srat;
 
@@ -409,6 +572,22 @@ BuildSratTable (
     goto error_handler;
   }
 
+  Status = GetEArchCommonObjGenericPortAffinityInfo (
+             CfgMgrProtocol,
+             CM_NULL_TOKEN,
+             &GenPortAffInfo,
+             &GenPortCount
+             );
+  if (EFI_ERROR (Status) && (Status != EFI_NOT_FOUND)) {
+    DEBUG ((
+      DEBUG_ERROR,
+      "ERROR: SRAT: Failed to get Generic Port Affinity Info."
+      " Status = %r\n",
+      Status
+      ));
+    goto error_handler;
+  }
+
   // Calculate the size of the SRAT table
   TableSize = sizeof (EFI_ACPI_6_3_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER);
 
@@ -436,6 +615,12 @@ BuildSratTable (
     GenInitiatorAffOffset = TableSize;
     TableSize            += (sizeof (EFI_ACPI_6_3_GENERIC_INITIATOR_AFFINITY_STRUCTURE) *
                              GenInitiatorAffCount);
+  }
+
+  if (GenPortCount != 0) {
+    GenPortOffset = TableSize;
+    TableSize    += (sizeof (EFI_ACPI_6_5_GENERIC_PORT_AFFINITY_STRUCTURE) *
+                     GenPortCount);
   }
 
   // Allocate the Buffer for SRAT table
@@ -522,6 +707,25 @@ BuildSratTable (
       DEBUG ((
         DEBUG_ERROR,
         "ERROR: SRAT: Failed to add Generic Initiator Affinity structures."
+        " Status = %r\n",
+        Status
+        ));
+      goto error_handler;
+    }
+  }
+
+  if (GenPortCount != 0) {
+    Status = AddGenericPortAffinity (
+               CfgMgrProtocol,
+               Srat,
+               GenPortOffset,
+               GenPortAffInfo,
+               GenPortCount
+               );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "ERROR: SRAT: Failed to add Generic Port Affinity structures."
         " Status = %r\n",
         Status
         ));
