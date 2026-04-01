@@ -65,6 +65,7 @@
   DynamicTablesPkg/Library/Smbios/SmbiosType39Lib/SmbiosType39Lib.inf
   DynamicTablesPkg/Library/Smbios/SmbiosType41Lib/SmbiosType41Lib.inf
   DynamicTablesPkg/Library/Smbios/SmbiosType43Lib/SmbiosType43Lib.inf
+  DynamicTablesPkg/Library/Smbios/SmbiosType45Lib/SmbiosType45Lib.inf
 
 [Components.ARM, Components.AARCH64]
   DynamicTablesPkg/Library/FdtHwInfoParserLib/FdtHwInfoParserLib.inf
