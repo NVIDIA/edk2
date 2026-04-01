@@ -132,22 +132,25 @@ GetSmbiosTableStringsSize (
   );
 
 /** STRING_TABLE_ADD_STRING macro is the wrapper over StringTableAddString().
-    It adds a string to the string table, and if the string is NULL or empty,
-    add "" string instead.
+    It adds a string to the string table. If any error occurs within
+    StringTableAddString(), the macro will display a warning message and set
+    StringRef to 0, indicating an empty string.
 
-  @param [IN]   StrTable  Pointer to the string table
+  @param [IN]   StrTable  String table
   @param [IN]   Str       Pointer to the string
   @param [OUT]  StrRef    The string field reference of the added string
 **/
 #define STRING_TABLE_ADD_STRING(StrTable, String, StringRef)              \
   StringRef = 0;                                                          \
-  if ((String != NULL) && (String[0] != '\0')) {                          \
+  if (!EFI_ERROR (Status) && (String != NULL) && (String[0] != '\0')) {   \
     Status = StringTableAddString (&StrTable, String, &StringRef);        \
-  } else {                                                                \
-    Status = StringTableAddString (&StrTable, "", &StringRef);     \
-  }                                                                       \
-  if (EFI_ERROR (Status)) {                                               \
-    DEBUG ((DEBUG_ERROR, "Failed to add "#String" string %r\n", Status)); \
-  }                                                                       \
+    if (EFI_ERROR (Status)) {                                             \
+      DEBUG ((DEBUG_WARN, "%a: Failed to add "#String". Status %r\n", __FUNCTION__,  Status)); \
+      if (Status != EFI_BUFFER_TOO_SMALL) {                               \
+        Status = EFI_SUCCESS;                                             \
+      }                                                                   \
+    }                                                                     \
+    ASSERT (Status != EFI_BUFFER_TOO_SMALL);                              \
+  }
 
 #endif // SMBIOS_STRING_TABLE_H_
