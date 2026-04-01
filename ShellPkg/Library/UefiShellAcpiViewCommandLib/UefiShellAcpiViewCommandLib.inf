@@ -31,6 +31,7 @@
   Parsers/Aest/AestParser.c
   Parsers/Apmt/ApmtParser.c
   Parsers/Bgrt/BgrtParser.c
+  Parsers/Cedt/CedtParser.c
   Parsers/Dbg2/Dbg2Parser.c
   Parsers/Dsdt/DsdtParser.c
   Parsers/Einj/EinjParser.c
