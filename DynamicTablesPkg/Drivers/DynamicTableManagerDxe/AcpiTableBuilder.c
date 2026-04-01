@@ -373,8 +373,10 @@ BuildAndInstallAcpiTable (
     if (EFI_ERROR (Status)) {
       DEBUG ((
         DEBUG_ERROR,
-        "ERROR: Failed to find build and install ACPI Table." \
-        " Status = %r\n",
+        "ERROR: Failed to find build and install ACPI Table '%s'." \
+        " TableGeneratorId = 0x%x. Status = %r\n",
+        Generator->Description,
+        AcpiTableInfo->TableGeneratorId,
         Status
         ));
     }
@@ -389,8 +391,10 @@ BuildAndInstallAcpiTable (
     if (EFI_ERROR (Status)) {
       DEBUG ((
         DEBUG_ERROR,
-        "ERROR: Failed to find build and install ACPI Table." \
-        " Status = %r\n",
+        "ERROR: Failed to find build and install ACPI Table '%s'." \
+        " TableGeneratorId = 0x%x. Status = %r\n",
+        Generator->Description,
+        AcpiTableInfo->TableGeneratorId,
         Status
         ));
     }
@@ -523,6 +527,7 @@ ProcessAcpiTables (
   )
 {
   EFI_STATUS                  Status;
+  EFI_STATUS                  ReturnStatus;
   EFI_ACPI_TABLE_PROTOCOL     *AcpiTableProtocol;
   CM_STD_OBJ_ACPI_TABLE_INFO  *AcpiTableInfo;
   UINT32                      AcpiTableCount;
@@ -622,6 +627,7 @@ ProcessAcpiTables (
   }
 
   // Add remaining ACPI Tables
+  ReturnStatus = EFI_SUCCESS;
   for (Idx = 0; Idx < AcpiTableCount; Idx++) {
     DEBUG ((
       DEBUG_INFO,
@@ -662,14 +668,17 @@ ProcessAcpiTables (
       DEBUG ((
         DEBUG_ERROR,
         "ERROR: Failed to find, build, and install ACPI Table." \
-        " Status = %r\n",
+        " Status = %r. Continuing with remaining tables...\n",
         Status
         ));
-      return Status;
+      // Track first error but continue processing remaining tables
+      if (!EFI_ERROR (ReturnStatus)) {
+        ReturnStatus = Status;
+      }
     }
   } // for
 
-  return Status;
+  return ReturnStatus;
 }
 
 /** Callback function for ACPI Protocol .
