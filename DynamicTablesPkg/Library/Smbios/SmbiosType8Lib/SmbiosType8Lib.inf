@@ -1,0 +1,34 @@
+## @file
+# SMBIOS Type 8 Table Generator
+#
+#  Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#  Copyright (c) 2019 - 2021, Arm Limited. All rights reserved.<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x0001001B
+  BASE_NAME      = SmbiosType8Lib
+  FILE_GUID      = 7b87e887-8cf8-495f-9fe8-cd4b84ae8e50
+  VERSION_STRING = 1.0
+  MODULE_TYPE    = DXE_DRIVER
+  LIBRARY_CLASS  = NULL|DXE_DRIVER
+  CONSTRUCTOR    = SmbiosType8LibConstructor
+  DESTRUCTOR     = SmbiosType8LibDestructor
+
+[Sources]
+  SmbiosType8Generator.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  EmbeddedPkg/EmbeddedPkg.dec
+  DynamicTablesPkg/DynamicTablesPkg.dec
+
+[Protocols]
+
+[LibraryClasses]
+  BaseLib
+  DebugLib
+  SmbiosStringTableLib
