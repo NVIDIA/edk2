@@ -9,13 +9,14 @@ MAKEROOT ?= ..
 
 APPNAME = VfrCompile
 
+BUILD_DIR = Build
+
 LIBS = -lCommon
 
-TOOL_INCLUDE = -I Pccts/h
+TOOL_INCLUDE = -I Pccts/h -I $(BUILD_DIR)
 
-#OBJECTS = VfrSyntax.o VfrServices.o DLGLexer.o EfiVfrParser.o ATokenBuffer.o DLexerBase.o AParser.o
-OBJECTS = AParser.o DLexerBase.o ATokenBuffer.o EfiVfrParser.o VfrLexer.o VfrSyntax.o \
-          VfrFormPkg.o VfrError.o VfrUtilityLib.o VfrCompiler.o
+OBJECTS = $(BUILD_DIR)/AParser.o $(BUILD_DIR)/DLexerBase.o $(BUILD_DIR)/ATokenBuffer.o $(BUILD_DIR)/EfiVfrParser.o $(BUILD_DIR)/VfrLexer.o $(BUILD_DIR)/VfrSyntax.o \
+          $(BUILD_DIR)/VfrFormPkg.o $(BUILD_DIR)/VfrError.o $(BUILD_DIR)/VfrUtilityLib.o $(BUILD_DIR)/VfrCompiler.o
 CLANG:=$(shell $(CC) --version | grep clang)
 ifneq ($(CLANG),)
 VFR_CPPFLAGS = -Wno-deprecated-register -std=c++14 -DPCCTS_USE_NAMESPACE_STD $(CPPFLAGS)
@@ -30,7 +31,7 @@ VFR_LFLAGS = $(EXTRA_LDFLAGS)
 
 LINKER = $(CXX)
 
-EXTRA_CLEAN_OBJECTS = EfiVfrParser.cpp EfiVfrParser.h VfrParser.dlg VfrTokens.h VfrLexer.cpp VfrLexer.h VfrSyntax.cpp tokens.h
+EXTRA_CLEAN_OBJECTS = $(BUILD_DIR)/EfiVfrParser.cpp $(BUILD_DIR)/EfiVfrParser.h $(BUILD_DIR)/VfrParser.dlg $(BUILD_DIR)/VfrTokens.h $(BUILD_DIR)/VfrLexer.cpp $(BUILD_DIR)/VfrLexer.h $(BUILD_DIR)/VfrSyntax.cpp $(BUILD_DIR)/tokens.h
 
 MAKEROOT ?= ../..
 
@@ -39,20 +40,38 @@ include $(MAKEROOT)/Makefiles/header.makefile
 APPLICATION = $(MAKEROOT)/bin/$(APPNAME)
 
 .PHONY:all
-all: $(MAKEROOT)/bin $(APPLICATION)
+all: $(MAKEROOT)/bin $(BUILD_DIR) $(APPLICATION)
+
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
 
 $(APPLICATION): $(OBJECTS)
 	$(LINKER) -o $(APPLICATION) $(VFR_LFLAGS) $(OBJECTS) -L$(MAKEROOT)/libs $(LIBS)
 
-VfrCompiler.o: ../Include/Common/BuildVersion.h
+# Special rule for VfrCompiler.o with additional dependency
+$(BUILD_DIR)/VfrCompiler.o: ../Include/Common/BuildVersion.h
+
+# Pattern rules for compiling cpp files
+$(BUILD_DIR)/%.o: %.cpp | $(BUILD_DIR)
+	$(CXX) -c $(VFR_CPPFLAGS) $(INC) $(VFR_CXXFLAGS) $< -o $@
+
+$(BUILD_DIR)/%.o: Pccts/h/%.cpp | $(BUILD_DIR)
+	$(CXX) -c $(VFR_CPPFLAGS) $(INC) $(VFR_CXXFLAGS) $< -o $@
+
+$(BUILD_DIR)/%.o: $(BUILD_DIR)/%.cpp | $(BUILD_DIR)
+	$(CXX) -c $(VFR_CPPFLAGS) $(INC) $(VFR_CXXFLAGS) $< -o $@
 
 include $(MAKEROOT)/Makefiles/footer.makefile
 
-VfrSyntax.cpp EfiVfrParser.cpp EfiVfrParser.h VfrParser.dlg VfrTokens.h: Pccts/antlr/antlr VfrSyntax.g
-	Pccts/antlr/antlr -CC -e3 -ck 3 -k 2 -fl VfrParser.dlg -ft VfrTokens.h -o . VfrSyntax.g
+# Use VfrTokens.h as a stamp file to avoid running multiple times
+$(BUILD_DIR)/VfrSyntax.cpp $(BUILD_DIR)/EfiVfrParser.cpp $(BUILD_DIR)/EfiVfrParser.h $(BUILD_DIR)/VfrParser.dlg: $(BUILD_DIR)/VfrTokens.h
+$(BUILD_DIR)/VfrTokens.h: Pccts/antlr/antlr VfrSyntax.g | $(BUILD_DIR)
+	Pccts/antlr/antlr -CC -e3 -ck 3 -k 2 -fl $(BUILD_DIR)/VfrParser.dlg -ft $(BUILD_DIR)/VfrTokens.h -o $(BUILD_DIR) VfrSyntax.g
 
-VfrLexer.cpp VfrLexer.h: Pccts/dlg/dlg VfrParser.dlg
-	Pccts/dlg/dlg -C2 -i -CC -cl VfrLexer -o . VfrParser.dlg
+# Use VfrLexer.h as a stamp file to avoid running multiple times
+$(BUILD_DIR)/VfrSyntax.cpp $(BUILD_DIR)/VfrLexer.cpp: $(BUILD_DIR)/VfrLexer.h
+$(BUILD_DIR)/VfrLexer.h: Pccts/dlg/dlg $(BUILD_DIR)/VfrParser.dlg | $(BUILD_DIR)
+	Pccts/dlg/dlg -C2 -i -CC -cl VfrLexer -o $(BUILD_DIR) $(BUILD_DIR)/VfrParser.dlg
 
 Pccts/antlr/antlr:
 	BIN_DIR='.' $(MAKE) -C Pccts/antlr
@@ -60,22 +79,11 @@ Pccts/antlr/antlr:
 Pccts/dlg/dlg:
 	BIN_DIR='.' $(MAKE) -C Pccts/dlg
 
-ATokenBuffer.o: Pccts/h/ATokenBuffer.cpp
-	$(CXX) -c $(VFR_CPPFLAGS) $(INC) $(VFR_CXXFLAGS) $? -o $@
-
-DLexerBase.o: Pccts/h/DLexerBase.cpp
-	$(CXX) -c $(VFR_CPPFLAGS) $(INC) $(VFR_CXXFLAGS) $? -o $@
-
-AParser.o: Pccts/h/AParser.cpp
-	$(CXX) -c $(VFR_CPPFLAGS) $(INC) $(VFR_CXXFLAGS) $? -o $@
-
-VfrSyntax.o: VfrSyntax.cpp
-	$(CXX) -c $(VFR_CPPFLAGS) $(INC) $(VFR_CXXFLAGS) $? -o $@
-
 clean: localClean
 
 localClean:
 	BIN_DIR='.' $(MAKE) -C Pccts/antlr clean
 	BIN_DIR='.' $(MAKE) -C Pccts/dlg clean
 	rm -f $(EXTRA_CLEAN_OBJECTS)
+	rm -rf $(BUILD_DIR)
 
