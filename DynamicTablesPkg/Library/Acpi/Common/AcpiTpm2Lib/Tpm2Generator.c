@@ -20,6 +20,7 @@
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/TpmMeasurementLib.h>
 #include <Protocol/AcpiTable.h>
 
 // Module specific include files.
@@ -30,6 +31,7 @@
 #include <Protocol/ConfigurationManagerProtocol.h>
 
 #include <IndustryStandard/Tpm2Acpi.h>
+#include <IndustryStandard/UefiTcgPlatform.h>
 
 #define  START_METHOD_ACPI_PARAM_SIZE_MIN      4
 #define  START_METHOD_CRB_WITH_SMC_PARAM_SIZE  12
@@ -251,10 +253,25 @@ BuildTpm2Table (
     goto error_handler;
   }
 
-  Tpm2->Flags                = TpmInfo->PlatformClass;
-  Tpm2->AddressOfControlArea = TpmInfo->AddressOfControlArea;
-  Tpm2->StartMethod          = TpmInfo->StartMethod;
+  Tpm2->Flags       = TpmInfo->PlatformClass;
+  Tpm2->StartMethod = TpmInfo->StartMethod;
 
+  //
+  // Measure to PCR[0] with event EV_POST_CODE ACPI DATA.
+  // The measurement has to be done before any update.
+  // Otherwise, the PCR record would be different after event log update
+  // or the PCD configuration change.
+  //
+  TpmMeasureAndLogData (
+    0,
+    EV_POST_CODE,
+    EV_POSTCODE_INFO_ACPI_DATA,
+    ACPI_DATA_LEN,
+    Tpm2,
+    Tpm2->Header.Length
+    );
+
+  Tpm2->AddressOfControlArea = TpmInfo->AddressOfControlArea;
   CopyMem (
     Tpm2 + 1,
     TpmInfo->StartMethodParameters,
