@@ -536,8 +536,8 @@ AllocateType4AndSetProcessorInformationStrings (
   }
 
   // Check ProcessorIndex is smaller than the defined max(16) socket number.
-  ASSERT (SD_INDEX_TO_FIELD (ProcessorIndex) <= ProcessorSocketDesType04_15);
-  OemUpdateSmbiosInfo (mHiiHandle, SocketDesignation, SD_INDEX_TO_FIELD (ProcessorIndex));
+  ASSERT (INDEX_TO_FIELD (ProcessorIndex, ProcessorSocketDesType04_0) <= ProcessorSocketDesType04_15);
+  OemUpdateSmbiosInfo (mHiiHandle, SocketDesignation, INDEX_TO_FIELD (ProcessorIndex, ProcessorSocketDesType04_0));
 
   // Socket Designation
   SocketDesignationStr    = HiiGetPackageString (&gEfiCallerIdGuid, SocketDesignation, NULL);
