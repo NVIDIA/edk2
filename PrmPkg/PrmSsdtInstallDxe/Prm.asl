@@ -2,6 +2,7 @@
   The definition block in ACPI table for PRM Operation Region
 
   Copyright (c) 2020-2021, Intel Corporation. All rights reserved.<BR>
+  SPDX-FileCopyrightText: Copyright (c) 2024, NVIDIA Corporation. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
@@ -54,8 +55,11 @@ DefinitionBlock (
                 /* Invoke PRM OperationRegion Handler and store the result into Local0 */
                 Local0 = (PRMF = Local0)
 
+                /* Creating byte field again as a WA for the return status */
+                CreateByteField (Local0, 0x0, RSTS)
+
                 /* Return status */
-                Return (PSTA)
+                Return (RSTS)
             }
 
             /*
