@@ -605,6 +605,278 @@ FdtGetString (
 }
 
 /**
+  Retrieves a property value and name by property offset.
+
+  @param[in]  Fdt       The pointer to FDT blob.
+  @param[in]  Offset    The offset to the property.
+  @param[out] Name      Pointer to retrieve the property name (optional, can be NULL).
+  @param[out] Length    Pointer to retrieve the property length.
+
+  @return Pointer to the property value, or NULL on error.
+
+**/
+CONST VOID *
+EFIAPI
+FdtGetPropertyValueByOffset (
+  IN CONST VOID    *Fdt,
+  IN INT32         Offset,
+  OUT CONST CHAR8  **Name     OPTIONAL,
+  OUT INT32        *Length
+  )
+{
+  return fdt_getprop_by_offset (Fdt, Offset, Name, Length);
+}
+
+/**
+  Check if a node is compatible with a given string.
+
+  @param[in] Fdt            The pointer to FDT blob.
+  @param[in] NodeOffset     Offset of node to check.
+  @param[in] Compatible     Compatible string to match.
+
+  @return 0 if compatible, 1 if not compatible, negative on error.
+
+**/
+INT32
+EFIAPI
+FdtNodeCheckCompatible (
+  IN CONST VOID   *Fdt,
+  IN INT32        NodeOffset,
+  IN CONST CHAR8  *Compatible
+  )
+{
+  return fdt_node_check_compatible (Fdt, NodeOffset, Compatible);
+}
+
+/**
+  Turn a node and its subnodes into nop tags.
+
+  @param[in,out] Fdt        The pointer to FDT blob.
+  @param[in] NodeOffset     Offset of node to nop.
+
+  @return 0 on success, negative on error.
+
+**/
+INT32
+EFIAPI
+FdtNopNode (
+  IN OUT VOID  *Fdt,
+  IN INT32     NodeOffset
+  )
+{
+  return fdt_nop_node (Fdt, NodeOffset);
+}
+
+/**
+  Turn a property into nop tags.
+
+  @param[in,out] Fdt        The pointer to FDT blob.
+  @param[in] NodeOffset     Offset of node containing the property.
+  @param[in] Name           Name of the property to nop.
+
+  @return 0 on success, negative on error.
+
+**/
+INT32
+EFIAPI
+FdtNopProperty (
+  IN OUT VOID     *Fdt,
+  IN INT32        NodeOffset,
+  IN CONST CHAR8  *Name
+  )
+{
+  return fdt_nop_property (Fdt, NodeOffset, Name);
+}
+
+/**
+  Set the name of a node.
+
+  @param[in,out] Fdt        The pointer to FDT blob.
+  @param[in] NodeOffset     Offset of node to rename.
+  @param[in] Name           New name for the node.
+
+  @return 0 on success, negative on error.
+
+**/
+INT32
+EFIAPI
+FdtSetName (
+  IN OUT VOID     *Fdt,
+  IN INT32        NodeOffset,
+  IN CONST CHAR8  *Name
+  )
+{
+  return fdt_set_name (Fdt, NodeOffset, Name);
+}
+
+/**
+  Set property value in-place (without moving other data).
+
+  @param[in,out] Fdt        The pointer to FDT blob.
+  @param[in] NodeOffset     Offset of node containing the property.
+  @param[in] Name           Name of the property.
+  @param[in] Value          New value data.
+  @param[in] Length         Length of new value.
+
+  @return 0 on success, negative on error.
+
+**/
+INT32
+EFIAPI
+FdtSetPropInplace (
+  IN OUT VOID     *Fdt,
+  IN INT32        NodeOffset,
+  IN CONST CHAR8  *Name,
+  IN CONST VOID   *Value,
+  IN INT32        Length
+  )
+{
+  return fdt_setprop_inplace (Fdt, NodeOffset, Name, Value, Length);
+}
+
+/**
+  Set a 64-bit integer property in-place (converts to big-endian).
+
+  @param[in,out] Fdt        The pointer to FDT blob.
+  @param[in] NodeOffset     Offset of node containing the property.
+  @param[in] Name           Name of the property.
+  @param[in] Value          64-bit value to set.
+
+  @return 0 on success, negative on error.
+
+**/
+INT32
+EFIAPI
+FdtSetPropInplaceU64 (
+  IN OUT VOID     *Fdt,
+  IN INT32        NodeOffset,
+  IN CONST CHAR8  *Name,
+  IN UINT64       Value
+  )
+{
+  return fdt_setprop_inplace_u64 (Fdt, NodeOffset, Name, Value);
+}
+
+/**
+  Set a 32-bit integer property in-place (converts to big-endian).
+
+  @param[in,out] Fdt        The pointer to FDT blob.
+  @param[in] NodeOffset     Offset of node containing the property.
+  @param[in] Name           Name of the property.
+  @param[in] Value          32-bit value to set.
+
+  @return 0 on success, negative on error.
+
+**/
+INT32
+EFIAPI
+FdtSetPropInplaceU32 (
+  IN OUT VOID     *Fdt,
+  IN INT32        NodeOffset,
+  IN CONST CHAR8  *Name,
+  IN UINT32       Value
+  )
+{
+  UINT32  Tmp = CpuToFdt32 (Value);
+
+  return FdtSetPropInplace (Fdt, NodeOffset, Name, &Tmp, sizeof (Tmp));
+}
+
+/**
+  Set a 32-bit integer property (converts to big-endian).
+
+  @param[in,out] Fdt        The pointer to FDT blob.
+  @param[in] NodeOffset     Offset of node to add property to.
+  @param[in] Name           Name of the property.
+  @param[in] Value          32-bit value to set.
+
+  @return 0 on success, negative on error.
+
+**/
+INT32
+EFIAPI
+FdtSetPropU32 (
+  IN OUT VOID     *Fdt,
+  IN INT32        NodeOffset,
+  IN CONST CHAR8  *Name,
+  IN UINT32       Value
+  )
+{
+  UINT32  Tmp = CpuToFdt32 (Value);
+
+  return FdtSetProp (Fdt, NodeOffset, Name, &Tmp, sizeof (Tmp));
+}
+
+/**
+  Count the number of strings in a stringlist property.
+
+  @param[in] Fdt            The pointer to FDT blob.
+  @param[in] NodeOffset     Offset of node containing the property.
+  @param[in] Property       Name of the string list property.
+
+  @return Number of strings, or negative on error.
+
+**/
+INT32
+EFIAPI
+FdtStringListCount (
+  IN CONST VOID   *Fdt,
+  IN INT32        NodeOffset,
+  IN CONST CHAR8  *Property
+  )
+{
+  return fdt_stringlist_count (Fdt, NodeOffset, Property);
+}
+
+/**
+  Get a string from a stringlist property by index.
+
+  @param[in] Fdt            The pointer to FDT blob.
+  @param[in] NodeOffset     Offset of node containing the property.
+  @param[in] Property       Name of the string list property.
+  @param[in] Index          Index of string to retrieve.
+  @param[out] Length        Length of the retrieved string (optional).
+
+  @return Pointer to the string, or NULL on error.
+
+**/
+CONST CHAR8 *
+EFIAPI
+FdtStringListGet (
+  IN CONST VOID   *Fdt,
+  IN INT32        NodeOffset,
+  IN CONST CHAR8  *Property,
+  IN INT32        Index,
+  OUT INT32       *Length    OPTIONAL
+  )
+{
+  return fdt_stringlist_get (Fdt, NodeOffset, Property, Index, Length);
+}
+
+/**
+  Search for a string in a stringlist property.
+
+  @param[in] Fdt            The pointer to FDT blob.
+  @param[in] NodeOffset     Offset of node containing the property.
+  @param[in] Property       Name of the string list property.
+  @param[in] String         String to search for.
+
+  @return Index of string if found, or negative on error.
+
+**/
+INT32
+EFIAPI
+FdtStringListSearch (
+  IN CONST VOID   *Fdt,
+  IN INT32        NodeOffset,
+  IN CONST CHAR8  *Property,
+  IN CONST CHAR8  *String
+  )
+{
+  return fdt_stringlist_search (Fdt, NodeOffset, Property, String);
+}
+
+/**
   Add a new node to the FDT.
 
   @param[in] Fdt            The pointer to FDT blob.
