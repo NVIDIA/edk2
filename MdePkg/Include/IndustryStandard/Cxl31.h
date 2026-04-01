@@ -27,6 +27,13 @@
 
 #define CEDT_TYPE_CSDS  0x4
 
+///
+/// CEDT CXL CSDS System Description Structure System Capabilities
+// Compute Express Link Specification Revision 3.1  - Chapter 9.18.1.6
+///
+#define CXL_SYSTEM_DESCRIPTION_STRUCTURE_SYSTEM_CAPABILITIES_CMP_M               BIT0
+#define CXL_SYSTEM_DESCRIPTION_STRUCTURE_SYSTEM_CAPABILITIES_NO_CLEAN_WRITEBACK  BIT1
+
 //
 // Ensure proper structure formats
 //
@@ -34,13 +41,13 @@
 
 //
 // Definition for CXL System Description Structure (CSDS)
-// Compute Express Link Specification Revision 3.1  - Chapter 9.18.6
+// Compute Express Link Specification Revision 3.1  - Chapter 9.18.1.6
 //
 typedef struct {
   CEDT_STRUCTURE    Header;
   UINT16            Capabilities;
   UINT16            Reserved;
-} CXL_DOWNSTREAM_PORT_ASSOCIATION_STRUCTURE;
+} CXL_SYSTEM_DESCRIPTION_STRUCTURE;
 
 #pragma pack()
 
