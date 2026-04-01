@@ -54,7 +54,6 @@
   mbedtls/library/ssl_client.c
   mbedtls/library/ssl_debug_helpers_generated.c
   mbedtls/library/rsa_alt_helpers.c
-  mbedtls/library/hash_info.c
   mbedtls/library/bignum_core.c
   mbedtls/library/constant_time.c
   mbedtls/library/memory_buffer_alloc.c

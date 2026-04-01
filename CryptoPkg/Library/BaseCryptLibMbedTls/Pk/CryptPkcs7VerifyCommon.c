@@ -147,6 +147,8 @@ Pkcs7GetContentInfoType (
   return Ret;
 }
 
+#if 0
+
 /**
   DigestAlgorithmIdentifier ::= AlgorithmIdentifier.
 
@@ -170,6 +172,8 @@ MbedTlsPkcs7GetDigestAlgorithm (
   Ret = mbedtls_asn1_get_alg_null (Ptr, End, Alg);
   return Ret;
 }
+
+#endif
 
 /**
   DigestAlgorithmIdentifiers :: SET of DigestAlgorithmIdentifier.
@@ -236,6 +240,8 @@ MbedTlsPkcs7GetCertificates (
   return Ret;
 }
 
+#if 0
+
 /**
    EncryptedDigest ::= OCTET STRING.
 
@@ -268,6 +274,8 @@ Pkcs7GetSignature (
   return Ret;
 }
 
+#endif
+
 /**
    SignerInfo ::= SEQUENCE {
         version Version;
@@ -295,6 +303,7 @@ MbedTlsPkcs7GetSignersInfoSet (
   MbedtlsPkcs7SignerInfo  *SignersSet
   )
 {
+ #if 0
   UINT8  *EndSet;
   INT32  Ret;
   UINTN  Len;
@@ -382,6 +391,8 @@ MbedTlsPkcs7GetSignersInfoSet (
   }
 
   return Ret;
+ #endif
+  return -1;
 }
 
 /**
