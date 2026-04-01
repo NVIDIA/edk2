@@ -2,7 +2,7 @@
   CEDT Table Generator
 
   Copyright (c) 2025, Google, Inc. All rights reserved. <BR>
-
+  Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Reference(s):
@@ -13,6 +13,7 @@
 #include <Library/AcpiLib.h>
 #include <Library/DebugLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/BaseMemoryLib.h>
 #include <Protocol/AcpiTable.h>
 
 // Module specific include files.
@@ -22,9 +23,8 @@
 #include <Library/TableHelperLib.h>
 #include <Protocol/ConfigurationManagerProtocol.h>
 
-#include <IndustryStandard/Cxl.h>
-#include "Base.h"
-#include "IndustryStandard/Acpi10.h"
+#include <IndustryStandard/Cxl32.h>
+
 #include "Library/BaseLib.h"
 
 /** ARM standard CEDT Generator
@@ -34,6 +34,9 @@ Requirements:
   this Generator:
   - EArchCommonObjCxlHostBridgeInfo
   - EArchCommonObjCxlFixedMemoryWindowInfo
+
+Optional:
+  - EArchCommonObjCxlSystemDescriptionInfo
 */
 
 /** Retrieve the CXL host bridge info.
@@ -50,6 +53,14 @@ GET_OBJECT_LIST (
   EObjNameSpaceArchCommon,
   EArchCommonObjCxlFixedMemoryWindowInfo,
   CM_ARCH_COMMON_CXL_FIXED_MEMORY_WINDOW_INFO
+  );
+
+/** Retrieve the CXL system description structure info.
+*/
+GET_OBJECT_LIST (
+  EObjNameSpaceArchCommon,
+  EArchCommonObjCxlSystemDescriptionInfo,
+  CM_ARCH_COMMON_CXL_SYSTEM_DESCRIPTION_INFO
   );
 
 #define CEDT_CXL_VERSION_RCH_LENGTH_BYTES  SIZE_8KB
@@ -278,6 +289,34 @@ AddCxlFixedMemoryWindowList (
   return EFI_SUCCESS;
 }
 
+/** Add the CXL System Description Structure (CSDS) to the CEDT table
+
+  @param [in,out]  WritePointer       Address of a write pointer for the CEDT table.
+                                      On return, this will point to the next write
+                                      location.
+  @param [in]  SystemDescription      Pointer to the CXL system description.
+**/
+STATIC
+VOID
+AddCxlSystemDescription (
+  IN OUT   UINT8                                       **WritePointer,
+  IN CONST CM_ARCH_COMMON_CXL_SYSTEM_DESCRIPTION_INFO  *SystemDescription
+  )
+{
+  CXL_SYSTEM_DESCRIPTION_STRUCTURE  *Csds;
+
+  ASSERT (WritePointer != NULL);
+  ASSERT (*WritePointer != NULL);
+  ASSERT (SystemDescription != NULL);
+
+  Csds                = (CXL_SYSTEM_DESCRIPTION_STRUCTURE *)*WritePointer;
+  Csds->Header.Type   = CEDT_TYPE_CSDS;
+  Csds->Header.Length = sizeof (CXL_SYSTEM_DESCRIPTION_STRUCTURE);
+  Csds->Capabilities  = SystemDescription->SystemCapabilities;
+
+  *WritePointer += Csds->Header.Length;
+}
+
 /** Construct the CEDT ACPI table.
 
   This function invokes the Configuration Manager protocol interface
@@ -320,6 +359,8 @@ BuildCedtTable (
 
   UINT32                                       WindowCount;
   CM_ARCH_COMMON_CXL_FIXED_MEMORY_WINDOW_INFO  *WindowList;
+
+  CM_ARCH_COMMON_CXL_SYSTEM_DESCRIPTION_INFO  *SystemDescription;
 
   CXL_EARLY_DISCOVERY_TABLE  *CedtTable;
 
@@ -393,6 +434,26 @@ BuildCedtTable (
     WindowCount
     ));
 
+  // Get CSDS object
+  SystemDescription = NULL;
+  if (AcpiTableInfo->AcpiTableRevision >= CXL_EARLY_DISCOVERY_TABLE_REVISION_02) {
+    Status = GetEArchCommonObjCxlSystemDescriptionInfo (
+               CfgMgrProtocol,
+               CM_NULL_TOKEN,
+               &SystemDescription,
+               NULL
+               );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "ERROR: CEDT: Failed to get CXL System Description Information." \
+        " Status = %r\n",
+        Status
+        ));
+      goto error_handler;
+    }
+  }
+
   // Calculate the CEDT Table Size
   TableSize =
     sizeof (CXL_EARLY_DISCOVERY_TABLE) +
@@ -421,6 +482,13 @@ BuildCedtTable (
 
   TableSize += (TotalInterleaveTargets * sizeof (UINT32)) +
                (WindowCount * sizeof (CXL_FIXED_MEMORY_WINDOW_STRUCTURE));
+
+  // Add CSDS size
+  if (AcpiTableInfo->AcpiTableRevision >= CXL_EARLY_DISCOVERY_TABLE_REVISION_02) {
+    if (SystemDescription != NULL) {
+      TableSize += sizeof (SystemDescription);
+    }
+  }
 
   *Table = (EFI_ACPI_DESCRIPTION_HEADER *)AllocateZeroPool (TableSize);
   if (*Table == NULL) {
@@ -477,6 +545,16 @@ BuildCedtTable (
       Status
       ));
     goto error_handler;
+  }
+
+  // Populate CSDS entry
+  if (AcpiTableInfo->AcpiTableRevision >= CXL_EARLY_DISCOVERY_TABLE_REVISION_02) {
+    if (SystemDescription != NULL) {
+      AddCxlSystemDescription (
+        &WritePointer,
+        SystemDescription
+        );
+    }
   }
 
   return Status;
@@ -544,7 +622,7 @@ ACPI_TABLE_GENERATOR  CedtGenerator = {
   // ACPI Table Signature
   CXL_EARLY_DISCOVERY_TABLE_SIGNATURE,
   // ACPI Table Revision supported by this Generator
-  CXL_EARLY_DISCOVERY_TABLE_REVISION_01,
+  CXL_EARLY_DISCOVERY_TABLE_REVISION_02,
   // Minimum supported ACPI Table Revision
   CXL_EARLY_DISCOVERY_TABLE_REVISION_01,
   // Creator ID
