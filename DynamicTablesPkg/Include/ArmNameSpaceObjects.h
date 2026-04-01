@@ -52,6 +52,8 @@ typedef enum ArmObjectID {
   EArmObjRmr,                                                  ///< 21 - Reserved Memory Range Node
   EArmObjMemoryRangeDescriptor,                                ///< 22 - Memory Range Descriptor
   EArmObjEtInfo,                                               ///< 23 - Embedded Trace Extension/Module Info
+  EArmObjGenericDeviceInfo,                                    ///< 24 - Generic Device Info
+  EArmObjGenericInterrupt,                                     ///< 25 - Generic Interrupt
   EArmObjMax
 } EARM_OBJECT_ID;
 
@@ -616,6 +618,13 @@ typedef struct CmArmIdMapping {
   UINT32             Flags;
 } CM_ARM_ID_MAPPING;
 
+/** A structure that describes the Arm
+    Generic Interrupts.
+
+    ID: EArmObjGenericInterrupt
+*/
+typedef CM_ARCH_COMMON_GENERIC_INTERRUPT CM_ARM_GENERIC_INTERRUPT;
+
 /** A structure that describes the SMMU interrupts for the Platform.
 
     Interrupt   Interrupt number.
@@ -722,6 +731,42 @@ typedef enum ArmEtType {
 typedef struct CmArmEtInfo {
   ARM_ET_TYPE    EtType;
 } CM_ARM_ET_INFO;
+
+/** A structure that describes a generic device to create SSDT node from.
+
+  ID: EArmObjGenericDeviceInfo,
+*/
+typedef struct CmArmGenericDeviceInfo {
+  /// ACPI device name
+  CHAR8              Name[AML_NAME_SEG_SIZE + 1];
+
+  /// Hardware ID
+  CHAR8              Hid[8+1];
+
+  /// Compatible ID
+  BOOLEAN            CidValid;
+  CHAR8              Cid[8+1];
+
+  /// Unique Id
+  UINT32             Uid;
+
+  /// Hardware revision
+  BOOLEAN            HrvValid;
+  UINT32             Hrv;
+
+  /// Cache Coherency Attribute
+  BOOLEAN            Cca;
+
+  /// References used to create _CRS method.
+
+  /// Optional field: Reference Token for address resources.
+  /// Token identifying an array of CM_ARM_MEMORY_RANGE_DESCRIPTOR objects
+  CM_OBJECT_TOKEN    AddressResourceToken;
+
+  /// Optional field: Reference Token for interrupt resources.
+  /// Token identifying an array of CM_ARM_GENERIC_INTERRUPT objects
+  CM_OBJECT_TOKEN    InterruptResourceToken;
+} CM_ARM_GENERIC_DEVICE_INFO;
 
 #pragma pack()
 
