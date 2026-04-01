@@ -139,7 +139,7 @@ struct MockFdtLib {
     );
   MOCK_FUNCTION_DECLARATION (
     INT32,
-    FdtSetProperty,
+    FdtSetProp,
     (IN VOID         *Fdt,
      IN INT32        NodeOffset,
      IN CONST CHAR8  *Name,
@@ -158,6 +158,20 @@ struct MockFdtLib {
     FdtNodeDepth,
     (IN CONST VOID  *Fdt,
      IN INT32       NodeOffset)
+    );
+  MOCK_FUNCTION_DECLARATION (
+    INT32,
+    FdtDelNode,
+    (IN VOID   *Fdt,
+     IN INT32  NodeOffset)
+    );
+  MOCK_FUNCTION_DECLARATION (
+    INT32,
+    FdtGetPath,
+    (IN VOID    *Fdt,
+     IN INT32   NodeOffset,
+     IN VOID    *Buffer,
+     IN UINT32  BufferSize)
     );
 };
 
