@@ -358,7 +358,7 @@ ACPI_TABLE_GENERATOR  SsdtHpetGenerator = {
   // Generator Description
   L"ACPI.STD.SSDT.HPET.GENERATOR",
   // ACPI Table Signature
-  EFI_ACPI_6_5_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE,
+  EFI_ACPI_6_6_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE,
   // ACPI Table Revision supported by this Generator
   0,
   // Minimum supported ACPI Table Revision

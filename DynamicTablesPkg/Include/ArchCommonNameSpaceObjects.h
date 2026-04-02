@@ -413,15 +413,15 @@ typedef struct CmArchCommonLpiInfo {
 
   /** EntryMethod described as a EFI_ACPI_GENERIC_REGISTER_DESCRIPTOR.
   */
-  EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE    RegisterEntryMethod;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    RegisterEntryMethod;
 
   /** Residency counter register.
   */
-  EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE    ResidencyCounterRegister;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    ResidencyCounterRegister;
 
   /** Usage counter register.
   */
-  EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE    UsageCounterRegister;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    UsageCounterRegister;
 
   /** String representing the Lpi state
   */
@@ -522,7 +522,7 @@ typedef AML_CPC_INFO CM_ARCH_COMMON_CPC_INFO;
 */
 typedef struct PccMailboxRegisterInfo {
   /// GAS describing the Register.
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    Register;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    Register;
 
   /** Mask of bits to preserve when writing.
 
@@ -768,7 +768,7 @@ typedef struct CmArchCommonObjSpmiInterfaceInfo {
   UINT8                                     InterfaceType;
 
   /** Base address */
-  EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE    BaseAddress;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    BaseAddress;
 } CM_ARCH_COMMON_SPMI_INTERFACE_INFO;
 
 /** A structure that describes the

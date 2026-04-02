@@ -147,12 +147,12 @@ ArchReserveOffsets (
   }
 
   mSratSubTable[EArmGicCSubTableType].Offset = *ArchOffset;
-  *ArchOffset                               += (sizeof (EFI_ACPI_6_3_GICC_AFFINITY_STRUCTURE) *
+  *ArchOffset                               += (sizeof (EFI_ACPI_6_6_GICC_AFFINITY_STRUCTURE) *
                                                 mSratSubTable[EArmGicCSubTableType].Count);
 
   if (mSratSubTable[EArmGicItsSubTableType].Count != 0) {
     mSratSubTable[EArmGicItsSubTableType].Offset = *ArchOffset;
-    *ArchOffset                                 += (sizeof (EFI_ACPI_6_3_GIC_ITS_AFFINITY_STRUCTURE) *
+    *ArchOffset                                 += (sizeof (EFI_ACPI_6_6_GIC_ITS_AFFINITY_STRUCTURE) *
                                                     mSratSubTable[EArmGicItsSubTableType].Count);
   }
 
@@ -170,22 +170,22 @@ VOID
 EFIAPI
 AddGICCAffinity (
   IN CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL         *CONST  CfgMgrProtocol,
-  IN EFI_ACPI_6_3_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER *CONST  Srat
+  IN EFI_ACPI_6_6_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER *CONST  Srat
   )
 {
   EFI_STATUS                            Status;
-  EFI_ACPI_6_3_GICC_AFFINITY_STRUCTURE  *GicCAff;
+  EFI_ACPI_6_6_GICC_AFFINITY_STRUCTURE  *GicCAff;
   CM_ARM_GICC_INFO                      *GicCInfo;
 
   GicCInfo = mSratSubTable[EArmGicCSubTableType].CmInfo;
-  GicCAff  = (EFI_ACPI_6_3_GICC_AFFINITY_STRUCTURE *)((UINT8 *)Srat +
+  GicCAff  = (EFI_ACPI_6_6_GICC_AFFINITY_STRUCTURE *)((UINT8 *)Srat +
                                                       mSratSubTable[EArmGicCSubTableType].Offset);
 
   while (mSratSubTable[EArmGicCSubTableType].Count-- != 0) {
     DEBUG ((DEBUG_INFO, "SRAT: GicCAff = 0x%p\n", GicCAff));
 
-    GicCAff->Type             = EFI_ACPI_6_3_GICC_AFFINITY;
-    GicCAff->Length           = sizeof (EFI_ACPI_6_3_GICC_AFFINITY_STRUCTURE);
+    GicCAff->Type             = EFI_ACPI_6_6_GICC_AFFINITY;
+    GicCAff->Length           = sizeof (EFI_ACPI_6_6_GICC_AFFINITY_STRUCTURE);
     GicCAff->AcpiProcessorUid = GicCInfo->AcpiProcessorUid;
     GicCAff->Flags            = GicCInfo->AffinityFlags;
 
@@ -228,22 +228,22 @@ VOID
 EFIAPI
 AddGICItsAffinity (
   IN CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL         *CONST  CfgMgrProtocol,
-  IN EFI_ACPI_6_3_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER *CONST  Srat
+  IN EFI_ACPI_6_6_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER *CONST  Srat
   )
 {
   EFI_STATUS                               Status;
-  EFI_ACPI_6_3_GIC_ITS_AFFINITY_STRUCTURE  *GicItsAff;
+  EFI_ACPI_6_6_GIC_ITS_AFFINITY_STRUCTURE  *GicItsAff;
   CM_ARM_GIC_ITS_INFO                      *GicItsInfo;
 
   GicItsInfo = mSratSubTable[EArmGicItsSubTableType].CmInfo;
-  GicItsAff  = (EFI_ACPI_6_3_GIC_ITS_AFFINITY_STRUCTURE *)((UINT8 *)Srat +
+  GicItsAff  = (EFI_ACPI_6_6_GIC_ITS_AFFINITY_STRUCTURE *)((UINT8 *)Srat +
                                                            mSratSubTable[EArmGicItsSubTableType].Offset);
 
   while (mSratSubTable[EArmGicItsSubTableType].Count-- != 0) {
     DEBUG ((DEBUG_INFO, "SRAT: GicItsAff = 0x%p\n", GicItsAff));
 
-    GicItsAff->Type        = EFI_ACPI_6_3_GIC_ITS_AFFINITY;
-    GicItsAff->Length      = sizeof (EFI_ACPI_6_3_GIC_ITS_AFFINITY_STRUCTURE);
+    GicItsAff->Type        = EFI_ACPI_6_6_GIC_ITS_AFFINITY;
+    GicItsAff->Length      = sizeof (EFI_ACPI_6_6_GIC_ITS_AFFINITY_STRUCTURE);
     GicItsAff->Reserved[0] = EFI_ACPI_RESERVED_BYTE;
     GicItsAff->Reserved[1] = EFI_ACPI_RESERVED_BYTE;
     GicItsAff->ItsId       = GicItsInfo->GicItsId;
@@ -279,7 +279,7 @@ EFI_STATUS
 EFIAPI
 AddArchObjects (
   IN CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL         *CONST  CfgMgrProtocol,
-  IN EFI_ACPI_6_3_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER *CONST  Srat
+  IN EFI_ACPI_6_6_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER *CONST  Srat
   )
 {
   ASSERT (CfgMgrProtocol != NULL);

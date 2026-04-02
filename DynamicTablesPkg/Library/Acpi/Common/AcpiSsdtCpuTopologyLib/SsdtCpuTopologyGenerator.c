@@ -800,9 +800,9 @@ CreateAmlCpuFromProcHierarchy (
 
   Any CM_ARCH_COMMON_PROC_HIERARCHY_INFO object with the following flags is
   assumed to be a processor container:
-   - EFI_ACPI_6_3_PPTT_PACKAGE_NOT_PHYSICAL
-   - EFI_ACPI_6_3_PPTT_PROCESSOR_ID_INVALID
-   - EFI_ACPI_6_3_PPTT_NODE_IS_NOT_LEAF
+   - EFI_ACPI_6_6_PPTT_PACKAGE_NOT_PHYSICAL
+   - EFI_ACPI_6_6_PPTT_PROCESSOR_ID_INVALID
+   - EFI_ACPI_6_6_PPTT_NODE_IS_NOT_LEAF
 
   This generates the following ASL code:
   Device (C002)
@@ -863,7 +863,7 @@ CreateAmlProcessorContainer (
   }
 
   // Use the ProcContainerUid for the _UID value as there is no AcpiProcessorUid
-  // and EFI_ACPI_6_3_PPTT_PROCESSOR_ID_INVALID is set for non-Cpus.
+  // and EFI_ACPI_6_6_PPTT_PROCESSOR_ID_INVALID is set for non-Cpus.
   Status = AmlCodeGenNameInteger (
              "_UID",
              ProcContainerUid,
@@ -933,8 +933,8 @@ CheckProcNode (
   UINT32   CheckMask;
   UINT32   ExpectedMask;
 
-  HasPhysicalPackageBit = (NodeFlags & EFI_ACPI_6_3_PPTT_PACKAGE_PHYSICAL) ==
-                          EFI_ACPI_6_3_PPTT_PACKAGE_PHYSICAL;
+  HasPhysicalPackageBit = (NodeFlags & EFI_ACPI_6_6_PPTT_PACKAGE_PHYSICAL) ==
+                          EFI_ACPI_6_6_PPTT_PACKAGE_PHYSICAL;
 
   // Only one Physical Package flag is allowed in the hierarchy
   InvalidFlags = HasPhysicalPackageBit && PackageNodeSeen;
@@ -1135,8 +1135,8 @@ CreateAmlCpuTopologyTree (
           ProcContainerName++;
         }
 
-        HasPhysicalPackageBit = (Generator->ProcNodeList[Index].Flags & EFI_ACPI_6_3_PPTT_PACKAGE_PHYSICAL) ==
-                                EFI_ACPI_6_3_PPTT_PACKAGE_PHYSICAL;
+        HasPhysicalPackageBit = (Generator->ProcNodeList[Index].Flags & EFI_ACPI_6_6_PPTT_PACKAGE_PHYSICAL) ==
+                                EFI_ACPI_6_6_PPTT_PACKAGE_PHYSICAL;
 
         // Recursively continue creating an AML tree.
         Status = CreateAmlCpuTopologyTree (
@@ -1392,7 +1392,7 @@ ACPI_CPU_TOPOLOGY_GENERATOR  SsdtCpuTopologyGenerator = {
     // Generator Description
     L"ACPI.STD.SSDT.CPU.TOPOLOGY.GENERATOR",
     // ACPI Table Signature
-    EFI_ACPI_6_3_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE,
+    EFI_ACPI_6_6_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE,
     // ACPI Table Revision - Unused
     0,
     // Minimum ACPI Table Revision - Unused

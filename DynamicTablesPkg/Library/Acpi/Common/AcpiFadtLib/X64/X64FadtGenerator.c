@@ -121,7 +121,7 @@ EFI_STATUS
 EFIAPI
 FadtArchUpdate (
   IN  CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL  *CONST  CfgMgrProtocol,
-  IN   OUT EFI_ACPI_6_5_FIXED_ACPI_DESCRIPTION_TABLE      *Fadt
+  IN   OUT EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE      *Fadt
   )
 {
   EFI_STATUS                    Status;
@@ -246,32 +246,32 @@ FadtArchUpdate (
     CopyMem (
       &Fadt->XPm1aEvtBlk,
       &XpmBlockInfo->XPm1aEvtBlk,
-      sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE)
+      sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
       );
     CopyMem (
       &Fadt->XPm1bEvtBlk,
       &XpmBlockInfo->XPm1bEvtBlk,
-      sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE)
+      sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
       );
     CopyMem (
       &Fadt->XPm1aCntBlk,
       &XpmBlockInfo->XPm1aCntBlk,
-      sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE)
+      sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
       );
     CopyMem (
       &Fadt->XPm1bCntBlk,
       &XpmBlockInfo->XPm1bCntBlk,
-      sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE)
+      sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
       );
     CopyMem (
       &Fadt->XPm2CntBlk,
       &XpmBlockInfo->XPm2CntBlk,
-      sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE)
+      sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
       );
     CopyMem (
       &Fadt->XPmTmrBlk,
       &XpmBlockInfo->XPmTmrBlk,
-      sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE)
+      sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
       );
   }
 
@@ -319,12 +319,12 @@ FadtArchUpdate (
     CopyMem (
       &Fadt->XGpe0Blk,
       &XgpeBlockInfo->XGpe0Blk,
-      sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE)
+      sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
       );
     CopyMem (
       &Fadt->XGpe1Blk,
       &XgpeBlockInfo->XGpe1Blk,
-      sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE)
+      sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
       );
   }
 
@@ -346,12 +346,12 @@ FadtArchUpdate (
     CopyMem (
       &Fadt->SleepControlReg,
       &SleepBlockInfo->SleepControlReg,
-      sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE)
+      sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
       );
     CopyMem (
       &Fadt->SleepStatusReg,
       &SleepBlockInfo->SleepStatusReg,
-      sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE)
+      sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
       );
   }
 
@@ -373,7 +373,7 @@ FadtArchUpdate (
     CopyMem (
       &Fadt->ResetReg,
       &ResetBlockInfo->ResetReg,
-      sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE)
+      sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
       );
     Fadt->ResetValue = ResetBlockInfo->ResetValue;
   }

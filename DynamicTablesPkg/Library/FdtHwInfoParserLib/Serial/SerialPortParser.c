@@ -218,7 +218,7 @@ SerialPortNodeParser (
       }
 
       AccessSize = Fdt32ToCpu (*(UINT32 *)Data);
-      if (AccessSize > EFI_ACPI_6_3_QWORD) {
+      if (AccessSize > EFI_ACPI_6_6_QWORD) {
         ASSERT (0);
         return EFI_INVALID_PARAMETER;
       }
@@ -226,7 +226,7 @@ SerialPortNodeParser (
       SerialPortInfo->AccessSize = AccessSize;
     } else {
       // 8250/16550 defaults to byte access.
-      SerialPortInfo->AccessSize = EFI_ACPI_6_3_BYTE;
+      SerialPortInfo->AccessSize = EFI_ACPI_6_6_BYTE;
     }
   } else if (FdtNodeIsCompatible (
                Fdt,

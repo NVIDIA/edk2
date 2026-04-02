@@ -1140,7 +1140,7 @@ FreeSsdtPciTableEx (
   for (Index = 0; Index < TableCount; Index++) {
     if ((TableList[Index] != NULL) &&
         (TableList[Index]->Signature ==
-         EFI_ACPI_6_3_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE))
+         EFI_ACPI_6_6_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE))
     {
       FreePool (TableList[Index]);
     } else {
@@ -1174,7 +1174,7 @@ ACPI_PCI_GENERATOR  SsdtPcieGenerator = {
     // Generator Description
     L"ACPI.STD.SSDT.PCI.GENERATOR",
     // ACPI Table Signature
-    EFI_ACPI_6_3_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE,
+    EFI_ACPI_6_6_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE,
     // ACPI Table Revision - Unused
     0,
     // Minimum ACPI Table Revision - Unused

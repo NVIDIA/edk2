@@ -134,27 +134,27 @@ STATIC
 EFI_STATUS
 AddMemoryAffinity (
   IN CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL         *CONST  CfgMgrProtocol,
-  IN EFI_ACPI_6_3_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER *CONST  Srat,
+  IN EFI_ACPI_6_6_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER *CONST  Srat,
   IN CONST UINT32                                               MemAffOffset,
   IN CONST CM_ARCH_COMMON_MEMORY_AFFINITY_INFO                  *MemAffInfo,
   IN       UINT32                                               MemAffCount
   )
 {
   EFI_STATUS                              Status;
-  EFI_ACPI_6_3_MEMORY_AFFINITY_STRUCTURE  *MemAff;
+  EFI_ACPI_6_6_MEMORY_AFFINITY_STRUCTURE  *MemAff;
   UINT32                                  ProximityDomain;
 
   ASSERT (Srat != NULL);
   ASSERT (MemAffInfo != NULL);
 
-  MemAff = (EFI_ACPI_6_3_MEMORY_AFFINITY_STRUCTURE *)((UINT8 *)Srat +
+  MemAff = (EFI_ACPI_6_6_MEMORY_AFFINITY_STRUCTURE *)((UINT8 *)Srat +
                                                       MemAffOffset);
 
   while (MemAffCount-- != 0) {
     DEBUG ((DEBUG_INFO, "SRAT: MemAff = 0x%p\n", MemAff));
 
-    MemAff->Type            = EFI_ACPI_6_3_MEMORY_AFFINITY;
-    MemAff->Length          = sizeof (EFI_ACPI_6_3_MEMORY_AFFINITY_STRUCTURE);
+    MemAff->Type            = EFI_ACPI_6_6_MEMORY_AFFINITY;
+    MemAff->Length          = sizeof (EFI_ACPI_6_6_MEMORY_AFFINITY_STRUCTURE);
     MemAff->Reserved1       = EFI_ACPI_RESERVED_WORD;
     MemAff->AddressBaseLow  = (UINT32)(MemAffInfo->BaseAddress & MAX_UINT32);
     MemAff->AddressBaseHigh = (UINT32)RShiftU64 (MemAffInfo->BaseAddress, 32);
@@ -209,14 +209,14 @@ STATIC
 EFI_STATUS
 AddGenericInitiatorAffinity (
   IN CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL         *CONST  CfgMgrProtocol,
-  IN EFI_ACPI_6_3_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER *CONST  Srat,
+  IN EFI_ACPI_6_6_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER *CONST  Srat,
   IN CONST UINT32                                               GenInitAffOff,
   IN CONST CM_ARCH_COMMON_GENERIC_INITIATOR_AFFINITY_INFO       *GenInitAffInfo,
   IN       UINT32                                               GenInitAffCount
   )
 {
   EFI_STATUS                                         Status;
-  EFI_ACPI_6_3_GENERIC_INITIATOR_AFFINITY_STRUCTURE  *GenInitAff;
+  EFI_ACPI_6_6_GENERIC_INITIATOR_AFFINITY_STRUCTURE  *GenInitAff;
   CM_ARCH_COMMON_DEVICE_HANDLE_ACPI                  *DeviceHandleAcpi;
   CM_ARCH_COMMON_DEVICE_HANDLE_PCI                   *DeviceHandlePci;
   UINT32                                             DeviceHandleCount;
@@ -224,15 +224,15 @@ AddGenericInitiatorAffinity (
   ASSERT (Srat != NULL);
   ASSERT (GenInitAffInfo != NULL);
 
-  GenInitAff = (EFI_ACPI_6_3_GENERIC_INITIATOR_AFFINITY_STRUCTURE *)(
+  GenInitAff = (EFI_ACPI_6_6_GENERIC_INITIATOR_AFFINITY_STRUCTURE *)(
                                                                      (UINT8 *)Srat + GenInitAffOff);
 
   while (GenInitAffCount-- != 0) {
     DEBUG ((DEBUG_INFO, "SRAT: GenInitAff = 0x%p\n", GenInitAff));
 
-    GenInitAff->Type   = EFI_ACPI_6_3_GENERIC_INITIATOR_AFFINITY;
+    GenInitAff->Type   = EFI_ACPI_6_6_GENERIC_INITIATOR_AFFINITY;
     GenInitAff->Length =
-      sizeof (EFI_ACPI_6_3_GENERIC_INITIATOR_AFFINITY_STRUCTURE);
+      sizeof (EFI_ACPI_6_6_GENERIC_INITIATOR_AFFINITY_STRUCTURE);
     GenInitAff->Reserved1        = EFI_ACPI_RESERVED_WORD;
     GenInitAff->DeviceHandleType = GenInitAffInfo->DeviceHandleType;
 
@@ -256,7 +256,7 @@ AddGenericInitiatorAffinity (
       return EFI_INVALID_PARAMETER;
     }
 
-    if (GenInitAffInfo->DeviceHandleType == EFI_ACPI_6_3_ACPI_DEVICE_HANDLE) {
+    if (GenInitAffInfo->DeviceHandleType == EFI_ACPI_6_6_ACPI_DEVICE_HANDLE) {
       Status = GetEArchCommonObjDeviceHandleAcpi (
                  CfgMgrProtocol,
                  GenInitAffInfo->DeviceHandleToken,
@@ -286,7 +286,7 @@ AddGenericInitiatorAffinity (
       GenInitAff->DeviceHandle.Acpi.Reserved[2] = EFI_ACPI_RESERVED_BYTE;
       GenInitAff->DeviceHandle.Acpi.Reserved[3] = EFI_ACPI_RESERVED_BYTE;
     } else if (GenInitAffInfo->DeviceHandleType ==
-               EFI_ACPI_6_3_PCI_DEVICE_HANDLE)
+               EFI_ACPI_6_6_PCI_DEVICE_HANDLE)
     {
       Status = GetEArchCommonObjDeviceHandlePci (
                  CfgMgrProtocol,
@@ -369,14 +369,14 @@ STATIC
 EFI_STATUS
 AddGenericPortAffinity (
   IN CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL         *CONST  CfgMgrProtocol,
-  IN EFI_ACPI_6_3_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER *CONST  Srat,
+  IN EFI_ACPI_6_6_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER *CONST  Srat,
   IN CONST UINT32                                               GenPortAffOff,
   IN CONST CM_ARCH_COMMON_GENERIC_PORT_AFFINITY_INFO            *GenPortAffInfo,
   IN       UINT32                                               GenPortAffCount
   )
 {
   EFI_STATUS                                    Status;
-  EFI_ACPI_6_5_GENERIC_PORT_AFFINITY_STRUCTURE  *GenPortAff;
+  EFI_ACPI_6_6_GENERIC_PORT_AFFINITY_STRUCTURE  *GenPortAff;
   CM_ARCH_COMMON_DEVICE_HANDLE_ACPI             *DeviceHandleAcpi;
   CM_ARCH_COMMON_DEVICE_HANDLE_PCI              *DeviceHandlePci;
   UINT32                                        DeviceHandleCount;
@@ -384,14 +384,14 @@ AddGenericPortAffinity (
   ASSERT (Srat != NULL);
   ASSERT (GenPortAffInfo != NULL);
 
-  GenPortAff = (EFI_ACPI_6_5_GENERIC_PORT_AFFINITY_STRUCTURE *)((UINT8 *)Srat + GenPortAffOff);
+  GenPortAff = (EFI_ACPI_6_6_GENERIC_PORT_AFFINITY_STRUCTURE *)((UINT8 *)Srat + GenPortAffOff);
 
   while (GenPortAffCount-- != 0) {
     DEBUG ((DEBUG_INFO, "SRAT: GenPortAff = 0x%p\n", GenPortAff));
 
-    GenPortAff->Type   = EFI_ACPI_6_5_GENERIC_PORT_AFFINITY;
+    GenPortAff->Type   = EFI_ACPI_6_6_GENERIC_PORT_AFFINITY;
     GenPortAff->Length =
-      sizeof (EFI_ACPI_6_5_GENERIC_PORT_AFFINITY_STRUCTURE);
+      sizeof (EFI_ACPI_6_6_GENERIC_PORT_AFFINITY_STRUCTURE);
     GenPortAff->Reserved1        = EFI_ACPI_RESERVED_WORD;
     GenPortAff->DeviceHandleType = GenPortAffInfo->DeviceHandleType;
     GenPortAff->ProximityDomain  = GenPortAffInfo->ProximityDomain;
@@ -405,7 +405,7 @@ AddGenericPortAffinity (
       return EFI_INVALID_PARAMETER;
     }
 
-    if (GenPortAffInfo->DeviceHandleType == EFI_ACPI_6_5_ACPI_DEVICE_HANDLE) {
+    if (GenPortAffInfo->DeviceHandleType == EFI_ACPI_6_6_ACPI_DEVICE_HANDLE) {
       Status = GetEArchCommonObjDeviceHandleAcpi (
                  CfgMgrProtocol,
                  GenPortAffInfo->DeviceHandleToken,
@@ -435,7 +435,7 @@ AddGenericPortAffinity (
       GenPortAff->DeviceHandle.Acpi.Reserved[2] = EFI_ACPI_RESERVED_BYTE;
       GenPortAff->DeviceHandle.Acpi.Reserved[3] = EFI_ACPI_RESERVED_BYTE;
     } else if (GenPortAffInfo->DeviceHandleType ==
-               EFI_ACPI_6_5_PCI_DEVICE_HANDLE)
+               EFI_ACPI_6_6_PCI_DEVICE_HANDLE)
     {
       Status = GetEArchCommonObjDeviceHandlePci (
                  CfgMgrProtocol,
@@ -542,7 +542,7 @@ BuildSratTable (
   CM_ARCH_COMMON_GENERIC_INITIATOR_AFFINITY_INFO  *GenInitiatorAffInfo;
   CM_ARCH_COMMON_GENERIC_PORT_AFFINITY_INFO       *GenPortAffInfo;
 
-  EFI_ACPI_6_3_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER  *Srat;
+  EFI_ACPI_6_6_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER  *Srat;
 
   ASSERT (
     (This != NULL) &&
@@ -617,7 +617,7 @@ BuildSratTable (
   }
 
   // Calculate the size of the SRAT table
-  TableSize = sizeof (EFI_ACPI_6_3_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER);
+  TableSize = sizeof (EFI_ACPI_6_6_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER);
 
   // Place the Arch specific subtables/structures first and
   // reserve the offsets. The common subtables/structures
@@ -635,19 +635,19 @@ BuildSratTable (
 
   if (MemAffCount != 0) {
     MemAffOffset = TableSize;
-    TableSize   += (sizeof (EFI_ACPI_6_3_MEMORY_AFFINITY_STRUCTURE) *
+    TableSize   += (sizeof (EFI_ACPI_6_6_MEMORY_AFFINITY_STRUCTURE) *
                     MemAffCount);
   }
 
   if (GenInitiatorAffCount != 0) {
     GenInitiatorAffOffset = TableSize;
-    TableSize            += (sizeof (EFI_ACPI_6_3_GENERIC_INITIATOR_AFFINITY_STRUCTURE) *
+    TableSize            += (sizeof (EFI_ACPI_6_6_GENERIC_INITIATOR_AFFINITY_STRUCTURE) *
                              GenInitiatorAffCount);
   }
 
   if (GenPortCount != 0) {
     GenPortOffset = TableSize;
-    TableSize    += (sizeof (EFI_ACPI_6_5_GENERIC_PORT_AFFINITY_STRUCTURE) *
+    TableSize    += (sizeof (EFI_ACPI_6_6_GENERIC_PORT_AFFINITY_STRUCTURE) *
                      GenPortCount);
   }
 
@@ -665,7 +665,7 @@ BuildSratTable (
     goto error_handler;
   }
 
-  Srat = (EFI_ACPI_6_3_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER *)*Table;
+  Srat = (EFI_ACPI_6_6_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER *)*Table;
 
   DEBUG ((
     DEBUG_INFO,
@@ -827,11 +827,11 @@ ACPI_TABLE_GENERATOR  SratGenerator = {
   // Generator Description
   L"ACPI.STD.SRAT.GENERATOR",
   // ACPI Table Signature
-  EFI_ACPI_6_3_SYSTEM_RESOURCE_AFFINITY_TABLE_SIGNATURE,
+  EFI_ACPI_6_6_SYSTEM_RESOURCE_AFFINITY_TABLE_SIGNATURE,
   // ACPI Table Revision supported by this Generator
-  EFI_ACPI_6_3_SYSTEM_RESOURCE_AFFINITY_TABLE_REVISION,
+  EFI_ACPI_6_6_SYSTEM_RESOURCE_AFFINITY_TABLE_REVISION,
   // Minimum supported ACPI Table Revision
-  EFI_ACPI_6_3_SYSTEM_RESOURCE_AFFINITY_TABLE_REVISION,
+  EFI_ACPI_6_6_SYSTEM_RESOURCE_AFFINITY_TABLE_REVISION,
   // Creator ID
   TABLE_GENERATOR_CREATOR_ID,
   // Creator Revision

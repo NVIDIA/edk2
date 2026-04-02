@@ -422,7 +422,7 @@ STATIC CONST CM_OBJ_PARSER  CmArmCmn600InfoParser[] = {
   { "DtcFlags[3]",             4, "0x%x",   NULL }
 };
 
-/** A parser for the EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE structure.
+/** A parser for the EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE structure.
 */
 STATIC CONST CM_OBJ_PARSER  AcpiGenericAddressParser[] = {
   { "AddressSpaceId",    1, "%d",     NULL },
@@ -443,13 +443,13 @@ STATIC CONST CM_OBJ_PARSER  CmArchCommonLpiInfoParser[] = {
   { "EnableParentState",        4,                                               "0x%x",   NULL        },
   { "IsInteger",                1,                                               "%d",     NULL        },
   { "IntegerEntryMethod",       8,                                               "0x%llx", NULL        },
-  { "RegisterEntryMethod",      sizeof (EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE),
+  { "RegisterEntryMethod",      sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "ResidencyCounterRegister", sizeof (EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE),
+  { "ResidencyCounterRegister", sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "UsageCounterRegister",     sizeof (EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE),
+  { "UsageCounterRegister",     sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
   { "StateName",                16,                                              NULL,     PrintString },
@@ -498,75 +498,75 @@ STATIC CONST CM_OBJ_PARSER  CmArmMemoryRangeDescriptorInfoParser[] = {
 */
 STATIC CONST CM_OBJ_PARSER  CmArchCommonCpcInfoParser[] = {
   { "Revision",                              4,                                               "0x%lx", NULL },
-  { "HighestPerformanceBuffer",              sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "HighestPerformanceBuffer",              sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
   { "HighestPerformanceInteger",             4,                                               "0x%lx", NULL },
-  { "NominalPerformanceBuffer",              sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "NominalPerformanceBuffer",              sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
   { "NominalPerformanceInteger",             4,                                               "0x%lx", NULL },
-  { "LowestNonlinearPerformanceBuffer",      sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "LowestNonlinearPerformanceBuffer",      sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
   { "LowestNonlinearPerformanceInteger",     4,                                               "0x%lx", NULL },
-  { "LowestPerformanceBuffer",               sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "LowestPerformanceBuffer",               sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
   { "LowestPerformanceInteger",              4,                                               "0x%lx", NULL },
-  { "GuaranteedPerformanceRegister",         sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "GuaranteedPerformanceRegister",         sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "DesiredPerformanceRegister",            sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "DesiredPerformanceRegister",            sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "MinimumPerformanceRegister",            sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "MinimumPerformanceRegister",            sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "MaximumPerformanceRegister",            sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "MaximumPerformanceRegister",            sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "PerformanceReductionToleranceRegister", sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "PerformanceReductionToleranceRegister", sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "TimeWindowRegister",                    sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "TimeWindowRegister",                    sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "CounterWraparoundTimeBuffer",           sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "CounterWraparoundTimeBuffer",           sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
   { "CounterWraparoundTimeInteger",          4,                                               "0x%lx", NULL },
-  { "ReferencePerformanceCounterRegister",   sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "ReferencePerformanceCounterRegister",   sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "DeliveredPerformanceCounterRegister",   sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "DeliveredPerformanceCounterRegister",   sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "PerformanceLimitedRegister",            sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "PerformanceLimitedRegister",            sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "CPPCEnableRegister",                    sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "CPPCEnableRegister",                    sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "AutonomousSelectionEnableBuffer",       sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "AutonomousSelectionEnableBuffer",       sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
   { "AutonomousSelectionEnableInteger",      4,                                               "0x%lx", NULL },
-  { "AutonomousActivityWindowRegister",      sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "AutonomousActivityWindowRegister",      sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "EnergyPerformancePreferenceRegister",   sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "EnergyPerformancePreferenceRegister",   sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "ReferencePerformanceBuffer",            sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "ReferencePerformanceBuffer",            sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
   { "ReferencePerformanceInteger",           4,                                               "0x%lx", NULL },
-  { "LowestFrequencyBuffer",                 sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "LowestFrequencyBuffer",                 sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
   { "LowestFrequencyInteger",                4,                                               "0x%lx", NULL },
-  { "NominalFrequencyBuffer",                sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE),
+  { "NominalFrequencyBuffer",                sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
   { "NominalFrequencyInteger",               4,                                               "0x%lx", NULL },
@@ -575,7 +575,7 @@ STATIC CONST CM_OBJ_PARSER  CmArchCommonCpcInfoParser[] = {
 /** A parser for the PCC_MAILBOX_REGISTER_INFO struct.
 */
 STATIC CONST CM_OBJ_PARSER  CmArmMailboxRegisterInfoParser[] = {
-  { "Register",     sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE), NULL,     NULL,
+  { "Register",     sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE), NULL,     NULL,
     AcpiGenericAddressParser, ARRAY_SIZE (AcpiGenericAddressParser) },
   { "PreserveMask", 8,                                               "0x%llx", NULL },
   { "WriteMask",    8,                                               "0x%llx", NULL },
@@ -736,7 +736,7 @@ STATIC CONST CM_OBJ_PARSER  CmArchCommonTpm2InterfaceInfo[] = {
 */
 STATIC CONST CM_OBJ_PARSER  CmArchCommonSpmiInterfaceInfoParser[] = {
   { "InterfaceType", sizeof (UINT8),                                  "0x%x", NULL },
-  { "BaseAddress",   sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE),
+  { "BaseAddress",   sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser, ARRAY_SIZE (AcpiGenericAddressParser) },
 };
 
@@ -752,7 +752,7 @@ STATIC CONST CM_OBJ_PARSER  CmArchCommonSpmiInterruptDeviceInfoParser[] = {
 
 STATIC CONST CM_OBJ_PARSER  CmArchCommonCstInfoParser[] = {
   { "Register",
-    sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE),
+    sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL,
     NULL,
     AcpiGenericAddressParser,
@@ -776,13 +776,13 @@ STATIC CONST CM_OBJ_PARSER  CmArchCommonCsdInfoParser[] = {
 */
 STATIC CONST CM_OBJ_PARSER  CmArchCommonPctInfoParser[] = {
   { "ControlRegister",
-    sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE),
+    sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL,
     NULL,
     AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
   { "StatusRegister",
-    sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE),
+    sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL,
     NULL,
     AcpiGenericAddressParser,
@@ -1093,22 +1093,22 @@ STATIC CONST CM_OBJ_PARSER  CmX64ObjFadtGpeBlockInfoParser[] = {
 /** A parser for EX64ObjFadtXpmBlockInfo.
 */
 STATIC CONST CM_OBJ_PARSER  CmX64ObjFadtXpmBlockInfoParser[] = {
-  { "XPm1aEvtBlk", sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE),
+  { "XPm1aEvtBlk", sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "XPm1bEvtBlk", sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE),
+  { "XPm1bEvtBlk", sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "XPm1aCntBlk", sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE),
+  { "XPm1aCntBlk", sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "XPm1bCntBlk", sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE),
+  { "XPm1bCntBlk", sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "XPm2CntBlk",  sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE),
+  { "XPm2CntBlk",  sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "XPmTmrBlk",   sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE),
+  { "XPmTmrBlk",   sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) }
 };
@@ -1116,10 +1116,10 @@ STATIC CONST CM_OBJ_PARSER  CmX64ObjFadtXpmBlockInfoParser[] = {
 /** A parser for EX64ObjFadtXgpeBlockInfo.
 */
 STATIC CONST CM_OBJ_PARSER  CmX64ObjFadtXgpeBlockInfoParser[] = {
-  { "XGpe0Blk", sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE),
+  { "XGpe0Blk", sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "XGpe1Blk", sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE),
+  { "XGpe1Blk", sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) }
 };
@@ -1127,10 +1127,10 @@ STATIC CONST CM_OBJ_PARSER  CmX64ObjFadtXgpeBlockInfoParser[] = {
 /** A parser for EX64ObjFadtSleepBlockInfo.
 */
 STATIC CONST CM_OBJ_PARSER  CmX64ObjFadtSleepBlockInfoParser[] = {
-  { "SleepControlReg", sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE),
+  { "SleepControlReg", sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
-  { "SleepStatusReg",  sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE),
+  { "SleepStatusReg",  sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) }
 };
@@ -1138,7 +1138,7 @@ STATIC CONST CM_OBJ_PARSER  CmX64ObjFadtSleepBlockInfoParser[] = {
 /** A parser for EX64ObjFadtResetBlockInfo.
 */
 STATIC CONST CM_OBJ_PARSER  CmX64ObjFadtResetBlockInfoParser[] = {
-  { "ResetReg",   sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE),
+  { "ResetReg",   sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
   { "ResetValue", 1,                                              "0x%x",NULL }

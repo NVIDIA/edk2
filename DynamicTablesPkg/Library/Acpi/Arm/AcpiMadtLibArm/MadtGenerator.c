@@ -82,7 +82,7 @@ GET_OBJECT_LIST (
   );
 
 /** This function updates the GIC CPU Interface Information in the
-    EFI_ACPI_6_5_GIC_STRUCTURE structure.
+    EFI_ACPI_6_6_GIC_STRUCTURE structure.
 
   @param [in]  Gicc         Pointer to GIC CPU Interface structure.
   @param [in]  GicCInfo     Pointer to the GIC CPU Interface Information.
@@ -92,7 +92,7 @@ GET_OBJECT_LIST (
 STATIC
 VOID
 AddGICC (
-  IN        EFI_ACPI_6_5_GIC_STRUCTURE  *CONST  Gicc,
+  IN        EFI_ACPI_6_6_GIC_STRUCTURE  *CONST  Gicc,
   IN  CONST CM_ARM_GICC_INFO            *CONST  GicCInfo,
   IN  CONST UINT8                               MadtRev,
   IN  CONST BOOLEAN                             GicRPresent
@@ -102,9 +102,9 @@ AddGICC (
   ASSERT (GicCInfo != NULL);
 
   // UINT8 Type
-  Gicc->Type = EFI_ACPI_6_5_GIC;
+  Gicc->Type = EFI_ACPI_6_6_GIC;
   // UINT8 Length
-  Gicc->Length = sizeof (EFI_ACPI_6_5_GIC_STRUCTURE);
+  Gicc->Length = sizeof (EFI_ACPI_6_6_GIC_STRUCTURE);
   // UINT16 Reserved
   Gicc->Reserved = EFI_ACPI_RESERVED_WORD;
 
@@ -146,17 +146,17 @@ AddGICC (
   Gicc->Reserved2 = EFI_ACPI_RESERVED_BYTE;
 
   // UINT16  SpeOverflowInterrupt
-  if (MadtRev > EFI_ACPI_6_2_MULTIPLE_APIC_DESCRIPTION_TABLE_REVISION) {
+  if (MadtRev > EFI_ACPI_6_6_MULTIPLE_APIC_DESCRIPTION_TABLE_REVISION) {
     Gicc->SpeOverflowInterrupt = GicCInfo->SpeOverflowInterrupt;
   } else {
     // Setting SpeOverflowInterrupt to 0 ensures backward compatibility with
     // ACPI 6.2 by also clearing the Reserved2[1] and Reserved2[2] fields
-    // in EFI_ACPI_6_2_GIC_STRUCTURE.
+    // in EFI_ACPI_6_6_GIC_STRUCTURE.
     Gicc->SpeOverflowInterrupt = 0;
   }
 
   // UINT16  TrbeInterrupt
-  if (MadtRev > EFI_ACPI_6_4_MULTIPLE_APIC_DESCRIPTION_TABLE_REVISION) {
+  if (MadtRev > EFI_ACPI_6_6_MULTIPLE_APIC_DESCRIPTION_TABLE_REVISION) {
     Gicc->TrbeInterrupt = GicCInfo->TrbeInterrupt;
   }
 }
@@ -227,7 +227,7 @@ IsAcpiUidEqual (
 STATIC
 EFI_STATUS
 AddGICCList (
-  IN  EFI_ACPI_6_5_GIC_STRUCTURE  *Gicc,
+  IN  EFI_ACPI_6_6_GIC_STRUCTURE  *Gicc,
   IN  CONST CM_ARM_GICC_INFO      *GicCInfo,
   IN        UINT32                GicCCount,
   IN  CONST UINT8                 MadtRev,
@@ -266,7 +266,7 @@ AddGICCList (
 STATIC
 VOID
 AddGICD (
-  EFI_ACPI_6_5_GIC_DISTRIBUTOR_STRUCTURE  *CONST  Gicd,
+  EFI_ACPI_6_6_GIC_DISTRIBUTOR_STRUCTURE  *CONST  Gicd,
   CONST CM_ARM_GICD_INFO                  *CONST  GicDInfo
   )
 {
@@ -274,9 +274,9 @@ AddGICD (
   ASSERT (GicDInfo != NULL);
 
   // UINT8 Type
-  Gicd->Type = EFI_ACPI_6_5_GICD;
+  Gicd->Type = EFI_ACPI_6_6_GICD;
   // UINT8 Length
-  Gicd->Length = sizeof (EFI_ACPI_6_5_GIC_DISTRIBUTOR_STRUCTURE);
+  Gicd->Length = sizeof (EFI_ACPI_6_6_GIC_DISTRIBUTOR_STRUCTURE);
   // UINT16 Reserved
   Gicd->Reserved1 = EFI_ACPI_RESERVED_WORD;
   // UINT32 Identifier
@@ -303,15 +303,15 @@ AddGICD (
 STATIC
 VOID
 AddGICMsiFrame (
-  IN  EFI_ACPI_6_5_GIC_MSI_FRAME_STRUCTURE  *CONST  GicMsiFrame,
+  IN  EFI_ACPI_6_6_GIC_MSI_FRAME_STRUCTURE  *CONST  GicMsiFrame,
   IN  CONST CM_ARM_GIC_MSI_FRAME_INFO       *CONST  GicMsiFrameInfo
   )
 {
   ASSERT (GicMsiFrame != NULL);
   ASSERT (GicMsiFrameInfo != NULL);
 
-  GicMsiFrame->Type                = EFI_ACPI_6_5_GIC_MSI_FRAME;
-  GicMsiFrame->Length              = sizeof (EFI_ACPI_6_5_GIC_MSI_FRAME_STRUCTURE);
+  GicMsiFrame->Type                = EFI_ACPI_6_6_GIC_MSI_FRAME;
+  GicMsiFrame->Length              = sizeof (EFI_ACPI_6_6_GIC_MSI_FRAME_STRUCTURE);
   GicMsiFrame->Reserved1           = EFI_ACPI_RESERVED_WORD;
   GicMsiFrame->GicMsiFrameId       = GicMsiFrameInfo->GicMsiFrameId;
   GicMsiFrame->PhysicalBaseAddress = GicMsiFrameInfo->PhysicalBaseAddress;
@@ -330,7 +330,7 @@ AddGICMsiFrame (
 STATIC
 VOID
 AddGICMsiFrameInfoList (
-  IN  EFI_ACPI_6_5_GIC_MSI_FRAME_STRUCTURE  *GicMsiFrame,
+  IN  EFI_ACPI_6_6_GIC_MSI_FRAME_STRUCTURE  *GicMsiFrame,
   IN  CONST CM_ARM_GIC_MSI_FRAME_INFO       *GicMsiFrameInfo,
   IN        UINT32                          GicMsiFrameCount
   )
@@ -351,15 +351,15 @@ AddGICMsiFrameInfoList (
 STATIC
 VOID
 AddGICRedistributor (
-  IN  EFI_ACPI_6_5_GICR_STRUCTURE   *CONST  Gicr,
+  IN  EFI_ACPI_6_6_GICR_STRUCTURE   *CONST  Gicr,
   IN  CONST CM_ARM_GIC_REDIST_INFO  *CONST  GicRedistributorInfo
   )
 {
   ASSERT (Gicr != NULL);
   ASSERT (GicRedistributorInfo != NULL);
 
-  Gicr->Type                      = EFI_ACPI_6_5_GICR;
-  Gicr->Length                    = sizeof (EFI_ACPI_6_5_GICR_STRUCTURE);
+  Gicr->Type                      = EFI_ACPI_6_6_GICR;
+  Gicr->Length                    = sizeof (EFI_ACPI_6_6_GICR_STRUCTURE);
   Gicr->Reserved                  = EFI_ACPI_RESERVED_WORD;
   Gicr->DiscoveryRangeBaseAddress =
     GicRedistributorInfo->DiscoveryRangeBaseAddress;
@@ -375,7 +375,7 @@ AddGICRedistributor (
 STATIC
 VOID
 AddGICRedistributorList (
-  IN  EFI_ACPI_6_5_GICR_STRUCTURE   *Gicr,
+  IN  EFI_ACPI_6_6_GICR_STRUCTURE   *Gicr,
   IN  CONST CM_ARM_GIC_REDIST_INFO  *GicRInfo,
   IN        UINT32                  GicRCount
   )
@@ -396,15 +396,15 @@ AddGICRedistributorList (
 STATIC
 VOID
 AddGICInterruptTranslationService (
-  IN  EFI_ACPI_6_5_GIC_ITS_STRUCTURE  *CONST  GicIts,
+  IN  EFI_ACPI_6_6_GIC_ITS_STRUCTURE  *CONST  GicIts,
   IN  CONST CM_ARM_GIC_ITS_INFO       *CONST  GicItsInfo
   )
 {
   ASSERT (GicIts != NULL);
   ASSERT (GicItsInfo != NULL);
 
-  GicIts->Type                = EFI_ACPI_6_5_GIC_ITS;
-  GicIts->Length              = sizeof (EFI_ACPI_6_5_GIC_ITS_STRUCTURE);
+  GicIts->Type                = EFI_ACPI_6_6_GIC_ITS;
+  GicIts->Length              = sizeof (EFI_ACPI_6_6_GIC_ITS_STRUCTURE);
   GicIts->Reserved            = EFI_ACPI_RESERVED_WORD;
   GicIts->GicItsId            = GicItsInfo->GicItsId;
   GicIts->PhysicalBaseAddress = GicItsInfo->PhysicalBaseAddress;
@@ -421,7 +421,7 @@ AddGICInterruptTranslationService (
 STATIC
 VOID
 AddGICItsList (
-  IN  EFI_ACPI_6_5_GIC_ITS_STRUCTURE  *GicIts,
+  IN  EFI_ACPI_6_6_GIC_ITS_STRUCTURE  *GicIts,
   IN  CONST CM_ARM_GIC_ITS_INFO       *GicItsInfo,
   IN        UINT32                    GicItsCount
   )
@@ -484,7 +484,7 @@ BuildMadtTable (
   UINT32                     GicRedistOffset;
   UINT32                     GicItsOffset;
 
-  EFI_ACPI_6_5_MULTIPLE_APIC_DESCRIPTION_TABLE_HEADER  *Madt;
+  EFI_ACPI_6_6_MULTIPLE_APIC_DESCRIPTION_TABLE_HEADER  *Madt;
 
   ASSERT (This != NULL);
   ASSERT (AcpiTableInfo != NULL);
@@ -616,22 +616,22 @@ BuildMadtTable (
     goto error_handler;
   }
 
-  TableSize = sizeof (EFI_ACPI_6_5_MULTIPLE_APIC_DESCRIPTION_TABLE_HEADER);
+  TableSize = sizeof (EFI_ACPI_6_6_MULTIPLE_APIC_DESCRIPTION_TABLE_HEADER);
 
   GicCOffset = TableSize;
-  TableSize += (sizeof (EFI_ACPI_6_5_GIC_STRUCTURE) * GicCCount);
+  TableSize += (sizeof (EFI_ACPI_6_6_GIC_STRUCTURE) * GicCCount);
 
   GicDOffset = TableSize;
-  TableSize += (sizeof (EFI_ACPI_6_5_GIC_DISTRIBUTOR_STRUCTURE) * GicDCount);
+  TableSize += (sizeof (EFI_ACPI_6_6_GIC_DISTRIBUTOR_STRUCTURE) * GicDCount);
 
   GicMSIOffset = TableSize;
-  TableSize   += (sizeof (EFI_ACPI_6_5_GIC_MSI_FRAME_STRUCTURE) * GicMSICount);
+  TableSize   += (sizeof (EFI_ACPI_6_6_GIC_MSI_FRAME_STRUCTURE) * GicMSICount);
 
   GicRedistOffset = TableSize;
-  TableSize      += (sizeof (EFI_ACPI_6_5_GICR_STRUCTURE) * GicRedistCount);
+  TableSize      += (sizeof (EFI_ACPI_6_6_GICR_STRUCTURE) * GicRedistCount);
 
   GicItsOffset = TableSize;
-  TableSize   += (sizeof (EFI_ACPI_6_5_GIC_ITS_STRUCTURE) * GicItsCount);
+  TableSize   += (sizeof (EFI_ACPI_6_6_GIC_ITS_STRUCTURE) * GicItsCount);
 
   // Allocate the Buffer for MADT table
   *Table = (EFI_ACPI_DESCRIPTION_HEADER *)AllocateZeroPool (TableSize);
@@ -647,7 +647,7 @@ BuildMadtTable (
     goto error_handler;
   }
 
-  Madt = (EFI_ACPI_6_5_MULTIPLE_APIC_DESCRIPTION_TABLE_HEADER *)*Table;
+  Madt = (EFI_ACPI_6_6_MULTIPLE_APIC_DESCRIPTION_TABLE_HEADER *)*Table;
 
   DEBUG ((
     DEBUG_INFO,
@@ -673,7 +673,7 @@ BuildMadtTable (
   }
 
   Status = AddGICCList (
-             (EFI_ACPI_6_5_GIC_STRUCTURE *)((UINT8 *)Madt + GicCOffset),
+             (EFI_ACPI_6_6_GIC_STRUCTURE *)((UINT8 *)Madt + GicCOffset),
              GicCInfo,
              GicCCount,
              Madt->Header.Revision,
@@ -689,13 +689,13 @@ BuildMadtTable (
   }
 
   AddGICD (
-    (EFI_ACPI_6_5_GIC_DISTRIBUTOR_STRUCTURE *)((UINT8 *)Madt + GicDOffset),
+    (EFI_ACPI_6_6_GIC_DISTRIBUTOR_STRUCTURE *)((UINT8 *)Madt + GicDOffset),
     GicDInfo
     );
 
   if (GicMSICount != 0) {
     AddGICMsiFrameInfoList (
-      (EFI_ACPI_6_5_GIC_MSI_FRAME_STRUCTURE *)((UINT8 *)Madt + GicMSIOffset),
+      (EFI_ACPI_6_6_GIC_MSI_FRAME_STRUCTURE *)((UINT8 *)Madt + GicMSIOffset),
       GicMSIInfo,
       GicMSICount
       );
@@ -703,7 +703,7 @@ BuildMadtTable (
 
   if (GicRedistCount != 0) {
     AddGICRedistributorList (
-      (EFI_ACPI_6_5_GICR_STRUCTURE *)((UINT8 *)Madt + GicRedistOffset),
+      (EFI_ACPI_6_6_GICR_STRUCTURE *)((UINT8 *)Madt + GicRedistOffset),
       GicRedistInfo,
       GicRedistCount
       );
@@ -711,7 +711,7 @@ BuildMadtTable (
 
   if (GicItsCount != 0) {
     AddGICItsList (
-      (EFI_ACPI_6_5_GIC_ITS_STRUCTURE *)((UINT8 *)Madt + GicItsOffset),
+      (EFI_ACPI_6_6_GIC_ITS_STRUCTURE *)((UINT8 *)Madt + GicItsOffset),
       GicItsInfo,
       GicItsCount
       );
@@ -779,11 +779,11 @@ ACPI_TABLE_GENERATOR  MadtGenerator = {
   // Generator Description
   L"ACPI.STD.MADT.GENERATOR",
   // ACPI Table Signature
-  EFI_ACPI_6_5_MULTIPLE_APIC_DESCRIPTION_TABLE_SIGNATURE,
+  EFI_ACPI_6_6_MULTIPLE_APIC_DESCRIPTION_TABLE_SIGNATURE,
   // ACPI Table Revision supported by this Generator
-  EFI_ACPI_6_5_MULTIPLE_APIC_DESCRIPTION_TABLE_REVISION,
+  EFI_ACPI_6_6_MULTIPLE_APIC_DESCRIPTION_TABLE_REVISION,
   // Minimum supported ACPI Table Revision
-  EFI_ACPI_6_2_MULTIPLE_APIC_DESCRIPTION_TABLE_REVISION,
+  EFI_ACPI_6_6_MULTIPLE_APIC_DESCRIPTION_TABLE_REVISION,
   // Creator ID
   TABLE_GENERATOR_CREATOR_ID_ARM,
   // Creator Revision

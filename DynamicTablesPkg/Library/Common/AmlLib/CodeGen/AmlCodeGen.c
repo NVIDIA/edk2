@@ -2611,10 +2611,10 @@ AmlAddLpiState (
   IN  UINT32                                  ArchFlags,
   IN  UINT32                                  ResCntFreq,
   IN  UINT32                                  EnableParentState,
-  IN  EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE  *GenericRegisterDescriptor   OPTIONAL,
+  IN  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE  *GenericRegisterDescriptor   OPTIONAL,
   IN  UINT64                                  Integer                     OPTIONAL,
-  IN  EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE  *ResidencyCounterRegister    OPTIONAL,
-  IN  EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE  *UsageCounterRegister        OPTIONAL,
+  IN  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE  *ResidencyCounterRegister    OPTIONAL,
+  IN  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE  *UsageCounterRegister        OPTIONAL,
   IN  CONST CHAR8                             *StateName                   OPTIONAL,
   IN  AML_OBJECT_NODE_HANDLE                  LpiNode
   )
@@ -2893,7 +2893,7 @@ AmlAddLpiState (
                );
   } else {
     Status = AmlCodeGenRdRegister (
-               EFI_ACPI_6_4_SYSTEM_MEMORY,
+               EFI_ACPI_6_6_SYSTEM_MEMORY,
                0,
                0,
                0,
@@ -2948,7 +2948,7 @@ AmlAddLpiState (
                );
   } else {
     Status = AmlCodeGenRdRegister (
-               EFI_ACPI_6_4_SYSTEM_MEMORY,
+               EFI_ACPI_6_6_SYSTEM_MEMORY,
                0,
                0,
                0,
@@ -3309,7 +3309,7 @@ STATIC
 EFI_STATUS
 EFIAPI
 AmlAddRegisterToPackage (
-  IN EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE  *Register OPTIONAL,
+  IN EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE  *Register OPTIONAL,
   IN AML_OBJECT_NODE_HANDLE                  PackageNode
   )
 {
@@ -3337,7 +3337,7 @@ AmlAddRegisterToPackage (
                );
   } else {
     Status = AmlCodeGenRdRegister (
-               EFI_ACPI_6_4_SYSTEM_MEMORY,
+               EFI_ACPI_6_6_SYSTEM_MEMORY,
                0,
                0,
                0,
@@ -3394,11 +3394,11 @@ STATIC
 BOOLEAN
 EFIAPI
 IsNullGenericAddress (
-  IN EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE  *Address
+  IN EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE  *Address
   )
 {
   if ((Address == NULL) ||
-      ((Address->AddressSpaceId == EFI_ACPI_6_4_SYSTEM_MEMORY) &&
+      ((Address->AddressSpaceId == EFI_ACPI_6_6_SYSTEM_MEMORY) &&
        (Address->Address == 0x0)))
   {
     return TRUE;
@@ -3423,7 +3423,7 @@ STATIC
 EFI_STATUS
 EFIAPI
 AmlAddRegisterOrIntegerToPackage (
-  IN EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE  *Register OPTIONAL,
+  IN EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE  *Register OPTIONAL,
   IN UINT32                                  Integer,
   IN AML_OBJECT_NODE_HANDLE                  PackageNode
   )
@@ -3524,7 +3524,7 @@ AmlCreateCpcNode (
   }
 
   // Revision 3 per ACPI 6.4 specification
-  if (CpcInfo->Revision == EFI_ACPI_6_5_AML_CPC_REVISION) {
+  if (CpcInfo->Revision == EFI_ACPI_6_6_AML_CPC_REVISION) {
     // NumEntries 23 per ACPI 6.4 specification
     NumberOfEntries = 23;
   } else {
@@ -4232,7 +4232,7 @@ AmlCreatePsdNode (
   }
 
   // Revision 3 per ACPI 6.5 specification
-  if (PsdInfo->Revision == EFI_ACPI_6_5_AML_PSD_REVISION) {
+  if (PsdInfo->Revision == EFI_ACPI_6_6_AML_PSD_REVISION) {
     // NumEntries 5 per ACPI 6.5 specification
     NumberOfEntries = 5;
   } else {
@@ -4691,7 +4691,7 @@ AmlCreateCsdNode (
   }
 
   for (Index = 0; Index < NumEntries; Index++) {
-    if ((CsdInfo[Index].Revision != EFI_ACPI_6_5_AML_CSD_REVISION) ||
+    if ((CsdInfo[Index].Revision != EFI_ACPI_6_6_AML_CSD_REVISION) ||
         ((CsdInfo[Index].CoordType != ACPI_AML_COORD_TYPE_SW_ALL) &&
          (CsdInfo[Index].CoordType != ACPI_AML_COORD_TYPE_SW_ANY) &&
          (CsdInfo[Index].CoordType != ACPI_AML_COORD_TYPE_HW_ALL)))
@@ -4731,7 +4731,7 @@ AmlCreateCsdNode (
 
     Status = AmlAddRegisterOrIntegerToPackage (
                NULL,
-               EFI_ACPI_6_5_AML_CSD_NUM_ENTRIES,
+               EFI_ACPI_6_6_AML_CSD_NUM_ENTRIES,
                CsdPackage
                );
     if (EFI_ERROR (Status)) {

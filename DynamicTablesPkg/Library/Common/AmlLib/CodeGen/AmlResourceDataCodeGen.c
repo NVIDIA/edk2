@@ -1403,11 +1403,11 @@ AmlCodeGenRdInterrupt (
   @param [in]  Address         Register address.
   @param [in]  AccessSize      Size of data values used when accessing the
                                address space. Can be one of:
-                                 0 - Undefined, legacy (EFI_ACPI_6_4_UNDEFINED)
-                                 1 - Byte access (EFI_ACPI_6_4_BYTE)
-                                 2 - Word access (EFI_ACPI_6_4_WORD)
-                                 3 - DWord access (EFI_ACPI_6_4_DWORD)
-                                 4 - QWord access (EFI_ACPI_6_4_QWORD)
+                                 0 - Undefined, legacy (EFI_ACPI_6_6_UNDEFINED)
+                                 1 - Byte access (EFI_ACPI_6_6_BYTE)
+                                 2 - Word access (EFI_ACPI_6_6_WORD)
+                                 3 - DWord access (EFI_ACPI_6_6_DWORD)
+                                 4 - QWord access (EFI_ACPI_6_6_QWORD)
   @param  [in]  NameOpNode       NameOp object node defining a named object.
                                  If provided, append the new resource data node
                                  to the list of resource data elements of this
@@ -1437,8 +1437,8 @@ AmlCodeGenRdRegister (
 
   // Cf. ACPI 6.4, s14.7 Referencing the PCC address space
   // The AccessSize represents the Subspace Id for the PCC address space.
-  if (((AddressSpace != EFI_ACPI_6_4_PLATFORM_COMMUNICATION_CHANNEL) &&
-       (AccessSize > EFI_ACPI_6_4_QWORD)) ||
+  if (((AddressSpace != EFI_ACPI_6_6_PLATFORM_COMMUNICATION_CHANNEL) &&
+       (AccessSize > EFI_ACPI_6_6_QWORD)) ||
       ((NameOpNode == NULL) && (NewRdNode == NULL)))
   {
     ASSERT (0);

@@ -140,7 +140,7 @@ CpuNodeParser (
   }
 
   GicCInfo->AcpiProcessorUid = ProcUid;
-  GicCInfo->Flags            = EFI_ACPI_6_3_GIC_ENABLED;
+  GicCInfo->Flags            = EFI_ACPI_6_6_GIC_ENABLED;
   GicCInfo->MPIDR            = MpIdr;
 
   return EFI_SUCCESS;
@@ -319,7 +319,7 @@ GicCIntcNodeParser (
     Flags                = DT_IRQ_IS_EDGE_TRIGGERED (
                              Fdt32ToCpu (((UINT32 *)Data)[IRQ_FLAGS_OFFSET])
                              ) ?
-                           EFI_ACPI_6_3_VGIC_MAINTENANCE_INTERRUPT_MODE_FLAGS :
+                           EFI_ACPI_6_6_VGIC_MAINTENANCE_INTERRUPT_MODE_FLAGS :
                            0;
     for (GicCInfo = (CM_ARM_GICC_INFO *)GicCCmObjDesc->Data; CpuCount--; GicCInfo++) {
       GicCInfo->VGICMaintenanceInterrupt = MaintenanceInterrupt;

@@ -121,7 +121,7 @@ ArchReserveOffsets (
   ApicMode = CmX2ApicAffinity[0].ApicMode;
   for (Index = 0; Index < CmCount; Index++) {
     if ((CmX2ApicAffinity[Index].Flags &
-         ~EFI_ACPI_6_3_PROCESSOR_LOCAL_APIC_SAPIC_ENABLED) != 0)
+         ~EFI_ACPI_6_6_PROCESSOR_LOCAL_APIC_SAPIC_ENABLED) != 0)
     {
       DEBUG ((
         DEBUG_ERROR,
@@ -159,9 +159,9 @@ ArchReserveOffsets (
   mSratSubTable[EX64LocalApicX2ApicAffinityTableType].Offset = *ArchOffset;
 
   if (CmX2ApicAffinity[0].ApicMode == LocalApicModeX2Apic) {
-    *ArchOffset += sizeof (EFI_ACPI_6_3_PROCESSOR_LOCAL_X2APIC_AFFINITY_STRUCTURE) * CmCount;
+    *ArchOffset += sizeof (EFI_ACPI_6_6_PROCESSOR_LOCAL_X2APIC_AFFINITY_STRUCTURE) * CmCount;
   } else {
-    *ArchOffset += sizeof (EFI_ACPI_6_3_PROCESSOR_LOCAL_APIC_SAPIC_AFFINITY_STRUCTURE) * CmCount;
+    *ArchOffset += sizeof (EFI_ACPI_6_6_PROCESSOR_LOCAL_APIC_SAPIC_AFFINITY_STRUCTURE) * CmCount;
   }
 
   return EFI_SUCCESS;
@@ -182,25 +182,25 @@ EFI_STATUS
 EFIAPI
 AddArchObjects (
   IN CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL         *CONST  CfgMgrProtocol,
-  IN EFI_ACPI_6_3_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER *CONST  Srat
+  IN EFI_ACPI_6_6_SYSTEM_RESOURCE_AFFINITY_TABLE_HEADER *CONST  Srat
   )
 {
   EFI_STATUS                                                  Status;
   UINT32                                                      ProximityDomain;
   CM_X64_LOCAL_APIC_X2APIC_AFFINITY_INFO                      *CmX2ApicAffinity;
-  EFI_ACPI_6_3_PROCESSOR_LOCAL_APIC_SAPIC_AFFINITY_STRUCTURE  *ApicAffinity;
-  EFI_ACPI_6_3_PROCESSOR_LOCAL_X2APIC_AFFINITY_STRUCTURE      *X2ApicAffinity;
+  EFI_ACPI_6_6_PROCESSOR_LOCAL_APIC_SAPIC_AFFINITY_STRUCTURE  *ApicAffinity;
+  EFI_ACPI_6_6_PROCESSOR_LOCAL_X2APIC_AFFINITY_STRUCTURE      *X2ApicAffinity;
 
   CmX2ApicAffinity = (CM_X64_LOCAL_APIC_X2APIC_AFFINITY_INFO *)
                      mSratSubTable[EX64LocalApicX2ApicAffinityTableType].CmInfo;
 
   if (CmX2ApicAffinity->ApicMode == LocalApicModeX2Apic) {
-    X2ApicAffinity = (EFI_ACPI_6_3_PROCESSOR_LOCAL_X2APIC_AFFINITY_STRUCTURE *)
+    X2ApicAffinity = (EFI_ACPI_6_6_PROCESSOR_LOCAL_X2APIC_AFFINITY_STRUCTURE *)
                      ((UINT8 *)Srat +
                       mSratSubTable[EX64LocalApicX2ApicAffinityTableType].Offset);
     while (mSratSubTable[EX64LocalApicX2ApicAffinityTableType].Count-- != 0) {
-      X2ApicAffinity->Type         = EFI_ACPI_6_3_PROCESSOR_LOCAL_X2APIC_AFFINITY;
-      X2ApicAffinity->Length       = sizeof (EFI_ACPI_6_3_PROCESSOR_LOCAL_X2APIC_AFFINITY_STRUCTURE);
+      X2ApicAffinity->Type         = EFI_ACPI_6_6_PROCESSOR_LOCAL_X2APIC_AFFINITY;
+      X2ApicAffinity->Length       = sizeof (EFI_ACPI_6_6_PROCESSOR_LOCAL_X2APIC_AFFINITY_STRUCTURE);
       X2ApicAffinity->Reserved1[0] = EFI_ACPI_RESERVED_BYTE;
       X2ApicAffinity->Reserved1[1] = EFI_ACPI_RESERVED_BYTE;
       X2ApicAffinity->X2ApicId     = CmX2ApicAffinity->ApicId;
@@ -237,12 +237,12 @@ AddArchObjects (
       CmX2ApicAffinity++;
     }
   } else {
-    ApicAffinity = (EFI_ACPI_6_3_PROCESSOR_LOCAL_APIC_SAPIC_AFFINITY_STRUCTURE *)
+    ApicAffinity = (EFI_ACPI_6_6_PROCESSOR_LOCAL_APIC_SAPIC_AFFINITY_STRUCTURE *)
                    ((UINT8 *)Srat +
                     mSratSubTable[EX64LocalApicX2ApicAffinityTableType].Offset);
     while (mSratSubTable[EX64LocalApicX2ApicAffinityTableType].Count-- != 0) {
-      ApicAffinity->Type          = EFI_ACPI_6_3_PROCESSOR_LOCAL_APIC_SAPIC_AFFINITY;
-      ApicAffinity->Length        = sizeof (EFI_ACPI_6_3_PROCESSOR_LOCAL_APIC_SAPIC_AFFINITY_STRUCTURE);
+      ApicAffinity->Type          = EFI_ACPI_6_6_PROCESSOR_LOCAL_APIC_SAPIC_AFFINITY;
+      ApicAffinity->Length        = sizeof (EFI_ACPI_6_6_PROCESSOR_LOCAL_APIC_SAPIC_AFFINITY_STRUCTURE);
       ApicAffinity->ApicId        = CmX2ApicAffinity->ApicId & MAX_UINT8;
       ApicAffinity->Flags         = CmX2ApicAffinity->Flags;
       ApicAffinity->LocalSapicEid = 0;

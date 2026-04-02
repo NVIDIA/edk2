@@ -74,7 +74,7 @@ NOTE: This implementation ignores the possibility that the Serial settings may
 STATIC
 EFI_ACPI_SERIAL_PORT_CONSOLE_REDIRECTION_TABLE_4  AcpiSpcr = {
   ACPI_HEADER (
-    EFI_ACPI_6_2_SERIAL_PORT_CONSOLE_REDIRECTION_TABLE_SIGNATURE,
+    EFI_ACPI_6_6_SERIAL_PORT_CONSOLE_REDIRECTION_TABLE_SIGNATURE,
     EFI_ACPI_SERIAL_PORT_CONSOLE_REDIRECTION_TABLE_4,
     EFI_ACPI_SERIAL_PORT_CONSOLE_REDIRECTION_TABLE_REVISION_4
     ),
@@ -344,7 +344,7 @@ FreeSpcrTableEx (
 
   if ((TableList[1] == NULL) ||
       (TableList[1]->Signature !=
-       EFI_ACPI_6_3_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE))
+       EFI_ACPI_6_6_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE))
   {
     DEBUG ((DEBUG_ERROR, "ERROR: SPCR: Invalid SSDT table pointer.\n"));
     return EFI_INVALID_PARAMETER;
@@ -553,7 +553,7 @@ BuildSpcrTableEx (
   AcpiSpcr.BaseAddress.Address = SerialPortInfo->BaseAddress;
 
   // Set the access size
-  if (SerialPortInfo->AccessSize >= EFI_ACPI_6_3_QWORD) {
+  if (SerialPortInfo->AccessSize >= EFI_ACPI_6_6_QWORD) {
     Status = EFI_INVALID_PARAMETER;
     DEBUG ((
       DEBUG_ERROR,
@@ -561,18 +561,18 @@ BuildSpcrTableEx (
       Status
       ));
     goto error_handler;
-  } else if (SerialPortInfo->AccessSize == EFI_ACPI_6_3_UNDEFINED) {
+  } else if (SerialPortInfo->AccessSize == EFI_ACPI_6_6_UNDEFINED) {
     // 0 Undefined (legacy reasons)
     // Default to DWORD access size as the access
     // size field was introduced at a later date
     // and some ConfigurationManager implementations
     // may not be providing this field data
-    AcpiSpcr.BaseAddress.AccessSize = EFI_ACPI_6_3_DWORD;
+    AcpiSpcr.BaseAddress.AccessSize = EFI_ACPI_6_6_DWORD;
     if (SerialPortInfo->PortSubtype == EFI_ACPI_DBG2_PORT_SUBTYPE_SERIAL_FULL_16550) {
-      AcpiSpcr.BaseAddress.AddressSpaceId    = EFI_ACPI_6_3_SYSTEM_IO;
+      AcpiSpcr.BaseAddress.AddressSpaceId    = EFI_ACPI_6_6_SYSTEM_IO;
       AcpiSpcr.BaseAddress.RegisterBitWidth  = 8;
       AcpiSpcr.BaseAddress.RegisterBitOffset = 0;
-      AcpiSpcr.BaseAddress.AccessSize        = EFI_ACPI_6_3_UNDEFINED;
+      AcpiSpcr.BaseAddress.AccessSize        = EFI_ACPI_6_6_UNDEFINED;
     }
   } else {
     AcpiSpcr.BaseAddress.AccessSize = SerialPortInfo->AccessSize;
@@ -690,7 +690,7 @@ ACPI_TABLE_GENERATOR  SpcrGenerator = {
   // Generator Description
   L"ACPI.STD.SPCR.GENERATOR",
   // ACPI Table Signature
-  EFI_ACPI_6_3_SERIAL_PORT_CONSOLE_REDIRECTION_TABLE_SIGNATURE,
+  EFI_ACPI_6_6_SERIAL_PORT_CONSOLE_REDIRECTION_TABLE_SIGNATURE,
   // ACPI Table Revision supported by this Generator
   EFI_ACPI_SERIAL_PORT_CONSOLE_REDIRECTION_TABLE_REVISION_4,
   // Minimum supported ACPI Table Revision

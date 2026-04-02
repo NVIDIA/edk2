@@ -181,7 +181,7 @@ FreeDbg2TableEx (
   for (Index = 1; Index < TableCount; Index++) {
     if ((TableList[Index] == NULL) ||
         (TableList[Index]->Signature !=
-         EFI_ACPI_6_3_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE))
+         EFI_ACPI_6_6_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE))
     {
       DEBUG ((DEBUG_ERROR, "ERROR: DBG2: Invalid SSDT table pointer.\n"));
       return EFI_INVALID_PARAMETER;
@@ -222,7 +222,7 @@ PopulateDbg2Device (
   UINTN                                          Index;
   UINT16                                         Dbg2DeviceSize;
   EFI_ACPI_DBG2_DEBUG_DEVICE_INFORMATION_STRUCT  *CurrentDbg2Device;
-  EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE         *BaseAddressRegister;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE         *BaseAddressRegister;
   UINT32                                         *AddressSize;
   UINT64                                         TotalSize;
   CHAR8                                          *NamespaceString;
@@ -271,7 +271,7 @@ PopulateDbg2Device (
 
   // Calculate total size with overflow check
   TotalSize = (UINT64)sizeof (EFI_ACPI_DBG2_DEBUG_DEVICE_INFORMATION_STRUCT) +
-              ((UINT64)sizeof (EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE) + sizeof (UINT32)) * MemoryRangesCount +
+              ((UINT64)sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE) + sizeof (UINT32)) * MemoryRangesCount +
               (UINT64)sizeof (CHAR8) * DBG2_NAMESPACESTRING_FIELD_SIZE;
 
   if (TotalSize > MAX_UINT16) {
@@ -292,14 +292,14 @@ PopulateDbg2Device (
   CurrentDbg2Device->PortSubtype                     = DeviceInfo->PortSubtype;
   CurrentDbg2Device->BaseAddressRegisterOffset       = sizeof (EFI_ACPI_DBG2_DEBUG_DEVICE_INFORMATION_STRUCT);
   CurrentDbg2Device->AddressSizeOffset               = CurrentDbg2Device->BaseAddressRegisterOffset +
-                                                       ((UINT16)sizeof (EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE) * ((UINT8)MemoryRangesCount));
+                                                       ((UINT16)sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE) * ((UINT8)MemoryRangesCount));
   CurrentDbg2Device->NameSpaceStringLength = DBG2_NAMESPACESTRING_FIELD_SIZE;
   CurrentDbg2Device->NameSpaceStringOffset = CurrentDbg2Device->AddressSizeOffset +
                                              ((UINT16)sizeof (UINT32) * ((UINT8)MemoryRangesCount));
-  BaseAddressRegister = (EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE *)((UINT8 *)CurrentDbg2Device + CurrentDbg2Device->BaseAddressRegisterOffset);
+  BaseAddressRegister = (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE *)((UINT8 *)CurrentDbg2Device + CurrentDbg2Device->BaseAddressRegisterOffset);
   AddressSize         = (UINT32 *)((UINT8 *)CurrentDbg2Device + CurrentDbg2Device->AddressSizeOffset);
   for (Index = 0; Index < MemoryRangesCount; Index++) {
-    BaseAddressRegister->AddressSpaceId    = EFI_ACPI_6_3_SYSTEM_MEMORY;
+    BaseAddressRegister->AddressSpaceId    = EFI_ACPI_6_6_SYSTEM_MEMORY;
     BaseAddressRegister->RegisterBitWidth  = 32;
     BaseAddressRegister->RegisterBitOffset = 0;
     BaseAddressRegister->AccessSize        = DeviceInfo->AccessSize;
@@ -370,7 +370,7 @@ BuildDbg2SerialPortEntry  (
   SerialPortDeviceInfo.PortType             = EFI_ACPI_DBG2_PORT_TYPE_SERIAL;
   SerialPortDeviceInfo.PortSubtype          = SerialPortInfo->PortSubtype;
   // Set the access size
-  if (SerialPortInfo->AccessSize >= EFI_ACPI_6_3_QWORD) {
+  if (SerialPortInfo->AccessSize >= EFI_ACPI_6_6_QWORD) {
     Status = EFI_INVALID_PARAMETER;
     DEBUG ((
       DEBUG_ERROR,
@@ -378,13 +378,13 @@ BuildDbg2SerialPortEntry  (
       Status
       ));
     goto error_handler;
-  } else if (SerialPortInfo->AccessSize == EFI_ACPI_6_3_UNDEFINED) {
+  } else if (SerialPortInfo->AccessSize == EFI_ACPI_6_6_UNDEFINED) {
     // 0 Undefined (legacy reasons)
     // Default to DWORD access size as the access
     // size field was introduced at a later date
     // and some ConfigurationManager implementations
     // may not be providing this field data
-    SerialPortDeviceInfo.AccessSize = EFI_ACPI_6_3_DWORD;
+    SerialPortDeviceInfo.AccessSize = EFI_ACPI_6_6_DWORD;
   } else {
     SerialPortDeviceInfo.AccessSize = SerialPortInfo->AccessSize;
   }
@@ -601,7 +601,7 @@ BuildDbg2TableEx (
 
         // Calculate total size with overflow check
         TotalSize = (UINT64)sizeof (EFI_ACPI_DBG2_DEBUG_DEVICE_INFORMATION_STRUCT) +
-                    ((UINT64)sizeof (EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE) + sizeof (UINT32)) * Dbg2DevicesMemoryRangeCount[Index] +
+                    ((UINT64)sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE) + sizeof (UINT32)) * Dbg2DevicesMemoryRangeCount[Index] +
                     (UINT64)sizeof (CHAR8) * DBG2_NAMESPACESTRING_FIELD_SIZE;
 
         if (TotalSize > MAX_UINT32) {
@@ -642,7 +642,7 @@ BuildDbg2TableEx (
   if (SerialPortCount > 0) {
     TotalSize = (UINT64)AcpiDbg2Len +
                 (UINT64)sizeof (EFI_ACPI_DBG2_DEBUG_DEVICE_INFORMATION_STRUCT) +
-                ((UINT64)sizeof (EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE) + sizeof (UINT32)) * SerialPortCount +
+                ((UINT64)sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE) + sizeof (UINT32)) * SerialPortCount +
                 (UINT64)sizeof (CHAR8) * DBG2_NAMESPACESTRING_FIELD_SIZE;
 
     if (TotalSize > MAX_UINT32) {
@@ -772,7 +772,7 @@ ACPI_TABLE_GENERATOR  Dbg2Generator = {
   // Generator Description
   L"ACPI.STD.DBG2.GENERATOR",
   // ACPI Table Signature
-  EFI_ACPI_6_3_DEBUG_PORT_2_TABLE_SIGNATURE,
+  EFI_ACPI_6_6_DEBUG_PORT_2_TABLE_SIGNATURE,
   // ACPI Table Revision supported by this Generator
   EFI_ACPI_DBG2_DEBUG_DEVICE_INFORMATION_STRUCT_REVISION,
   // Minimum supported ACPI Table Revision

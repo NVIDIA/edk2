@@ -459,7 +459,7 @@ FreeSsdtCmn600TableResourcesEx (
   for (Index = 0; Index < TableCount; Index++) {
     if ((TableList[Index] != NULL) &&
         (TableList[Index]->Signature ==
-         EFI_ACPI_6_3_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE))
+         EFI_ACPI_6_6_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE))
     {
       FreePool (TableList[Index]);
     } else {
@@ -640,7 +640,7 @@ ACPI_TABLE_GENERATOR  SsdtCmn600Generator = {
   // Generator Description
   L"ACPI.STD.SSDT.CMN600.GENERATOR",
   // ACPI Table Signature
-  EFI_ACPI_6_3_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE,
+  EFI_ACPI_6_6_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE,
   // ACPI Table Revision - Unused
   0,
   // Minimum ACPI Table Revision - Unused
