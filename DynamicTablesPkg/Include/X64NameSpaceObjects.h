@@ -131,12 +131,12 @@ typedef struct CmX64FadtXpmBlockInfo {
   /** This is the System control interrupt command information of the FADT Table
       described in the ACPI Specification
   */
-  EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE    XPm1aEvtBlk;
-  EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE    XPm1bEvtBlk;
-  EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE    XPm1aCntBlk;
-  EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE    XPm1bCntBlk;
-  EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE    XPm2CntBlk;
-  EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE    XPmTmrBlk;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    XPm1aEvtBlk;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    XPm1bEvtBlk;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    XPm1aCntBlk;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    XPm1bCntBlk;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    XPm2CntBlk;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    XPmTmrBlk;
 } CM_X64_FADT_X_PM_BLOCK_INFO;
 
 /** A structure that describes the
@@ -148,8 +148,8 @@ typedef struct CmX64FadtXgpeBlockInfo {
   /** This is the GPE Block information of the FADT Table
       described in the ACPI Specification
   */
-  EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE    XGpe0Blk;
-  EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE    XGpe1Blk;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    XGpe0Blk;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    XGpe1Blk;
 } CM_X64_FADT_X_GPE_BLOCK_INFO;
 
 /** A structure that describes the
@@ -158,8 +158,8 @@ typedef struct CmX64FadtXgpeBlockInfo {
     ID: EX64ObjFadtSleepBlockInfo
 */
 typedef struct CmX64FadtSleepBlockInfo {
-  EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE    SleepControlReg;
-  EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE    SleepStatusReg;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    SleepControlReg;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    SleepStatusReg;
 } CM_X64_FADT_SLEEP_BLOCK_INFO;
 
 /** A structure that describes the
@@ -168,7 +168,7 @@ typedef struct CmX64FadtSleepBlockInfo {
     ID: EX64ObjFadtResetBlockInfo
 */
 typedef struct CmX64FadtResetBlockInfo {
-  EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE    ResetReg;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    ResetReg;
   UINT8                                     ResetValue;
 } CM_X64_FADT_RESET_BLOCK_INFO;
 

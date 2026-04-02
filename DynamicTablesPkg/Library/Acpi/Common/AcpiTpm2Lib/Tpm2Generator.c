@@ -517,7 +517,7 @@ ACPI_TABLE_GENERATOR  Tpm2Generator = {
   // Generator Description
   L"ACPI.STD.TPM2.GENERATOR",
   // ACPI Table Signature
-  EFI_ACPI_6_4_TRUSTED_COMPUTING_PLATFORM_2_TABLE_SIGNATURE,
+  EFI_ACPI_6_6_TRUSTED_COMPUTING_PLATFORM_2_TABLE_SIGNATURE,
   // ACPI Table Revision supported by this Generator
   EFI_TPM2_ACPI_TABLE_REVISION_5,
   // Minimum supported ACPI Table Revision

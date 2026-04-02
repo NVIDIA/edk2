@@ -251,37 +251,37 @@ DynamicTablesScmiInfoGetFastChannel (
                        FcLimitsSet.ChanAddrLow;
   FcLimitsMinSetAddr = FcLimitsMaxSetAddr + 0x4;
 
-  CpcInfo->Revision                          = EFI_ACPI_6_5_AML_CPC_REVISION;
+  CpcInfo->Revision                          = EFI_ACPI_6_6_AML_CPC_REVISION;
   CpcInfo->HighestPerformanceInteger         = LevelArray[LevelCount - 1].Level;
   CpcInfo->NominalPerformanceInteger         = DomainAttributes.SustainedPerfLevel;
   CpcInfo->LowestNonlinearPerformanceInteger = LevelArray[0].Level;
   CpcInfo->LowestPerformanceInteger          = LevelArray[0].Level;
 
-  CpcInfo->DesiredPerformanceRegister.AddressSpaceId    = EFI_ACPI_6_5_SYSTEM_MEMORY;
+  CpcInfo->DesiredPerformanceRegister.AddressSpaceId    = EFI_ACPI_6_6_SYSTEM_MEMORY;
   CpcInfo->DesiredPerformanceRegister.RegisterBitWidth  = 32;
   CpcInfo->DesiredPerformanceRegister.RegisterBitOffset = 0;
-  CpcInfo->DesiredPerformanceRegister.AccessSize        = EFI_ACPI_6_5_DWORD;
+  CpcInfo->DesiredPerformanceRegister.AccessSize        = EFI_ACPI_6_6_DWORD;
   CpcInfo->DesiredPerformanceRegister.Address           = FcLevelGetAddr;
 
-  CpcInfo->MinimumPerformanceRegister.AddressSpaceId    = EFI_ACPI_6_5_SYSTEM_MEMORY;
+  CpcInfo->MinimumPerformanceRegister.AddressSpaceId    = EFI_ACPI_6_6_SYSTEM_MEMORY;
   CpcInfo->MinimumPerformanceRegister.RegisterBitWidth  = 32;
   CpcInfo->MinimumPerformanceRegister.RegisterBitOffset = 0;
-  CpcInfo->MinimumPerformanceRegister.AccessSize        = EFI_ACPI_6_5_DWORD;
+  CpcInfo->MinimumPerformanceRegister.AccessSize        = EFI_ACPI_6_6_DWORD;
   CpcInfo->MinimumPerformanceRegister.Address           = FcLimitsMinSetAddr;
 
-  CpcInfo->MaximumPerformanceRegister.AddressSpaceId    = EFI_ACPI_6_5_SYSTEM_MEMORY;
+  CpcInfo->MaximumPerformanceRegister.AddressSpaceId    = EFI_ACPI_6_6_SYSTEM_MEMORY;
   CpcInfo->MaximumPerformanceRegister.RegisterBitWidth  = 32;
   CpcInfo->MaximumPerformanceRegister.RegisterBitOffset = 0;
-  CpcInfo->MaximumPerformanceRegister.AccessSize        = EFI_ACPI_6_5_DWORD;
+  CpcInfo->MaximumPerformanceRegister.AccessSize        = EFI_ACPI_6_6_DWORD;
   CpcInfo->MaximumPerformanceRegister.Address           = FcLimitsMaxSetAddr;
 
-  CpcInfo->ReferencePerformanceCounterRegister.AddressSpaceId    = EFI_ACPI_6_5_FUNCTIONAL_FIXED_HARDWARE;
+  CpcInfo->ReferencePerformanceCounterRegister.AddressSpaceId    = EFI_ACPI_6_6_FUNCTIONAL_FIXED_HARDWARE;
   CpcInfo->ReferencePerformanceCounterRegister.RegisterBitWidth  = 0x40;
   CpcInfo->ReferencePerformanceCounterRegister.RegisterBitOffset = 0;
   CpcInfo->ReferencePerformanceCounterRegister.AccessSize        = ARM_FFH_REFERENCE_PERF_COUNTER_REGISTER;
   CpcInfo->ReferencePerformanceCounterRegister.Address           = 0x4;
 
-  CpcInfo->DeliveredPerformanceCounterRegister.AddressSpaceId    = EFI_ACPI_6_5_FUNCTIONAL_FIXED_HARDWARE;
+  CpcInfo->DeliveredPerformanceCounterRegister.AddressSpaceId    = EFI_ACPI_6_6_FUNCTIONAL_FIXED_HARDWARE;
   CpcInfo->DeliveredPerformanceCounterRegister.RegisterBitWidth  = 0x40;
   CpcInfo->DeliveredPerformanceCounterRegister.RegisterBitOffset = 0;
   CpcInfo->DeliveredPerformanceCounterRegister.AccessSize        = ARM_FFH_DELIVERED_PERF_COUNTER_REGISTER;

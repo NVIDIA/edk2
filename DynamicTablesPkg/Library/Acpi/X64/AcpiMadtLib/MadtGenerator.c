@@ -30,14 +30,14 @@
                         LocalApicCount,                                                     \
                         LocalApicNmiCount)                                                  \
   (                                                                                         \
-    sizeof (EFI_ACPI_6_5_MULTIPLE_APIC_DESCRIPTION_TABLE_HEADER) +                          \
-    (sizeof (EFI_ACPI_6_5_IO_APIC_STRUCTURE) * IoApicCount) +                               \
-    (sizeof (EFI_ACPI_6_5_INTERRUPT_SOURCE_OVERRIDE_STRUCTURE) * IntrSourceOverrideCount) + \
+    sizeof (EFI_ACPI_6_6_MULTIPLE_APIC_DESCRIPTION_TABLE_HEADER) +                          \
+    (sizeof (EFI_ACPI_6_6_IO_APIC_STRUCTURE) * IoApicCount) +                               \
+    (sizeof (EFI_ACPI_6_6_INTERRUPT_SOURCE_OVERRIDE_STRUCTURE) * IntrSourceOverrideCount) + \
     ((ApicMode == LocalApicModeXApic) ?                                                     \
-      ((sizeof (EFI_ACPI_6_5_PROCESSOR_LOCAL_APIC_STRUCTURE) * LocalApicCount) +            \
-       (sizeof (EFI_ACPI_6_5_LOCAL_APIC_NMI_STRUCTURE) * LocalApicNmiCount)) :              \
-      ((sizeof (EFI_ACPI_6_5_PROCESSOR_LOCAL_X2APIC_STRUCTURE) * LocalApicCount) +          \
-       (sizeof (EFI_ACPI_6_5_LOCAL_X2APIC_NMI_STRUCTURE) * LocalApicNmiCount))              \
+      ((sizeof (EFI_ACPI_6_6_PROCESSOR_LOCAL_APIC_STRUCTURE) * LocalApicCount) +            \
+       (sizeof (EFI_ACPI_6_6_LOCAL_APIC_NMI_STRUCTURE) * LocalApicNmiCount)) :              \
+      ((sizeof (EFI_ACPI_6_6_PROCESSOR_LOCAL_X2APIC_STRUCTURE) * LocalApicCount) +          \
+       (sizeof (EFI_ACPI_6_6_LOCAL_X2APIC_NMI_STRUCTURE) * LocalApicNmiCount))              \
     )                                                                                       \
   )
 
@@ -123,13 +123,13 @@ BuildMadtTable (
   CM_X64_LOCAL_APIC_X2APIC_INFO                        *LocalApic;
   CM_X64_LOCAL_APIC_X2APIC_NMI_INFO                    *LocalApicNmi;
   CM_X64_MADT_INFO                                     *MadtInfo;
-  EFI_ACPI_6_5_INTERRUPT_SOURCE_OVERRIDE_STRUCTURE     *IntrSourceOverrideEntry;
-  EFI_ACPI_6_5_IO_APIC_STRUCTURE                       *IoApicEntry;
-  EFI_ACPI_6_5_LOCAL_APIC_NMI_STRUCTURE                *LocalApicNmiEntry;
-  EFI_ACPI_6_5_LOCAL_X2APIC_NMI_STRUCTURE              *LocalX2ApicNmiEntry;
-  EFI_ACPI_6_5_MULTIPLE_APIC_DESCRIPTION_TABLE_HEADER  *MadtHeader;
-  EFI_ACPI_6_5_PROCESSOR_LOCAL_APIC_STRUCTURE          *LocalApicEntry;
-  EFI_ACPI_6_5_PROCESSOR_LOCAL_X2APIC_STRUCTURE        *LocalX2ApicEntry;
+  EFI_ACPI_6_6_INTERRUPT_SOURCE_OVERRIDE_STRUCTURE     *IntrSourceOverrideEntry;
+  EFI_ACPI_6_6_IO_APIC_STRUCTURE                       *IoApicEntry;
+  EFI_ACPI_6_6_LOCAL_APIC_NMI_STRUCTURE                *LocalApicNmiEntry;
+  EFI_ACPI_6_6_LOCAL_X2APIC_NMI_STRUCTURE              *LocalX2ApicNmiEntry;
+  EFI_ACPI_6_6_MULTIPLE_APIC_DESCRIPTION_TABLE_HEADER  *MadtHeader;
+  EFI_ACPI_6_6_PROCESSOR_LOCAL_APIC_STRUCTURE          *LocalApicEntry;
+  EFI_ACPI_6_6_PROCESSOR_LOCAL_X2APIC_STRUCTURE        *LocalX2ApicEntry;
   EFI_STATUS                                           Status;
   LOCAL_APIC_MODE                                      ApicMode;
   UINT32                                               AcpiMadtSize;
@@ -180,7 +180,7 @@ BuildMadtTable (
     return Status;
   }
 
-  if ((MadtInfo->Flags & ~(UINT32)EFI_ACPI_6_5_PCAT_COMPAT) != 0) {
+  if ((MadtInfo->Flags & ~(UINT32)EFI_ACPI_6_6_PCAT_COMPAT) != 0) {
     DEBUG ((
       DEBUG_ERROR,
       "ERROR: MADT: Invalid MADT Info object. Flags = 0x%x\n",
@@ -232,7 +232,7 @@ BuildMadtTable (
 
   for (Index = 0; Index < LocalApicCount; Index++) {
     if ((LocalApic[Index].Flags &
-         ~(UINT32)(EFI_ACPI_6_5_LOCAL_APIC_ENABLED|EFI_ACPI_6_5_LOCAL_APIC_ONLINE_CAPABLE)) != 0)
+         ~(UINT32)(EFI_ACPI_6_6_LOCAL_APIC_ENABLED|EFI_ACPI_6_6_LOCAL_APIC_ONLINE_CAPABLE)) != 0)
     {
       DEBUG ((
         DEBUG_ERROR,
@@ -318,7 +318,7 @@ BuildMadtTable (
 
   for (Index = 0; Index < IntrSourceOverrideCount; Index++) {
     if ((IntrSourceOverride[Index].Flags &
-         ~(UINT32)(EFI_ACPI_6_5_POLARITY|EFI_ACPI_6_5_TRIGGER_MODE)) != 0)
+         ~(UINT32)(EFI_ACPI_6_6_POLARITY|EFI_ACPI_6_6_TRIGGER_MODE)) != 0)
     {
       DEBUG ((
         DEBUG_ERROR,
@@ -359,7 +359,7 @@ BuildMadtTable (
   }
 
   for (Index = 0; Index < LocalApicNmiCount; Index++) {
-    if ((LocalApicNmi[Index].Flags & ~(UINT32)(EFI_ACPI_6_5_POLARITY|EFI_ACPI_6_5_TRIGGER_MODE)) != 0) {
+    if ((LocalApicNmi[Index].Flags & ~(UINT32)(EFI_ACPI_6_6_POLARITY|EFI_ACPI_6_6_TRIGGER_MODE)) != 0) {
       DEBUG ((
         DEBUG_ERROR,
         "ERROR: MADT: Invalid Local APIC NMI Info object. Flags = 0x%x\n",
@@ -417,27 +417,27 @@ BuildMadtTable (
     return Status;
   }
 
-  MadtHeader                   = (EFI_ACPI_6_5_MULTIPLE_APIC_DESCRIPTION_TABLE_HEADER *)(VOID *)AcpiMadtPtr;
+  MadtHeader                   = (EFI_ACPI_6_6_MULTIPLE_APIC_DESCRIPTION_TABLE_HEADER *)(VOID *)AcpiMadtPtr;
   MadtHeader->LocalApicAddress = MadtInfo->LocalApicAddress;
   MadtHeader->Flags            = MadtInfo->Flags;
 
-  NextPtrSize = sizeof (EFI_ACPI_6_5_MULTIPLE_APIC_DESCRIPTION_TABLE_HEADER);
+  NextPtrSize = sizeof (EFI_ACPI_6_6_MULTIPLE_APIC_DESCRIPTION_TABLE_HEADER);
   if (ApicMode == LocalApicModeXApic) {
-    LocalApicEntry = (EFI_ACPI_6_5_PROCESSOR_LOCAL_APIC_STRUCTURE *)(AcpiMadtPtr + NextPtrSize);
+    LocalApicEntry = (EFI_ACPI_6_6_PROCESSOR_LOCAL_APIC_STRUCTURE *)(AcpiMadtPtr + NextPtrSize);
     for (Index = 0; Index < LocalApicCount; Index++) {
-      LocalApicEntry[Index].Type             = EFI_ACPI_6_5_PROCESSOR_LOCAL_APIC;
-      LocalApicEntry[Index].Length           = sizeof (EFI_ACPI_6_5_PROCESSOR_LOCAL_APIC_STRUCTURE);
+      LocalApicEntry[Index].Type             = EFI_ACPI_6_6_PROCESSOR_LOCAL_APIC;
+      LocalApicEntry[Index].Length           = sizeof (EFI_ACPI_6_6_PROCESSOR_LOCAL_APIC_STRUCTURE);
       LocalApicEntry[Index].AcpiProcessorUid = (UINT8)LocalApic[Index].AcpiProcessorUid;
       LocalApicEntry[Index].ApicId           = (UINT8)LocalApic[Index].ApicId;
       LocalApicEntry[Index].Flags            = LocalApic[Index].Flags;
     }
 
-    NextPtrSize += (sizeof (EFI_ACPI_6_5_PROCESSOR_LOCAL_APIC_STRUCTURE) * LocalApicCount);
+    NextPtrSize += (sizeof (EFI_ACPI_6_6_PROCESSOR_LOCAL_APIC_STRUCTURE) * LocalApicCount);
   } else {
-    LocalX2ApicEntry = (EFI_ACPI_6_5_PROCESSOR_LOCAL_X2APIC_STRUCTURE *)(AcpiMadtPtr + NextPtrSize);
+    LocalX2ApicEntry = (EFI_ACPI_6_6_PROCESSOR_LOCAL_X2APIC_STRUCTURE *)(AcpiMadtPtr + NextPtrSize);
     for (Index = 0; Index < LocalApicCount; Index++) {
-      LocalX2ApicEntry[Index].Type             = EFI_ACPI_6_5_PROCESSOR_LOCAL_X2APIC;
-      LocalX2ApicEntry[Index].Length           = sizeof (EFI_ACPI_6_5_PROCESSOR_LOCAL_X2APIC_STRUCTURE);
+      LocalX2ApicEntry[Index].Type             = EFI_ACPI_6_6_PROCESSOR_LOCAL_X2APIC;
+      LocalX2ApicEntry[Index].Length           = sizeof (EFI_ACPI_6_6_PROCESSOR_LOCAL_X2APIC_STRUCTURE);
       LocalX2ApicEntry[Index].Reserved[0]      = 0;
       LocalX2ApicEntry[Index].Reserved[1]      = 0;
       LocalX2ApicEntry[Index].X2ApicId         = LocalApic[Index].ApicId;
@@ -445,46 +445,46 @@ BuildMadtTable (
       LocalX2ApicEntry[Index].AcpiProcessorUid = LocalApic[Index].AcpiProcessorUid;
     }
 
-    NextPtrSize += (sizeof (EFI_ACPI_6_5_PROCESSOR_LOCAL_X2APIC_STRUCTURE) * LocalApicCount);
+    NextPtrSize += (sizeof (EFI_ACPI_6_6_PROCESSOR_LOCAL_X2APIC_STRUCTURE) * LocalApicCount);
   }
 
-  IoApicEntry = (EFI_ACPI_6_5_IO_APIC_STRUCTURE *)(AcpiMadtPtr + NextPtrSize);
+  IoApicEntry = (EFI_ACPI_6_6_IO_APIC_STRUCTURE *)(AcpiMadtPtr + NextPtrSize);
   for (Index = 0; Index < IoApicCount; Index++) {
-    IoApicEntry[Index].Type                      = EFI_ACPI_6_5_IO_APIC;
-    IoApicEntry[Index].Length                    = sizeof (EFI_ACPI_6_5_IO_APIC_STRUCTURE);
+    IoApicEntry[Index].Type                      = EFI_ACPI_6_6_IO_APIC;
+    IoApicEntry[Index].Length                    = sizeof (EFI_ACPI_6_6_IO_APIC_STRUCTURE);
     IoApicEntry[Index].IoApicId                  = IoApic[Index].IoApicId;
     IoApicEntry[Index].Reserved                  = 0;
     IoApicEntry[Index].IoApicAddress             = IoApic[Index].IoApicAddress;
     IoApicEntry[Index].GlobalSystemInterruptBase = IoApic[Index].GlobalSystemInterruptBase;
   }
 
-  NextPtrSize += (sizeof (EFI_ACPI_6_5_IO_APIC_STRUCTURE) * IoApicCount);
+  NextPtrSize += (sizeof (EFI_ACPI_6_6_IO_APIC_STRUCTURE) * IoApicCount);
 
-  IntrSourceOverrideEntry = (EFI_ACPI_6_5_INTERRUPT_SOURCE_OVERRIDE_STRUCTURE *)(AcpiMadtPtr + NextPtrSize);
+  IntrSourceOverrideEntry = (EFI_ACPI_6_6_INTERRUPT_SOURCE_OVERRIDE_STRUCTURE *)(AcpiMadtPtr + NextPtrSize);
   for (Index = 0; Index < IntrSourceOverrideCount; Index++) {
-    IntrSourceOverrideEntry[Index].Type                  = EFI_ACPI_6_5_INTERRUPT_SOURCE_OVERRIDE;
-    IntrSourceOverrideEntry[Index].Length                = sizeof (EFI_ACPI_6_5_INTERRUPT_SOURCE_OVERRIDE_STRUCTURE);
+    IntrSourceOverrideEntry[Index].Type                  = EFI_ACPI_6_6_INTERRUPT_SOURCE_OVERRIDE;
+    IntrSourceOverrideEntry[Index].Length                = sizeof (EFI_ACPI_6_6_INTERRUPT_SOURCE_OVERRIDE_STRUCTURE);
     IntrSourceOverrideEntry[Index].Bus                   = IntrSourceOverride[Index].Bus;
     IntrSourceOverrideEntry[Index].Source                = IntrSourceOverride[Index].Source;
     IntrSourceOverrideEntry[Index].GlobalSystemInterrupt = IntrSourceOverride[Index].GlobalSystemInterrupt;
     IntrSourceOverrideEntry[Index].Flags                 = IntrSourceOverride[Index].Flags;
   }
 
-  NextPtrSize += (sizeof (EFI_ACPI_6_5_INTERRUPT_SOURCE_OVERRIDE_STRUCTURE) * IntrSourceOverrideCount);
+  NextPtrSize += (sizeof (EFI_ACPI_6_6_INTERRUPT_SOURCE_OVERRIDE_STRUCTURE) * IntrSourceOverrideCount);
   if (ApicMode == LocalApicModeXApic) {
-    LocalApicNmiEntry = (EFI_ACPI_6_5_LOCAL_APIC_NMI_STRUCTURE *)(AcpiMadtPtr + NextPtrSize);
+    LocalApicNmiEntry = (EFI_ACPI_6_6_LOCAL_APIC_NMI_STRUCTURE *)(AcpiMadtPtr + NextPtrSize);
     for (Index = 0; Index < LocalApicNmiCount; Index++) {
-      LocalApicNmiEntry[Index].Type             = EFI_ACPI_6_5_LOCAL_APIC_NMI;
-      LocalApicNmiEntry[Index].Length           = sizeof (EFI_ACPI_6_5_LOCAL_APIC_NMI_STRUCTURE);
+      LocalApicNmiEntry[Index].Type             = EFI_ACPI_6_6_LOCAL_APIC_NMI;
+      LocalApicNmiEntry[Index].Length           = sizeof (EFI_ACPI_6_6_LOCAL_APIC_NMI_STRUCTURE);
       LocalApicNmiEntry[Index].AcpiProcessorUid = (UINT8)LocalApicNmi[Index].AcpiProcessorUid;
       LocalApicNmiEntry[Index].Flags            = LocalApicNmi[Index].Flags;
       LocalApicNmiEntry[Index].LocalApicLint    = LocalApicNmi[Index].LocalApicLint;
     }
   } else {
-    LocalX2ApicNmiEntry = (EFI_ACPI_6_5_LOCAL_X2APIC_NMI_STRUCTURE *)(AcpiMadtPtr + NextPtrSize);
+    LocalX2ApicNmiEntry = (EFI_ACPI_6_6_LOCAL_X2APIC_NMI_STRUCTURE *)(AcpiMadtPtr + NextPtrSize);
     for (Index = 0; Index < LocalApicNmiCount; Index++) {
-      LocalX2ApicNmiEntry[Index].Type             = EFI_ACPI_6_5_LOCAL_X2APIC_NMI;
-      LocalX2ApicNmiEntry[Index].Length           = sizeof (EFI_ACPI_6_5_LOCAL_X2APIC_NMI_STRUCTURE);
+      LocalX2ApicNmiEntry[Index].Type             = EFI_ACPI_6_6_LOCAL_X2APIC_NMI;
+      LocalX2ApicNmiEntry[Index].Length           = sizeof (EFI_ACPI_6_6_LOCAL_X2APIC_NMI_STRUCTURE);
       LocalX2ApicNmiEntry[Index].AcpiProcessorUid = LocalApicNmi[Index].AcpiProcessorUid;
       LocalX2ApicNmiEntry[Index].Flags            = LocalApicNmi[Index].Flags;
       LocalX2ApicNmiEntry[Index].LocalX2ApicLint  = LocalApicNmi[Index].LocalApicLint;
@@ -527,11 +527,11 @@ ACPI_TABLE_GENERATOR  MadtGenerator = {
   // Generator Description
   L"ACPI.STD.MADT.GENERATOR",
   // ACPI Table Signature
-  EFI_ACPI_6_5_MULTIPLE_APIC_DESCRIPTION_TABLE_SIGNATURE,
+  EFI_ACPI_6_6_MULTIPLE_APIC_DESCRIPTION_TABLE_SIGNATURE,
   // ACPI Table Revision supported by this Generator
-  EFI_ACPI_6_5_MULTIPLE_APIC_DESCRIPTION_TABLE_REVISION,
+  EFI_ACPI_6_6_MULTIPLE_APIC_DESCRIPTION_TABLE_REVISION,
   // Minimum supported ACPI Table Revision
-  EFI_ACPI_6_5_MULTIPLE_APIC_DESCRIPTION_TABLE_REVISION,
+  EFI_ACPI_6_6_MULTIPLE_APIC_DESCRIPTION_TABLE_REVISION,
   // Creator ID
   TABLE_GENERATOR_CREATOR_ID,
   // Creator Revision

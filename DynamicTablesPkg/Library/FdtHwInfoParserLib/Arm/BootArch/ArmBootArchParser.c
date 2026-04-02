@@ -78,10 +78,10 @@ PsciNodeParser (
 
   // Check PSCI conduit.
   if (AsciiStrnCmp (Data, PsciMethod[0], DataSize) == 0) {
-    BootArchInfo->BootArchFlags = EFI_ACPI_6_3_ARM_PSCI_COMPLIANT;
+    BootArchInfo->BootArchFlags = EFI_ACPI_6_6_ARM_PSCI_COMPLIANT;
   } else if (AsciiStrnCmp (Data, PsciMethod[1], DataSize) == 0) {
-    BootArchInfo->BootArchFlags = (EFI_ACPI_6_3_ARM_PSCI_COMPLIANT |
-                                   EFI_ACPI_6_3_ARM_PSCI_USE_HVC);
+    BootArchInfo->BootArchFlags = (EFI_ACPI_6_6_ARM_PSCI_COMPLIANT |
+                                   EFI_ACPI_6_6_ARM_PSCI_USE_HVC);
   }
 
   return EFI_SUCCESS;

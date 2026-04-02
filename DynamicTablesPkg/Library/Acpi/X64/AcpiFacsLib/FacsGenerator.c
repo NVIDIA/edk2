@@ -31,10 +31,10 @@ GET_OBJECT_LIST (
 /** The ACPI FACS Table.
 */
 STATIC
-EFI_ACPI_6_5_FIRMWARE_ACPI_CONTROL_STRUCTURE  AcpiFacs = {
-  EFI_ACPI_6_5_FIRMWARE_ACPI_CONTROL_STRUCTURE_SIGNATURE,
+EFI_ACPI_6_6_FIRMWARE_ACPI_CONTROL_STRUCTURE  AcpiFacs = {
+  EFI_ACPI_6_6_FIRMWARE_ACPI_CONTROL_STRUCTURE_SIGNATURE,
   // Length
-  sizeof (EFI_ACPI_6_5_FIRMWARE_ACPI_CONTROL_STRUCTURE),
+  sizeof (EFI_ACPI_6_6_FIRMWARE_ACPI_CONTROL_STRUCTURE),
   // Hardware Signature
   0,
   // Firmware Waking Vector
@@ -67,9 +67,9 @@ AcpiFacsUpdateHardwareSignature (
   VOID
   )
 {
-  EFI_ACPI_6_5_FIRMWARE_ACPI_CONTROL_STRUCTURE  *Facs;
-  EFI_ACPI_6_5_FIXED_ACPI_DESCRIPTION_TABLE     *Fadt;
-  EFI_ACPI_6_5_ROOT_SYSTEM_DESCRIPTION_POINTER  *Rsdp;
+  EFI_ACPI_6_6_FIRMWARE_ACPI_CONTROL_STRUCTURE  *Facs;
+  EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE     *Fadt;
+  EFI_ACPI_6_6_ROOT_SYSTEM_DESCRIPTION_POINTER  *Rsdp;
   EFI_ACPI_DESCRIPTION_HEADER                   *Table;
   EFI_ACPI_DESCRIPTION_HEADER                   *Xsdt;
   EFI_ACPI_DESCRIPTION_HEADER                   *Dsdt;
@@ -131,9 +131,9 @@ AcpiFacsUpdateHardwareSignature (
              );
       CollectedCrc[0] = ComputedCrc;
       /// check if Table is FADT
-      if (Table->Signature == EFI_ACPI_6_5_FIXED_ACPI_DESCRIPTION_TABLE_SIGNATURE) {
+      if (Table->Signature == EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE_SIGNATURE) {
         Dsdt = NULL;
-        Fadt = (EFI_ACPI_6_5_FIXED_ACPI_DESCRIPTION_TABLE *)Table;
+        Fadt = (EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE *)Table;
         if (Fadt->XDsdt != 0) {
           Dsdt = (EFI_ACPI_DESCRIPTION_HEADER *)(UINTN)(Fadt->XDsdt);
         } else {
@@ -160,9 +160,9 @@ AcpiFacsUpdateHardwareSignature (
 
         Facs = NULL;
         if (Fadt->XFirmwareCtrl != 0) {
-          Facs = (EFI_ACPI_6_5_FIRMWARE_ACPI_CONTROL_STRUCTURE *)(UINTN)(Fadt->XFirmwareCtrl);
+          Facs = (EFI_ACPI_6_6_FIRMWARE_ACPI_CONTROL_STRUCTURE *)(UINTN)(Fadt->XFirmwareCtrl);
         } else {
-          Facs = (EFI_ACPI_6_5_FIRMWARE_ACPI_CONTROL_STRUCTURE *)(UINTN)(Fadt->FirmwareCtrl);
+          Facs = (EFI_ACPI_6_6_FIRMWARE_ACPI_CONTROL_STRUCTURE *)(UINTN)(Fadt->FirmwareCtrl);
         }
       }
     }
@@ -246,7 +246,7 @@ FacsUpdateTableInfo (
     return Status;
   }
 
-  if ((FacsInfo->Flags & ~(EFI_ACPI_6_5_S4BIOS_F|EFI_ACPI_6_5_64BIT_WAKE_SUPPORTED_F)) != 0) {
+  if ((FacsInfo->Flags & ~(EFI_ACPI_6_6_S4BIOS_F|EFI_ACPI_6_6_64BIT_WAKE_SUPPORTED_F)) != 0) {
     DEBUG ((
       DEBUG_ERROR,
       "ERROR: FACS: Invalid Flags. Flags = 0x%x\n",
@@ -255,7 +255,7 @@ FacsUpdateTableInfo (
     return EFI_UNSUPPORTED;
   }
 
-  if ((FacsInfo->OspmFlags & ~(EFI_ACPI_6_5_OSPM_64BIT_WAKE_F)) != 0) {
+  if ((FacsInfo->OspmFlags & ~(EFI_ACPI_6_6_OSPM_64BIT_WAKE_F)) != 0) {
     DEBUG ((
       DEBUG_ERROR,
       "ERROR: FACS: Invalid OSPM Flags. Flags = 0x%x\n",
@@ -264,8 +264,8 @@ FacsUpdateTableInfo (
     return EFI_UNSUPPORTED;
   }
 
-  if ((FacsInfo->OspmFlags & EFI_ACPI_6_5_OSPM_64BIT_WAKE_F) &&
-      !(FacsInfo->Flags & EFI_ACPI_6_5_64BIT_WAKE_SUPPORTED_F))
+  if ((FacsInfo->OspmFlags & EFI_ACPI_6_6_OSPM_64BIT_WAKE_F) &&
+      !(FacsInfo->Flags & EFI_ACPI_6_6_64BIT_WAKE_SUPPORTED_F))
   {
     DEBUG ((
       DEBUG_ERROR,
@@ -282,7 +282,7 @@ FacsUpdateTableInfo (
   AcpiFacs.FirmwareWakingVector  = FacsInfo->FirmwareWakingVector;
   AcpiFacs.Flags                 = FacsInfo->Flags;
   AcpiFacs.XFirmwareWakingVector = FacsInfo->XFirmwareWakingVector;
-  AcpiFacs.Version               = EFI_ACPI_6_5_FIRMWARE_ACPI_CONTROL_STRUCTURE_VERSION;
+  AcpiFacs.Version               = EFI_ACPI_6_6_FIRMWARE_ACPI_CONTROL_STRUCTURE_VERSION;
   AcpiFacs.OspmFlags             = FacsInfo->OspmFlags;
 
   return Status;
@@ -394,11 +394,11 @@ ACPI_TABLE_GENERATOR  FacsGenerator = {
   // Generator Description
   L"ACPI.STD.FACS.GENERATOR",
   // ACPI Table Signature
-  EFI_ACPI_6_5_FIRMWARE_ACPI_CONTROL_STRUCTURE_SIGNATURE,
+  EFI_ACPI_6_6_FIRMWARE_ACPI_CONTROL_STRUCTURE_SIGNATURE,
   // ACPI Table Revision supported by this Generator
-  EFI_ACPI_6_5_FIRMWARE_ACPI_CONTROL_STRUCTURE_VERSION,
+  EFI_ACPI_6_6_FIRMWARE_ACPI_CONTROL_STRUCTURE_VERSION,
   // Minimum supported ACPI Table Revision
-  EFI_ACPI_6_5_FIRMWARE_ACPI_CONTROL_STRUCTURE_VERSION,
+  EFI_ACPI_6_6_FIRMWARE_ACPI_CONTROL_STRUCTURE_VERSION,
   // Creator ID
   TABLE_GENERATOR_CREATOR_ID,
   // Creator Revision

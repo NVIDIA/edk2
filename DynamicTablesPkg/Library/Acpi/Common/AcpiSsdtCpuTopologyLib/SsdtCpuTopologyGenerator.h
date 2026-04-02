@@ -22,30 +22,30 @@
 
 // Mask for the flags that need to be checked.
 #define PPTT_PROCESSOR_MASK  (                                                \
-          (EFI_ACPI_6_3_PPTT_PACKAGE_PHYSICAL)          |                     \
-          (EFI_ACPI_6_3_PPTT_PROCESSOR_ID_VALID << 1)   |                     \
-          (EFI_ACPI_6_3_PPTT_NODE_IS_LEAF << 3))
+          (EFI_ACPI_6_6_PPTT_PACKAGE_PHYSICAL)          |                     \
+          (EFI_ACPI_6_6_PPTT_PROCESSOR_ID_VALID << 1)   |                     \
+          (EFI_ACPI_6_6_PPTT_NODE_IS_LEAF << 3))
 
 // Mask for the cpu flags.
 #define PPTT_CPU_PROCESSOR_MASK  (                                            \
-          (EFI_ACPI_6_3_PPTT_PACKAGE_NOT_PHYSICAL)      |                     \
-          (EFI_ACPI_6_3_PPTT_PROCESSOR_ID_VALID << 1)   |                     \
-          (EFI_ACPI_6_3_PPTT_NODE_IS_LEAF << 3))
+          (EFI_ACPI_6_6_PPTT_PACKAGE_NOT_PHYSICAL)      |                     \
+          (EFI_ACPI_6_6_PPTT_PROCESSOR_ID_VALID << 1)   |                     \
+          (EFI_ACPI_6_6_PPTT_NODE_IS_LEAF << 3))
 
 // Mask for the cluster flags.
 // Even though a _UID is generated for clusters, it is simpler to use
-// EFI_ACPI_6_3_PPTT_PROCESSOR_ID_INVALID and to not match the cluster id of
+// EFI_ACPI_6_6_PPTT_PROCESSOR_ID_INVALID and to not match the cluster id of
 // the PPTT table (not sure the PPTT table is generated).
 #define PPTT_CLUSTER_PROCESSOR_MASK  (                                        \
-          (EFI_ACPI_6_3_PPTT_PACKAGE_NOT_PHYSICAL)      |                     \
-          (EFI_ACPI_6_3_PPTT_PROCESSOR_ID_INVALID << 1) |                     \
-          (EFI_ACPI_6_3_PPTT_NODE_IS_NOT_LEAF << 3))
+          (EFI_ACPI_6_6_PPTT_PACKAGE_NOT_PHYSICAL)      |                     \
+          (EFI_ACPI_6_6_PPTT_PROCESSOR_ID_INVALID << 1) |                     \
+          (EFI_ACPI_6_6_PPTT_NODE_IS_NOT_LEAF << 3))
 
 // Mask for the VALID flag.
-#define PPTT_VALID_FLAG_MASK  (EFI_ACPI_6_3_PPTT_PROCESSOR_ID_VALID << 1)
+#define PPTT_VALID_FLAG_MASK  (EFI_ACPI_6_6_PPTT_PROCESSOR_ID_VALID << 1)
 
 // Mask for the LEAF flag.
-#define PPTT_LEAF_FLAG_MASK  (EFI_ACPI_6_3_PPTT_NODE_IS_LEAF << 3)
+#define PPTT_LEAF_FLAG_MASK  (EFI_ACPI_6_6_PPTT_NODE_IS_LEAF << 3)
 
 /** LPI states are stored in the ASL namespace at '\_SB_.Lxxx',
     with xxx being the node index of the LPI state.

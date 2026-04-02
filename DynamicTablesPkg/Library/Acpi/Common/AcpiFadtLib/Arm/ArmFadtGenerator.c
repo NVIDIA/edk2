@@ -40,8 +40,8 @@ GET_OBJECT_LIST (
 
 /** This macro defines the FADT flag options for ARM Platforms.
 */
-#define FADT_FLAGS  (EFI_ACPI_6_5_HW_REDUCED_ACPI |          \
-                     EFI_ACPI_6_5_LOW_POWER_S0_IDLE_CAPABLE)
+#define FADT_FLAGS  (EFI_ACPI_6_6_HW_REDUCED_ACPI |          \
+                     EFI_ACPI_6_6_LOW_POWER_S0_IDLE_CAPABLE)
 
 /** Updates the Architecture specific information in the FADT Table.
 
@@ -61,7 +61,7 @@ EFI_STATUS
 EFIAPI
 ArmFadtBootArchInfoUpdate (
   IN  CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL  *CONST  CfgMgrProtocol,
-  IN   OUT EFI_ACPI_6_5_FIXED_ACPI_DESCRIPTION_TABLE      *Fadt
+  IN   OUT EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE      *Fadt
   )
 {
   EFI_STATUS             Status;
@@ -114,7 +114,7 @@ EFI_STATUS
 EFIAPI
 FadtArchUpdate (
   IN  CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL  *CONST  CfgMgrProtocol,
-  IN   OUT EFI_ACPI_6_5_FIXED_ACPI_DESCRIPTION_TABLE      *Fadt
+  IN   OUT EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE      *Fadt
   )
 {
   ASSERT (CfgMgrProtocol != NULL);

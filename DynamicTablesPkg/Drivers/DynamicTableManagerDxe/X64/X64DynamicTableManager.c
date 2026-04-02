@@ -28,7 +28,7 @@
 /// Array containing the ACPI tables to check.
 ///
 STATIC ACPI_TABLE_PRESENCE_INFO  mAcpiVerifyTables[] = {
-  { EStdAcpiTableIdFadt, EFI_ACPI_6_2_FIXED_ACPI_DESCRIPTION_TABLE_SIGNATURE, "FADT", TRUE, 0 }
+  { EStdAcpiTableIdFadt, EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE_SIGNATURE, "FADT", TRUE, 0 }
 };
 
 /** Get the arch specific ACPI table presence information.

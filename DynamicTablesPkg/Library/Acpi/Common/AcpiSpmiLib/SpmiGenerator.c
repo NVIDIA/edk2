@@ -49,7 +49,7 @@ GET_OBJECT_LIST (
 STATIC
 EFI_ACPI_SERVICE_PROCESSOR_MANAGEMENT_INTERFACE_TABLE  AcpiSpmi = {
   ACPI_HEADER (
-    EFI_ACPI_6_5_SERVER_PLATFORM_MANAGEMENT_INTERFACE_TABLE_SIGNATURE,
+    EFI_ACPI_6_6_SERVER_PLATFORM_MANAGEMENT_INTERFACE_TABLE_SIGNATURE,
     EFI_ACPI_SERVICE_PROCESSOR_MANAGEMENT_INTERFACE_TABLE,
     EFI_ACPI_SERVICE_PROCESSOR_MANAGEMENT_INTERFACE_5_TABLE_REVISION
     ),
@@ -173,7 +173,7 @@ BuildSpmiTable (
 
   /// If the interface type is SSIF, the Address Space ID should be SMBUS.
   if ((SpmiInfo->InterfaceType == EFI_ACPI_SPMI_INTERFACE_TYPE_SSIF) &&
-      (SpmiInfo->BaseAddress.AddressSpaceId != EFI_ACPI_6_5_SMBUS))
+      (SpmiInfo->BaseAddress.AddressSpaceId != EFI_ACPI_6_6_SMBUS))
   {
     DEBUG ((
       DEBUG_ERROR,
@@ -185,8 +185,8 @@ BuildSpmiTable (
 
   /// For non-ssif interface types, the Address Space ID should be System Memory or System I/O.
   if ((SpmiInfo->InterfaceType != EFI_ACPI_SPMI_INTERFACE_TYPE_SSIF) &&
-      ((SpmiInfo->BaseAddress.AddressSpaceId != EFI_ACPI_6_5_SYSTEM_MEMORY) &&
-       (SpmiInfo->BaseAddress.AddressSpaceId != EFI_ACPI_6_5_SYSTEM_IO)))
+      ((SpmiInfo->BaseAddress.AddressSpaceId != EFI_ACPI_6_6_SYSTEM_MEMORY) &&
+       (SpmiInfo->BaseAddress.AddressSpaceId != EFI_ACPI_6_6_SYSTEM_IO)))
   {
     DEBUG ((
       DEBUG_ERROR,
@@ -284,7 +284,7 @@ BuildSpmiTable (
   CopyMem (
     &AcpiSpmi.BaseAddress,
     &SpmiInfo->BaseAddress,
-    sizeof (EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE)
+    sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
     );
 
   Status = AddAcpiHeader (
@@ -320,7 +320,7 @@ ACPI_TABLE_GENERATOR  SpmiGenerator = {
   // Generator Description
   L"ACPI.STD.SPMI.GENERATOR",
   // ACPI Table Signature
-  EFI_ACPI_6_5_SERVER_PLATFORM_MANAGEMENT_INTERFACE_TABLE_SIGNATURE,
+  EFI_ACPI_6_6_SERVER_PLATFORM_MANAGEMENT_INTERFACE_TABLE_SIGNATURE,
   // ACPI Table Revision supported by this Generator
   EFI_ACPI_SERVICE_PROCESSOR_MANAGEMENT_INTERFACE_5_TABLE_REVISION,
   // Minimum supported ACPI Table Revision

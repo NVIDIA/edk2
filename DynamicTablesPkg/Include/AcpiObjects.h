@@ -36,88 +36,88 @@ typedef struct AmlCpcInfo {
 
   /// Indicates the highest level of performance the processor
   /// is theoretically capable of achieving.
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    HighestPerformanceBuffer;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    HighestPerformanceBuffer;
   UINT32                                    HighestPerformanceInteger;
 
   /// Indicates the highest sustained performance level of the processor.
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    NominalPerformanceBuffer;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    NominalPerformanceBuffer;
   UINT32                                    NominalPerformanceInteger;
 
   /// Indicates the lowest performance level of the processor with non-linear power savings.
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    LowestNonlinearPerformanceBuffer;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    LowestNonlinearPerformanceBuffer;
   UINT32                                    LowestNonlinearPerformanceInteger;
 
   /// Indicates the lowest performance level of the processor..
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    LowestPerformanceBuffer;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    LowestPerformanceBuffer;
   UINT32                                    LowestPerformanceInteger;
 
   /// Guaranteed Performance Register Buffer.
   /// Optional
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    GuaranteedPerformanceRegister;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    GuaranteedPerformanceRegister;
 
   /// Desired Performance Register Buffer.
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    DesiredPerformanceRegister;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    DesiredPerformanceRegister;
 
   /// Minimum Performance Register Buffer.
   /// Optional
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    MinimumPerformanceRegister;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    MinimumPerformanceRegister;
 
   /// Maximum Performance Register Buffer.
   /// Optional
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    MaximumPerformanceRegister;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    MaximumPerformanceRegister;
 
   /// Performance Reduction Tolerance Register.
   /// Optional
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    PerformanceReductionToleranceRegister;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    PerformanceReductionToleranceRegister;
 
   /// Time Window Register.
   /// Optional
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    TimeWindowRegister;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    TimeWindowRegister;
 
   /// Counter Wraparound Time
   /// Optional
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    CounterWraparoundTimeBuffer;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    CounterWraparoundTimeBuffer;
   UINT32                                    CounterWraparoundTimeInteger;
 
   /// Reference Performance Counter Register
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    ReferencePerformanceCounterRegister;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    ReferencePerformanceCounterRegister;
 
   /// Delivered Performance Counter Register
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    DeliveredPerformanceCounterRegister;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    DeliveredPerformanceCounterRegister;
 
   /// Performance Limited Register
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    PerformanceLimitedRegister;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    PerformanceLimitedRegister;
 
   /// CPPC EnableRegister
   /// Optional
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    CPPCEnableRegister;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    CPPCEnableRegister;
 
   /// Autonomous Selection Enable
   /// Optional
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    AutonomousSelectionEnableBuffer;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    AutonomousSelectionEnableBuffer;
   UINT32                                    AutonomousSelectionEnableInteger;
 
   /// AutonomousActivity-WindowRegister
   /// Optional
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    AutonomousActivityWindowRegister;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    AutonomousActivityWindowRegister;
 
   /// EnergyPerformance-PreferenceRegister
   /// Optional
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    EnergyPerformancePreferenceRegister;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    EnergyPerformancePreferenceRegister;
 
   /// Reference Performance
   /// Optional
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    ReferencePerformanceBuffer;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    ReferencePerformanceBuffer;
   UINT32                                    ReferencePerformanceInteger;
 
   /// Lowest Frequency
   /// Optional
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    LowestFrequencyBuffer;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    LowestFrequencyBuffer;
   UINT32                                    LowestFrequencyInteger;
 
   /// Nominal Frequency
   /// Optional
-  EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE    NominalFrequencyBuffer;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    NominalFrequencyBuffer;
   UINT32                                    NominalFrequencyInteger;
 } AML_CPC_INFO;
 
@@ -153,7 +153,7 @@ typedef struct AmlPsdInfo {
 */
 typedef struct AmlCstInfo {
   /// Information about the C-State register.
-  EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE    Register;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    Register;
 
   /// Type of C-State, such as c1, c2, c3, etc.
   UINT8                                     Type;
@@ -208,10 +208,10 @@ typedef struct AmlCsdInfo {
 */
 typedef struct AmlPctInfo {
   /// The performance control register for the processor.
-  EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE    ControlRegister;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    ControlRegister;
 
   /// The performance status register for the processor.
-  EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE    StatusRegister;
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    StatusRegister;
 } AML_PCT_INFO;
 
 /** A structure that describes a

@@ -97,7 +97,7 @@ protected:
     )
   {
     EXPECT_NE (Dbg2Table, nullptr);
-    EXPECT_EQ (Dbg2Table->Header.Signature, (UINT32)EFI_ACPI_6_3_DEBUG_PORT_2_TABLE_SIGNATURE);
+    EXPECT_EQ (Dbg2Table->Header.Signature, (UINT32)EFI_ACPI_6_6_DEBUG_PORT_2_TABLE_SIGNATURE);
     EXPECT_EQ (Dbg2Table->Header.Revision, EFI_ACPI_DEBUG_PORT_2_TABLE_REVISION);
     EXPECT_EQ (Dbg2Table->Header.OemId[0], (UINT8)'T');
     EXPECT_EQ (Dbg2Table->Header.OemId[1], (UINT8)'E');
@@ -120,12 +120,12 @@ protected:
     EXPECT_EQ (DeviceInfo->NumberofGenericAddressRegisters, 1U);
 
     // Validate base address register
-    EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE  *Gas = (EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE *)((UINT8 *)DeviceInfo + DeviceInfo->BaseAddressRegisterOffset);
+    EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE  *Gas = (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE *)((UINT8 *)DeviceInfo + DeviceInfo->BaseAddressRegisterOffset);
 
-    EXPECT_EQ (Gas->AddressSpaceId, (UINT8)EFI_ACPI_6_3_SYSTEM_MEMORY);
+    EXPECT_EQ (Gas->AddressSpaceId, (UINT8)EFI_ACPI_6_6_SYSTEM_MEMORY);
     EXPECT_EQ (Gas->RegisterBitWidth, 32U);
     EXPECT_EQ (Gas->RegisterBitOffset, 0U);
-    EXPECT_EQ (Gas->AccessSize, (UINT8)EFI_ACPI_6_3_DWORD);
+    EXPECT_EQ (Gas->AccessSize, (UINT8)EFI_ACPI_6_6_DWORD);
     EXPECT_EQ (Gas->Address, ExpectedBaseAddress);
 
     // Validate address size
@@ -147,18 +147,18 @@ protected:
     EXPECT_EQ ((UINT32)DeviceInfo->NumberofGenericAddressRegisters, (UINT32)MemoryRanges.size ());
 
     // Validate base address registers
-    EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE  *Gas = (EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE *)((UINT8 *)DeviceInfo + DeviceInfo->BaseAddressRegisterOffset);
+    EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE  *Gas = (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE *)((UINT8 *)DeviceInfo + DeviceInfo->BaseAddressRegisterOffset);
 
     // Validate each memory range
     for (size_t j = 0; j < MemoryRanges.size (); j++) {
-      EXPECT_EQ (Gas->AddressSpaceId, (UINT8)EFI_ACPI_6_3_SYSTEM_MEMORY);
+      EXPECT_EQ (Gas->AddressSpaceId, (UINT8)EFI_ACPI_6_6_SYSTEM_MEMORY);
       EXPECT_EQ (Gas->RegisterBitWidth, (UINT8)32);
       EXPECT_EQ (Gas->RegisterBitOffset, (UINT8)0);
-      EXPECT_EQ (Gas->AccessSize, (UINT8)EFI_ACPI_6_3_DWORD);
+      EXPECT_EQ (Gas->AccessSize, (UINT8)EFI_ACPI_6_6_DWORD);
       EXPECT_EQ (Gas->Address, MemoryRanges[j].BaseAddress);
 
       // Move to next GAS structure
-      Gas = (EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE *)((UINT8 *)Gas + sizeof (EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE));
+      Gas = (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE *)((UINT8 *)Gas + sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE));
     }
 
     // Validate address sizes
@@ -175,8 +175,8 @@ protected:
     )
   {
     EXPECT_NE (SsdtTable, nullptr);
-    EXPECT_EQ (SsdtTable->Signature, (UINT32)EFI_ACPI_6_3_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE);
-    EXPECT_EQ (SsdtTable->Revision, EFI_ACPI_6_3_SECONDARY_SYSTEM_DESCRIPTION_TABLE_REVISION);
+    EXPECT_EQ (SsdtTable->Signature, (UINT32)EFI_ACPI_6_6_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE);
+    EXPECT_EQ (SsdtTable->Revision, EFI_ACPI_6_6_SECONDARY_SYSTEM_DESCRIPTION_TABLE_REVISION);
     EXPECT_EQ (SsdtTable->OemId[0], (UINT8)'A');
     EXPECT_EQ (SsdtTable->OemId[1], (UINT8)'R');
     EXPECT_EQ (SsdtTable->OemId[2], (UINT8)'M');
@@ -230,7 +230,7 @@ protected:
 
     // Setup common test data with proper initialization
     mAcpiTableInfo.TableGeneratorId   = CREATE_STD_ACPI_TABLE_GEN_ID (EStdAcpiTableIdDbg2);
-    mAcpiTableInfo.AcpiTableSignature = EFI_ACPI_6_3_DEBUG_PORT_2_TABLE_SIGNATURE;
+    mAcpiTableInfo.AcpiTableSignature = EFI_ACPI_6_6_DEBUG_PORT_2_TABLE_SIGNATURE;
     mAcpiTableInfo.AcpiTableRevision  = EFI_ACPI_DBG2_DEBUG_DEVICE_INFORMATION_STRUCT_REVISION;
   }
 
@@ -252,7 +252,7 @@ protected:
       CM_ARCH_COMMON_SERIAL_PORT_INFO  info = { 0 };
       info.BaseAddress       = SERIAL_PORT_BASE_ADDRESS (i);
       info.BaseAddressLength = SERIAL_PORT_BASE_ADDRESS_LENGTH;
-      info.AccessSize        = EFI_ACPI_6_3_DWORD;
+      info.AccessSize        = EFI_ACPI_6_6_DWORD;
       info.BaudRate          = SERIAL_PORT_BAUD_RATE;
       info.PortSubtype       = EFI_ACPI_DBG2_PORT_SUBTYPE_SERIAL_FULL_16550;
       mSerialPortInfo[i]     = info;
@@ -299,7 +299,7 @@ protected:
     info.AddressResourceToken = 1;  // Unique token for each device
     info.PortType             = EFI_ACPI_DBG2_PORT_TYPE_NET;
     info.PortSubtype          = 0;
-    info.AccessSize           = EFI_ACPI_6_3_DWORD;
+    info.AccessSize           = EFI_ACPI_6_6_DWORD;
     CopyMem (info.ObjectName, "DBG2", sizeof ("DBG2"));
     mDbg2DeviceInfo.push_back (info);
 
@@ -374,9 +374,9 @@ TEST_F (Dbg2GeneratorTest, BuildDbg2TableEx_SingleSerialPort) {
   EFI_ACPI_DESCRIPTION_HEADER              *SsdtTable = nullptr;
 
   for (UINTN i = 0; i < TableCount; i++) {
-    if (Table[i]->Signature == EFI_ACPI_6_3_DEBUG_PORT_2_TABLE_SIGNATURE) {
+    if (Table[i]->Signature == EFI_ACPI_6_6_DEBUG_PORT_2_TABLE_SIGNATURE) {
       Dbg2Table = (EFI_ACPI_DEBUG_PORT_2_DESCRIPTION_TABLE *)Table[i];
-    } else if (Table[i]->Signature == EFI_ACPI_6_3_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE) {
+    } else if (Table[i]->Signature == EFI_ACPI_6_6_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE) {
       SsdtTable = Table[i];
     }
   }
@@ -455,7 +455,7 @@ TEST_F (Dbg2GeneratorTest, BuildDbg2TableEx_NonSerialDbg2Device) {
   EFI_ACPI_DEBUG_PORT_2_DESCRIPTION_TABLE  *Dbg2Table = nullptr;
 
   for (UINTN i = 0; i < TableCount; i++) {
-    if (Table[i]->Signature == EFI_ACPI_6_3_DEBUG_PORT_2_TABLE_SIGNATURE) {
+    if (Table[i]->Signature == EFI_ACPI_6_6_DEBUG_PORT_2_TABLE_SIGNATURE) {
       Dbg2Table = (EFI_ACPI_DEBUG_PORT_2_DESCRIPTION_TABLE *)Table[i];
       break;
     }
@@ -536,7 +536,7 @@ protected:
 
     // Setup common test data
     mAcpiTableInfo.TableGeneratorId   = CREATE_STD_ACPI_TABLE_GEN_ID (EStdAcpiTableIdDbg2);
-    mAcpiTableInfo.AcpiTableSignature = EFI_ACPI_6_3_DEBUG_PORT_2_TABLE_SIGNATURE;
+    mAcpiTableInfo.AcpiTableSignature = EFI_ACPI_6_6_DEBUG_PORT_2_TABLE_SIGNATURE;
     mAcpiTableInfo.AcpiTableRevision  = EFI_ACPI_DBG2_DEBUG_DEVICE_INFORMATION_STRUCT_REVISION;
 
     // Set up devices and memory ranges based on test parameters
@@ -554,7 +554,7 @@ protected:
       CM_ARCH_COMMON_SERIAL_PORT_INFO  info = { 0 };
       info.BaseAddress       = SERIAL_PORT_BASE_ADDRESS (0);
       info.BaseAddressLength = SERIAL_PORT_BASE_ADDRESS_LENGTH;
-      info.AccessSize        = EFI_ACPI_6_3_DWORD;
+      info.AccessSize        = EFI_ACPI_6_6_DWORD;
       info.BaudRate          = SERIAL_PORT_BAUD_RATE;
       info.PortSubtype       = EFI_ACPI_DBG2_PORT_SUBTYPE_SERIAL_FULL_16550;
       mSerialPortInfo[0]     = info;
@@ -584,7 +584,7 @@ protected:
       device.AddressResourceToken = mDevices.size () + 1;
       device.PortType             = EFI_ACPI_DBG2_PORT_TYPE_NET;
       device.PortSubtype          = 0;
-      device.AccessSize           = EFI_ACPI_6_3_DWORD;
+      device.AccessSize           = EFI_ACPI_6_6_DWORD;
       CopyMem (device.ObjectName, "DBG2", sizeof (device.ObjectName) - 1);
       device.ObjectName[sizeof (device.ObjectName) - 1] = '\0';
       mDevices.push_back (device);
@@ -677,9 +677,9 @@ TEST_P (Dbg2GeneratorParameterizedTest, BuildDbg2TableEx_MultipleNonSerialDevice
   EFI_ACPI_DESCRIPTION_HEADER              *SsdtTable = nullptr;
 
   for (UINTN i = 0; i < TableCount; i++) {
-    if (Table[i]->Signature == EFI_ACPI_6_3_DEBUG_PORT_2_TABLE_SIGNATURE) {
+    if (Table[i]->Signature == EFI_ACPI_6_6_DEBUG_PORT_2_TABLE_SIGNATURE) {
       Dbg2Table = (EFI_ACPI_DEBUG_PORT_2_DESCRIPTION_TABLE *)Table[i];
-    } else if (Table[i]->Signature == EFI_ACPI_6_3_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE) {
+    } else if (Table[i]->Signature == EFI_ACPI_6_6_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE) {
       SsdtTable = Table[i];
     }
   }
@@ -769,7 +769,7 @@ protected:
 
     // Setup common test data
     mAcpiTableInfo.TableGeneratorId   = CREATE_STD_ACPI_TABLE_GEN_ID (EStdAcpiTableIdDbg2);
-    mAcpiTableInfo.AcpiTableSignature = EFI_ACPI_6_3_DEBUG_PORT_2_TABLE_SIGNATURE;
+    mAcpiTableInfo.AcpiTableSignature = EFI_ACPI_6_6_DEBUG_PORT_2_TABLE_SIGNATURE;
     mAcpiTableInfo.AcpiTableRevision  = EFI_ACPI_DBG2_DEBUG_DEVICE_INFORMATION_STRUCT_REVISION;
   }
 
@@ -790,7 +790,7 @@ TEST_F (Dbg2GeneratorAdversarialTest, InvalidMemoryRangeBaseAddress) {
   device.AddressResourceToken = 1;
   device.PortType             = EFI_ACPI_DBG2_PORT_TYPE_NET;
   device.PortSubtype          = 0;
-  device.AccessSize           = EFI_ACPI_6_3_DWORD;
+  device.AccessSize           = EFI_ACPI_6_6_DWORD;
 
   // Set up memory range with invalid base address
   CM_ARCH_COMMON_MEMORY_RANGE_DESCRIPTOR  range = { 0 };
@@ -881,7 +881,7 @@ TEST_F (Dbg2GeneratorAdversarialTest, MemoryRangeTooLarge) {
   device.AddressResourceToken = 1;
   device.PortType             = EFI_ACPI_DBG2_PORT_TYPE_NET;
   device.PortSubtype          = 0;
-  device.AccessSize           = EFI_ACPI_6_3_DWORD;
+  device.AccessSize           = EFI_ACPI_6_6_DWORD;
 
   // Set up memory range with length > MAX_UINT32
   CM_ARCH_COMMON_MEMORY_RANGE_DESCRIPTOR  range = { 0 };
@@ -972,7 +972,7 @@ TEST_F (Dbg2GeneratorAdversarialTest, TooManyMemoryRanges) {
   device.AddressResourceToken = 1;
   device.PortType             = EFI_ACPI_DBG2_PORT_TYPE_NET;
   device.PortSubtype          = 0;
-  device.AccessSize           = EFI_ACPI_6_3_DWORD;
+  device.AccessSize           = EFI_ACPI_6_6_DWORD;
 
   // Create array of memory ranges with count > MAX_UINT8
   std::vector<CM_ARCH_COMMON_MEMORY_RANGE_DESCRIPTOR>  ranges;
@@ -1067,7 +1067,7 @@ TEST_F (Dbg2GeneratorAdversarialTest, InvalidResourceToken) {
   device.AddressResourceToken = CM_NULL_TOKEN; // Invalid - must be non-zero
   device.PortType             = EFI_ACPI_DBG2_PORT_TYPE_NET;
   device.PortSubtype          = 0;
-  device.AccessSize           = EFI_ACPI_6_3_DWORD;
+  device.AccessSize           = EFI_ACPI_6_6_DWORD;
 
   // Mock serial port info query to return not found
   EXPECT_CALL (
@@ -1126,7 +1126,7 @@ TEST_F (Dbg2GeneratorAdversarialTest, InvalidSerialPortAccessSize) {
 
   serialPort.BaseAddress       = SERIAL_PORT_BASE_ADDRESS (0);
   serialPort.BaseAddressLength = SERIAL_PORT_BASE_ADDRESS_LENGTH;
-  serialPort.AccessSize        = EFI_ACPI_6_3_QWORD; // Invalid - must be <= DWORD
+  serialPort.AccessSize        = EFI_ACPI_6_6_QWORD; // Invalid - must be <= DWORD
   serialPort.BaudRate          = SERIAL_PORT_BAUD_RATE;
   serialPort.PortSubtype       = EFI_ACPI_DBG2_PORT_SUBTYPE_SERIAL_FULL_16550;
 
@@ -1189,7 +1189,7 @@ TEST_F (Dbg2GeneratorAdversarialTest, MissingObjectName) {
   device.AddressResourceToken = 1;
   device.PortType             = EFI_ACPI_DBG2_PORT_TYPE_NET;
   device.PortSubtype          = 0;
-  device.AccessSize           = EFI_ACPI_6_3_DWORD;
+  device.AccessSize           = EFI_ACPI_6_6_DWORD;
   // Intentionally leave ObjectName empty
 
   // Set up memory range
@@ -1279,7 +1279,7 @@ TEST_F (Dbg2GeneratorAdversarialTest, MissingObjectName) {
   EFI_ACPI_DEBUG_PORT_2_DESCRIPTION_TABLE  *Dbg2Table = nullptr;
 
   for (UINTN i = 0; i < TableCount; i++) {
-    if (Table[i]->Signature == EFI_ACPI_6_3_DEBUG_PORT_2_TABLE_SIGNATURE) {
+    if (Table[i]->Signature == EFI_ACPI_6_6_DEBUG_PORT_2_TABLE_SIGNATURE) {
       Dbg2Table = (EFI_ACPI_DEBUG_PORT_2_DESCRIPTION_TABLE *)Table[i];
       break;
     }
@@ -1307,12 +1307,12 @@ TEST_F (Dbg2GeneratorAdversarialTest, MissingObjectName) {
   EXPECT_EQ (NameString[1], '\0');
 
   // Validate memory range
-  EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE  *Gas = (EFI_ACPI_6_3_GENERIC_ADDRESS_STRUCTURE *)((UINT8 *)DeviceInfo + DeviceInfo->BaseAddressRegisterOffset);
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE  *Gas = (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE *)((UINT8 *)DeviceInfo + DeviceInfo->BaseAddressRegisterOffset);
 
-  EXPECT_EQ (Gas->AddressSpaceId, (UINT8)EFI_ACPI_6_3_SYSTEM_MEMORY);
+  EXPECT_EQ (Gas->AddressSpaceId, (UINT8)EFI_ACPI_6_6_SYSTEM_MEMORY);
   EXPECT_EQ (Gas->RegisterBitWidth, (UINT8)32);
   EXPECT_EQ (Gas->RegisterBitOffset, (UINT8)0);
-  EXPECT_EQ (Gas->AccessSize, (UINT8)EFI_ACPI_6_3_DWORD);
+  EXPECT_EQ (Gas->AccessSize, (UINT8)EFI_ACPI_6_6_DWORD);
   EXPECT_EQ (Gas->Address, range.BaseAddress);
 
   // Validate address size
@@ -1339,7 +1339,7 @@ TEST_F (Dbg2GeneratorTest, MultipleSerialPorts) {
 
   port1.BaseAddress       = SERIAL_PORT_BASE_ADDRESS (0);
   port1.BaseAddressLength = SERIAL_PORT_BASE_ADDRESS_LENGTH;
-  port1.AccessSize        = EFI_ACPI_6_3_DWORD;
+  port1.AccessSize        = EFI_ACPI_6_6_DWORD;
   port1.BaudRate          = SERIAL_PORT_BAUD_RATE;
   port1.PortSubtype       = EFI_ACPI_DBG2_PORT_SUBTYPE_SERIAL_FULL_16550;
   serialPorts.push_back (port1);
@@ -1349,7 +1349,7 @@ TEST_F (Dbg2GeneratorTest, MultipleSerialPorts) {
 
   port2.BaseAddress       = SERIAL_PORT_BASE_ADDRESS (1);
   port2.BaseAddressLength = SERIAL_PORT_BASE_ADDRESS_LENGTH;
-  port2.AccessSize        = EFI_ACPI_6_3_DWORD;
+  port2.AccessSize        = EFI_ACPI_6_6_DWORD;
   port2.BaudRate          = SERIAL_PORT_BAUD_RATE;
   port2.PortSubtype       = EFI_ACPI_DBG2_PORT_SUBTYPE_SERIAL_FULL_16550;
   serialPorts.push_back (port2);
@@ -1412,9 +1412,9 @@ TEST_F (Dbg2GeneratorTest, MultipleSerialPorts) {
   EFI_ACPI_DESCRIPTION_HEADER              *SsdtTable = nullptr;
 
   for (UINTN i = 0; i < TableCount; i++) {
-    if (Table[i]->Signature == EFI_ACPI_6_3_DEBUG_PORT_2_TABLE_SIGNATURE) {
+    if (Table[i]->Signature == EFI_ACPI_6_6_DEBUG_PORT_2_TABLE_SIGNATURE) {
       Dbg2Table = (EFI_ACPI_DEBUG_PORT_2_DESCRIPTION_TABLE *)Table[i];
-    } else if (Table[i]->Signature == EFI_ACPI_6_3_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE) {
+    } else if (Table[i]->Signature == EFI_ACPI_6_6_SECONDARY_SYSTEM_DESCRIPTION_TABLE_SIGNATURE) {
       SsdtTable = Table[i];
     }
   }

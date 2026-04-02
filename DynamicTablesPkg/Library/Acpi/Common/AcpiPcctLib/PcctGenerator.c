@@ -243,27 +243,27 @@ MapPccSubspaceId (
   GenericPcc = (PCC_SUBSPACE_GENERIC_INFO *)CmPccArray;
 
   switch (GenericPcc->Type) {
-    case EFI_ACPI_6_4_PCCT_SUBSPACE_TYPE_GENERIC:
+    case EFI_ACPI_6_6_PCCT_SUBSPACE_TYPE_GENERIC:
       CmObjSize = sizeof (CM_ARCH_COMMON_PCC_SUBSPACE_TYPE0_INFO);
       break;
 
-    case EFI_ACPI_6_4_PCCT_SUBSPACE_TYPE_1_HW_REDUCED_COMMUNICATIONS:
+    case EFI_ACPI_6_6_PCCT_SUBSPACE_TYPE_1_HW_REDUCED_COMMUNICATIONS:
       CmObjSize = sizeof (CM_ARCH_COMMON_PCC_SUBSPACE_TYPE1_INFO);
       break;
 
-    case EFI_ACPI_6_4_PCCT_SUBSPACE_TYPE_2_HW_REDUCED_COMMUNICATIONS:
+    case EFI_ACPI_6_6_PCCT_SUBSPACE_TYPE_2_HW_REDUCED_COMMUNICATIONS:
       CmObjSize = sizeof (CM_ARCH_COMMON_PCC_SUBSPACE_TYPE2_INFO);
       break;
 
-    case EFI_ACPI_6_4_PCCT_SUBSPACE_TYPE_3_EXTENDED_PCC:
+    case EFI_ACPI_6_6_PCCT_SUBSPACE_TYPE_3_EXTENDED_PCC:
       CmObjSize = sizeof (CM_ARCH_COMMON_PCC_SUBSPACE_TYPE3_INFO);
       break;
 
-    case EFI_ACPI_6_4_PCCT_SUBSPACE_TYPE_4_EXTENDED_PCC:
+    case EFI_ACPI_6_6_PCCT_SUBSPACE_TYPE_4_EXTENDED_PCC:
       CmObjSize = sizeof (CM_ARCH_COMMON_PCC_SUBSPACE_TYPE4_INFO);
       break;
 
-    case EFI_ACPI_6_4_PCCT_SUBSPACE_TYPE_5_HW_REGISTERS_COMMUNICATIONS:
+    case EFI_ACPI_6_6_PCCT_SUBSPACE_TYPE_5_HW_REGISTERS_COMMUNICATIONS:
       CmObjSize = sizeof (CM_ARCH_COMMON_PCC_SUBSPACE_TYPE5_INFO);
       break;
 
@@ -307,14 +307,14 @@ EFI_STATUS
 EFIAPI
 AddSubspaceStructType0 (
   IN  CM_ARCH_COMMON_PCC_SUBSPACE_TYPE0_INFO  *PccCmObj,
-  IN  EFI_ACPI_6_4_PCCT_SUBSPACE_GENERIC      *PccAcpi
+  IN  EFI_ACPI_6_6_PCCT_SUBSPACE_GENERIC      *PccAcpi
   )
 {
   PCC_MAILBOX_REGISTER_INFO         *Doorbell;
   PCC_SUBSPACE_CHANNEL_TIMING_INFO  *ChannelTiming;
 
   if ((PccCmObj == NULL) ||
-      (PccCmObj->Type != EFI_ACPI_6_4_PCCT_SUBSPACE_TYPE_GENERIC)  ||
+      (PccCmObj->Type != EFI_ACPI_6_6_PCCT_SUBSPACE_TYPE_GENERIC)  ||
       (PccAcpi == NULL))
   {
     ASSERT_EFI_ERROR (EFI_INVALID_PARAMETER);
@@ -325,7 +325,7 @@ AddSubspaceStructType0 (
   ChannelTiming = &PccCmObj->ChannelTiming;
 
   PccAcpi->Type                    = PccCmObj->Type;
-  PccAcpi->Length                  = sizeof (EFI_ACPI_6_4_PCCT_SUBSPACE_GENERIC);
+  PccAcpi->Length                  = sizeof (EFI_ACPI_6_6_PCCT_SUBSPACE_GENERIC);
   *(UINT32 *)&PccAcpi->Reserved[0] = EFI_ACPI_RESERVED_DWORD;
   *(UINT16 *)&PccAcpi->Reserved[4] = EFI_ACPI_RESERVED_WORD;
   PccAcpi->BaseAddress             = PccCmObj->BaseAddress;
@@ -334,7 +334,7 @@ AddSubspaceStructType0 (
   CopyMem (
     &PccAcpi->DoorbellRegister,
     &Doorbell->Register,
-    sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE)
+    sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
     );
   PccAcpi->DoorbellPreserve = Doorbell->PreserveMask;
   PccAcpi->DoorbellWrite    = Doorbell->WriteMask;
@@ -359,7 +359,7 @@ EFI_STATUS
 EFIAPI
 AddSubspaceStructType1 (
   IN  CM_ARCH_COMMON_PCC_SUBSPACE_TYPE1_INFO                  *PccCmObj,
-  IN  EFI_ACPI_6_4_PCCT_SUBSPACE_1_HW_REDUCED_COMMUNICATIONS  *PccAcpi
+  IN  EFI_ACPI_6_6_PCCT_SUBSPACE_1_HW_REDUCED_COMMUNICATIONS  *PccAcpi
   )
 {
   CM_ARCH_COMMON_PCC_SUBSPACE_TYPE0_INFO  *GenericPccCmObj;
@@ -369,7 +369,7 @@ AddSubspaceStructType1 (
   GenericPccCmObj = (CM_ARCH_COMMON_PCC_SUBSPACE_TYPE0_INFO *)PccCmObj;
 
   if ((PccCmObj == NULL) ||
-      (GenericPccCmObj->Type != EFI_ACPI_6_4_PCCT_SUBSPACE_TYPE_1_HW_REDUCED_COMMUNICATIONS)  ||
+      (GenericPccCmObj->Type != EFI_ACPI_6_6_PCCT_SUBSPACE_TYPE_1_HW_REDUCED_COMMUNICATIONS)  ||
       (PccAcpi == NULL))
   {
     ASSERT_EFI_ERROR (EFI_INVALID_PARAMETER);
@@ -382,7 +382,7 @@ AddSubspaceStructType1 (
   ASSERT ((PccCmObj->PlatIrq.Flags & ~MAX_UINT8) == 0);
 
   PccAcpi->Type                   = GenericPccCmObj->Type;
-  PccAcpi->Length                 = sizeof (EFI_ACPI_6_4_PCCT_SUBSPACE_1_HW_REDUCED_COMMUNICATIONS);
+  PccAcpi->Length                 = sizeof (EFI_ACPI_6_6_PCCT_SUBSPACE_1_HW_REDUCED_COMMUNICATIONS);
   PccAcpi->PlatformInterrupt      = PccCmObj->PlatIrq.Interrupt;
   PccAcpi->PlatformInterruptFlags = (UINT8)PccCmObj->PlatIrq.Flags;
   PccAcpi->Reserved               = EFI_ACPI_RESERVED_BYTE;
@@ -392,7 +392,7 @@ AddSubspaceStructType1 (
   CopyMem (
     &PccAcpi->DoorbellRegister,
     &Doorbell->Register,
-    sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE)
+    sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
     );
   PccAcpi->DoorbellPreserve = Doorbell->PreserveMask;
   PccAcpi->DoorbellWrite    = Doorbell->WriteMask;
@@ -421,7 +421,7 @@ EFI_STATUS
 EFIAPI
 AddSubspaceStructType2 (
   IN  CM_ARCH_COMMON_PCC_SUBSPACE_TYPE2_INFO                  *PccCmObj,
-  IN  EFI_ACPI_6_4_PCCT_SUBSPACE_2_HW_REDUCED_COMMUNICATIONS  *PccAcpi
+  IN  EFI_ACPI_6_6_PCCT_SUBSPACE_2_HW_REDUCED_COMMUNICATIONS  *PccAcpi
   )
 {
   CM_ARCH_COMMON_PCC_SUBSPACE_TYPE0_INFO  *GenericPccCmObj;
@@ -432,7 +432,7 @@ AddSubspaceStructType2 (
   GenericPccCmObj = (CM_ARCH_COMMON_PCC_SUBSPACE_TYPE0_INFO *)PccCmObj;
 
   if ((PccCmObj == NULL) ||
-      (GenericPccCmObj->Type != EFI_ACPI_6_4_PCCT_SUBSPACE_TYPE_2_HW_REDUCED_COMMUNICATIONS)  ||
+      (GenericPccCmObj->Type != EFI_ACPI_6_6_PCCT_SUBSPACE_TYPE_2_HW_REDUCED_COMMUNICATIONS)  ||
       (PccAcpi == NULL))
   {
     ASSERT_EFI_ERROR (EFI_INVALID_PARAMETER);
@@ -446,7 +446,7 @@ AddSubspaceStructType2 (
   ASSERT ((PccCmObj->PlatIrq.Flags & ~MAX_UINT8) == 0);
 
   PccAcpi->Type                   = GenericPccCmObj->Type;
-  PccAcpi->Length                 = sizeof (EFI_ACPI_6_4_PCCT_SUBSPACE_2_HW_REDUCED_COMMUNICATIONS);
+  PccAcpi->Length                 = sizeof (EFI_ACPI_6_6_PCCT_SUBSPACE_2_HW_REDUCED_COMMUNICATIONS);
   PccAcpi->PlatformInterrupt      = PccCmObj->PlatIrq.Interrupt;
   PccAcpi->PlatformInterruptFlags = (UINT8)PccCmObj->PlatIrq.Flags;
   PccAcpi->BaseAddress            = GenericPccCmObj->BaseAddress;
@@ -457,7 +457,7 @@ AddSubspaceStructType2 (
   CopyMem (
     &PccAcpi->DoorbellRegister,
     &Doorbell->Register,
-    sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE)
+    sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
     );
   PccAcpi->DoorbellPreserve = Doorbell->PreserveMask;
   PccAcpi->DoorbellWrite    = Doorbell->WriteMask;
@@ -469,7 +469,7 @@ AddSubspaceStructType2 (
   CopyMem (
     &PccAcpi->PlatformInterruptAckRegister,
     &PlatIrqAck->Register,
-    sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE)
+    sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
     );
   PccAcpi->PlatformInterruptAckPreserve = PlatIrqAck->PreserveMask;
   PccAcpi->PlatformInterruptAckWrite    = PlatIrqAck->WriteMask;
@@ -494,7 +494,7 @@ EFI_STATUS
 EFIAPI
 AddSubspaceStructType34 (
   IN  CM_ARCH_COMMON_PCC_SUBSPACE_TYPE3_INFO     *PccCmObj,
-  IN  EFI_ACPI_6_4_PCCT_SUBSPACE_3_EXTENDED_PCC  *PccAcpi
+  IN  EFI_ACPI_6_6_PCCT_SUBSPACE_3_EXTENDED_PCC  *PccAcpi
   )
 {
   CM_ARCH_COMMON_PCC_SUBSPACE_TYPE0_INFO  *GenericPccCmObj;
@@ -508,8 +508,8 @@ AddSubspaceStructType34 (
   GenericPccCmObj = (CM_ARCH_COMMON_PCC_SUBSPACE_TYPE0_INFO *)PccCmObj;
 
   if ((PccCmObj == NULL) ||
-      ((GenericPccCmObj->Type != EFI_ACPI_6_4_PCCT_SUBSPACE_TYPE_3_EXTENDED_PCC) &&
-       (GenericPccCmObj->Type != EFI_ACPI_6_4_PCCT_SUBSPACE_TYPE_4_EXTENDED_PCC)) ||
+      ((GenericPccCmObj->Type != EFI_ACPI_6_6_PCCT_SUBSPACE_TYPE_3_EXTENDED_PCC) &&
+       (GenericPccCmObj->Type != EFI_ACPI_6_6_PCCT_SUBSPACE_TYPE_4_EXTENDED_PCC)) ||
       (PccAcpi == NULL))
   {
     ASSERT_EFI_ERROR (EFI_INVALID_PARAMETER);
@@ -527,7 +527,7 @@ AddSubspaceStructType34 (
   ASSERT ((GenericPccCmObj->AddressLength & ~MAX_UINT32) == 0);
 
   PccAcpi->Type                   = GenericPccCmObj->Type;
-  PccAcpi->Length                 = sizeof (EFI_ACPI_6_4_PCCT_SUBSPACE_3_EXTENDED_PCC);
+  PccAcpi->Length                 = sizeof (EFI_ACPI_6_6_PCCT_SUBSPACE_3_EXTENDED_PCC);
   PccAcpi->PlatformInterrupt      = PccCmObj->PlatIrq.Interrupt;
   PccAcpi->PlatformInterruptFlags = (UINT8)PccCmObj->PlatIrq.Flags;
   PccAcpi->Reserved               = EFI_ACPI_RESERVED_BYTE;
@@ -537,7 +537,7 @@ AddSubspaceStructType34 (
   CopyMem (
     &PccAcpi->DoorbellRegister,
     &Doorbell->Register,
-    sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE)
+    sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
     );
   PccAcpi->DoorbellPreserve = Doorbell->PreserveMask;
   PccAcpi->DoorbellWrite    = Doorbell->WriteMask;
@@ -549,7 +549,7 @@ AddSubspaceStructType34 (
   CopyMem (
     &PccAcpi->PlatformInterruptAckRegister,
     &PlatIrqAck->Register,
-    sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE)
+    sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
     );
   PccAcpi->PlatformInterruptAckPreserve = PlatIrqAck->PreserveMask;
   PccAcpi->PlatformInterruptAckSet      = PlatIrqAck->WriteMask;
@@ -566,7 +566,7 @@ AddSubspaceStructType34 (
   CopyMem (
     &PccAcpi->CommandCompleteCheckRegister,
     &CmdCompleteCheck->Register,
-    sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE)
+    sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
     );
   PccAcpi->CommandCompleteCheckMask = CmdCompleteCheck->PreserveMask;
   // No Write mask.
@@ -574,7 +574,7 @@ AddSubspaceStructType34 (
   CopyMem (
     &PccAcpi->CommandCompleteUpdateRegister,
     &CmdCompleteUpdate->Register,
-    sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE)
+    sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
     );
   PccAcpi->CommandCompleteUpdatePreserve = CmdCompleteUpdate->PreserveMask;
   PccAcpi->CommandCompleteUpdateSet      = CmdCompleteUpdate->WriteMask;
@@ -582,12 +582,12 @@ AddSubspaceStructType34 (
   CopyMem (
     &PccAcpi->ErrorStatusRegister,
     &ErrorStatus->Register,
-    sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE)
+    sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
     );
   PccAcpi->ErrorStatusMask = ErrorStatus->PreserveMask;
   // No Write mask.
 
-  if (GenericPccCmObj->Type == EFI_ACPI_6_4_PCCT_SUBSPACE_TYPE_4_EXTENDED_PCC) {
+  if (GenericPccCmObj->Type == EFI_ACPI_6_6_PCCT_SUBSPACE_TYPE_4_EXTENDED_PCC) {
     mHasPlatformInterrupt = TRUE;
   } else if ((PccCmObj->PlatIrq.Interrupt != 0)) {
     mHasPlatformInterrupt = TRUE;
@@ -609,7 +609,7 @@ EFI_STATUS
 EFIAPI
 AddSubspaceStructType5 (
   IN  CM_ARCH_COMMON_PCC_SUBSPACE_TYPE5_INFO                    *PccCmObj,
-  IN  EFI_ACPI_6_4_PCCT_SUBSPACE_5_HW_REGISTERS_COMMUNICATIONS  *PccAcpi
+  IN  EFI_ACPI_6_6_PCCT_SUBSPACE_5_HW_REGISTERS_COMMUNICATIONS  *PccAcpi
   )
 {
   CM_ARCH_COMMON_PCC_SUBSPACE_TYPE0_INFO  *GenericPccCmObj;
@@ -621,7 +621,7 @@ AddSubspaceStructType5 (
   GenericPccCmObj = (CM_ARCH_COMMON_PCC_SUBSPACE_TYPE0_INFO *)PccCmObj;
 
   if ((PccCmObj == NULL) ||
-      (GenericPccCmObj->Type != EFI_ACPI_6_4_PCCT_SUBSPACE_TYPE_5_HW_REGISTERS_COMMUNICATIONS)  ||
+      (GenericPccCmObj->Type != EFI_ACPI_6_6_PCCT_SUBSPACE_TYPE_5_HW_REGISTERS_COMMUNICATIONS)  ||
       (PccAcpi == NULL))
   {
     ASSERT_EFI_ERROR (EFI_INVALID_PARAMETER);
@@ -634,7 +634,7 @@ AddSubspaceStructType5 (
   ChannelTiming    = &GenericPccCmObj->ChannelTiming;
 
   PccAcpi->Type                    = GenericPccCmObj->Type;
-  PccAcpi->Length                  = sizeof (EFI_ACPI_6_4_PCCT_SUBSPACE_5_HW_REGISTERS_COMMUNICATIONS);
+  PccAcpi->Length                  = sizeof (EFI_ACPI_6_6_PCCT_SUBSPACE_5_HW_REGISTERS_COMMUNICATIONS);
   PccAcpi->Version                 = PccCmObj->Version;
   PccAcpi->BaseAddress             = GenericPccCmObj->BaseAddress;
   PccAcpi->SharedMemoryRangeLength = GenericPccCmObj->AddressLength;
@@ -642,7 +642,7 @@ AddSubspaceStructType5 (
   CopyMem (
     &PccAcpi->DoorbellRegister,
     &Doorbell->Register,
-    sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE)
+    sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
     );
   PccAcpi->DoorbellPreserve = Doorbell->PreserveMask;
   PccAcpi->DoorbellWrite    = Doorbell->WriteMask;
@@ -650,7 +650,7 @@ AddSubspaceStructType5 (
   CopyMem (
     &PccAcpi->CommandCompleteCheckRegister,
     &CmdCompleteCheck->Register,
-    sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE)
+    sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
     );
   PccAcpi->CommandCompleteCheckMask = CmdCompleteCheck->PreserveMask;
   // No Write mask.
@@ -658,7 +658,7 @@ AddSubspaceStructType5 (
   CopyMem (
     &PccAcpi->ErrorStatusRegister,
     &ErrorStatus->Register,
-    sizeof (EFI_ACPI_6_4_GENERIC_ADDRESS_STRUCTURE)
+    sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE)
     );
   PccAcpi->ErrorStatusMask = ErrorStatus->PreserveMask;
   // No Write mask.
@@ -712,58 +712,58 @@ PopulatePcctTable (
     }
 
     switch (((PCC_SUBSPACE_GENERIC_INFO *)CurrentPccSubspace)->Type) {
-      case EFI_ACPI_6_4_PCCT_SUBSPACE_TYPE_GENERIC:
+      case EFI_ACPI_6_6_PCCT_SUBSPACE_TYPE_GENERIC:
         Status = AddSubspaceStructType0 (
                    (CM_ARCH_COMMON_PCC_SUBSPACE_TYPE0_INFO *)CurrentPccSubspace,
-                   (EFI_ACPI_6_4_PCCT_SUBSPACE_GENERIC *)PccBuffer
+                   (EFI_ACPI_6_6_PCCT_SUBSPACE_GENERIC *)PccBuffer
                    );
 
-        CmObjSize = sizeof (EFI_ACPI_6_4_PCCT_SUBSPACE_GENERIC);
+        CmObjSize = sizeof (EFI_ACPI_6_6_PCCT_SUBSPACE_GENERIC);
         break;
 
-      case EFI_ACPI_6_4_PCCT_SUBSPACE_TYPE_1_HW_REDUCED_COMMUNICATIONS:
+      case EFI_ACPI_6_6_PCCT_SUBSPACE_TYPE_1_HW_REDUCED_COMMUNICATIONS:
         Status = AddSubspaceStructType1 (
                    (CM_ARCH_COMMON_PCC_SUBSPACE_TYPE1_INFO *)CurrentPccSubspace,
-                   (EFI_ACPI_6_4_PCCT_SUBSPACE_1_HW_REDUCED_COMMUNICATIONS *)PccBuffer
+                   (EFI_ACPI_6_6_PCCT_SUBSPACE_1_HW_REDUCED_COMMUNICATIONS *)PccBuffer
                    );
 
-        CmObjSize = sizeof (EFI_ACPI_6_4_PCCT_SUBSPACE_1_HW_REDUCED_COMMUNICATIONS);
+        CmObjSize = sizeof (EFI_ACPI_6_6_PCCT_SUBSPACE_1_HW_REDUCED_COMMUNICATIONS);
         break;
 
-      case EFI_ACPI_6_4_PCCT_SUBSPACE_TYPE_2_HW_REDUCED_COMMUNICATIONS:
+      case EFI_ACPI_6_6_PCCT_SUBSPACE_TYPE_2_HW_REDUCED_COMMUNICATIONS:
         Status = AddSubspaceStructType2 (
                    (CM_ARCH_COMMON_PCC_SUBSPACE_TYPE2_INFO *)CurrentPccSubspace,
-                   (EFI_ACPI_6_4_PCCT_SUBSPACE_2_HW_REDUCED_COMMUNICATIONS *)PccBuffer
+                   (EFI_ACPI_6_6_PCCT_SUBSPACE_2_HW_REDUCED_COMMUNICATIONS *)PccBuffer
                    );
 
-        CmObjSize = sizeof (EFI_ACPI_6_4_PCCT_SUBSPACE_2_HW_REDUCED_COMMUNICATIONS);
+        CmObjSize = sizeof (EFI_ACPI_6_6_PCCT_SUBSPACE_2_HW_REDUCED_COMMUNICATIONS);
         break;
 
-      case EFI_ACPI_6_4_PCCT_SUBSPACE_TYPE_3_EXTENDED_PCC:
+      case EFI_ACPI_6_6_PCCT_SUBSPACE_TYPE_3_EXTENDED_PCC:
         Status = AddSubspaceStructType34 (
                    (CM_ARCH_COMMON_PCC_SUBSPACE_TYPE3_INFO *)CurrentPccSubspace,
-                   (EFI_ACPI_6_4_PCCT_SUBSPACE_3_EXTENDED_PCC *)PccBuffer
+                   (EFI_ACPI_6_6_PCCT_SUBSPACE_3_EXTENDED_PCC *)PccBuffer
                    );
 
-        CmObjSize = sizeof (EFI_ACPI_6_4_PCCT_SUBSPACE_3_EXTENDED_PCC);
+        CmObjSize = sizeof (EFI_ACPI_6_6_PCCT_SUBSPACE_3_EXTENDED_PCC);
         break;
 
-      case EFI_ACPI_6_4_PCCT_SUBSPACE_TYPE_4_EXTENDED_PCC:
+      case EFI_ACPI_6_6_PCCT_SUBSPACE_TYPE_4_EXTENDED_PCC:
         Status = AddSubspaceStructType34 (
                    (CM_ARCH_COMMON_PCC_SUBSPACE_TYPE4_INFO *)CurrentPccSubspace,
-                   (EFI_ACPI_6_4_PCCT_SUBSPACE_4_EXTENDED_PCC *)PccBuffer
+                   (EFI_ACPI_6_6_PCCT_SUBSPACE_4_EXTENDED_PCC *)PccBuffer
                    );
 
-        CmObjSize = sizeof (EFI_ACPI_6_4_PCCT_SUBSPACE_4_EXTENDED_PCC);
+        CmObjSize = sizeof (EFI_ACPI_6_6_PCCT_SUBSPACE_4_EXTENDED_PCC);
         break;
 
-      case EFI_ACPI_6_4_PCCT_SUBSPACE_TYPE_5_HW_REGISTERS_COMMUNICATIONS:
+      case EFI_ACPI_6_6_PCCT_SUBSPACE_TYPE_5_HW_REGISTERS_COMMUNICATIONS:
         Status = AddSubspaceStructType5 (
                    (CM_ARCH_COMMON_PCC_SUBSPACE_TYPE5_INFO *)CurrentPccSubspace,
-                   (EFI_ACPI_6_4_PCCT_SUBSPACE_5_HW_REGISTERS_COMMUNICATIONS *)PccBuffer
+                   (EFI_ACPI_6_6_PCCT_SUBSPACE_5_HW_REGISTERS_COMMUNICATIONS *)PccBuffer
                    );
 
-        CmObjSize = sizeof (EFI_ACPI_6_4_PCCT_SUBSPACE_5_HW_REGISTERS_COMMUNICATIONS);
+        CmObjSize = sizeof (EFI_ACPI_6_6_PCCT_SUBSPACE_5_HW_REGISTERS_COMMUNICATIONS);
         break;
 
       default:
@@ -825,7 +825,7 @@ BuildPcctTable (
   EFI_STATUS                                                Status;
   ACPI_PCCT_GENERATOR                                       *Generator;
   UINT32                                                    TableSize;
-  EFI_ACPI_6_4_PLATFORM_COMMUNICATION_CHANNEL_TABLE_HEADER  *Pcct;
+  EFI_ACPI_6_6_PLATFORM_COMMUNICATION_CHANNEL_TABLE_HEADER  *Pcct;
   UINT8                                                     *Buffer;
 
   MAPPING_TABLE  *MappingTable;
@@ -991,13 +991,13 @@ BuildPcctTable (
   }
 
   // Compute the size of the PCCT table.
-  TableSize  = sizeof (EFI_ACPI_6_4_PLATFORM_COMMUNICATION_CHANNEL_TABLE_HEADER);
-  TableSize += PccType0Count * sizeof (EFI_ACPI_6_4_PCCT_SUBSPACE_GENERIC);
-  TableSize += PccType1Count * sizeof (EFI_ACPI_6_4_PCCT_SUBSPACE_1_HW_REDUCED_COMMUNICATIONS);
-  TableSize += PccType2Count * sizeof (EFI_ACPI_6_4_PCCT_SUBSPACE_2_HW_REDUCED_COMMUNICATIONS);
-  TableSize += PccType3Count * sizeof (EFI_ACPI_6_4_PCCT_SUBSPACE_3_EXTENDED_PCC);
-  TableSize += PccType4Count * sizeof (EFI_ACPI_6_4_PCCT_SUBSPACE_4_EXTENDED_PCC);
-  TableSize += PccType5Count * sizeof (EFI_ACPI_6_4_PCCT_SUBSPACE_5_HW_REGISTERS_COMMUNICATIONS);
+  TableSize  = sizeof (EFI_ACPI_6_6_PLATFORM_COMMUNICATION_CHANNEL_TABLE_HEADER);
+  TableSize += PccType0Count * sizeof (EFI_ACPI_6_6_PCCT_SUBSPACE_GENERIC);
+  TableSize += PccType1Count * sizeof (EFI_ACPI_6_6_PCCT_SUBSPACE_1_HW_REDUCED_COMMUNICATIONS);
+  TableSize += PccType2Count * sizeof (EFI_ACPI_6_6_PCCT_SUBSPACE_2_HW_REDUCED_COMMUNICATIONS);
+  TableSize += PccType3Count * sizeof (EFI_ACPI_6_6_PCCT_SUBSPACE_3_EXTENDED_PCC);
+  TableSize += PccType4Count * sizeof (EFI_ACPI_6_6_PCCT_SUBSPACE_4_EXTENDED_PCC);
+  TableSize += PccType5Count * sizeof (EFI_ACPI_6_6_PCCT_SUBSPACE_5_HW_REGISTERS_COMMUNICATIONS);
 
   // Allocate a Buffer for the PCCT table.
   *Table = (EFI_ACPI_DESCRIPTION_HEADER *)AllocateZeroPool (TableSize);
@@ -1007,7 +1007,7 @@ BuildPcctTable (
     goto error_handler;
   }
 
-  Pcct = (EFI_ACPI_6_4_PLATFORM_COMMUNICATION_CHANNEL_TABLE_HEADER *)*Table;
+  Pcct = (EFI_ACPI_6_6_PLATFORM_COMMUNICATION_CHANNEL_TABLE_HEADER *)*Table;
 
   Status = AddAcpiHeader (
              CfgMgrProtocol,
@@ -1027,8 +1027,8 @@ BuildPcctTable (
   }
 
   Buffer     = (UINT8 *)Pcct;
-  Buffer    += sizeof (EFI_ACPI_6_4_PLATFORM_COMMUNICATION_CHANNEL_TABLE_HEADER);
-  TableSize -= sizeof (EFI_ACPI_6_4_PLATFORM_COMMUNICATION_CHANNEL_TABLE_HEADER);
+  Buffer    += sizeof (EFI_ACPI_6_6_PLATFORM_COMMUNICATION_CHANNEL_TABLE_HEADER);
+  TableSize -= sizeof (EFI_ACPI_6_6_PLATFORM_COMMUNICATION_CHANNEL_TABLE_HEADER);
 
   // Populate the PCCT table by following the Subspace Id mapping.
   Status = PopulatePcctTable (MappingTable, Buffer, TableSize);
@@ -1115,11 +1115,11 @@ ACPI_PCCT_GENERATOR  PcctGenerator = {
     // Generator Description
     L"ACPI.STD.PCCT.GENERATOR",
     // ACPI Table Signature
-    EFI_ACPI_6_4_PLATFORM_COMMUNICATIONS_CHANNEL_TABLE_SIGNATURE,
+    EFI_ACPI_6_6_PLATFORM_COMMUNICATIONS_CHANNEL_TABLE_SIGNATURE,
     // ACPI Table Revision supported by this Generator
-    EFI_ACPI_6_4_PLATFORM_COMMUNICATION_CHANNEL_TABLE_REVISION,
+    EFI_ACPI_6_6_PLATFORM_COMMUNICATION_CHANNEL_TABLE_REVISION,
     // Minimum ACPI Table Revision supported by this Generator
-    EFI_ACPI_6_4_PLATFORM_COMMUNICATION_CHANNEL_TABLE_REVISION,
+    EFI_ACPI_6_6_PLATFORM_COMMUNICATION_CHANNEL_TABLE_REVISION,
     // Creator ID
     TABLE_GENERATOR_CREATOR_ID,
     // Creator Revision

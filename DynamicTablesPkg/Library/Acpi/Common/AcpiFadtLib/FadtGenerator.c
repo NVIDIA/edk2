@@ -39,34 +39,34 @@ Requirements:
     22-31 (reserved).
 
   Valid bits are:
-    EFI_ACPI_6_5_WBINVD                               BIT0
-    EFI_ACPI_6_5_PWR_BUTTON                           BIT4
-    EFI_ACPI_6_5_SLP_BUTTON                           BIT5
-    EFI_ACPI_6_5_FIX_RTC                              BIT6
-    EFI_ACPI_6_5_DCK_CAP                              BIT9
-    EFI_ACPI_6_5_RESET_REG_SUP                        BIT10
-    EFI_ACPI_6_5_SEALED_CASE                          BIT11
-    EFI_ACPI_6_5_HEADLESS                             BIT12
-    EFI_ACPI_6_5_USE_PLATFORM_CLOCK                   BIT15
-    EFI_ACPI_6_5_FORCE_APIC_CLUSTER_MODEL             BIT18
-    EFI_ACPI_6_5_FORCE_APIC_PHYSICAL_DESTINATION_MODE BIT19
-    EFI_ACPI_6_5_HW_REDUCED_ACPI                      BIT20
-    EFI_ACPI_6_5_LOW_POWER_S0_IDLE_CAPABLE            BIT21
+    EFI_ACPI_6_6_WBINVD                               BIT0
+    EFI_ACPI_6_6_PWR_BUTTON                           BIT4
+    EFI_ACPI_6_6_SLP_BUTTON                           BIT5
+    EFI_ACPI_6_6_FIX_RTC                              BIT6
+    EFI_ACPI_6_6_DCK_CAP                              BIT9
+    EFI_ACPI_6_6_RESET_REG_SUP                        BIT10
+    EFI_ACPI_6_6_SEALED_CASE                          BIT11
+    EFI_ACPI_6_6_HEADLESS                             BIT12
+    EFI_ACPI_6_6_USE_PLATFORM_CLOCK                   BIT15
+    EFI_ACPI_6_6_FORCE_APIC_CLUSTER_MODEL             BIT18
+    EFI_ACPI_6_6_FORCE_APIC_PHYSICAL_DESTINATION_MODE BIT19
+    EFI_ACPI_6_6_HW_REDUCED_ACPI                      BIT20
+    EFI_ACPI_6_6_LOW_POWER_S0_IDLE_CAPABLE            BIT21
 */
 #define VALID_HARDWARE_REDUCED_FLAG_MASK  (                   \
-          EFI_ACPI_6_5_WBINVD                               | \
-          EFI_ACPI_6_5_PWR_BUTTON                           | \
-          EFI_ACPI_6_5_SLP_BUTTON                           | \
-          EFI_ACPI_6_5_FIX_RTC                              | \
-          EFI_ACPI_6_5_DCK_CAP                              | \
-          EFI_ACPI_6_5_RESET_REG_SUP                        | \
-          EFI_ACPI_6_5_SEALED_CASE                          | \
-          EFI_ACPI_6_5_HEADLESS                             | \
-          EFI_ACPI_6_5_USE_PLATFORM_CLOCK                   | \
-          EFI_ACPI_6_5_FORCE_APIC_CLUSTER_MODEL             | \
-          EFI_ACPI_6_5_FORCE_APIC_PHYSICAL_DESTINATION_MODE | \
-          EFI_ACPI_6_5_HW_REDUCED_ACPI                      | \
-          EFI_ACPI_6_5_LOW_POWER_S0_IDLE_CAPABLE)
+          EFI_ACPI_6_6_WBINVD                               | \
+          EFI_ACPI_6_6_PWR_BUTTON                           | \
+          EFI_ACPI_6_6_SLP_BUTTON                           | \
+          EFI_ACPI_6_6_FIX_RTC                              | \
+          EFI_ACPI_6_6_DCK_CAP                              | \
+          EFI_ACPI_6_6_RESET_REG_SUP                        | \
+          EFI_ACPI_6_6_SEALED_CASE                          | \
+          EFI_ACPI_6_6_HEADLESS                             | \
+          EFI_ACPI_6_6_USE_PLATFORM_CLOCK                   | \
+          EFI_ACPI_6_6_FORCE_APIC_CLUSTER_MODEL             | \
+          EFI_ACPI_6_6_FORCE_APIC_PHYSICAL_DESTINATION_MODE | \
+          EFI_ACPI_6_6_HW_REDUCED_ACPI                      | \
+          EFI_ACPI_6_6_LOW_POWER_S0_IDLE_CAPABLE)
 
 /** This macro defines the valid mask for the FADT flag option
     if HW_REDUCED_ACPI flag in the table is not set.
@@ -74,63 +74,63 @@ Requirements:
   Invalid bits are: Bit 20 and 22-31 (reserved).
 
   Valid bits are:
-    EFI_ACPI_6_5_WBINVD                                BIT0
-    EFI_ACPI_6_5_WBINVD_FLUSH                          BIT1
-    EFI_ACPI_6_5_PROC_C1                               BIT2
-    EFI_ACPI_6_5_P_LVL2_UP                             BIT3
-    EFI_ACPI_6_5_PWR_BUTTON                            BIT4
-    EFI_ACPI_6_5_SLP_BUTTON                            BIT5
-    EFI_ACPI_6_5_FIX_RTC                               BIT6
-    EFI_ACPI_6_5_RTC_S4                                BIT7
-    EFI_ACPI_6_5_TMR_VAL_EXT                           BIT8
-    EFI_ACPI_6_5_DCK_CAP                               BIT9
-    EFI_ACPI_6_5_RESET_REG_SUP                         BIT10
-    EFI_ACPI_6_5_SEALED_CASE                           BIT11
-    EFI_ACPI_6_5_HEADLESS                              BIT12
-    EFI_ACPI_6_5_CPU_SW_SLP                            BIT13
-    EFI_ACPI_6_5_PCI_EXP_WAK                           BIT14
-    EFI_ACPI_6_5_USE_PLATFORM_CLOCK                    BIT15
-    EFI_ACPI_6_5_S4_RTC_STS_VALID                      BIT16
-    EFI_ACPI_6_5_REMOTE_POWER_ON_CAPABLE               BIT17
-    EFI_ACPI_6_5_FORCE_APIC_CLUSTER_MODEL              BIT18
-    EFI_ACPI_6_5_FORCE_APIC_PHYSICAL_DESTINATION_MODE  BIT19
-    EFI_ACPI_6_5_LOW_POWER_S0_IDLE_CAPABLE             BIT21
+    EFI_ACPI_6_6_WBINVD                                BIT0
+    EFI_ACPI_6_6_WBINVD_FLUSH                          BIT1
+    EFI_ACPI_6_6_PROC_C1                               BIT2
+    EFI_ACPI_6_6_P_LVL2_UP                             BIT3
+    EFI_ACPI_6_6_PWR_BUTTON                            BIT4
+    EFI_ACPI_6_6_SLP_BUTTON                            BIT5
+    EFI_ACPI_6_6_FIX_RTC                               BIT6
+    EFI_ACPI_6_6_RTC_S4                                BIT7
+    EFI_ACPI_6_6_TMR_VAL_EXT                           BIT8
+    EFI_ACPI_6_6_DCK_CAP                               BIT9
+    EFI_ACPI_6_6_RESET_REG_SUP                         BIT10
+    EFI_ACPI_6_6_SEALED_CASE                           BIT11
+    EFI_ACPI_6_6_HEADLESS                              BIT12
+    EFI_ACPI_6_6_CPU_SW_SLP                            BIT13
+    EFI_ACPI_6_6_PCI_EXP_WAK                           BIT14
+    EFI_ACPI_6_6_USE_PLATFORM_CLOCK                    BIT15
+    EFI_ACPI_6_6_S4_RTC_STS_VALID                      BIT16
+    EFI_ACPI_6_6_REMOTE_POWER_ON_CAPABLE               BIT17
+    EFI_ACPI_6_6_FORCE_APIC_CLUSTER_MODEL              BIT18
+    EFI_ACPI_6_6_FORCE_APIC_PHYSICAL_DESTINATION_MODE  BIT19
+    EFI_ACPI_6_6_LOW_POWER_S0_IDLE_CAPABLE             BIT21
 */
 #define VALID_NON_HARDWARE_REDUCED_FLAG_MASK  (                               \
-          EFI_ACPI_6_5_WBINVD                               | \
-          EFI_ACPI_6_5_WBINVD_FLUSH                         | \
-          EFI_ACPI_6_5_PROC_C1                              | \
-          EFI_ACPI_6_5_P_LVL2_UP                            | \
-          EFI_ACPI_6_5_PWR_BUTTON                           | \
-          EFI_ACPI_6_5_SLP_BUTTON                           | \
-          EFI_ACPI_6_5_FIX_RTC                              | \
-          EFI_ACPI_6_5_RTC_S4                               | \
-          EFI_ACPI_6_5_TMR_VAL_EXT                          | \
-          EFI_ACPI_6_5_DCK_CAP                              | \
-          EFI_ACPI_6_5_RESET_REG_SUP                        | \
-          EFI_ACPI_6_5_SEALED_CASE                          | \
-          EFI_ACPI_6_5_HEADLESS                             | \
-          EFI_ACPI_6_5_CPU_SW_SLP                           | \
-          EFI_ACPI_6_5_PCI_EXP_WAK                          | \
-          EFI_ACPI_6_5_USE_PLATFORM_CLOCK                   | \
-          EFI_ACPI_6_5_S4_RTC_STS_VALID                     | \
-          EFI_ACPI_6_5_REMOTE_POWER_ON_CAPABLE              | \
-          EFI_ACPI_6_5_FORCE_APIC_CLUSTER_MODEL             | \
-          EFI_ACPI_6_5_FORCE_APIC_PHYSICAL_DESTINATION_MODE | \
-          EFI_ACPI_6_5_LOW_POWER_S0_IDLE_CAPABLE)
+          EFI_ACPI_6_6_WBINVD                               | \
+          EFI_ACPI_6_6_WBINVD_FLUSH                         | \
+          EFI_ACPI_6_6_PROC_C1                              | \
+          EFI_ACPI_6_6_P_LVL2_UP                            | \
+          EFI_ACPI_6_6_PWR_BUTTON                           | \
+          EFI_ACPI_6_6_SLP_BUTTON                           | \
+          EFI_ACPI_6_6_FIX_RTC                              | \
+          EFI_ACPI_6_6_RTC_S4                               | \
+          EFI_ACPI_6_6_TMR_VAL_EXT                          | \
+          EFI_ACPI_6_6_DCK_CAP                              | \
+          EFI_ACPI_6_6_RESET_REG_SUP                        | \
+          EFI_ACPI_6_6_SEALED_CASE                          | \
+          EFI_ACPI_6_6_HEADLESS                             | \
+          EFI_ACPI_6_6_CPU_SW_SLP                           | \
+          EFI_ACPI_6_6_PCI_EXP_WAK                          | \
+          EFI_ACPI_6_6_USE_PLATFORM_CLOCK                   | \
+          EFI_ACPI_6_6_S4_RTC_STS_VALID                     | \
+          EFI_ACPI_6_6_REMOTE_POWER_ON_CAPABLE              | \
+          EFI_ACPI_6_6_FORCE_APIC_CLUSTER_MODEL             | \
+          EFI_ACPI_6_6_FORCE_APIC_PHYSICAL_DESTINATION_MODE | \
+          EFI_ACPI_6_6_LOW_POWER_S0_IDLE_CAPABLE)
 
 #pragma pack(1)
 
-/** The AcpiFadt is a template EFI_ACPI_6_5_FIXED_ACPI_DESCRIPTION_TABLE
+/** The AcpiFadt is a template EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE
     structure used for generating the FADT Table.
   Note: fields marked with "{Template}" will be updated dynamically.
 */
 STATIC
-EFI_ACPI_6_5_FIXED_ACPI_DESCRIPTION_TABLE  AcpiFadt = {
+EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE  AcpiFadt = {
   ACPI_HEADER (
-    EFI_ACPI_6_5_FIXED_ACPI_DESCRIPTION_TABLE_SIGNATURE,
-    EFI_ACPI_6_5_FIXED_ACPI_DESCRIPTION_TABLE,
-    EFI_ACPI_6_5_FIXED_ACPI_DESCRIPTION_TABLE_REVISION
+    EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE_SIGNATURE,
+    EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE,
+    EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE_REVISION
     ),
   // UINT32     FirmwareCtrl
   0,
@@ -139,7 +139,7 @@ EFI_ACPI_6_5_FIXED_ACPI_DESCRIPTION_TABLE  AcpiFadt = {
   // UINT8      Reserved0
   EFI_ACPI_RESERVED_BYTE,
   // UINT8      PreferredPmProfile
-  EFI_ACPI_6_5_PM_PROFILE_UNSPECIFIED,  // {Template}: Power Management Profile
+  EFI_ACPI_6_6_PM_PROFILE_UNSPECIFIED,  // {Template}: Power Management Profile
   // UINT16     SciInt
   0,
   // UINT32     SmiCmd
@@ -208,37 +208,37 @@ EFI_ACPI_6_5_FIXED_ACPI_DESCRIPTION_TABLE  AcpiFadt = {
   0,
   // UINT32     Flags
   0,
-  // EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE  ResetReg
+  // EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE  ResetReg
   NULL_GAS,
   // UINT8      ResetValue
   0,
   // UINT16     ArmBootArch
   0,  // {Template}: ARM Boot Architecture Flags
   // UINT8      MinorRevision
-  EFI_ACPI_6_5_FIXED_ACPI_DESCRIPTION_TABLE_MINOR_REVISION, // {Template}
+  EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE_MINOR_REVISION, // {Template}
   // UINT64     XFirmwareCtrl
   0,
   // UINT64     XDsdt
   0,
-  // EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE  XPm1aEvtBlk
+  // EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE  XPm1aEvtBlk
   NULL_GAS,
-  // EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE  XPm1bEvtBlk
+  // EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE  XPm1bEvtBlk
   NULL_GAS,
-  // EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE  XPm1aCntBlk
+  // EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE  XPm1aCntBlk
   NULL_GAS,
-  // EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE  XPm1bCntBlk
+  // EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE  XPm1bCntBlk
   NULL_GAS,
-  // EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE  XPm2CntBlk
+  // EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE  XPm2CntBlk
   NULL_GAS,
-  // EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE  XPmTmrBlk
+  // EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE  XPmTmrBlk
   NULL_GAS,
-  // EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE  XGpe0Blk
+  // EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE  XGpe0Blk
   NULL_GAS,
-  // EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE  XGpe1Blk
+  // EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE  XGpe1Blk
   NULL_GAS,
-  // EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE  SleepControlReg
+  // EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE  SleepControlReg
   NULL_GAS,
-  // EFI_ACPI_6_5_GENERIC_ADDRESS_STRUCTURE  SleepStatusReg
+  // EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE  SleepStatusReg
   NULL_GAS,
   // UINT64     HypervisorVendorIdentity
   EFI_ACPI_RESERVED_QWORD  // {Template}: Hypervisor Vendor ID
@@ -444,7 +444,7 @@ FadtAddFixedFeatureFlags (
     FixedFeatureFlags->Flags
     ));
 
-  if ((FixedFeatureFlags->Flags & EFI_ACPI_6_5_HW_REDUCED_ACPI) != 0) {
+  if ((FixedFeatureFlags->Flags & EFI_ACPI_6_6_HW_REDUCED_ACPI) != 0) {
     if ((FixedFeatureFlags->Flags & ~(VALID_HARDWARE_REDUCED_FLAG_MASK)) != 0) {
       DEBUG ((
         DEBUG_WARN,
@@ -536,7 +536,7 @@ BuildFadtTable (
              This,
              (EFI_ACPI_DESCRIPTION_HEADER *)&AcpiFadt,
              AcpiTableInfo,
-             sizeof (EFI_ACPI_6_5_FIXED_ACPI_DESCRIPTION_TABLE)
+             sizeof (EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE)
              );
   if (EFI_ERROR (Status)) {
     DEBUG ((
@@ -556,9 +556,9 @@ BuildFadtTable (
   //            specification errata.
   if (AcpiTableInfo->MinorRevision != 0) {
     if (((AcpiTableInfo->MinorRevision & 0xF) >=
-         EFI_ACPI_6_2_FIXED_ACPI_DESCRIPTION_TABLE_MINOR_REVISION) &&
+         EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE_MINOR_REVISION) &&
         ((AcpiTableInfo->MinorRevision & 0xF) <=
-         EFI_ACPI_6_5_FIXED_ACPI_DESCRIPTION_TABLE_MINOR_REVISION))
+         EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE_MINOR_REVISION))
     {
       AcpiFadt.MinorVersion = AcpiTableInfo->MinorRevision;
     } else {
@@ -567,7 +567,7 @@ BuildFadtTable (
         "WARNING: FADT: Unsupported FADT Minor Revision 0x%x specified, " \
         "defaulting to FADT Minor Revision 0x%x\n",
         AcpiTableInfo->MinorRevision,
-        EFI_ACPI_6_5_FIXED_ACPI_DESCRIPTION_TABLE_MINOR_REVISION
+        EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE_MINOR_REVISION
         ));
     }
   }
@@ -643,11 +643,11 @@ ACPI_TABLE_GENERATOR  FadtGenerator = {
   // Generator Description
   L"ACPI.STD.FADT.GENERATOR",
   // ACPI Table Signature
-  EFI_ACPI_6_5_FIXED_ACPI_DESCRIPTION_TABLE_SIGNATURE,
+  EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE_SIGNATURE,
   // ACPI Table Revision supported by this Generator
-  EFI_ACPI_6_5_FIXED_ACPI_DESCRIPTION_TABLE_REVISION,
+  EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE_REVISION,
   // Minimum supported ACPI Table Revision
-  EFI_ACPI_6_2_FIXED_ACPI_DESCRIPTION_TABLE_REVISION,
+  EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE_REVISION,
   // Creator ID
   TABLE_GENERATOR_CREATOR_ID,
   // Creator Revision
