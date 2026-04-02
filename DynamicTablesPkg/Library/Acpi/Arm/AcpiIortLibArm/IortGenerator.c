@@ -160,7 +160,7 @@ GetItsGroupNodeSize (
   /* Size of ITS Group Node +
      Size of ITS Identifier array
   */
-  return (UINT32)(sizeof (EFI_ACPI_6_0_IO_REMAPPING_ITS_NODE) +
+  return (UINT32)(sizeof (EFI_ACPI_6_6_IO_REMAPPING_ITS_NODE) +
                   (Node->ItsIdCount * sizeof (UINT32)));
 }
 
@@ -235,9 +235,9 @@ GetNamedComponentNodeSize (
      Size of ID mapping array +
      Size of ASCII string + 'padding to 32-bit word aligned'.
   */
-  return (UINT32)(sizeof (EFI_ACPI_6_0_IO_REMAPPING_NAMED_COMP_NODE) +
+  return (UINT32)(sizeof (EFI_ACPI_6_6_IO_REMAPPING_NAMED_COMP_NODE) +
                   (Node->IdMappingCount *
-                   sizeof (EFI_ACPI_6_0_IO_REMAPPING_ID_TABLE)) +
+                   sizeof (EFI_ACPI_6_6_IO_REMAPPING_ID_TABLE)) +
                   ALIGN_VALUE (AsciiStrSize (Node->ObjectName), 4));
 }
 
@@ -311,9 +311,9 @@ GetRootComplexNodeSize (
   /* Size of Root Complex node +
      Size of ID mapping array
   */
-  return (UINT32)(sizeof (EFI_ACPI_6_0_IO_REMAPPING_RC_NODE) +
+  return (UINT32)(sizeof (EFI_ACPI_6_6_IO_REMAPPING_RC_NODE) +
                   (Node->IdMappingCount *
-                   sizeof (EFI_ACPI_6_0_IO_REMAPPING_ID_TABLE)));
+                   sizeof (EFI_ACPI_6_6_IO_REMAPPING_ID_TABLE)));
 }
 
 /** Returns the total size required for the Root Complex nodes and
@@ -388,13 +388,13 @@ GetSmmuV1V2NodeSize (
      Size of context interrupt array +
      Size of PMU interrupt array
   */
-  return (UINT32)(sizeof (EFI_ACPI_6_0_IO_REMAPPING_SMMU_NODE) +
+  return (UINT32)(sizeof (EFI_ACPI_6_6_IO_REMAPPING_SMMU_NODE) +
                   (Node->IdMappingCount *
-                   sizeof (EFI_ACPI_6_0_IO_REMAPPING_ID_TABLE)) +
+                   sizeof (EFI_ACPI_6_6_IO_REMAPPING_ID_TABLE)) +
                   (Node->ContextInterruptCount *
-                   sizeof (EFI_ACPI_6_0_IO_REMAPPING_SMMU_INT)) +
+                   sizeof (EFI_ACPI_6_6_IO_REMAPPING_SMMU_INT)) +
                   (Node->PmuInterruptCount *
-                   sizeof (EFI_ACPI_6_0_IO_REMAPPING_SMMU_INT)));
+                   sizeof (EFI_ACPI_6_6_IO_REMAPPING_SMMU_INT)));
 }
 
 /** Returns the total size required for the SMMUv1/SMMUv2 nodes and
@@ -467,9 +467,9 @@ GetSmmuV3NodeSize (
   /* Size of SMMU v1/SMMU v2 node +
      Size of ID mapping array
   */
-  return (UINT32)(sizeof (EFI_ACPI_6_0_IO_REMAPPING_SMMU3_NODE) +
+  return (UINT32)(sizeof (EFI_ACPI_6_6_IO_REMAPPING_SMMU3_NODE) +
                   (Node->IdMappingCount *
-                   sizeof (EFI_ACPI_6_0_IO_REMAPPING_ID_TABLE)));
+                   sizeof (EFI_ACPI_6_6_IO_REMAPPING_ID_TABLE)));
 }
 
 /** Returns the total size required for the SMMUv3 nodes and
@@ -542,9 +542,9 @@ GetPmcgNodeSize (
   /* Size of PMCG node +
      Size of ID mapping array
   */
-  return (UINT32)(sizeof (EFI_ACPI_6_0_IO_REMAPPING_PMCG_NODE) +
+  return (UINT32)(sizeof (EFI_ACPI_6_6_IO_REMAPPING_PMCG_NODE) +
                   (Node->IdMappingCount *
-                   sizeof (EFI_ACPI_6_0_IO_REMAPPING_ID_TABLE)));
+                   sizeof (EFI_ACPI_6_6_IO_REMAPPING_ID_TABLE)));
 }
 
 /** Returns the total size required for the PMCG nodes and
@@ -618,11 +618,11 @@ GetRmrNodeSize (
      Size of ID mapping array +
      Size of Memory Range Descriptor array
   */
-  return (UINT32)(sizeof (EFI_ACPI_6_0_IO_REMAPPING_RMR_NODE) +
+  return (UINT32)(sizeof (EFI_ACPI_6_6_IO_REMAPPING_RMR_NODE) +
                   (Node->IdMappingCount *
-                   sizeof (EFI_ACPI_6_0_IO_REMAPPING_ID_TABLE)) +
+                   sizeof (EFI_ACPI_6_6_IO_REMAPPING_ID_TABLE)) +
                   (Node->MemRangeDescCount *
-                   sizeof (EFI_ACPI_6_0_IO_REMAPPING_MEM_RANGE_DESC)));
+                   sizeof (EFI_ACPI_6_6_IO_REMAPPING_MEM_RANGE_DESC)));
 }
 
 /** Returns the total size required for the RMR nodes and
@@ -754,7 +754,7 @@ EFI_STATUS
 AddIdMappingArray (
   IN      CONST ACPI_TABLE_GENERATOR                   *CONST  This,
   IN      CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL   *CONST  CfgMgrProtocol,
-  IN            EFI_ACPI_6_0_IO_REMAPPING_ID_TABLE             *IdMapArray,
+  IN            EFI_ACPI_6_6_IO_REMAPPING_ID_TABLE             *IdMapArray,
   IN            UINT32                                         IdCount,
   IN      CONST CM_OBJECT_TOKEN                                IdMappingToken
   )
@@ -847,14 +847,14 @@ AddItsGroupNodes (
   IN  CONST ACPI_TABLE_GENERATOR                  *CONST  This,
   IN  CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL  *CONST  CfgMgrProtocol,
   IN  CONST CM_STD_OBJ_ACPI_TABLE_INFO            *CONST  AcpiTableInfo,
-  IN  CONST EFI_ACPI_6_0_IO_REMAPPING_TABLE               *Iort,
+  IN  CONST EFI_ACPI_6_6_IO_REMAPPING_TABLE               *Iort,
   IN  CONST UINT32                                        NodesStartOffset,
   IN  CONST CM_ARM_ITS_GROUP_NODE                         *NodeList,
   IN        UINT32                                        NodeCount
   )
 {
   EFI_STATUS                          Status;
-  EFI_ACPI_6_0_IO_REMAPPING_ITS_NODE  *ItsGroupNode;
+  EFI_ACPI_6_6_IO_REMAPPING_ITS_NODE  *ItsGroupNode;
   UINT32                              *ItsIds;
   CM_ARM_ITS_IDENTIFIER               *ItsIdentifier;
   UINT32                              ItsIdentifierCount;
@@ -863,7 +863,7 @@ AddItsGroupNodes (
 
   ASSERT (Iort != NULL);
 
-  ItsGroupNode = (EFI_ACPI_6_0_IO_REMAPPING_ITS_NODE *)((UINT8 *)Iort +
+  ItsGroupNode = (EFI_ACPI_6_6_IO_REMAPPING_ITS_NODE *)((UINT8 *)Iort +
                                                         NodesStartOffset);
 
   while (NodeCount-- != 0) {
@@ -899,7 +899,7 @@ AddItsGroupNodes (
     // IORT specific data
     ItsGroupNode->NumItsIdentifiers = NodeList->ItsIdCount;
     ItsIds                          = (UINT32 *)((UINT8 *)ItsGroupNode +
-                                                 sizeof (EFI_ACPI_6_0_IO_REMAPPING_ITS_NODE));
+                                                 sizeof (EFI_ACPI_6_6_IO_REMAPPING_ITS_NODE));
 
     Status = GetEArmObjGicItsIdentifierArray (
                CfgMgrProtocol,
@@ -930,7 +930,7 @@ AddItsGroupNodes (
     } // ITS identifier array
 
     // Next IORT Group Node
-    ItsGroupNode = (EFI_ACPI_6_0_IO_REMAPPING_ITS_NODE *)((UINT8 *)ItsGroupNode +
+    ItsGroupNode = (EFI_ACPI_6_6_IO_REMAPPING_ITS_NODE *)((UINT8 *)ItsGroupNode +
                                                           ItsGroupNode->Node.Length);
     NodeList++;
   } // IORT Group Node
@@ -964,22 +964,22 @@ AddNamedComponentNodes (
   IN      CONST ACPI_TABLE_GENERATOR                   *CONST  This,
   IN      CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL   *CONST  CfgMgrProtocol,
   IN      CONST CM_STD_OBJ_ACPI_TABLE_INFO             *CONST  AcpiTableInfo,
-  IN      CONST EFI_ACPI_6_0_IO_REMAPPING_TABLE                *Iort,
+  IN      CONST EFI_ACPI_6_6_IO_REMAPPING_TABLE                *Iort,
   IN      CONST UINT32                                         NodesStartOffset,
   IN      CONST CM_ARM_NAMED_COMPONENT_NODE                    *NodeList,
   IN            UINT32                                         NodeCount
   )
 {
   EFI_STATUS                                 Status;
-  EFI_ACPI_6_0_IO_REMAPPING_NAMED_COMP_NODE  *NcNode;
-  EFI_ACPI_6_0_IO_REMAPPING_ID_TABLE         *IdMapArray;
+  EFI_ACPI_6_6_IO_REMAPPING_NAMED_COMP_NODE  *NcNode;
+  EFI_ACPI_6_6_IO_REMAPPING_ID_TABLE         *IdMapArray;
   CHAR8                                      *ObjectName;
   UINTN                                      ObjectNameLength;
   UINT64                                     NodeLength;
 
   ASSERT (Iort != NULL);
 
-  NcNode = (EFI_ACPI_6_0_IO_REMAPPING_NAMED_COMP_NODE *)((UINT8 *)Iort +
+  NcNode = (EFI_ACPI_6_6_IO_REMAPPING_NAMED_COMP_NODE *)((UINT8 *)Iort +
                                                          NodesStartOffset);
 
   while (NodeCount-- != 0) {
@@ -1013,7 +1013,7 @@ AddNamedComponentNodes (
 
     ObjectNameLength         = AsciiStrLen (NodeList->ObjectName) + 1;
     NcNode->Node.IdReference = (NodeList->IdMappingCount == 0) ?
-                               0 : ((UINT32)(sizeof (EFI_ACPI_6_0_IO_REMAPPING_NAMED_COMP_NODE) +
+                               0 : ((UINT32)(sizeof (EFI_ACPI_6_6_IO_REMAPPING_NAMED_COMP_NODE) +
                                              (ALIGN_VALUE (ObjectNameLength, 4))));
 
     // Named Component specific data
@@ -1026,7 +1026,7 @@ AddNamedComponentNodes (
 
     // Copy the object name
     ObjectName = (CHAR8 *)((UINT8 *)NcNode +
-                           sizeof (EFI_ACPI_6_0_IO_REMAPPING_NAMED_COMP_NODE));
+                           sizeof (EFI_ACPI_6_6_IO_REMAPPING_NAMED_COMP_NODE));
     Status = AsciiStrCpyS (
                ObjectName,
                ObjectNameLength,
@@ -1055,7 +1055,7 @@ AddNamedComponentNodes (
       }
 
       // Ids for Named Component
-      IdMapArray = (EFI_ACPI_6_0_IO_REMAPPING_ID_TABLE *)((UINT8 *)NcNode +
+      IdMapArray = (EFI_ACPI_6_6_IO_REMAPPING_ID_TABLE *)((UINT8 *)NcNode +
                                                           NcNode->Node.IdReference);
 
       Status = AddIdMappingArray (
@@ -1076,7 +1076,7 @@ AddNamedComponentNodes (
     }
 
     // Next Named Component Node
-    NcNode = (EFI_ACPI_6_0_IO_REMAPPING_NAMED_COMP_NODE *)((UINT8 *)NcNode +
+    NcNode = (EFI_ACPI_6_6_IO_REMAPPING_NAMED_COMP_NODE *)((UINT8 *)NcNode +
                                                            NcNode->Node.Length);
     NodeList++;
   } // Named Component Node
@@ -1109,20 +1109,20 @@ AddRootComplexNodes (
   IN      CONST ACPI_TABLE_GENERATOR                   *CONST  This,
   IN      CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL   *CONST  CfgMgrProtocol,
   IN      CONST CM_STD_OBJ_ACPI_TABLE_INFO             *CONST  AcpiTableInfo,
-  IN      CONST EFI_ACPI_6_0_IO_REMAPPING_TABLE                *Iort,
+  IN      CONST EFI_ACPI_6_6_IO_REMAPPING_TABLE                *Iort,
   IN      CONST UINT32                                         NodesStartOffset,
   IN      CONST CM_ARM_ROOT_COMPLEX_NODE                       *NodeList,
   IN            UINT32                                         NodeCount
   )
 {
   EFI_STATUS                          Status;
-  EFI_ACPI_6_0_IO_REMAPPING_RC_NODE   *RcNode;
-  EFI_ACPI_6_0_IO_REMAPPING_ID_TABLE  *IdMapArray;
+  EFI_ACPI_6_6_IO_REMAPPING_RC_NODE   *RcNode;
+  EFI_ACPI_6_6_IO_REMAPPING_ID_TABLE  *IdMapArray;
   UINT64                              NodeLength;
 
   ASSERT (Iort != NULL);
 
-  RcNode = (EFI_ACPI_6_0_IO_REMAPPING_RC_NODE *)((UINT8 *)Iort +
+  RcNode = (EFI_ACPI_6_6_IO_REMAPPING_RC_NODE *)((UINT8 *)Iort +
                                                  NodesStartOffset);
 
   while (NodeCount-- != 0) {
@@ -1144,7 +1144,7 @@ AddRootComplexNodes (
     RcNode->Node.Length        = (UINT16)NodeLength;
     RcNode->Node.NumIdMappings = NodeList->IdMappingCount;
     RcNode->Node.IdReference   = (NodeList->IdMappingCount == 0) ?
-                                 0 : sizeof (EFI_ACPI_6_0_IO_REMAPPING_RC_NODE);
+                                 0 : sizeof (EFI_ACPI_6_6_IO_REMAPPING_RC_NODE);
 
     if (AcpiTableInfo->AcpiTableRevision <
         EFI_ACPI_IO_REMAPPING_TABLE_REVISION_05)
@@ -1183,7 +1183,7 @@ AddRootComplexNodes (
       }
 
       // Ids for Root Complex
-      IdMapArray = (EFI_ACPI_6_0_IO_REMAPPING_ID_TABLE *)((UINT8 *)RcNode +
+      IdMapArray = (EFI_ACPI_6_6_IO_REMAPPING_ID_TABLE *)((UINT8 *)RcNode +
                                                           RcNode->Node.IdReference);
       Status = AddIdMappingArray (
                  This,
@@ -1203,7 +1203,7 @@ AddRootComplexNodes (
     }
 
     // Next Root Complex Node
-    RcNode = (EFI_ACPI_6_0_IO_REMAPPING_RC_NODE *)((UINT8 *)RcNode +
+    RcNode = (EFI_ACPI_6_6_IO_REMAPPING_RC_NODE *)((UINT8 *)RcNode +
                                                    RcNode->Node.Length);
     NodeList++;
   } // Root Complex Node
@@ -1231,7 +1231,7 @@ STATIC
 EFI_STATUS
 AddSmmuInterruptArray (
   IN      CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL  *CONST  CfgMgrProtocol,
-  IN OUT        EFI_ACPI_6_0_IO_REMAPPING_SMMU_INT            *InterruptArray,
+  IN OUT        EFI_ACPI_6_6_IO_REMAPPING_SMMU_INT            *InterruptArray,
   IN            UINT32                                        InterruptCount,
   IN      CONST CM_OBJECT_TOKEN                               InterruptToken
   )
@@ -1300,24 +1300,24 @@ AddSmmuV1V2Nodes (
   IN      CONST ACPI_TABLE_GENERATOR                  *CONST  This,
   IN      CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL  *CONST  CfgMgrProtocol,
   IN      CONST CM_STD_OBJ_ACPI_TABLE_INFO            *CONST  AcpiTableInfo,
-  IN      CONST EFI_ACPI_6_0_IO_REMAPPING_TABLE               *Iort,
+  IN      CONST EFI_ACPI_6_6_IO_REMAPPING_TABLE               *Iort,
   IN      CONST UINT32                                        NodesStartOffset,
   IN      CONST CM_ARM_SMMUV1_SMMUV2_NODE                     *NodeList,
   IN            UINT32                                        NodeCount
   )
 {
   EFI_STATUS                           Status;
-  EFI_ACPI_6_0_IO_REMAPPING_SMMU_NODE  *SmmuNode;
-  EFI_ACPI_6_0_IO_REMAPPING_ID_TABLE   *IdMapArray;
+  EFI_ACPI_6_6_IO_REMAPPING_SMMU_NODE  *SmmuNode;
+  EFI_ACPI_6_6_IO_REMAPPING_ID_TABLE   *IdMapArray;
 
-  EFI_ACPI_6_0_IO_REMAPPING_SMMU_INT  *ContextInterruptArray;
-  EFI_ACPI_6_0_IO_REMAPPING_SMMU_INT  *PmuInterruptArray;
+  EFI_ACPI_6_6_IO_REMAPPING_SMMU_INT  *ContextInterruptArray;
+  EFI_ACPI_6_6_IO_REMAPPING_SMMU_INT  *PmuInterruptArray;
   UINT64                              NodeLength;
   UINT32                              Offset;
 
   ASSERT (Iort != NULL);
 
-  SmmuNode = (EFI_ACPI_6_0_IO_REMAPPING_SMMU_NODE *)((UINT8 *)Iort +
+  SmmuNode = (EFI_ACPI_6_6_IO_REMAPPING_SMMU_NODE *)((UINT8 *)Iort +
                                                      NodesStartOffset);
 
   while (NodeCount-- != 0) {
@@ -1338,11 +1338,11 @@ AddSmmuV1V2Nodes (
     SmmuNode->Node.Length        = (UINT16)NodeLength;
     SmmuNode->Node.NumIdMappings = NodeList->IdMappingCount;
     SmmuNode->Node.IdReference   = (NodeList->IdMappingCount == 0) ?
-                                   0 : (sizeof (EFI_ACPI_6_0_IO_REMAPPING_SMMU_NODE) +
+                                   0 : (sizeof (EFI_ACPI_6_6_IO_REMAPPING_SMMU_NODE) +
                                         (NodeList->ContextInterruptCount *
-                                         sizeof (EFI_ACPI_6_0_IO_REMAPPING_SMMU_INT)) +
+                                         sizeof (EFI_ACPI_6_6_IO_REMAPPING_SMMU_INT)) +
                                         (NodeList->PmuInterruptCount *
-                                         sizeof (EFI_ACPI_6_0_IO_REMAPPING_SMMU_INT)));
+                                         sizeof (EFI_ACPI_6_6_IO_REMAPPING_SMMU_INT)));
 
     if (AcpiTableInfo->AcpiTableRevision <
         EFI_ACPI_IO_REMAPPING_TABLE_REVISION_05)
@@ -1362,17 +1362,17 @@ AddSmmuV1V2Nodes (
 
     // Reference to Global Interrupt Array
     SmmuNode->GlobalInterruptArrayRef =
-      OFFSET_OF (EFI_ACPI_6_0_IO_REMAPPING_SMMU_NODE, SMMU_NSgIrpt);
+      OFFSET_OF (EFI_ACPI_6_6_IO_REMAPPING_SMMU_NODE, SMMU_NSgIrpt);
 
-    Offset = sizeof (EFI_ACPI_6_0_IO_REMAPPING_SMMU_NODE);
+    Offset = sizeof (EFI_ACPI_6_6_IO_REMAPPING_SMMU_NODE);
     // Context Interrupt
     SmmuNode->NumContextInterrupts = NodeList->ContextInterruptCount;
     if (NodeList->ContextInterruptCount != 0) {
       SmmuNode->ContextInterruptArrayRef = Offset;
       ContextInterruptArray              =
-        (EFI_ACPI_6_0_IO_REMAPPING_SMMU_INT *)((UINT8 *)SmmuNode + Offset);
+        (EFI_ACPI_6_6_IO_REMAPPING_SMMU_INT *)((UINT8 *)SmmuNode + Offset);
       Offset += (NodeList->ContextInterruptCount *
-                 sizeof (EFI_ACPI_6_0_IO_REMAPPING_SMMU_INT));
+                 sizeof (EFI_ACPI_6_6_IO_REMAPPING_SMMU_INT));
     }
 
     // PMU Interrupt
@@ -1380,7 +1380,7 @@ AddSmmuV1V2Nodes (
     if (NodeList->PmuInterruptCount != 0) {
       SmmuNode->PmuInterruptArrayRef = Offset;
       PmuInterruptArray              =
-        (EFI_ACPI_6_0_IO_REMAPPING_SMMU_INT *)((UINT8 *)SmmuNode + Offset);
+        (EFI_ACPI_6_6_IO_REMAPPING_SMMU_INT *)((UINT8 *)SmmuNode + Offset);
     }
 
     SmmuNode->SMMU_NSgIrpt         = NodeList->SMMU_NSgIrpt;
@@ -1462,7 +1462,7 @@ AddSmmuV1V2Nodes (
       }
 
       // Ids for SMMU v1/v2 Node
-      IdMapArray = (EFI_ACPI_6_0_IO_REMAPPING_ID_TABLE *)((UINT8 *)SmmuNode +
+      IdMapArray = (EFI_ACPI_6_6_IO_REMAPPING_ID_TABLE *)((UINT8 *)SmmuNode +
                                                           SmmuNode->Node.IdReference);
       Status = AddIdMappingArray (
                  This,
@@ -1482,7 +1482,7 @@ AddSmmuV1V2Nodes (
     }
 
     // Next SMMU v1/v2 Node
-    SmmuNode = (EFI_ACPI_6_0_IO_REMAPPING_SMMU_NODE *)((UINT8 *)SmmuNode +
+    SmmuNode = (EFI_ACPI_6_6_IO_REMAPPING_SMMU_NODE *)((UINT8 *)SmmuNode +
                                                        SmmuNode->Node.Length);
     NodeList++;
   } // SMMU v1/v2 Node
@@ -1513,20 +1513,20 @@ AddSmmuV3Nodes (
   IN      CONST ACPI_TABLE_GENERATOR                  *CONST  This,
   IN      CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL  *CONST  CfgMgrProtocol,
   IN      CONST CM_STD_OBJ_ACPI_TABLE_INFO            *CONST  AcpiTableInfo,
-  IN      CONST EFI_ACPI_6_0_IO_REMAPPING_TABLE               *Iort,
+  IN      CONST EFI_ACPI_6_6_IO_REMAPPING_TABLE               *Iort,
   IN      CONST UINT32                                        NodesStartOffset,
   IN      CONST CM_ARM_SMMUV3_NODE                            *NodeList,
   IN            UINT32                                        NodeCount
   )
 {
   EFI_STATUS                            Status;
-  EFI_ACPI_6_0_IO_REMAPPING_SMMU3_NODE  *SmmuV3Node;
-  EFI_ACPI_6_0_IO_REMAPPING_ID_TABLE    *IdMapArray;
+  EFI_ACPI_6_6_IO_REMAPPING_SMMU3_NODE  *SmmuV3Node;
+  EFI_ACPI_6_6_IO_REMAPPING_ID_TABLE    *IdMapArray;
   UINT64                                NodeLength;
 
   ASSERT (Iort != NULL);
 
-  SmmuV3Node = (EFI_ACPI_6_0_IO_REMAPPING_SMMU3_NODE *)((UINT8 *)Iort +
+  SmmuV3Node = (EFI_ACPI_6_6_IO_REMAPPING_SMMU3_NODE *)((UINT8 *)Iort +
                                                         NodesStartOffset);
 
   while (NodeCount-- != 0) {
@@ -1547,7 +1547,7 @@ AddSmmuV3Nodes (
     SmmuV3Node->Node.Length        = (UINT16)NodeLength;
     SmmuV3Node->Node.NumIdMappings = NodeList->IdMappingCount;
     SmmuV3Node->Node.IdReference   = (NodeList->IdMappingCount == 0) ?
-                                     0 : sizeof (EFI_ACPI_6_0_IO_REMAPPING_SMMU3_NODE);
+                                     0 : sizeof (EFI_ACPI_6_6_IO_REMAPPING_SMMU3_NODE);
 
     if (AcpiTableInfo->AcpiTableRevision <
         EFI_ACPI_IO_REMAPPING_TABLE_REVISION_05)
@@ -1621,7 +1621,7 @@ AddSmmuV3Nodes (
       }
 
       // Ids for SMMUv3 node
-      IdMapArray = (EFI_ACPI_6_0_IO_REMAPPING_ID_TABLE *)((UINT8 *)SmmuV3Node +
+      IdMapArray = (EFI_ACPI_6_6_IO_REMAPPING_ID_TABLE *)((UINT8 *)SmmuV3Node +
                                                           SmmuV3Node->Node.IdReference);
       Status = AddIdMappingArray (
                  This,
@@ -1641,7 +1641,7 @@ AddSmmuV3Nodes (
     }
 
     // Next SMMUv3 Node
-    SmmuV3Node = (EFI_ACPI_6_0_IO_REMAPPING_SMMU3_NODE *)((UINT8 *)SmmuV3Node +
+    SmmuV3Node = (EFI_ACPI_6_6_IO_REMAPPING_SMMU3_NODE *)((UINT8 *)SmmuV3Node +
                                                           SmmuV3Node->Node.Length);
     NodeList++;
   } // SMMUv3 Node
@@ -1672,22 +1672,22 @@ AddPmcgNodes (
   IN      CONST ACPI_TABLE_GENERATOR                  *CONST  This,
   IN      CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL  *CONST  CfgMgrProtocol,
   IN      CONST CM_STD_OBJ_ACPI_TABLE_INFO            *CONST  AcpiTableInfo,
-  IN      CONST EFI_ACPI_6_0_IO_REMAPPING_TABLE               *Iort,
+  IN      CONST EFI_ACPI_6_6_IO_REMAPPING_TABLE               *Iort,
   IN      CONST UINT32                                        NodesStartOffset,
   IN      CONST CM_ARM_PMCG_NODE                              *NodeList,
   IN            UINT32                                        NodeCount
   )
 {
   EFI_STATUS                           Status;
-  EFI_ACPI_6_0_IO_REMAPPING_PMCG_NODE  *PmcgNode;
-  EFI_ACPI_6_0_IO_REMAPPING_ID_TABLE   *IdMapArray;
+  EFI_ACPI_6_6_IO_REMAPPING_PMCG_NODE  *PmcgNode;
+  EFI_ACPI_6_6_IO_REMAPPING_ID_TABLE   *IdMapArray;
   ACPI_IORT_GENERATOR                  *Generator;
   UINT64                               NodeLength;
 
   ASSERT (Iort != NULL);
 
   Generator = (ACPI_IORT_GENERATOR *)This;
-  PmcgNode  = (EFI_ACPI_6_0_IO_REMAPPING_PMCG_NODE *)((UINT8 *)Iort +
+  PmcgNode  = (EFI_ACPI_6_6_IO_REMAPPING_PMCG_NODE *)((UINT8 *)Iort +
                                                       NodesStartOffset);
 
   while (NodeCount-- != 0) {
@@ -1708,7 +1708,7 @@ AddPmcgNodes (
     PmcgNode->Node.Length        = (UINT16)NodeLength;
     PmcgNode->Node.NumIdMappings = NodeList->IdMappingCount;
     PmcgNode->Node.IdReference   = (NodeList->IdMappingCount == 0) ?
-                                   0 : sizeof (EFI_ACPI_6_0_IO_REMAPPING_PMCG_NODE);
+                                   0 : sizeof (EFI_ACPI_6_6_IO_REMAPPING_PMCG_NODE);
 
     if (AcpiTableInfo->AcpiTableRevision <
         EFI_ACPI_IO_REMAPPING_TABLE_REVISION_05)
@@ -1757,7 +1757,7 @@ AddPmcgNodes (
       }
 
       // Ids for PMCG node
-      IdMapArray = (EFI_ACPI_6_0_IO_REMAPPING_ID_TABLE *)((UINT8 *)PmcgNode +
+      IdMapArray = (EFI_ACPI_6_6_IO_REMAPPING_ID_TABLE *)((UINT8 *)PmcgNode +
                                                           PmcgNode->Node.IdReference);
 
       Status = AddIdMappingArray (
@@ -1778,7 +1778,7 @@ AddPmcgNodes (
     }
 
     // Next PMCG Node
-    PmcgNode = (EFI_ACPI_6_0_IO_REMAPPING_PMCG_NODE *)((UINT8 *)PmcgNode +
+    PmcgNode = (EFI_ACPI_6_6_IO_REMAPPING_PMCG_NODE *)((UINT8 *)PmcgNode +
                                                        PmcgNode->Node.Length);
     NodeList++;
   } // PMCG Node
@@ -1809,7 +1809,7 @@ EFI_STATUS
 AddMemRangeDescArray (
   IN  CONST ACPI_TABLE_GENERATOR                      *CONST  This,
   IN  CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL      *CONST  CfgMgrProtocol,
-  IN        EFI_ACPI_6_0_IO_REMAPPING_MEM_RANGE_DESC          *DescArray,
+  IN        EFI_ACPI_6_6_IO_REMAPPING_MEM_RANGE_DESC          *DescArray,
   IN        UINT32                                            DescCount,
   IN  CONST CM_OBJECT_TOKEN                                   DescToken
   )
@@ -1881,21 +1881,21 @@ AddRmrNodes (
   IN      CONST ACPI_TABLE_GENERATOR                  *CONST  This,
   IN      CONST EDKII_CONFIGURATION_MANAGER_PROTOCOL  *CONST  CfgMgrProtocol,
   IN      CONST CM_STD_OBJ_ACPI_TABLE_INFO            *CONST  AcpiTableInfo,
-  IN      CONST EFI_ACPI_6_0_IO_REMAPPING_TABLE               *Iort,
+  IN      CONST EFI_ACPI_6_6_IO_REMAPPING_TABLE               *Iort,
   IN      CONST UINT32                                        NodesStartOffset,
   IN      CONST CM_ARM_RMR_NODE                               *NodeList,
   IN            UINT32                                        NodeCount
   )
 {
   EFI_STATUS                                Status;
-  EFI_ACPI_6_0_IO_REMAPPING_RMR_NODE        *RmrNode;
-  EFI_ACPI_6_0_IO_REMAPPING_ID_TABLE        *IdMapArray;
-  EFI_ACPI_6_0_IO_REMAPPING_MEM_RANGE_DESC  *MemRangeDescArray;
+  EFI_ACPI_6_6_IO_REMAPPING_RMR_NODE        *RmrNode;
+  EFI_ACPI_6_6_IO_REMAPPING_ID_TABLE        *IdMapArray;
+  EFI_ACPI_6_6_IO_REMAPPING_MEM_RANGE_DESC  *MemRangeDescArray;
   UINT64                                    NodeLength;
 
   ASSERT (Iort != NULL);
 
-  RmrNode = (EFI_ACPI_6_0_IO_REMAPPING_RMR_NODE *)((UINT8 *)Iort +
+  RmrNode = (EFI_ACPI_6_6_IO_REMAPPING_RMR_NODE *)((UINT8 *)Iort +
                                                    NodesStartOffset);
 
   while (NodeCount-- != 0) {
@@ -1941,15 +1941,15 @@ AddRmrNodes (
     RmrNode->Node.Identifier    = NodeList->Identifier;
     RmrNode->Node.NumIdMappings = NodeList->IdMappingCount;
     RmrNode->Node.IdReference   = (NodeList->IdMappingCount == 0) ?
-                                  0 : sizeof (EFI_ACPI_6_0_IO_REMAPPING_RMR_NODE);
+                                  0 : sizeof (EFI_ACPI_6_6_IO_REMAPPING_RMR_NODE);
 
     // RMR specific data
     RmrNode->Flags           = NodeList->Flags;
     RmrNode->NumMemRangeDesc = NodeList->MemRangeDescCount;
     RmrNode->MemRangeDescRef = (NodeList->MemRangeDescCount == 0) ?
-                               0 : (sizeof (EFI_ACPI_6_0_IO_REMAPPING_RMR_NODE) +
+                               0 : (sizeof (EFI_ACPI_6_6_IO_REMAPPING_RMR_NODE) +
                                     (NodeList->IdMappingCount *
-                                     sizeof (EFI_ACPI_6_0_IO_REMAPPING_ID_TABLE)));
+                                     sizeof (EFI_ACPI_6_6_IO_REMAPPING_ID_TABLE)));
 
     if (NodeList->IdMappingCount > 0) {
       if (NodeList->IdMappingToken == CM_NULL_TOKEN) {
@@ -1965,7 +1965,7 @@ AddRmrNodes (
       }
 
       // Ids for RMR node
-      IdMapArray = (EFI_ACPI_6_0_IO_REMAPPING_ID_TABLE *)((UINT8 *)RmrNode +
+      IdMapArray = (EFI_ACPI_6_6_IO_REMAPPING_ID_TABLE *)((UINT8 *)RmrNode +
                                                           RmrNode->Node.IdReference);
 
       Status = AddIdMappingArray (
@@ -1986,7 +1986,7 @@ AddRmrNodes (
     }
 
     // Memory Range Descriptors for RMR node
-    MemRangeDescArray = (EFI_ACPI_6_0_IO_REMAPPING_MEM_RANGE_DESC *)(
+    MemRangeDescArray = (EFI_ACPI_6_6_IO_REMAPPING_MEM_RANGE_DESC *)(
                                                                      (UINT8 *)RmrNode +
                                                                      RmrNode->MemRangeDescRef
                                                                      );
@@ -2008,7 +2008,7 @@ AddRmrNodes (
     }
 
     // Next RMR Node
-    RmrNode = (EFI_ACPI_6_0_IO_REMAPPING_RMR_NODE *)((UINT8 *)RmrNode +
+    RmrNode = (EFI_ACPI_6_6_IO_REMAPPING_RMR_NODE *)((UINT8 *)RmrNode +
                                                      RmrNode->Node.Length);
     NodeList++;
   } // RMR Node
@@ -2116,7 +2116,7 @@ BuildIortTable (
   CM_ARM_PMCG_NODE             *PmcgNodeList;
   CM_ARM_RMR_NODE              *RmrNodeList;
 
-  EFI_ACPI_6_0_IO_REMAPPING_TABLE  *Iort;
+  EFI_ACPI_6_6_IO_REMAPPING_TABLE  *Iort;
   IORT_NODE_INDEXER                *NodeIndexer;
   ACPI_IORT_GENERATOR              *Generator;
 
@@ -2314,7 +2314,7 @@ BuildIortTable (
   Generator->NodeIndexer   = NodeIndexer;
 
   // Calculate the size of the IORT table
-  TableSize = sizeof (EFI_ACPI_6_0_IO_REMAPPING_TABLE);
+  TableSize = sizeof (EFI_ACPI_6_6_IO_REMAPPING_TABLE);
 
   // ITS Group Nodes
   if (ItsGroupNodeCount > 0) {
@@ -2586,7 +2586,7 @@ BuildIortTable (
     goto error_handler;
   }
 
-  Iort = (EFI_ACPI_6_0_IO_REMAPPING_TABLE *)*Table;
+  Iort = (EFI_ACPI_6_6_IO_REMAPPING_TABLE *)*Table;
 
   DEBUG ((
     DEBUG_INFO,
@@ -2613,7 +2613,7 @@ BuildIortTable (
 
   // Update IORT table
   Iort->NumNodes   = IortNodeCount;
-  Iort->NodeOffset = sizeof (EFI_ACPI_6_0_IO_REMAPPING_TABLE);
+  Iort->NodeOffset = sizeof (EFI_ACPI_6_6_IO_REMAPPING_TABLE);
   Iort->Reserved   = EFI_ACPI_RESERVED_DWORD;
 
   if (ItsGroupNodeCount > 0) {
@@ -2837,7 +2837,7 @@ ACPI_IORT_GENERATOR  IortGenerator = {
     // Generator Description
     L"ACPI.STD.IORT.GENERATOR",
     // ACPI Table Signature
-    EFI_ACPI_6_0_IO_REMAPPING_TABLE_SIGNATURE,
+    EFI_ACPI_6_6_IO_REMAPPING_TABLE_SIGNATURE,
     // ACPI Table Revision supported by this Generator
     EFI_ACPI_IO_REMAPPING_TABLE_REVISION_06,
     // Minimum supported ACPI Table Revision
