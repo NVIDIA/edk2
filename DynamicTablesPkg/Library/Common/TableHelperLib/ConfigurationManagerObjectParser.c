@@ -570,6 +570,12 @@ STATIC CONST CM_OBJ_PARSER  CmArchCommonCpcInfoParser[] = {
     NULL, NULL, AcpiGenericAddressParser,
     ARRAY_SIZE (AcpiGenericAddressParser) },
   { "NominalFrequencyInteger",               4,                                               "0x%lx", NULL },
+  { "OspmNominalPerformanceRegister",        sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
+    NULL, NULL, AcpiGenericAddressParser,
+    ARRAY_SIZE (AcpiGenericAddressParser) },
+  { "ResourcePriorityRegister",              sizeof (EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE),
+    NULL, NULL, AcpiGenericAddressParser,
+    ARRAY_SIZE (AcpiGenericAddressParser) },
 };
 
 /** A parser for the PCC_MAILBOX_REGISTER_INFO struct.

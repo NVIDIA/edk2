@@ -511,7 +511,9 @@ typedef struct CmArchCommonCacheInfo {
   if buffer is NULL resource.
   If resource is not NULL then Integer must be 0
 
-  Cf. ACPI 6.4, s8.4.7.1 _CPC (Continuous Performance Control)
+  Cf. ACPI 6.4, s8.4.7.1 / ACPI 6.6, s8.4.6.1 _CPC (Continuous Performance Control)
+  Revision 3: 23 entries (ACPI 6.2-6.5)
+  Revision 4: 25 entries (ACPI 6.6, CPPC V4)
 
   ID: EArchCommonObjCpcInfo
 */
