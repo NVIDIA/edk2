@@ -251,7 +251,7 @@ DynamicTablesScmiInfoGetFastChannel (
                        FcLimitsSet.ChanAddrLow;
   FcLimitsMinSetAddr = FcLimitsMaxSetAddr + 0x4;
 
-  CpcInfo->Revision                          = EFI_ACPI_6_6_AML_CPC_REVISION;
+  CpcInfo->Revision                          = EFI_ACPI_6_5_AML_CPC_REVISION;
   CpcInfo->HighestPerformanceInteger         = LevelArray[LevelCount - 1].Level;
   CpcInfo->NominalPerformanceInteger         = DomainAttributes.SustainedPerfLevel;
   CpcInfo->LowestNonlinearPerformanceInteger = LevelArray[0].Level;
