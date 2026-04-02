@@ -3514,6 +3514,7 @@ AmlCreateCpcNode (
   EFI_STATUS              Status;
   AML_OBJECT_NODE_HANDLE  CpcNode;
   AML_OBJECT_NODE_HANDLE  CpcPackage;
+  AML_OBJECT_NODE_HANDLE  ResPriorityPackageNode;
   UINT32                  NumberOfEntries;
 
   if ((CpcInfo == NULL) ||
@@ -3523,10 +3524,12 @@ AmlCreateCpcNode (
     return EFI_INVALID_PARAMETER;
   }
 
-  // Revision 3 per ACPI 6.4 specification
-  if (CpcInfo->Revision == EFI_ACPI_6_6_AML_CPC_REVISION) {
-    // NumEntries 23 per ACPI 6.4 specification
+  if (CpcInfo->Revision == EFI_ACPI_6_5_AML_CPC_REVISION) {
+    // Revision 3: 23 entries per ACPI 6.2-6.5
     NumberOfEntries = 23;
+  } else if (CpcInfo->Revision == EFI_ACPI_6_6_AML_CPC_REVISION) {
+    // Revision 4: 25 entries per ACPI 6.6, Table 8.23 (CPPC V4)
+    NumberOfEntries = 25;
   } else {
     ASSERT (0);
     return EFI_INVALID_PARAMETER;
@@ -3772,6 +3775,49 @@ AmlCreateCpcNode (
   if (EFI_ERROR (Status)) {
     ASSERT_EFI_ERROR (Status);
     goto error_handler;
+  }
+
+  //
+  // CPPC V4 (ACPI 6.6, Table 8.23) -- 2 additional entries for revision 4.
+  //
+  if (CpcInfo->Revision == EFI_ACPI_6_6_AML_CPC_REVISION) {
+    // Entry 24: OSPMNominalPerformanceRegister (Buffer)
+    Status = AmlAddRegisterToPackage (&CpcInfo->OspmNominalPerformanceRegister, CpcPackage);
+    if (EFI_ERROR (Status)) {
+      ASSERT_EFI_ERROR (Status);
+      goto error_handler;
+    }
+
+    // Entry 25: ResourcePriorityRegisters (Package per ACPI 6.6).
+    // Emit an empty Package when the register is NULL (unsupported),
+    // otherwise wrap the register descriptor inside a Package.
+    Status = AmlCodeGenPackage (&ResPriorityPackageNode);
+    if (EFI_ERROR (Status)) {
+      ASSERT_EFI_ERROR (Status);
+      goto error_handler;
+    }
+
+    if (!IsNullGenericAddress (&CpcInfo->ResourcePriorityRegister)) {
+      Status = AmlAddRegisterToPackage (
+                 &CpcInfo->ResourcePriorityRegister,
+                 ResPriorityPackageNode
+                 );
+      if (EFI_ERROR (Status)) {
+        ASSERT_EFI_ERROR (Status);
+        AmlDeleteTree ((AML_NODE_HANDLE)ResPriorityPackageNode);
+        goto error_handler;
+      }
+    }
+
+    Status = AmlVarListAddTail (
+               (AML_NODE_HANDLE)CpcPackage,
+               (AML_NODE_HANDLE)ResPriorityPackageNode
+               );
+    if (EFI_ERROR (Status)) {
+      ASSERT_EFI_ERROR (Status);
+      AmlDeleteTree ((AML_NODE_HANDLE)ResPriorityPackageNode);
+      goto error_handler;
+    }
   }
 
   Status = LinkNode (CpcNode, ParentNode, NewCpcNode);

@@ -26,7 +26,10 @@
   if buffer is NULL resource.
   If resource is not NULL then Integer must be 0
 
-  Cf. ACPI 6.4, s8.4.7.1 _CPC (Continuous Performance Control)
+  Revision 3: ACPI 6.2-6.5, 23 package entries (s8.4.7.1)
+  Revision 4: ACPI 6.6, 25 package entries -- adds OSPM Nominal
+              Performance Register and Resource Priority Registers
+              Package (s8.4.6.1, Table 8.23)
 
 **/
 
@@ -119,6 +122,29 @@ typedef struct AmlCpcInfo {
   /// Optional
   EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    NominalFrequencyBuffer;
   UINT32                                    NominalFrequencyInteger;
+
+  //
+  // CPPC V4 (ACPI 6.6, Table 8.23) fields below.
+  // Only emitted when Revision == 4. Package grows from 23 to 25 entries.
+  //
+
+  /// OSPMNominalPerformanceRegister (entry 24)
+  /// Optional. If supported, contains a register descriptor for the
+  /// register to write the requested nominal performance of the processor.
+  /// Unsupported platforms should set this to a NULL resource descriptor.
+  /// Only consumed when Revision >= 4.
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    OspmNominalPerformanceRegister;
+
+  /// ResourcePriorityRegister (entry 25)
+  /// ACPI 6.6 defines this field as a Package containing a list of
+  /// Resource Priority Register Descriptor packages. This implementation
+  /// models it as a single GAS for simplicity. AML codegen wraps it in
+  /// a Package: a NULL GAS emits Package(){} (unsupported), a non-NULL
+  /// GAS emits Package{ResourceTemplate{Register{...}}} (one register).
+  /// A future enhancement is needed to support multiple register
+  /// descriptors per the full spec definition.
+  /// Only consumed when Revision >= 4.
+  EFI_ACPI_6_6_GENERIC_ADDRESS_STRUCTURE    ResourcePriorityRegister;
 } AML_CPC_INFO;
 
 /** A structure that describes a
