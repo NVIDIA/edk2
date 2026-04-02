@@ -44,9 +44,9 @@
 #define EFI_ACPI_6_6_AML_PSD_REVISION  0
 
 ///
-/// _CPC Revision for ACPI 6.6
+/// _CPC Revision for ACPI 6.6 (CPPC V4, Table 8.23: NumEntries=25, Revision=4)
 ///
-#define EFI_ACPI_6_6_AML_CPC_REVISION  3
+#define EFI_ACPI_6_6_AML_CPC_REVISION  4
 
 ///
 /// ACPI 6.6 Generic Address Space definition
