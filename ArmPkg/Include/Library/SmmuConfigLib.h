@@ -118,4 +118,31 @@ SmmuConfigGetIortData (
   OUT UINT32  *IortSize
   );
 
+/**
+  Query whether a device should bypass SMMU translation and return
+  the SMMU base address and stream ID needed to reconfigure the STE.
+
+  SmmuDxe calls this from IoMmuSetAttribute on the first access for
+  each device.  When EFI_SUCCESS is returned, SmmuDxe writes a bypass
+  STE for the given StreamId so the SMMU hardware itself passes
+  transactions through without page-table walks.
+
+  The default implementation returns EFI_NOT_FOUND for all devices.
+
+  @param [in]  DeviceHandle  Handle of the device being queried.
+  @param [out] SmmuBase      MMIO base of the SMMU that owns the stream.
+  @param [out] StreamId      Hardware stream ID for the device.
+
+  @retval EFI_SUCCESS            Device should bypass; SmmuBase/StreamId valid.
+  @retval EFI_NOT_FOUND          Device should use normal translation.
+  @retval EFI_INVALID_PARAMETER  A parameter is NULL.
+**/
+EFI_STATUS
+EFIAPI
+SmmuConfigGetBypassStreamInfo (
+  IN  EFI_HANDLE  DeviceHandle,
+  OUT UINT64      *SmmuBase,
+  OUT UINT32      *StreamId
+  );
+
 #endif

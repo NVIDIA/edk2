@@ -167,6 +167,7 @@ typedef struct _RMR_NODE_INFO {
 typedef struct _SMMU_INFO {
   PAGE_TABLE    *PageTableRoot;
   VOID          *StreamTable;
+  VOID          *SharedL2Page;
   VOID          *CommandQueue;
   VOID          *EventQueue;
   LIST_ENTRY    RmrNodeList;
@@ -503,6 +504,23 @@ SmmuV3TLBInvalidateAddress (
 EFI_STATUS
 SmmuV3AddRMRMapping (
   IN SMMU_INFO  *SmmuInfo
+  );
+
+/**
+  Write a bypass STE for a single stream ID and invalidate the cache.
+
+  @param [in] SmmuInfo   Pointer to the SMMU_INFO for the owning SMMU.
+  @param [in] StreamId   Hardware stream ID to set to bypass mode.
+
+  @retval EFI_SUCCESS            STE written and invalidated.
+  @retval EFI_INVALID_PARAMETER  SmmuInfo is NULL or StreamId out of range.
+  @retval EFI_OUT_OF_RESOURCES   L2 page allocation failed.
+  @retval Others                 Command queue error.
+**/
+EFI_STATUS
+SmmuV3WriteBypassSte (
+  IN SMMU_INFO  *SmmuInfo,
+  IN UINT32     StreamId
   );
 
 #endif

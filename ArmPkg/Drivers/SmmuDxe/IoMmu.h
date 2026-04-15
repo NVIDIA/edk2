@@ -69,4 +69,13 @@ IoMmuInit (
   VOID
   );
 
+/**
+  Free the dynamically-allocated bypass-done tracking list.
+  Safe to call even if the list was never allocated.
+**/
+VOID
+IoMmuFreeBypassList (
+  VOID
+  );
+
 #endif

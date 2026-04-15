@@ -537,6 +537,134 @@ SmmuV3FreeStreamTable (
 }
 
 /**
+  Overwrite a single STE with a bypass configuration and invalidate the
+  cached copy in the SMMU.
+
+  Handles both linear and 2-level stream tables.  For 2-level tables
+  where all L1 entries point to the same shared L2 page, a private L2
+  page is allocated so that only the target StreamId is affected.
+
+  @param [in] SmmuInfo   Pointer to the SMMU_INFO for the owning SMMU.
+  @param [in] StreamId   Hardware stream ID to set to bypass mode.
+
+  @retval EFI_SUCCESS            STE written and invalidated.
+  @retval EFI_INVALID_PARAMETER  SmmuInfo is NULL or StreamId out of range.
+  @retval EFI_OUT_OF_RESOURCES   L2 page allocation failed.
+  @retval Others                 Command queue error.
+**/
+EFI_STATUS
+SmmuV3WriteBypassSte (
+  IN SMMU_INFO  *SmmuInfo,
+  IN UINT32     StreamId
+  )
+{
+  SMMUV3_STREAM_TABLE_ENTRY          *Ste;
+  SMMUV3_STREAM_TABLE_ENTRY          BypassEntry;
+  SMMUV3_STREAM_TABLE_ENTRY          OldEntry;
+  SMMUV3_CMD_GENERIC                 Command;
+  EFI_STATUS                         Status;
+  BOOLEAN                            TwoLevel;
+  BOOLEAN                            NewL2Allocated;
+  SMMUV3_L1_STREAM_TABLE_DESCRIPTOR  *L1Table;
+  SMMUV3_STREAM_TABLE_ENTRY          *L2Page;
+  SMMUV3_STREAM_TABLE_ENTRY          *SharedL2Page;
+  UINT32                             L1Index;
+  UINT32                             L2Index;
+
+  if ((SmmuInfo == NULL) || (StreamId > SmmuInfo->StreamTableEntryMax)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  TwoLevel = (SmmuInfo->StreamTableEntryMax >= (EFI_PAGE_SIZE / sizeof (SMMUV3_STREAM_TABLE_ENTRY)));
+
+  ZeroMem (&BypassEntry, sizeof (BypassEntry));
+  BypassEntry.Valid  = 1;
+  BypassEntry.Config = StreamEntryConfigS1BypassS2Bypass;
+
+  if (TwoLevel) {
+    L1Table = (SMMUV3_L1_STREAM_TABLE_DESCRIPTOR *)SmmuInfo->StreamTable;
+    L1Index = StreamId >> SMMUV3_STR_TAB_BASE_CFG_SPLIT;
+    L2Index = StreamId & ((1U << SMMUV3_STR_TAB_BASE_CFG_SPLIT) - 1);
+
+    if (L1Index >= (1U << (SmmuInfo->StreamTableLog2Size - SMMUV3_STR_TAB_BASE_CFG_SPLIT))) {
+      DEBUG ((
+        DEBUG_ERROR,
+        "%a: L1Index=%u exceeds L1 table size for StreamId=0x%x\n",
+        __func__,
+        L1Index,
+        StreamId
+        ));
+      return EFI_INVALID_PARAMETER;
+    }
+
+    SharedL2Page = (SMMUV3_STREAM_TABLE_ENTRY *)(UINTN)(L1Table[L1Index].L2Ptr << SMMUV3_STR_TAB_BASE_L2_PTR_OFFSET);
+
+    if (SharedL2Page == SmmuInfo->SharedL2Page) {
+      L2Page = (SMMUV3_STREAM_TABLE_ENTRY *)AllocatePages (1);
+      if (L2Page == NULL) {
+        return EFI_OUT_OF_RESOURCES;
+      }
+
+      NewL2Allocated = TRUE;
+      CopyMem (L2Page, SharedL2Page, EFI_PAGE_SIZE);
+    } else {
+      NewL2Allocated = FALSE;
+      L2Page         = SharedL2Page;
+    }
+
+    CopyMem (&OldEntry, &L2Page[L2Index], sizeof (SMMUV3_STREAM_TABLE_ENTRY));
+    CopyMem (&L2Page[L2Index], &BypassEntry, sizeof (SMMUV3_STREAM_TABLE_ENTRY));
+
+    L1Table[L1Index].L2Ptr = (UINT64)(UINTN)L2Page >> SMMUV3_STR_TAB_BASE_L2_PTR_OFFSET;
+  } else {
+    NewL2Allocated = FALSE;
+    Ste            = (SMMUV3_STREAM_TABLE_ENTRY *)SmmuInfo->StreamTable;
+    CopyMem (&OldEntry, &Ste[StreamId], sizeof (SMMUV3_STREAM_TABLE_ENTRY));
+    CopyMem (&Ste[StreamId], &BypassEntry, sizeof (SMMUV3_STREAM_TABLE_ENTRY));
+  }
+
+  ArmDataSynchronizationBarrier ();
+
+  SMMUV3_BUILD_CMD_CFGI_STE (&Command, StreamId, 1);
+  Status = SmmuV3SendCommand (SmmuInfo, &Command);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: CFGI_STE failed for StreamId %u\n", __func__, StreamId));
+    goto RestoreL1;
+  }
+
+  SMMUV3_BUILD_CMD_SYNC_NO_INTERRUPT (&Command);
+  Status = SmmuV3SendCommand (SmmuInfo, &Command);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: CMD_SYNC failed\n", __func__));
+    goto RestoreL1;
+  }
+
+  DEBUG ((
+    DEBUG_INFO,
+    "%a: SMMU 0x%llx StreamId %u set to BYPASS\n",
+    __func__,
+    SmmuInfo->SmmuBase,
+    StreamId
+    ));
+
+  return EFI_SUCCESS;
+
+RestoreL1:
+  if (TwoLevel) {
+    if (NewL2Allocated) {
+      L1Table[L1Index].L2Ptr = (UINT64)(UINTN)SharedL2Page >> SMMUV3_STR_TAB_BASE_L2_PTR_OFFSET;
+      FreePages (L2Page, 1);
+    } else {
+      CopyMem (&L2Page[L2Index], &OldEntry, sizeof (SMMUV3_STREAM_TABLE_ENTRY));
+    }
+  } else {
+    CopyMem (&Ste[StreamId], &OldEntry, sizeof (SMMUV3_STREAM_TABLE_ENTRY));
+  }
+
+  return Status;
+}
+
+/**
   Configure the SMMUv3 based on the provided configuration per the SmmuV3 specification.
   Main configuration function for smmu hardware. Creates and enables a stream table, page table,
   event queue, and command queue. Enables stage 2 translation and dma remapping.
@@ -661,6 +789,8 @@ SmmuV3Configure (
     for (Index = 0; Index < (EFI_PAGE_SIZE / sizeof (SMMUV3_STREAM_TABLE_ENTRY)); Index++) {
       CopyMem (&L2StreamTablePtr[Index], &TemplateEntry, sizeof (SMMUV3_STREAM_TABLE_ENTRY));
     }
+
+    SmmuInfo->SharedL2Page = L2StreamTablePtr;
 
     L1Table = (SMMUV3_L1_STREAM_TABLE_DESCRIPTOR *)StreamTablePtr;
     for (Index = 0; Index < (SMMUV3_L1_STREAM_TABLE_SIZE_FROM_LOG2 (StreamTableLog2Size - SMMUV3_STR_TAB_BASE_CFG_SPLIT) / sizeof (UINT64)); Index++) {
@@ -1074,6 +1204,11 @@ IoMmuDeInit (
       }
     }
 
+    if (IoMmu->SmmuInfo[SmmuIndex].SharedL2Page != NULL) {
+      FreePages (IoMmu->SmmuInfo[SmmuIndex].SharedL2Page, 1);
+      IoMmu->SmmuInfo[SmmuIndex].SharedL2Page = NULL;
+    }
+
     if (IoMmu->SmmuInfo[SmmuIndex].StreamTable != NULL) {
       SmmuV3FreeStreamTable (IoMmu->SmmuInfo[SmmuIndex].StreamTable, IoMmu->SmmuInfo[SmmuIndex].StreamTableSize);
       IoMmu->SmmuInfo[SmmuIndex].StreamTable = NULL;
@@ -1090,6 +1225,7 @@ IoMmuDeInit (
     }
   }
 
+  IoMmuFreeBypassList ();
   FreeSmmuInfoRmrNodes (IoMmu->SmmuInfo, IoMmu->SmmuCount);
   FreePool (IoMmu->SmmuInfo);
   FreePool (IoMmu);
