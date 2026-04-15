@@ -158,6 +158,7 @@
   ArmPkg/Universal/Smbios/OemMiscLibNull/OemMiscLibNull.inf
 
   ArmPkg/Drivers/MmCommunicationPei/MmCommunicationPei.inf
+  ArmPkg/Drivers/SmmuDxe/SmmuDxe.inf
 
 [Components.common.MM_CORE_STANALONE]
   ArmPkg/Library/ArmStandaloneMmCoreEntryPoint/ArmStandaloneMmCoreEntryPoint.inf
