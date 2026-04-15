@@ -7,6 +7,7 @@
 # For more info see README.md
 #
 # Copyright (c) Microsoft Corporation.
+# Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 
@@ -24,7 +25,6 @@
   SmmuV3Util.c
 
 [Guids]
-  gSmmuConfigHobGuid
   gEfiEventExitBootServicesGuid
 
 [Packages]
@@ -37,8 +37,10 @@
   BaseLib
   BaseMemoryLib
   IoLib
-  HobLib
+  UefiLib
+  DebugLib
   MemoryAllocationLib
+  SmmuConfigLib
   TimerLib
   UefiDriverEntryPoint
 

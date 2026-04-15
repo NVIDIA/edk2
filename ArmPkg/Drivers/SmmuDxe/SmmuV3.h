@@ -5,6 +5,7 @@
     <https://developer.arm.com/documentation/ihi0070/latest/>
 
     Copyright (c) Microsoft Corporation.
+    Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
     SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -142,8 +143,6 @@
 #define SMMUV3_CR0_EVENTQ_EN                1                // Event queue enable
 #define SMMUV3_CR0_CMDQ_EN                  1                // Command queue enable
 #define SMMUV3_CR0_SMMU_EN                  1                // SMMU enable
-#define SMMUV3_CR0_EVENTQ_EN                1                // Event queue enable
-#define SMMUV3_CR0_CMDQ_EN                  1                // Command queue enable
 #define SMMUV3_CR0_PRIQ_EN_DISABLED         0                // Disable PRI queue
 #define SMMUV3_CR0_VMW_DISABLED             0                // Disable VMID wildcard matching
 #define SMMUV3_CR0_ATS_CHK_DISABLE          1                // Disable bypass for ATS translated traffic
@@ -159,8 +158,9 @@ typedef enum _SMMU_ADDRESS_SIZE_TYPE {
 } SMMU_ADDRESS_SIZE_TYPE;
 
 typedef struct _RMR_NODE_INFO {
-  EFI_ACPI_6_0_IO_REMAPPING_RMR_NODE    *RmrNode; // Pointer to the RMR node
-  LIST_ENTRY                            Link;     // Link to the RMR node in the list
+  UINT64        BaseAddress;
+  UINT64        Length;
+  LIST_ENTRY    Link;
 } RMR_NODE_INFO;
 
 // General SMMU Information for a SMMU instance
@@ -503,26 +503,6 @@ SmmuV3TLBInvalidateAddress (
 EFI_STATUS
 SmmuV3AddRMRMapping (
   IN SMMU_INFO  *SmmuInfo
-  );
-
-/**
- * Parse IORT table and extract SMMU information
- *
- * @param[in]  IortTable    Pointer to the IORT table
- * @param[out] SmmuInfo     Pointer to store the array of SMMU_INFO structures
- * @param[out] SmmuCount    Pointer to store the number of SMMU nodes found
- *
- * @return EFI_SUCCESS on success
- * @return EFI_INVALID_PARAMETER if any parameter is NULL
- * @return EFI_OUT_OF_RESOURCES if memory allocation fails
- * @return EFI_NOT_FOUND if no SMMU nodes are found
- * @return EFI_UNSUPPORTED if the IORT table is not supported
- */
-EFI_STATUS
-SmmuV3ParseIort (
-  IN  VOID       *IortTable,
-  OUT SMMU_INFO  **SmmuInfo,
-  OUT UINT32     *SmmuCount
   );
 
 #endif
