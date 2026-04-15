@@ -666,3 +666,18 @@ SmmuConfigGetIortData (
   *IortSize = mCachedSmmuConfig->IortSize;
   return EFI_SUCCESS;
 }
+
+EFI_STATUS
+EFIAPI
+SmmuConfigGetBypassStreamInfo (
+  IN  EFI_HANDLE  DeviceHandle,
+  OUT UINT64      *SmmuBase,
+  OUT UINT32      *StreamId
+  )
+{
+  if ((SmmuBase == NULL) || (StreamId == NULL)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  return EFI_NOT_FOUND;
+}

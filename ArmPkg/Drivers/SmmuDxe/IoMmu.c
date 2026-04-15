@@ -17,6 +17,7 @@
 #include <Library/DebugLib.h>
 #include <Library/IoLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/SmmuConfigLib.h>
 #include <Library/TimerLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiDriverEntryPoint.h>
@@ -34,6 +35,22 @@ typedef struct IOMMU_MAP_INFO {
   UINT64                   HostAddress;
   EDKII_IOMMU_OPERATION    Operation;
 } IOMMU_MAP_INFO;
+
+/**
+  Entry in the bypass-done cache, keyed by both SMMU base address
+  and stream ID so that identically-numbered streams on different
+  SMMUs are tracked independently.
+**/
+typedef struct {
+  UINT64    SmmuBase;
+  UINT32    StreamId;
+} BYPASS_ENTRY;
+
+#define BYPASS_LIST_INITIAL_CAPACITY  64
+
+STATIC BYPASS_ENTRY  *mBypassDoneList;
+STATIC UINT32        mBypassDoneCount;
+STATIC UINT32        mBypassDoneCapacity;
 
 /**
   Update the mapping of a virtual address to a physical address in the page table.
@@ -500,10 +517,93 @@ IoMmuSetAttribute (
   EFI_STATUS      Status;
   IOMMU_MAP_INFO  *MapInfo;
   UINT32          SmmuIndex;
+  UINT64          BypassSmmuBase;
+  UINT32          BypassStreamId;
+  UINT32          BIdx;
+  BOOLEAN         AlreadyBypassed;
 
   if ((This == NULL) || (Mapping == NULL) || ((IoMmuAccess & ~(EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE)) != 0)) {
     DEBUG ((DEBUG_ERROR, "%a: Invalid parameter\n", __func__));
     Status = EFI_INVALID_PARAMETER;
+    goto End;
+  }
+
+  if (DeviceHandle == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a: DeviceHandle is NULL\n", __func__));
+    Status = EFI_INVALID_PARAMETER;
+    goto End;
+  }
+
+  Status = SmmuConfigGetBypassStreamInfo (DeviceHandle, &BypassSmmuBase, &BypassStreamId);
+  if (EFI_ERROR (Status) && (Status != EFI_NOT_FOUND)) {
+    DEBUG ((DEBUG_ERROR, "%a: Failed to get bypass stream info: %r\n", __func__, Status));
+    goto End;
+  }
+
+  if (Status == EFI_SUCCESS) {
+    AlreadyBypassed = FALSE;
+    for (BIdx = 0; BIdx < mBypassDoneCount; BIdx++) {
+      if ((mBypassDoneList[BIdx].SmmuBase == BypassSmmuBase) &&
+          (mBypassDoneList[BIdx].StreamId == BypassStreamId))
+      {
+        AlreadyBypassed = TRUE;
+        break;
+      }
+    }
+
+    if (AlreadyBypassed) {
+      Status = EFI_SUCCESS;
+      goto End;
+    }
+
+    if (mBypassDoneCount >= mBypassDoneCapacity) {
+      UINT32        NewCapacity;
+      BYPASS_ENTRY  *NewList;
+
+      NewCapacity = (mBypassDoneCapacity == 0) ? BYPASS_LIST_INITIAL_CAPACITY : mBypassDoneCapacity * 2;
+      NewList     = ReallocatePool (
+                      mBypassDoneCount * sizeof (BYPASS_ENTRY),
+                      NewCapacity * sizeof (BYPASS_ENTRY),
+                      mBypassDoneList
+                      );
+      if (NewList == NULL) {
+        DEBUG ((
+          DEBUG_ERROR,
+          "%a: Failed to grow BypassDoneList to %u entries\n",
+          __func__,
+          NewCapacity
+          ));
+        Status = EFI_OUT_OF_RESOURCES;
+        goto End;
+      }
+
+      mBypassDoneList     = NewList;
+      mBypassDoneCapacity = NewCapacity;
+    }
+
+    for (SmmuIndex = 0; SmmuIndex < mIoMmu->SmmuCount; SmmuIndex++) {
+      if (mIoMmu->SmmuInfo[SmmuIndex].Enabled &&
+          (mIoMmu->SmmuInfo[SmmuIndex].SmmuBase == BypassSmmuBase))
+      {
+        Status = SmmuV3WriteBypassSte (&mIoMmu->SmmuInfo[SmmuIndex], BypassStreamId);
+        if (!EFI_ERROR (Status)) {
+          mBypassDoneList[mBypassDoneCount].SmmuBase = BypassSmmuBase;
+          mBypassDoneList[mBypassDoneCount].StreamId = BypassStreamId;
+          mBypassDoneCount++;
+        }
+
+        goto End;
+      }
+    }
+
+    DEBUG ((
+      DEBUG_ERROR,
+      "%a: No enabled SMMU matches BypassSmmuBase=0x%llx for StreamId=0x%x\n",
+      __func__,
+      BypassSmmuBase,
+      BypassStreamId
+      ));
+    Status = EFI_NOT_FOUND;
     goto End;
   }
 
@@ -573,4 +673,22 @@ IoMmuInit (
   }
 
   return Status;
+}
+
+/**
+  Free the dynamically-allocated bypass-done tracking list.
+  Safe to call even if the list was never allocated.
+**/
+VOID
+IoMmuFreeBypassList (
+  VOID
+  )
+{
+  if (mBypassDoneList != NULL) {
+    FreePool (mBypassDoneList);
+    mBypassDoneList = NULL;
+  }
+
+  mBypassDoneCount    = 0;
+  mBypassDoneCapacity = 0;
 }
