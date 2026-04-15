@@ -2,12 +2,13 @@
 
     This file contains functions for the SMMU driver.
 
-    This driver consumes a SMMU_CONFIG Hob structure defined by the platform to configure the SMMU hardware.
+    This driver consumes platform SMMU configuration via SmmuConfigLib to configure the SMMU hardware.
     Initializes the SmmuV3 hardware to enable stage 2 translation and dma remapping.
-    Installs the IORT to describe the SMMU configuration to the OS.
+    Optionally installs the IORT ACPI table if the platform provides one via SmmuConfigLib.
     Implements the IoMmu protocol to provide a generic interface for mapping host memory to device memory.
 
     Copyright (c) Microsoft Corporation.
+    Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
     SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -18,13 +19,12 @@
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
-#include <Library/HobLib.h>
 #include <Library/IoLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/SmmuConfigLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiDriverEntryPoint.h>
 #include <Protocol/AcpiTable.h>
-#include <Guid/SmmuConfig.h>
 #include "IoMmu.h"
 #include "SmmuV3.h"
 
@@ -85,21 +85,29 @@ AddIortTable (
 {
   EFI_STATUS  Status;
   UINTN       TableHandle;
+  VOID        *IortCopy;
 
-  if ((AcpiTable == NULL) || (IortData == NULL)) {
+  if ((AcpiTable == NULL) || (IortData == NULL) || (IortSize == 0)) {
     DEBUG ((DEBUG_ERROR, "%a: Invalid Parameters\n", __func__));
     return EFI_INVALID_PARAMETER;
   }
 
-  Status = AcpiPlatformChecksum ((UINT8 *)(UINTN)IortData, IortSize);
+  IortCopy = AllocateCopyPool (IortSize, IortData);
+  if (IortCopy == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a: Failed to allocate IORT copy\n", __func__));
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  Status = AcpiPlatformChecksum ((UINT8 *)IortCopy, IortSize);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: Failed to calculate checksum for IORT table\n", __func__));
+    FreePool (IortCopy);
     return Status;
   }
 
   Status = AcpiTable->InstallAcpiTable (
                         AcpiTable,
-                        (EFI_ACPI_COMMON_HEADER *)(UINTN)IortData,
+                        (EFI_ACPI_COMMON_HEADER *)IortCopy,
                         IortSize,
                         &TableHandle
                         );
@@ -107,6 +115,7 @@ AddIortTable (
     DEBUG ((DEBUG_ERROR, "%a: Failed to install IORT table\n", __func__));
   }
 
+  FreePool (IortCopy);
   return Status;
 }
 
@@ -274,13 +283,17 @@ SmmuV3AllocateCommandQueue (
 /**
   Free a previously allocated queue.
 
-  @param [in]  QueuePtr    Pointer to the queue to free.
+  @param [in]  QueuePtr      Pointer to the queue to free.
+  @param [in]  Log2Size      Log2 of the number of entries in the queue.
+  @param [in]  IsEventQueue  TRUE for event queue (32-byte entries),
+                             FALSE for command queue (16-byte entries).
 **/
 STATIC
 VOID
 SmmuV3FreeQueue (
-  IN VOID    *QueuePtr,
-  IN UINT32  Log2Size
+  IN VOID     *QueuePtr,
+  IN UINT32   Log2Size,
+  IN BOOLEAN  IsEventQueue
   )
 {
   UINT32  Size;
@@ -288,7 +301,9 @@ SmmuV3FreeQueue (
   if (QueuePtr == NULL) {
     DEBUG ((DEBUG_ERROR, "%a: Invalid parameters. QueuePtr == NULL\n", __func__));
   } else {
-    Size = SMMUV3_COMMAND_QUEUE_SIZE_FROM_LOG2 (Log2Size);
+    Size = IsEventQueue
+             ? SMMUV3_EVENT_QUEUE_SIZE_FROM_LOG2 (Log2Size)
+             : SMMUV3_COMMAND_QUEUE_SIZE_FROM_LOG2 (Log2Size);
     FreePages ((VOID *)QueuePtr, EFI_SIZE_TO_PAGES (Size));
   }
 }
@@ -483,9 +498,10 @@ SmmuV3AllocateStreamTable (
     *Size  = SMMUV3_L1_STREAM_TABLE_SIZE_FROM_LOG2 (L1Bits);
   }
 
-  *Size            = ALIGN_VALUE (*Size, EFI_PAGE_SIZE);
-  Alignment        = *Size; // Aligned to the size of the table, linear stream table
-  Pages            = EFI_SIZE_TO_PAGES (*Size);
+  *Size     = ALIGN_VALUE (*Size, EFI_PAGE_SIZE);
+  Alignment = *Size;        // Aligned to the size of the table, linear stream table
+  Pages     = EFI_SIZE_TO_PAGES (*Size);
+
   AllocatedAddress = AllocateAlignedPages (Pages, Alignment);
   if (AllocatedAddress == NULL) {
     DEBUG ((DEBUG_ERROR, "%a: Allocation failed for stream table\n", __func__));
@@ -576,6 +592,8 @@ SmmuV3Configure (
     DEBUG ((DEBUG_ERROR, "%a: Invalid Parameters\n", __func__));
     return EFI_INVALID_PARAMETER;
   }
+
+  L2StreamTablePtr = NULL;
 
   // Set ReadWriteAllocationHint based on the COHAC_OVERRIDE flag.
   // These hints are applied to the allocated Stream Table, Command Queue, and Event Queue.
@@ -801,9 +819,7 @@ SmmuV3Configure (
   }
 
   // Configure CR0 part2
-  Cr0.AsUINT32 = SmmuV3ReadRegister32 (SmmuInfo->SmmuBase, SMMU_CR0);
-  ArmDataSynchronizationBarrier ();  // DSB
-
+  Cr0.AsUINT32  = SmmuV3ReadRegister32 (SmmuInfo->SmmuBase, SMMU_CR0);
   Cr0.AsUINT32  = Cr0.AsUINT32 & ~SMMUV3_CR0_VALID_MASK;
   Cr0.SmmuEn    = SMMUV3_CR0_SMMU_EN;
   Cr0.EventQEn  = SMMUV3_CR0_EVENTQ_EN;
@@ -814,6 +830,8 @@ SmmuV3Configure (
   if (Idr0.Ats != 0) {
     Cr0.AtsChk = SMMUV3_CR0_ATS_CHK_DISABLE;     // disable bypass for ATS translated traffic.
   }
+
+  ArmDataSynchronizationBarrier ();  // DSB
 
   SmmuV3WriteRegister32 (SmmuInfo->SmmuBase, SMMU_CR0, Cr0.AsUINT32);
   Status = SmmuV3Poll (SmmuInfo->SmmuBase, SMMU_CR0ACK, SMMUV3_CR0_SMMU_EN_MASK, SMMUV3_CR0_SMMU_EN_MASK);
@@ -831,68 +849,163 @@ SmmuV3Configure (
   }
 
 End:
+  if (EFI_ERROR (Status) && (L2StreamTablePtr != NULL)) {
+    FreePages (L2StreamTablePtr, 1);
+  }
+
   // Only logs errors if errors are found
   SmmuV3LogErrors (SmmuInfo);
   return Status;
 }
 
 /**
-  Retrieve the SMMU configuration data from the HOB.
+  Free all RMR_NODE_INFO linked-list nodes attached to every entry in a
+  SMMU_INFO array.  Only the individually-allocated list nodes are freed;
+  the SmmuInfoArray itself is left untouched so the caller can free it
+  separately.
 
-  @return Pointer to the SMMU_CONFIG structure, or NULL if not found.
+  @param [in]  SmmuInfoArray  The SMMU_INFO array whose RmrNodeList chains
+                              will be drained.
+  @param [in]  NodeCount      Number of entries in SmmuInfoArray.
 **/
 STATIC
-SMMU_CONFIG *
-GetSmmuConfigHobData (
-  VOID
+VOID
+FreeSmmuInfoRmrNodes (
+  IN SMMU_INFO  *SmmuInfoArray,
+  IN UINT32     NodeCount
   )
 {
-  VOID  *GuidHob;
+  UINT32      Index;
+  LIST_ENTRY  *Entry;
+  LIST_ENTRY  *Next;
 
-  GuidHob = GetFirstGuidHob (&gSmmuConfigHobGuid);
-
-  if (GuidHob != NULL) {
-    return (SMMU_CONFIG *)GET_GUID_HOB_DATA (GuidHob);
+  if (SmmuInfoArray == NULL) {
+    return;
   }
 
-  return NULL;
+  for (Index = 0; Index < NodeCount; Index++) {
+    Entry = GetFirstNode (&SmmuInfoArray[Index].RmrNodeList);
+    while (!IsNull (&SmmuInfoArray[Index].RmrNodeList, Entry)) {
+      Next = GetNextNode (&SmmuInfoArray[Index].RmrNodeList, Entry);
+      RemoveEntryList (Entry);
+      FreePool (BASE_CR (Entry, RMR_NODE_INFO, Link));
+      Entry = Next;
+    }
+  }
 }
 
 /**
-  Check if the SMMU_CONFIG structure is compatible with the current driver version.
-  Backwards compatibility is currently not supported.
+  Populate SMMU_INFO array from SmmuConfigLib platform data.
 
-  @param [in] SmmuConfig  Pointer to the SMMU_CONFIG structure.
+  Allocates and fills the SMMU_INFO array from SMMU_PLATFORM_NODE
+  entries and applies the disabled list and RMR data.
 
-  @retval EFI_SUCCESS               Success.
-  @retval EFI_INVALID_PARAMETER     Invalid parameter.
-  @retval EFI_INCOMPATIBLE_VERSION  Incompatible version.
+  @param [out]  SmmuInfoOut   Pointer to receive allocated SMMU_INFO array.
+  @param [out]  SmmuCountOut  Number of entries.
+
+  @retval EFI_SUCCESS            Data populated successfully.
+  @retval EFI_NOT_FOUND          No SMMU nodes found.
+  @retval EFI_OUT_OF_RESOURCES   Allocation failure.
 **/
 STATIC
 EFI_STATUS
-CheckSmmuConfigStructure (
-  IN SMMU_CONFIG  *SmmuConfig
+PopulateSmmuInfoFromPlatform (
+  OUT SMMU_INFO  **SmmuInfoOut,
+  OUT UINT32     *SmmuCountOut
   )
 {
-  if (SmmuConfig == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a: SMMU_CONFIG structure is NULL\n", __func__));
-    return EFI_INVALID_PARAMETER;
+  EFI_STATUS          Status;
+  SMMU_PLATFORM_NODE  *PlatformNodes;
+  UINT32              NodeCount;
+  UINT64              *DisabledBases;
+  UINT32              DisabledCount;
+  SMMU_PLATFORM_RMR   *RmrEntries;
+  UINT32              RmrCount;
+  SMMU_INFO           *SmmuInfoArray;
+  UINT32              Index;
+  UINT32              DisIdx;
+  UINT32              RmrIdx;
+  RMR_NODE_INFO       *RmrItem;
+
+  Status = SmmuConfigGetNodes (&PlatformNodes, &NodeCount);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: SmmuConfigGetNodes failed: %r\n", __func__, Status));
+    return Status;
   }
 
-  if ((SmmuConfig->VersionMajor == CURRENT_SMMU_CONFIG_VERSION_MAJOR) && (SmmuConfig->VersionMinor == CURRENT_SMMU_CONFIG_VERSION_MINOR)) {
-    return EFI_SUCCESS;
+  SmmuInfoArray = AllocateZeroPool (NodeCount * sizeof (SMMU_INFO));
+  if (SmmuInfoArray == NULL) {
+    FreePool (PlatformNodes);
+    return EFI_OUT_OF_RESOURCES;
   }
 
-  DEBUG ((
-    DEBUG_ERROR,
-    "%a: SMMU_CONFIG version mismatch. Expected: %u.%u Got: %u.%u\n",
-    __func__,
-    CURRENT_SMMU_CONFIG_VERSION_MAJOR,
-    CURRENT_SMMU_CONFIG_VERSION_MINOR,
-    SmmuConfig->VersionMajor,
-    SmmuConfig->VersionMinor
-    ));
-  return EFI_INCOMPATIBLE_VERSION;
+  for (Index = 0; Index < NodeCount; Index++) {
+    SmmuInfoArray[Index].SmmuBase            = PlatformNodes[Index].SmmuBase;
+    SmmuInfoArray[Index].Flags               = PlatformNodes[Index].Flags;
+    SmmuInfoArray[Index].StreamTableEntryMax = PlatformNodes[Index].StreamTableEntryMax;
+    SmmuInfoArray[Index].EBSBehaviorAbort    = TRUE;
+    SmmuInfoArray[Index].Enabled             = TRUE;
+    InitializeListHead (&SmmuInfoArray[Index].RmrNodeList);
+  }
+
+  FreePool (PlatformNodes);
+
+  Status = SmmuConfigGetDisabledList (&DisabledBases, &DisabledCount);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: SmmuConfigGetDisabledList failed: %r\n", __func__, Status));
+    FreePool (SmmuInfoArray);
+    return Status;
+  }
+
+  if (DisabledCount > 0) {
+    for (Index = 0; Index < NodeCount; Index++) {
+      for (DisIdx = 0; DisIdx < DisabledCount; DisIdx++) {
+        if (SmmuInfoArray[Index].SmmuBase == DisabledBases[DisIdx]) {
+          SmmuInfoArray[Index].Enabled = FALSE;
+          DEBUG ((DEBUG_ERROR, "%a: SMMU[%u] Base=0x%llx marked DISABLED\n", __func__, Index, SmmuInfoArray[Index].SmmuBase));
+        }
+      }
+    }
+
+    FreePool (DisabledBases);
+  }
+
+  Status = SmmuConfigGetRmrInfo (&RmrEntries, &RmrCount);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: SmmuConfigGetRmrInfo failed: %r\n", __func__, Status));
+    FreePool (SmmuInfoArray);
+    return Status;
+  }
+
+  DEBUG ((DEBUG_ERROR, "%a: SmmuConfigGetRmrInfo: RmrCount=%u\n", __func__, RmrCount));
+
+  if (RmrCount > 0) {
+    for (RmrIdx = 0; RmrIdx < RmrCount; RmrIdx++) {
+      for (Index = 0; Index < NodeCount; Index++) {
+        if (SmmuInfoArray[Index].SmmuBase == RmrEntries[RmrIdx].SmmuBase) {
+          RmrItem = AllocateZeroPool (sizeof (RMR_NODE_INFO));
+          if (RmrItem == NULL) {
+            DEBUG ((DEBUG_ERROR, "%a: Failed to allocate RMR_NODE_INFO\n", __func__));
+            FreePool (RmrEntries);
+            FreeSmmuInfoRmrNodes (SmmuInfoArray, NodeCount);
+            FreePool (SmmuInfoArray);
+            return EFI_OUT_OF_RESOURCES;
+          }
+
+          RmrItem->BaseAddress = RmrEntries[RmrIdx].BaseAddress;
+          RmrItem->Length      = RmrEntries[RmrIdx].Length;
+          InsertTailList (&SmmuInfoArray[Index].RmrNodeList, &RmrItem->Link);
+          break;
+        }
+      }
+    }
+
+    FreePool (RmrEntries);
+  }
+
+  *SmmuInfoOut  = SmmuInfoArray;
+  *SmmuCountOut = NodeCount;
+  return EFI_SUCCESS;
 }
 
 /**
@@ -936,19 +1049,29 @@ IoMmuDeInit (
   }
 
   for (SmmuIndex = 0; SmmuIndex < IoMmu->SmmuCount; SmmuIndex++) {
-    Status = SmmuV3DisableTranslation (IoMmu->SmmuInfo[SmmuIndex].SmmuBase);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a: Failed to disable SMMUv3 translation 0x%llx\n", __func__, IoMmu->SmmuInfo[SmmuIndex].SmmuBase));
-    }
+    if (IoMmu->SmmuInfo[SmmuIndex].CommandQueue != NULL) {
+      Status = SmmuV3DisableTranslation (IoMmu->SmmuInfo[SmmuIndex].SmmuBase);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a: Failed to disable SMMUv3 translation 0x%llx\n", __func__, IoMmu->SmmuInfo[SmmuIndex].SmmuBase));
+      }
 
-    Status = SmmuV3GlobalAbort (IoMmu->SmmuInfo[SmmuIndex].SmmuBase);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a: Failed to global abort SMMUv3 0x%llx\n", __func__, IoMmu->SmmuInfo[SmmuIndex].SmmuBase));
+      Status = SmmuV3GlobalAbort (IoMmu->SmmuInfo[SmmuIndex].SmmuBase);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a: Failed to global abort SMMUv3 0x%llx\n", __func__, IoMmu->SmmuInfo[SmmuIndex].SmmuBase));
+      }
     }
 
     if (IoMmu->SmmuInfo[SmmuIndex].PageTableRoot != NULL) {
-      PageTableDeInit (0, IoMmu->SmmuInfo[SmmuIndex].PageTableRoot);
-      IoMmu->SmmuInfo->PageTableRoot = NULL;
+      PAGE_TABLE  *FreedRoot;
+      UINT32      PtIdx;
+
+      FreedRoot = IoMmu->SmmuInfo[SmmuIndex].PageTableRoot;
+      PageTableDeInit (0, FreedRoot);
+      for (PtIdx = 0; PtIdx < IoMmu->SmmuCount; PtIdx++) {
+        if (IoMmu->SmmuInfo[PtIdx].PageTableRoot == FreedRoot) {
+          IoMmu->SmmuInfo[PtIdx].PageTableRoot = NULL;
+        }
+      }
     }
 
     if (IoMmu->SmmuInfo[SmmuIndex].StreamTable != NULL) {
@@ -957,16 +1080,17 @@ IoMmuDeInit (
     }
 
     if (IoMmu->SmmuInfo[SmmuIndex].CommandQueue != NULL) {
-      SmmuV3FreeQueue (IoMmu->SmmuInfo[SmmuIndex].CommandQueue, IoMmu->SmmuInfo[SmmuIndex].CommandQueueLog2Size);
+      SmmuV3FreeQueue (IoMmu->SmmuInfo[SmmuIndex].CommandQueue, IoMmu->SmmuInfo[SmmuIndex].CommandQueueLog2Size, FALSE);
       IoMmu->SmmuInfo[SmmuIndex].CommandQueue = NULL;
     }
 
     if (IoMmu->SmmuInfo[SmmuIndex].EventQueue != NULL) {
-      SmmuV3FreeQueue (IoMmu->SmmuInfo[SmmuIndex].EventQueue, IoMmu->SmmuInfo[SmmuIndex].EventQueueLog2Size);
+      SmmuV3FreeQueue (IoMmu->SmmuInfo[SmmuIndex].EventQueue, IoMmu->SmmuInfo[SmmuIndex].EventQueueLog2Size, TRUE);
       IoMmu->SmmuInfo[SmmuIndex].EventQueue = NULL;
     }
   }
 
+  FreeSmmuInfoRmrNodes (IoMmu->SmmuInfo, IoMmu->SmmuCount);
   FreePool (IoMmu->SmmuInfo);
   FreePool (IoMmu);
 }
@@ -1005,6 +1129,12 @@ SmmuV3ExitBootServices (
 
   for (SmmuIndex = 0; SmmuIndex < mIoMmu->SmmuCount; SmmuIndex++) {
     if (mIoMmu->SmmuInfo[SmmuIndex].Enabled) {
+      Status = SmmuV3DisableTranslation (mIoMmu->SmmuInfo[SmmuIndex].SmmuBase);
+      if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR, "%a: Failed to disable smmu 0x%llx translation.\n", __func__, mIoMmu->SmmuInfo[SmmuIndex].SmmuBase));
+        ASSERT_EFI_ERROR (Status);
+      }
+
       if (mIoMmu->SmmuInfo[SmmuIndex].EBSBehaviorAbort) {
         Status = SmmuV3GlobalAbort (mIoMmu->SmmuInfo[SmmuIndex].SmmuBase);
         if (EFI_ERROR (Status)) {
@@ -1018,12 +1148,6 @@ SmmuV3ExitBootServices (
           ASSERT_EFI_ERROR (Status);
         }
       }
-
-      Status = SmmuV3DisableTranslation (mIoMmu->SmmuInfo[SmmuIndex].SmmuBase);
-      if (EFI_ERROR (Status)) {
-        DEBUG ((DEBUG_ERROR, "%a: Failed to disable smmu 0x%llx translation.\n", __func__, mIoMmu->SmmuInfo[SmmuIndex].SmmuBase));
-        ASSERT_EFI_ERROR (Status);
-      }
     }
   }
 
@@ -1033,7 +1157,8 @@ SmmuV3ExitBootServices (
 
 /**
   Entrypoint for SmmuDxe driver.
-  Configures IORT, and SMMUv3 hardware based on the configuration data from gSmmuConfigHobGuid HOB.
+  Configures SMMUv3 hardware based on platform configuration data from SmmuConfigLib.
+  Optionally installs the IORT ACPI table if the platform provides one.
   Uses a linear stream table and stage 2 translation for dma remapping.
   Initializes IoMmu Protocol.
 
@@ -1044,10 +1169,8 @@ SmmuV3ExitBootServices (
   @retval EFI_OUT_OF_RESOURCES      Not enough resources to initialize the driver.
   @retval EFI_NOT_FOUND             The SMMU configuration data is not found.
   @retval EFI_INVALID_PARAMETER     Invalid parameter.
-  @retval EFI_OUT_OF_RESOURCES      Out of resources.
   @retval EFI_TIMEOUT               Timeout.
   @retval EFI_DEVICE_ERROR          Device error.
-  @retval EFI_INCOMPATIBLE_VERSION  Incompatible version.
   @retval Others                    Some error occurs when executing this entry point.
 **/
 EFI_STATUS
@@ -1059,27 +1182,13 @@ InitializeSmmuDxe (
   EFI_STATUS               Status;
   EFI_EVENT                Event;
   UINT32                   SmmuIndex;
-  UINT32                   SmmuStatusIndex;
-  UINT32                   SmmuDisabledCount;
-  UINT64                   *SmmuDisabledList;
   EFI_ACPI_TABLE_PROTOCOL  *AcpiTable;
-  SMMU_CONFIG              *SmmuConfig;
   PAGE_TABLE               *PageTableRoot;
   VOID                     *IortData;
+  UINT32                   IortSize;
 
-  // Get SMMU configuration data from HOB
-  SmmuConfig = GetSmmuConfigHobData ();
-  if (SmmuConfig == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a: Failed to get SMMU config data from gSmmuConfigHobGuid\n", __func__));
-    return EFI_NOT_FOUND;
-  }
-
-  // Check SMMU_CONFIG version, return error if incompatible. Backwards compatibility not supported.
-  Status = CheckSmmuConfigStructure (SmmuConfig);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: SMMU_CONFIG version check failed\n", __func__));
-    return Status;
-  }
+  Event         = NULL;
+  PageTableRoot = NULL;
 
   // Check if ACPI Table Protocol has been installed
   Status = gBS->LocateProtocol (
@@ -1092,40 +1201,30 @@ InitializeSmmuDxe (
     return Status;
   }
 
-  // Create an event callback to disable SMMUv3 translation and set global abort during ExitBootServices
-  Status = gBS->CreateEventEx (
-                  EVT_NOTIFY_SIGNAL,
-                  TPL_CALLBACK,
-                  SmmuV3ExitBootServices,
-                  NULL,
-                  &gEfiEventExitBootServicesGuid,
-                  &Event
-                  );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Failed to create ExitBootServices event\n", __func__));
-    return Status;
-  }
-
   Status = IoMmuConfigInit (&mIoMmu);
   if (EFI_ERROR (Status)) {
     DEBUG ((DEBUG_ERROR, "%a: Failed to initialize IoMmu Config\n", __func__));
     return Status;
   }
 
-  IortData = (VOID *)((UINTN)SmmuConfig + (UINTN)SmmuConfig->IortOffset);
-
-  Status = SmmuV3ParseIort (IortData, &mIoMmu->SmmuInfo, &mIoMmu->SmmuCount);
+  Status = PopulateSmmuInfoFromPlatform (&mIoMmu->SmmuInfo, &mIoMmu->SmmuCount);
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Failed to parse IORT for SMMU\n", __func__));
-    return Status;
+    DEBUG ((DEBUG_ERROR, "%a: Failed to get SMMU configuration from platform\n", __func__));
+    goto Error;
   }
 
-  DEBUG ((DEBUG_VERBOSE, "%a: Found %u SMMUs\n", __func__, mIoMmu->SmmuCount));
+  DEBUG ((DEBUG_ERROR, "%a: Found %u SMMU(s) from platform config\n", __func__, mIoMmu->SmmuCount));
 
-  // Add IORT Table
-  Status = AddIortTable (AcpiTable, IortData, SmmuConfig->IortSize);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Failed to add IORT table\n", __func__));
+  // Install IORT ACPI table if the platform provides one
+  Status = SmmuConfigGetIortData (&IortData, &IortSize);
+  if (!EFI_ERROR (Status)) {
+    Status = AddIortTable (AcpiTable, IortData, IortSize);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "%a: Failed to add IORT table\n", __func__));
+      goto Error;
+    }
+  } else if (Status != EFI_NOT_FOUND) {
+    DEBUG ((DEBUG_ERROR, "%a: SmmuConfigGetIortData failed: %r\n", __func__, Status));
     goto Error;
   }
 
@@ -1135,19 +1234,6 @@ InitializeSmmuDxe (
     DEBUG ((DEBUG_ERROR, "%a: Failed to initialize Page Table\n", __func__));
     Status = EFI_OUT_OF_RESOURCES;
     goto Error;
-  }
-
-  // Set SMMUs' Enabled status based on the SmmuDisabledList in the SMMU_CONFIG HOB structure.
-  SmmuDisabledCount = SmmuConfig->SmmuDisabledListSize / sizeof (UINT64);
-  SmmuDisabledList  = (UINT64 *)((UINTN)SmmuConfig + (UINTN)SmmuConfig->SmmuDisabledListOffset);
-
-  for (SmmuIndex = 0; SmmuIndex < mIoMmu->SmmuCount; SmmuIndex++) {
-    mIoMmu->SmmuInfo[SmmuIndex].Enabled = TRUE;
-    for (SmmuStatusIndex = 0; SmmuStatusIndex < SmmuDisabledCount; SmmuStatusIndex++) {
-      if (mIoMmu->SmmuInfo[SmmuIndex].SmmuBase == SmmuDisabledList[SmmuStatusIndex]) {
-        mIoMmu->SmmuInfo[SmmuIndex].Enabled = FALSE;
-      }
-    }
   }
 
   // Configure SMMUv3 hardware
@@ -1164,7 +1250,6 @@ InitializeSmmuDxe (
   }
 
   // Disable any SMMU that is not enabled.
-  // Disables translation and sets global bypass.
   for (SmmuIndex = 0; SmmuIndex < mIoMmu->SmmuCount; SmmuIndex++) {
     if (mIoMmu->SmmuInfo[SmmuIndex].Enabled == FALSE) {
       Status = SmmuV3DisableTranslation (mIoMmu->SmmuInfo[SmmuIndex].SmmuBase);
@@ -1183,10 +1268,24 @@ InitializeSmmuDxe (
     }
   }
 
+  // Create an event callback to disable SMMUv3 translation and set global abort during ExitBootServices
+  Status = gBS->CreateEventEx (
+                  EVT_NOTIFY_SIGNAL,
+                  TPL_CALLBACK,
+                  SmmuV3ExitBootServices,
+                  NULL,
+                  &gEfiEventExitBootServicesGuid,
+                  &Event
+                  );
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: Failed to create ExitBootServices event\n", __func__));
+    goto Error;
+  }
+
   // Initialize IoMmu Protocol
   Status = IoMmuInit ();
   if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Failed to intall IoMmuProtocol\n", __func__));
+    DEBUG ((DEBUG_ERROR, "%a: Failed to install IoMmuProtocol\n", __func__));
     goto Error;
   }
 
@@ -1196,7 +1295,24 @@ InitializeSmmuDxe (
 
 Error:
   DEBUG ((DEBUG_ERROR, "%a: SMMU DMA protection failed to initialize. Status = %llx\n", __func__, Status));
+  if (PageTableRoot != NULL) {
+    if ((mIoMmu != NULL) && (mIoMmu->SmmuInfo != NULL)) {
+      for (SmmuIndex = 0; SmmuIndex < mIoMmu->SmmuCount; SmmuIndex++) {
+        if (mIoMmu->SmmuInfo[SmmuIndex].PageTableRoot == PageTableRoot) {
+          mIoMmu->SmmuInfo[SmmuIndex].PageTableRoot = NULL;
+        }
+      }
+    }
+
+    PageTableDeInit (0, PageTableRoot);
+    PageTableRoot = NULL;
+  }
+
   IoMmuDeInit (mIoMmu);
   mIoMmu = NULL;
+  if (Event != NULL) {
+    gBS->CloseEvent (Event);
+  }
+
   return Status;
 }
