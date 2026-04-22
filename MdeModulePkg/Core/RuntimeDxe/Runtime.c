@@ -323,16 +323,16 @@ RuntimeDriverSetVirtualAddressMap (
     if (mMyImageBase != RuntimeImage->ImageBase) {
       VirtImageBase = (EFI_PHYSICAL_ADDRESS)(UINTN)RuntimeImage->ImageBase;
       Status        = RuntimeDriverConvertPointer (0, (VOID **)&VirtImageBase);
-      ASSERT_EFI_ERROR (Status);
+      if (!EFI_ERROR (Status)) {
+        PeCoffLoaderRelocateImageForRuntime (
+          (EFI_PHYSICAL_ADDRESS)(UINTN)RuntimeImage->ImageBase,
+          VirtImageBase,
+          (UINTN)RuntimeImage->ImageSize,
+          RuntimeImage->RelocationData
+          );
 
-      PeCoffLoaderRelocateImageForRuntime (
-        (EFI_PHYSICAL_ADDRESS)(UINTN)RuntimeImage->ImageBase,
-        VirtImageBase,
-        (UINTN)RuntimeImage->ImageSize,
-        RuntimeImage->RelocationData
-        );
-
-      InvalidateInstructionCacheRange (RuntimeImage->ImageBase, (UINTN)RuntimeImage->ImageSize);
+        InvalidateInstructionCacheRange (RuntimeImage->ImageBase, (UINTN)RuntimeImage->ImageSize);
+      }
     }
   }
 
