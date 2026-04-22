@@ -302,7 +302,14 @@ RuntimeServiceResetSystem (
       }
     }
   } else {
-    ASSERT (ResetType < ARRAY_SIZE (mResetTypeStr));
+    if (!EfiAtRuntime ()) {
+      ASSERT (ResetType < ARRAY_SIZE (mResetTypeStr));
+    }
+
+    if (ResetType >= ARRAY_SIZE (mResetTypeStr)) {
+      ResetType = EfiResetCold;
+    }
+
     DEBUG ((DEBUG_ERROR, "DXE ResetSystem2: Maximum reset call depth is met. Use the current reset type: %s!\n", mResetTypeStr[ResetType]));
   }
 
@@ -327,9 +334,4 @@ RuntimeServiceResetSystem (
     default:
       return;
   }
-
-  //
-  // Given we should have reset getting here would be bad
-  //
-  ASSERT (FALSE);
 }
