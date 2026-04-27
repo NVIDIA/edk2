@@ -226,7 +226,13 @@ SendCommunicateBuffer (
                                   mVariableBufferPhysical,
                                   mVariableBuffer
                                   );
-    ASSERT_EFI_ERROR (Status);
+    if (!EfiAtRuntime ()) {
+      ASSERT_EFI_ERROR (Status);
+    }
+
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
 
     SmmCommunicateHeaderV3    = (EFI_MM_COMMUNICATE_HEADER_V3 *)mVariableBuffer;
     SmmVariableFunctionHeader = (SMM_VARIABLE_COMMUNICATE_HEADER *)SmmCommunicateHeaderV3->MessageData;
@@ -240,7 +246,13 @@ SendCommunicateBuffer (
                                     mVariableBuffer,
                                     &CommSize
                                     );
-    ASSERT_EFI_ERROR (Status);
+    if (!EfiAtRuntime ()) {
+      ASSERT_EFI_ERROR (Status);
+    }
+
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
 
     SmmCommunicateHeader      = (EFI_MM_COMMUNICATE_HEADER *)mVariableBuffer;
     SmmVariableFunctionHeader = (SMM_VARIABLE_COMMUNICATE_HEADER *)SmmCommunicateHeader->Data;
@@ -538,7 +550,9 @@ CheckForRuntimeCacheSync (
     SyncRuntimeCache ();
   }
 
-  ASSERT (!(CacheInfoFlag->PendingUpdate));
+  if (!EfiAtRuntime ()) {
+    ASSERT (!(CacheInfoFlag->PendingUpdate));
+  }
 
   //
   // The HOB variable data may have finished being flushed in the runtime cache sync update
@@ -597,7 +611,13 @@ FindVariableInRuntimeCache (
   // a GetVariable () or GetNextVariable () call from being issued until a prior call has returned. The runtime
   // cache read lock should always be free when entering this function.
   //
-  ASSERT (!(CacheInfoFlag->ReadLock));
+  if (!EfiAtRuntime ()) {
+    ASSERT (!(CacheInfoFlag->ReadLock));
+  }
+
+  if (CacheInfoFlag->ReadLock) {
+    return EFI_ACCESS_DENIED;
+  }
 
   CacheInfoFlag->ReadLock = TRUE;
   CheckForRuntimeCacheSync ();
@@ -632,7 +652,14 @@ FindVariableInRuntimeCache (
       // Get data size
       //
       TempDataSize = DataSizeOfVariable (RtPtrTrack.CurrPtr, mVariableAuthFormat);
-      ASSERT (TempDataSize != 0);
+      if (!EfiAtRuntime ()) {
+        ASSERT (TempDataSize != 0);
+      }
+
+      if (TempDataSize == 0) {
+        Status = EFI_DEVICE_ERROR;
+        goto Done;
+      }
 
       if (*DataSize >= TempDataSize) {
         if (Data == NULL) {
@@ -732,8 +759,6 @@ FindVariableInSmm (
   if (EFI_ERROR (Status)) {
     goto Done;
   }
-
-  ASSERT (SmmVariableHeader != NULL);
 
   CopyGuid (&SmmVariableHeader->Guid, VendorGuid);
   SmmVariableHeader->DataSize = TempDataSize;
@@ -887,7 +912,13 @@ GetNextVariableNameInRuntimeCache (
   // a GetVariable () or GetNextVariable () call from being issued until a prior call has returned. The runtime
   // cache read lock should always be free when entering this function.
   //
-  ASSERT (!(CacheInfoFlag->ReadLock));
+  if (!EfiAtRuntime ()) {
+    ASSERT (!(CacheInfoFlag->ReadLock));
+  }
+
+  if (CacheInfoFlag->ReadLock) {
+    return EFI_ACCESS_DENIED;
+  }
 
   CheckForRuntimeCacheSync ();
 
@@ -911,16 +942,23 @@ GetNextVariableNameInRuntimeCache (
                 );
     if (!EFI_ERROR (Status)) {
       VarNameSize = NameSizeOfVariable (VariablePtr, mVariableAuthFormat);
-      ASSERT (VarNameSize != 0);
-      if (VarNameSize <= *VariableNameSize) {
-        CopyMem (VariableName, GetVariableNamePtr (VariablePtr, mVariableAuthFormat), VarNameSize);
-        CopyMem (VendorGuid, GetVendorGuidPtr (VariablePtr, mVariableAuthFormat), sizeof (EFI_GUID));
-        Status = EFI_SUCCESS;
-      } else {
-        Status = EFI_BUFFER_TOO_SMALL;
+      if (!EfiAtRuntime ()) {
+        ASSERT (VarNameSize != 0);
       }
 
-      *VariableNameSize = VarNameSize;
+      if (VarNameSize == 0) {
+        Status = EFI_DEVICE_ERROR;
+      } else {
+        if (VarNameSize <= *VariableNameSize) {
+          CopyMem (VariableName, GetVariableNamePtr (VariablePtr, mVariableAuthFormat), VarNameSize);
+          CopyMem (VendorGuid, GetVendorGuidPtr (VariablePtr, mVariableAuthFormat), sizeof (EFI_GUID));
+          Status = EFI_SUCCESS;
+        } else {
+          Status = EFI_BUFFER_TOO_SMALL;
+        }
+
+        *VariableNameSize = VarNameSize;
+      }
     }
   }
 
@@ -998,8 +1036,6 @@ GetNextVariableNameInSmm (
   if (EFI_ERROR (Status)) {
     goto Done;
   }
-
-  ASSERT (SmmGetNextVariableName != NULL);
 
   //
   // SMM comm buffer->NameSize is buffer size for return string
@@ -1190,8 +1226,6 @@ RuntimeServiceSetVariable (
     goto Done;
   }
 
-  ASSERT (SmmVariableHeader != NULL);
-
   CopyGuid ((EFI_GUID *)&SmmVariableHeader->Guid, VendorGuid);
   SmmVariableHeader->DataSize   = DataSize;
   SmmVariableHeader->NameSize   = VariableNameSize;
@@ -1266,8 +1300,6 @@ RuntimeServiceQueryVariableInfo (
   if (EFI_ERROR (Status)) {
     goto Done;
   }
-
-  ASSERT (SmmQueryVariableInfo != NULL);
 
   SmmQueryVariableInfo->Attributes = Attributes;
 

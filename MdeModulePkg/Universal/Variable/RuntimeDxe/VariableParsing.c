@@ -499,7 +499,14 @@ FindVariableEx (
           if (CompareGuid (VendorGuid, GetVendorGuidPtr (PtrTrack->CurrPtr, AuthFormat))) {
             Point = (VOID *)GetVariableNamePtr (PtrTrack->CurrPtr, AuthFormat);
 
-            ASSERT (NameSizeOfVariable (PtrTrack->CurrPtr, AuthFormat) != 0);
+            if (!AtRuntime ()) {
+              ASSERT (NameSizeOfVariable (PtrTrack->CurrPtr, AuthFormat) != 0);
+            }
+
+            if (NameSizeOfVariable (PtrTrack->CurrPtr, AuthFormat) == 0) {
+              break;
+            }
+
             if (CompareMem (VariableName, Point, NameSizeOfVariable (PtrTrack->CurrPtr, AuthFormat)) == 0) {
               if (PtrTrack->CurrPtr->State == (VAR_IN_DELETED_TRANSITION & VAR_ADDED)) {
                 InDeletedVariable = PtrTrack->CurrPtr;
@@ -618,7 +625,15 @@ VariableServiceGetNextVariableInternal (
         }
       }
 
-      ASSERT (StoreType < VariableStoreTypeMax);
+      if (!AtRuntime ()) {
+        ASSERT (StoreType < VariableStoreTypeMax);
+      }
+
+      if (StoreType >= VariableStoreTypeMax) {
+        Status = EFI_NOT_FOUND;
+        goto Done;
+      }
+
       //
       // Switch to next storage
       //
