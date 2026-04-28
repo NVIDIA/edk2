@@ -13,6 +13,7 @@
 #include <Library/DxeServicesTableLib.h>
 #include <Library/HobLib.h>
 #include <Library/PcdLib.h>
+#include <Library/TimerLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
@@ -35,6 +36,13 @@ STATIC UINT16  mStMmPartId;
 // world.
 //
 STATIC ARM_MEMORY_REGION_DESCRIPTOR  mNsCommBuffMemRegion;
+
+//
+// Retry parameters cached at init time to avoid re-entrant PCD access while
+// PcdDxe holds its own database lock.
+//
+STATIC UINTN   mMmCommMaxRetries;
+STATIC UINT64  mMmCommRetryBackOffUs;
 
 // Notification event when virtual address map is set.
 STATIC EFI_EVENT  mSetVirtualAddressMapEvent;
@@ -104,7 +112,7 @@ SmcMmRetToEfiStatus (
     case ARM_SMC_MM_RET_NO_MEMORY:
       return EFI_OUT_OF_RESOURCES;
     default:
-      return EFI_ACCESS_DENIED;
+      return EFI_DEVICE_ERROR;
   }
 }
 
@@ -188,6 +196,7 @@ MmCommunicationCommon (
   UINTN                         *MessageSize;
   UINTN                         HeaderSize;
   EFI_STATUS                    Status;
+  UINTN                         Retry;
 
   Status     = EFI_ACCESS_DENIED;
   BufferSize = 0;
@@ -259,13 +268,32 @@ MmCommunicationCommon (
     return Status;
   }
 
-  // Copy Communication Payload
-  CopyMem ((VOID *)mNsCommBuffMemRegion.VirtualBase, CommBufferVirtual, BufferSize);
+  for (Retry = 0; Retry <= mMmCommMaxRetries; Retry++) {
+    // Copy Communication Payload
+    CopyMem ((VOID *)mNsCommBuffMemRegion.VirtualBase, CommBufferVirtual, BufferSize);
 
-  if (IsFfaSupported ()) {
-    Status = SendFfaMmCommunicate ();
-  } else {
-    Status = SendSpmMmCommunicate ();
+    if (IsFfaSupported ()) {
+      Status = SendFfaMmCommunicate ();
+    } else {
+      Status = SendSpmMmCommunicate ();
+    }
+
+    if (!EFI_ERROR (Status)) {
+      break;
+    }
+
+    if (Retry < mMmCommMaxRetries) {
+      DEBUG ((
+        DEBUG_WARN,
+        "%a: MM communicate failed (%r), retry %u/%u after %lu us\n",
+        __func__,
+        Status,
+        Retry + 1,
+        mMmCommMaxRetries,
+        mMmCommRetryBackOffUs
+        ));
+      MicroSecondDelay (mMmCommRetryBackOffUs);
+    }
   }
 
   if (!EFI_ERROR (Status)) {
@@ -754,6 +782,10 @@ MmCommunication2Initialize (
   ASSERT (mNsCommBuffMemRegion.PhysicalBase != 0);
 
   ASSERT (mNsCommBuffMemRegion.Length != 0);
+
+  // Cache retry parameters once at init to avoid re-entrant PcdDxe access.
+  mMmCommRetryBackOffUs = PcdGet64 (PcdMmCommRetryBackOffUs);
+  mMmCommMaxRetries     = (mMmCommRetryBackOffUs == 0) ? 0 : PcdGet8 (PcdMmCommMaxRetries);
 
   /* The upstream driver adds the NS buffer as a cached memory region.
      But this isn't working on our platform, change this to be a uncached memory region.
