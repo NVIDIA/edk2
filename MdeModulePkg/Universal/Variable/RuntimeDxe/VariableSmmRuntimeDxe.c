@@ -231,7 +231,7 @@ SendCommunicateBuffer (
     }
 
     if (EFI_ERROR (Status)) {
-      return Status;
+      return EFI_DEVICE_ERROR;
     }
 
     SmmCommunicateHeaderV3    = (EFI_MM_COMMUNICATE_HEADER_V3 *)mVariableBuffer;
@@ -251,7 +251,7 @@ SendCommunicateBuffer (
     }
 
     if (EFI_ERROR (Status)) {
-      return Status;
+      return EFI_DEVICE_ERROR;
     }
 
     SmmCommunicateHeader      = (EFI_MM_COMMUNICATE_HEADER *)mVariableBuffer;
@@ -616,7 +616,7 @@ FindVariableInRuntimeCache (
   }
 
   if (CacheInfoFlag->ReadLock) {
-    return EFI_ACCESS_DENIED;
+    return EFI_DEVICE_ERROR;
   }
 
   CacheInfoFlag->ReadLock = TRUE;
@@ -917,7 +917,7 @@ GetNextVariableNameInRuntimeCache (
   }
 
   if (CacheInfoFlag->ReadLock) {
-    return EFI_ACCESS_DENIED;
+    return EFI_DEVICE_ERROR;
   }
 
   CheckForRuntimeCacheSync ();
