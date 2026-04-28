@@ -38,6 +38,7 @@
   DebugLib
   DxeServicesTableLib
   HobLib
+  TimerLib
   UefiDriverEntryPoint
 
 [Protocols]
@@ -54,6 +55,8 @@
 [Pcd.common]
   gArmTokenSpaceGuid.PcdMmBufferBase
   gArmTokenSpaceGuid.PcdMmBufferSize
+  gArmTokenSpaceGuid.PcdMmCommMaxRetries
+  gArmTokenSpaceGuid.PcdMmCommRetryBackOffUs
 
 [Depex]
   gEfiCpuArchProtocolGuid
