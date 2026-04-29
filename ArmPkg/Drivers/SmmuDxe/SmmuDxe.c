@@ -1227,7 +1227,10 @@ IoMmuDeInit (
 
   IoMmuFreeBypassList ();
   FreeSmmuInfoRmrNodes (IoMmu->SmmuInfo, IoMmu->SmmuCount);
-  FreePool (IoMmu->SmmuInfo);
+  if (IoMmu->SmmuInfo != NULL) {
+    FreePool (IoMmu->SmmuInfo);
+  }
+
   FreePool (IoMmu);
 }
 
