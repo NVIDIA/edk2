@@ -136,6 +136,12 @@
   # attributes initially, and can be disabled otherwise.
   gArmTokenSpaceGuid.PcdRemapUnusedMemoryNx|TRUE|BOOLEAN|0x00000048
 
+  ## When TRUE, IoMmuSetAttribute honours the caller-supplied IoMmuAccess
+  ## permissions (least-privilege). When FALSE, every mapping is granted
+  ## full read+write access for compatibility with platforms that cannot
+  ## yet restrict DMA permissions per-mapping.
+  gArmTokenSpaceGuid.PcdSmmuIoMmuStrictAccessPermissions|FALSE|BOOLEAN|0x00000067
+
 [PcdsFixedAtBuild.common]
   gArmTokenSpaceGuid.PcdTrustzoneSupport|FALSE|BOOLEAN|0x00000006
 
