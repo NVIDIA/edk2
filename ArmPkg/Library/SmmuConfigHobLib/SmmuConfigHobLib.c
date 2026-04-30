@@ -11,7 +11,7 @@
 
 **/
 
-#include <Uefi.h>
+#include <PiDxe.h>
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
