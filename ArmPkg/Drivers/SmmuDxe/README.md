@@ -4,7 +4,7 @@
 
 - [1. Overview](#1-overview)
 - [2. Architecture](#2-architecture)
-- [3. File Descriptions](#3-file-descriptions)
+- [3. Driver Source Files](#3-driver-source-files)
 - [4. Data Structures](#4-data-structures)
 - [5. Driver Initialization Flow (SmmuDxe.c)](#5-driver-initialization-flow-smmudxec)
 - [6. SMMUv3 Hardware Utilities (SmmuV3Util.c)](#6-smmuv3-hardware-utilities-smmuv3utilc)
@@ -13,7 +13,7 @@
 - [9. Stream Table Configuration](#9-stream-table-configuration)
 - [10. Command and Event Queues](#10-command-and-event-queues)
 - [11. TLB Invalidation](#11-tlb-invalidation)
-- [12. IORT Parsing](#12-iort-parsing)
+- [12. Platform Configuration (SmmuConfigLib)](#12-platform-configuration-smmuconfiglib)
 - [13. Reserved Memory Region (RMR) Support](#13-reserved-memory-region-rmr-support)
 - [14. ExitBootServices Handling](#14-exitbootservices-handling)
 - [15. Bounce Buffer Mechanism](#15-bounce-buffer-mechanism)
@@ -37,14 +37,17 @@ a uniform interface for mapping host memory to device-accessible addresses.
 - Configures SMMUv3 hardware for Stage 2 address translation
 - Maintains identity-mapped page tables (up to 4 levels) with 4KB granularity
 - Supports linear and 2-level stream tables
-- Handles Reserved Memory Regions (RMR) from the IORT
+- Handles Reserved Memory Regions (RMR) via SmmuConfigLib
 - Provides bounce buffering for alignment and address-range constraints
-- Installs the IORT ACPI table for OS-level SMMU awareness
+- Optionally installs the IORT ACPI table for OS-level SMMU awareness (if the
+  platform provides one via SmmuConfigLib)
+- Supports per-device bypass STE configuration via SmmuConfigLib
+- PCD-controlled access permission enforcement (`PcdSmmuIoMmuStrictAccessPermissions`)
 - Cleanly transitions SMMU state at ExitBootServices
 
 **Build module type:** `DXE_DRIVER`
 **Entry point:** `InitializeSmmuDxe`
-**GUID:** `BE506866-85F2-45EC-AC01-9BBF39D4CA78`
+**GUID:** `0DD51C83-1DEF-4922-A112-E00D67DF4C78`
 
 ---
 
@@ -72,50 +75,65 @@ SMMUv3 Hardware         (stream table, page table, command queue, event queue)
 
 | Protocol | Role |
 |----------|------|
-| `gEfiAcpiTableProtocolGuid` | **Consumed** -- used to install the IORT ACPI table |
+| `gEfiAcpiTableProtocolGuid` | **Consumed** -- used to install the IORT ACPI table (if platform provides one) |
 | `gEdkiiIoMmuProtocolGuid`   | **Produced** -- the IOMMU protocol exposed to PCI subsystem |
 
-### HOB Dependency
+### Library Dependency
 
-| GUID | Purpose |
-|------|---------|
-| `gSmmuConfigHobGuid` | Carries platform-supplied `SMMU_CONFIG` structure containing IORT data and disabled-SMMU list |
+| Library | Purpose |
+|---------|---------|
+| `SmmuConfigLib` | Platform abstraction for SMMU node information, disabled-SMMU lists, RMR memory ranges, optional IORT data, and per-device bypass stream queries |
+
+### Feature PCD
+
+| PCD | Default | Purpose |
+|-----|---------|---------|
+| `gArmTokenSpaceGuid.PcdSmmuIoMmuStrictAccessPermissions` | `FALSE` | When `TRUE`, `IoMmuSetAttribute` honours the caller-supplied `IoMmuAccess` flags (least-privilege). When `FALSE`, every mapping is granted full read+write access for compatibility with platforms that cannot yet restrict DMA permissions per-mapping. |
 
 ---
 
-## 3. File Descriptions
+## 3. Driver Source Files
+
+Files contained in the `ArmPkg/Drivers/SmmuDxe/` directory:
 
 | File | Purpose |
 |------|---------|
-| `SmmuDxe.inf` | EDK II module information file -- defines sources, dependencies, GUIDs, protocols, library classes, and the DEPEX |
-| `SmmuDxe.c` | Driver entry point and top-level orchestration: HOB consumption, IORT installation, page table / stream table / queue allocation, per-SMMU configuration, ExitBootServices callback |
-| `SmmuV3Util.c` | Low-level SMMUv3 utilities: register read/write, interrupt control, translation enable/disable, global abort/bypass, polling, command queue management, TLB invalidation, event queue consumption, error logging, IORT parsing, RMR mapping |
-| `IoMmu.c` | IOMMU protocol implementation: `Map`, `Unmap`, `SetAttribute`, `AllocateBuffer`, `FreeBuffer`, and the underlying page table update logic |
-| `SmmuV3.h` | Header for SMMUv3 constants, macros (page table index calculation, queue size computation, queue empty/full checks), data structures (`SMMU_INFO`, `IOMMU_CONFIG`, `RMR_NODE_INFO`), and function prototypes for SmmuV3Util.c |
-| `IoMmu.h` | Header for page table bit definitions, `PAGE_TABLE` structure, and prototypes for `UpdatePageTable` and `IoMmuInit` |
+| `SmmuDxe.inf` | EDK II module information file -- defines sources, dependencies, GUIDs, protocols, library classes, FeaturePcd references, and the DEPEX |
+| `SmmuDxe.c` | Driver entry point and top-level orchestration: SmmuConfigLib consumption, optional IORT installation, page table / stream table / queue allocation, per-SMMU configuration, per-device bypass STE writes, ExitBootServices callback |
+| `SmmuV3Util.c` | Low-level SMMUv3 utilities: register read/write, interrupt control, translation enable/disable, global abort/bypass, polling, command queue management, TLB invalidation, event queue consumption, error logging, RMR mapping |
+| `IoMmu.c` | IOMMU protocol implementation: `Map`, `Unmap`, `SetAttribute` (with per-device bypass STE and PCD-controlled access permissions), `AllocateBuffer`, `FreeBuffer`, and the underlying page table update logic |
+| `SmmuV3.h` | Header for SMMUv3 constants, macros (page table index calculation, queue size computation, queue empty/full checks), data structures (`SMMU_INFO`, `IOMMU_CONFIG`, `RMR_NODE_INFO`), and function prototypes for SmmuV3Util.c and SmmuDxe.c |
+| `IoMmu.h` | Header for page table bit definitions, `PAGE_TABLE` structure, and prototypes for `UpdatePageTable`, `IoMmuInit`, and `IoMmuFreeBypassList` |
 | `README.md` | This documentation file |
+
+### Related Files (outside this directory)
+
+| File | Purpose |
+|------|---------|
+| `ArmPkg/Include/Library/SmmuConfigLib.h` | `SmmuConfigLib` library class declaration consumed by `SmmuDxe.c` (see §4.1). Defines the platform interface for SMMU node info, disabled-SMMU lists, RMR ranges, optional IORT data, and per-device bypass stream queries. ArmPkg ships a default implementation (`SmmuConfigHobLib`); platforms may override `SmmuConfigLib` in their platform DSC with a platform-specific instance (for example, a Configuration Manager- or DTB-backed implementation). |
+| `ArmPkg/Library/SmmuConfigHobLib/` | Default `SmmuConfigLib` implementation that reads platform configuration from a `gSmmuConfigHobGuid` HOB. Bound by `ArmPkg/ArmPkg.dsc` for in-tree builds; see §4.1 for the API surface. |
 
 ---
 
 ## 4. Data Structures
 
-### 4.1 `SMMU_CONFIG` (platform HOB payload)
+### 4.1 `SmmuConfigLib` Platform Interface
 
-Defined externally (in `Guid/SmmuConfig.h`). Passed via `gSmmuConfigHobGuid`:
+Platform configuration is supplied via the `SmmuConfigLib` library class (defined in
+`Include/Library/SmmuConfigLib.h`). This replaces the former `SMMU_CONFIG` HOB approach with
+a more flexible abstraction supporting multiple data sources (HOB, DTB, Configuration Manager).
 
-```c
-typedef struct _SMMU_CONFIG {
-  UINT32    VersionMajor;
-  UINT32    VersionMinor;
-  UINT32    SmmuDisabledListSize;    // bytes
-  UINT32    SmmuDisabledListOffset;  // from start of struct
-  UINT32    IortSize;
-  UINT32    IortOffset;              // from start of struct
-} SMMU_CONFIG;
-```
+Key APIs:
 
-The IORT table data and the disabled-list array are appended contiguously after this header,
-addressed via their respective offsets.
+| Function | Purpose |
+|----------|---------|
+| `SmmuConfigGetNodes` | Returns `SMMU_PLATFORM_NODE` array with base addresses, flags, and max stream IDs |
+| `SmmuConfigGetDisabledList` | Returns SMMU base addresses that should be bypassed |
+| `SmmuConfigGetRmrInfo` | Returns `SMMU_PLATFORM_RMR` entries (SMMU base, memory base, length) |
+| `SmmuConfigGetIortData` | Returns raw IORT table data for ACPI installation (or `EFI_NOT_FOUND` if the platform handles IORT installation separately) |
+| `SmmuConfigGetBypassStreamInfo` | Queries whether a device should bypass SMMU translation, returning the SMMU base and stream ID |
+
+The default implementation (`SmmuConfigHobLib`) reads from the `gSmmuConfigHobGuid` HOB.
 
 ### 4.2 `IOMMU_CONFIG`
 
@@ -138,6 +156,7 @@ Per-SMMU instance state:
 typedef struct _SMMU_INFO {
   PAGE_TABLE    *PageTableRoot;
   VOID          *StreamTable;
+  VOID          *SharedL2Page;               // shared L2 page for 2-level stream tables (bypass STE support)
   VOID          *CommandQueue;
   VOID          *EventQueue;
   LIST_ENTRY    RmrNodeList;
@@ -146,7 +165,7 @@ typedef struct _SMMU_INFO {
   UINT64        CachedConsumer;              // command queue consumer tracking
   UINT32        StreamTableSize;
   UINT32        StreamTableEntryMax;         // max stream ID
-  UINT32        Flags;                       // from IORT SMMUv3 node
+  UINT32        Flags;                       // from platform node
   UINT32        CommandQueueSize;
   UINT32        EventQueueSize;
   UINT32        StreamTableLog2Size;
@@ -195,10 +214,26 @@ Linked-list node for tracking RMR entries per SMMU:
 
 ```c
 typedef struct _RMR_NODE_INFO {
-  EFI_ACPI_6_0_IO_REMAPPING_RMR_NODE  *RmrNode;
-  LIST_ENTRY                          Link;
+  UINT64        BaseAddress;
+  UINT64        Length;
+  LIST_ENTRY    Link;
 } RMR_NODE_INFO;
 ```
+
+### 4.7 `BYPASS_ENTRY`
+
+Cache entry for tracking which (SMMU, StreamId) pairs have already had their STE
+set to bypass mode, avoiding redundant `SmmuV3WriteBypassSte` calls:
+
+```c
+typedef struct {
+  UINT64    SmmuBase;
+  UINT32    StreamId;
+} BYPASS_ENTRY;
+```
+
+The bypass-done list (`mBypassDoneList`) is a dynamically-grown array starting at
+`BYPASS_LIST_INITIAL_CAPACITY` (64) entries, doubled as needed.
 
 ---
 
@@ -208,50 +243,45 @@ typedef struct _RMR_NODE_INFO {
 
 The entry point performs the following steps in order:
 
-1. **Retrieve HOB data** -- `GetSmmuConfigHobData()` locates `gSmmuConfigHobGuid` and returns the
-   `SMMU_CONFIG` pointer. Returns `EFI_NOT_FOUND` if absent.
+1. **Locate ACPI Table Protocol** -- Required for optional IORT installation. This is also
+   expressed in the module's `[Depex]` section to guarantee availability.
 
-2. **Version check** -- `CheckSmmuConfigStructure()` verifies that the HOB's `VersionMajor` /
-   `VersionMinor` match the driver's expected version. No backward compatibility is provided;
-   a mismatch returns `EFI_INCOMPATIBLE_VERSION`.
-
-3. **Locate ACPI Table Protocol** -- Required for IORT installation. This is also expressed in
-   the module's `[Depex]` section to guarantee availability.
-
-4. **Register ExitBootServices callback** -- `SmmuV3ExitBootServices` is registered via
-   `CreateEventEx` with `gEfiEventExitBootServicesGuid`.
-
-5. **Allocate `IOMMU_CONFIG`** -- `IoMmuConfigInit()` allocates and zero-initializes the global
+2. **Allocate `IOMMU_CONFIG`** -- `IoMmuConfigInit()` allocates and zero-initializes the global
    `mIoMmu` structure.
 
-6. **Parse IORT** -- `SmmuV3ParseIort()` (in SmmuV3Util.c) performs a multi-pass parse of the
-   IORT embedded in the HOB:
-   - Pass 1: Count SMMUv3 nodes
-   - Pass 2: Extract base addresses, flags, initialize RMR lists
-   - Pass 3: Calculate maximum stream IDs from Root Complex / Named Component ID mappings
-   - Pass 4: Collect RMR node references
+3. **Populate SMMU info from platform** -- `PopulateSmmuInfoFromPlatform()` uses SmmuConfigLib
+   to build the `SMMU_INFO` array:
+   - Calls `SmmuConfigGetNodes()` to get SMMU base addresses, flags, and max stream IDs
+   - Calls `SmmuConfigGetDisabledList()` to mark disabled SMMUs (`Enabled = FALSE`)
+   - Calls `SmmuConfigGetRmrInfo()` to build per-SMMU RMR linked lists from
+     `SMMU_PLATFORM_RMR` entries
 
-7. **Install IORT ACPI table** -- `AddIortTable()` calculates the checksum and calls
-   `AcpiTable->InstallAcpiTable`.
+4. **Optionally install IORT ACPI table** -- `SmmuConfigGetIortData()` is called. If the
+   platform provides IORT data, `AddIortTable()` calculates the checksum and installs it.
+   If the platform returns `EFI_NOT_FOUND` (e.g., Configuration Manager handles IORT
+   installation), this step is skipped.
 
-8. **Initialize global page table** -- `PageTableInit()` allocates the root page table. To support
+5. **Initialize global page table** -- `PageTableInit()` allocates the root page table. To support
    concatenated translation tables, the root is allocated as 16 contiguous pages aligned to
    `16 * EFI_PAGE_SIZE`.
 
-9. **Determine enabled/disabled SMMUs** -- The driver cross-references each SMMU's base address
-   against the `SmmuDisabledList` from the HOB. Matching SMMUs have `Enabled` set to `FALSE`.
+6. **Configure enabled SMMUs** -- For each enabled SMMU, `SmmuV3Configure()` is called
+   (see Section 5.2).
 
-10. **Configure enabled SMMUs** -- For each enabled SMMU, `SmmuV3Configure()` is called
-    (see Section 5.2).
+7. **Disable/bypass non-enabled SMMUs** -- For SMMUs in the disabled list, translation is
+   disabled and global bypass is set so their traffic passes through unmodified.
 
-11. **Disable/bypass non-enabled SMMUs** -- For SMMUs in the disabled list, translation is
-    disabled and global bypass is set so their traffic passes through unmodified.
+8. **Register ExitBootServices callback** -- `SmmuV3ExitBootServices` is registered via
+   `CreateEventEx` with `gEfiEventExitBootServicesGuid`.
 
-12. **Install IOMMU Protocol** -- `IoMmuInit()` calls `InstallMultipleProtocolInterfaces` to
-    publish `gEdkiiIoMmuProtocolGuid`.
+9. **Install IOMMU Protocol** -- `IoMmuInit()` calls `InstallMultipleProtocolInterfaces` to
+   publish `gEdkiiIoMmuProtocolGuid`.
 
-On any failure, `IoMmuDeInit()` tears down all allocated resources, disables translation on
-all SMMUs, and sets them to global abort.
+On any failure, `IoMmuDeInit()` tears down all allocated resources (including the bypass-done
+list via `IoMmuFreeBypassList()`). For each SMMU that was already configured (i.e.,
+`SmmuInfo[SmmuIndex].CommandQueue != NULL`), it additionally calls `SmmuV3DisableTranslation`
+and `SmmuV3GlobalAbort`; SMMUs that never reached the command-queue allocation step are left
+untouched.
 
 ### 5.2 `SmmuV3Configure` -- Per-SMMU Hardware Setup
 
@@ -494,13 +524,26 @@ before `Unmap`), not in `Unmap` itself.
 
 ### 7.4 `IoMmuSetAttribute`
 
-Sets or clears read/write access permissions for a mapping in the page table.
+Sets or clears read/write access permissions for a mapping in the page table, or configures
+per-device bypass STE.
 
-1. Calls `UpdatePageTable` with the device address, byte count, and R/W flags derived from
-   `IoMmuAccess`.
-2. When `IoMmuAccess == 0`, the `Valid` parameter is `FALSE`, which invalidates the leaf
+1. **Per-device bypass check** -- Calls `SmmuConfigGetBypassStreamInfo(DeviceHandle)`. If the
+   device should bypass SMMU translation (`EFI_SUCCESS`), the bypass-done cache is consulted.
+   If not already bypassed, `SmmuV3WriteBypassSte()` is called to overwrite the device's STE
+   with a bypass configuration, and the `(SmmuBase, StreamId)` pair is recorded in the cache.
+   The function returns immediately without updating the page table.
+
+2. **Page table update** -- For non-bypass devices, calls `UpdatePageTable` with the device
+   address, byte count, and R/W flags. The access permissions used depend on the
+   `PcdSmmuIoMmuStrictAccessPermissions` PCD:
+   - **`TRUE` (strict/least-privilege)**: Uses the caller-supplied `IoMmuAccess` flags via
+     `PAGE_TABLE_READ_WRITE_FROM_IOMMU_ACCESS(IoMmuAccess)`.
+   - **`FALSE` (permissive, default)**: Always grants full read+write access via
+     `PAGE_TABLE_READ_WRITE_FROM_IOMMU_ACCESS(EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE)`.
+
+3. When `IoMmuAccess == 0`, the `Valid` parameter is `FALSE`, which invalidates the leaf
    page table entries and triggers TLB invalidation across all enabled SMMUs.
-3. After the update, logs any SMMU errors from all enabled instances.
+4. After the update, logs any SMMU errors from all enabled instances.
 
 ### 7.5 `IoMmuAllocateBuffer` / `IoMmuFreeBuffer`
 
@@ -592,7 +635,23 @@ The driver chooses between stream table formats based on `StreamTableEntryMax`:
   - L2 table: a single page of `SMMUV3_STREAM_TABLE_ENTRY` entries, shared by all L1
     descriptors. Split point is fixed at 6 (`SMMUV3_STR_TAB_BASE_CFG_SPLIT`).
 
-### 9.2 Stream Table Entry (STE) Fields
+### 9.2 Per-Device Bypass STE (`SmmuV3WriteBypassSte`)
+
+Individual stream table entries can be overwritten to bypass mode at runtime via
+`SmmuV3WriteBypassSte`. This is triggered by `IoMmuSetAttribute` when
+`SmmuConfigGetBypassStreamInfo` reports that a device should bypass translation.
+
+The bypass STE is configured with `Config = S1Bypass | S2Bypass` and `Valid = 1`.
+
+For 2-level stream tables, the function detects when the target L2 page is the shared
+template page (all L1 entries initially point to a single shared L2 page). In that case,
+a **private L2 page** is allocated and the shared contents are copied, so that modifying one
+stream ID does not affect others. On failure, the original L1/L2 state is restored.
+
+After writing the STE, a `CMD_CFGI_STE` command is sent to invalidate the cached STE,
+followed by `CMD_SYNC` to ensure completion.
+
+### 9.3 Stream Table Entry (STE) Fields
 
 Key fields set by `SmmuV3BuildStreamTableEntry`:
 
@@ -662,27 +721,39 @@ All TLB invalidation sequences end with a `CMD_SYNC` and a DSB to ensure complet
 
 ---
 
-## 12. IORT Parsing
+## 12. Platform Configuration (SmmuConfigLib)
 
-### 12.1 `SmmuV3ParseIort`
+The driver obtains all platform-specific SMMU configuration via the `SmmuConfigLib` library
+class, replacing the former multi-pass IORT parsing approach. This allows platforms to
+source SMMU configuration from HOBs, DTB, Configuration Manager, or other mechanisms.
 
-Entry point for IORT parsing. Validates the IORT signature and revision (supports revision 0
-and revision 6), then performs four passes:
+### 12.1 `PopulateSmmuInfoFromPlatform`
 
-| Pass | Function | Purpose |
-|------|----------|---------|
-| 1 | `SmmuV3NodeCount` | Count SMMUv3 nodes in the IORT |
-| 2 | `SmmuV3GetNodeInfo` | Extract base address, flags; initialize RMR lists and EBS defaults |
-| 3 | `SmmuV3GetMaxStreamIds` | Walk Root Complex and Named Component nodes' ID mappings to find the maximum stream ID targeting each SMMU |
-| 4 | `SmmuV3GetRMRNodeInfo` | Walk RMR nodes' ID mappings and link each RMR node to its target SMMU |
+This function (in SmmuDxe.c) orchestrates the SmmuConfigLib calls:
 
-### 12.2 Max Stream ID Calculation
+1. **`SmmuConfigGetNodes`** -- Returns an array of `SMMU_PLATFORM_NODE` with SMMU base
+   addresses, flags, and `StreamTableEntryMax`. These are used to populate the `SMMU_INFO`
+   array.
 
-For each Root Complex or Named Component node with ID mappings:
-- The output reference is resolved to an SMMU node pointer
-- `MaxStreamId = max(MaxStreamId, OutputBase + NumIds)` for that SMMU
+2. **`SmmuConfigGetDisabledList`** -- Returns SMMU base addresses that should be disabled.
+   Matching SMMUs have `Enabled` set to `FALSE`.
 
-This value determines the stream table size.
+3. **`SmmuConfigGetRmrInfo`** -- Returns `SMMU_PLATFORM_RMR` entries associating each RMR
+   (base address, length) with the SMMU that owns it. These are inserted into per-SMMU
+   `RmrNodeList` linked lists as `RMR_NODE_INFO` nodes.
+
+### 12.2 Optional IORT Installation
+
+`SmmuConfigGetIortData` is called during initialization. If the platform provides IORT data,
+SmmuDxe installs it as an ACPI table. If the platform returns `EFI_NOT_FOUND` (e.g., a
+Configuration Manager handles IORT installation), this step is silently skipped.
+
+### 12.3 Per-Device Bypass Queries
+
+`SmmuConfigGetBypassStreamInfo(DeviceHandle)` is called from `IoMmuSetAttribute` on each
+device's first access. The default implementation returns `EFI_NOT_FOUND` for all devices
+(no bypass). Platform-specific implementations can return `EFI_SUCCESS` with the SMMU base
+and stream ID for devices that should bypass translation.
 
 ---
 
@@ -693,13 +764,13 @@ SMMU before the OS reconfigures it (e.g., GPU framebuffers, NIC DMA regions).
 
 ### 13.1 Collection
 
-`SmmuV3GetRMRNodeInfo` links each RMR node to the appropriate SMMU via
-`SmmuV3AddRmrNodeToList`, which inserts an `RMR_NODE_INFO` into the per-SMMU linked list.
+`PopulateSmmuInfoFromPlatform` calls `SmmuConfigGetRmrInfo()` to obtain `SMMU_PLATFORM_RMR`
+entries. Each entry is matched to the corresponding SMMU by base address and inserted as an
+`RMR_NODE_INFO` node (with `BaseAddress` and `Length`) into the per-SMMU `RmrNodeList`.
 
 ### 13.2 Application
 
-`SmmuV3AddRMRMapping` iterates the RMR list for a given SMMU and for each memory range
-descriptor:
+`SmmuV3AddRMRMapping` iterates the RMR list for a given SMMU and for each entry:
 - Calls `UpdatePageTable` with read/write access to identity-map the range
 - Sets `EBSBehaviorAbort = FALSE` (at ExitBootServices, bypass instead of abort, since
   active DMA may need continued access)
@@ -715,11 +786,11 @@ Registered as an `EVT_NOTIFY_SIGNAL` callback at `TPL_CALLBACK`:
 
 1. Raises TPL to `TPL_NOTIFY`
 2. For each enabled SMMU:
+   - Disables translation via `SmmuV3DisableTranslation`
    - If `EBSBehaviorAbort == TRUE` (no RMR mappings): calls `SmmuV3GlobalAbort` to block
      all transactions
    - If `EBSBehaviorAbort == FALSE` (has RMR mappings): calls `SmmuV3SetGlobalBypass` to
      allow traffic through without translation
-   - Disables translation via `SmmuV3DisableTranslation`
 3. Restores TPL and closes the event
 
 The rationale:
@@ -763,14 +834,20 @@ A bounce buffer is allocated in `IoMmuMap` when:
 
 - Page table entries encode Read and Write permissions per 4KB page
 - `IoMmuSetAttribute` with `IoMmuAccess = 0` invalidates entries, removing device access
-- `IoMmuSetAttribute` with `EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE` grants
-  access
+- When `PcdSmmuIoMmuStrictAccessPermissions` is `TRUE`, the caller-supplied `IoMmuAccess`
+  flags are honoured (least-privilege): a mapping with only `EDKII_IOMMU_ACCESS_READ` will
+  not grant the device write access
+- When `PcdSmmuIoMmuStrictAccessPermissions` is `FALSE` (default), every mapping is granted
+  full `EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE` for compatibility with platforms
+  that cannot yet restrict DMA permissions per-mapping
 
 ### Device Isolation
 
 - Each device is identified by its Stream ID, mapped via the stream table
 - Currently, all stream table entries share the same page table root (global page table),
   so isolation is at the page-table level rather than per-device
+- Devices can be individually set to bypass SMMU translation via `SmmuConfigGetBypassStreamInfo`,
+  which writes a bypass STE for the device's stream ID
 
 ### Error Handling
 
@@ -804,45 +881,44 @@ A bounce buffer is allocated in `IoMmuMap` when:
 
 ## 18. Platform Integration Guide
 
-### 18.1 HOB Construction
+### 18.1 SmmuConfigLib Implementation
 
-Platforms must build a `gSmmuConfigHobGuid` HOB containing:
+Platforms must provide an implementation of the `SmmuConfigLib` library class. The library
+exposes five APIs that SmmuDxe calls during initialization and at runtime:
 
-1. A `SMMU_CONFIG` header
-2. The complete IORT table (at `IortOffset` from the header start)
-3. Optionally, a `UINT64[]` array of SMMU base addresses to disable (at
-   `SmmuDisabledListOffset`)
+| API | When Called | Required Data |
+|-----|------------|---------------|
+| `SmmuConfigGetNodes` | Init | Array of `SMMU_PLATFORM_NODE` (SmmuBase, Flags, StreamTableEntryMax) |
+| `SmmuConfigGetDisabledList` | Init | Array of SMMU base addresses to disable (may be empty) |
+| `SmmuConfigGetRmrInfo` | Init | Array of `SMMU_PLATFORM_RMR` (SmmuBase, BaseAddress, Length) -- may be empty |
+| `SmmuConfigGetIortData` | Init | Raw IORT table, or `EFI_NOT_FOUND` if platform handles IORT installation |
+| `SmmuConfigGetBypassStreamInfo` | Runtime (`IoMmuSetAttribute`) | Per-device bypass query (SmmuBase, StreamId), or `EFI_NOT_FOUND` |
 
-```c
-SMMU_CONFIG  Config;
-Config.VersionMajor          = CURRENT_SMMU_CONFIG_VERSION_MAJOR;
-Config.VersionMinor          = CURRENT_SMMU_CONFIG_VERSION_MINOR;
-Config.IortOffset            = sizeof(SMMU_CONFIG);
-Config.IortSize              = IortTableSize;
-Config.SmmuDisabledListOffset = sizeof(SMMU_CONFIG) + IortTableSize;
-Config.SmmuDisabledListSize   = NumDisabled * sizeof(UINT64);
+The default implementation (`SmmuConfigHobLib`) reads from the `gSmmuConfigHobGuid` HOB.
+Platforms may provide alternative implementations sourcing data from DTB, Configuration
+Manager, or other mechanisms.
 
-// Build the HOB with Config + IORT data + disabled list appended
-BuildGuidDataHob(&gSmmuConfigHobGuid, &HobPayload, TotalSize);
-```
+### 18.2 IORT Handling
 
-### 18.2 IORT Requirements
+If the platform's SmmuConfigLib returns IORT data via `SmmuConfigGetIortData`, SmmuDxe
+installs it as an ACPI table. If the platform returns `EFI_NOT_FOUND` (e.g., Configuration
+Manager handles IORT installation separately), SmmuDxe does **not** install any IORT table.
 
-The IORT must contain:
-- At least one `EFI_ACPI_IORT_TYPE_SMMUv3` node with correct `Base` and `Flags`
-- Root Complex and/or Named Component nodes with ID mappings referencing the SMMU nodes
-- Optionally, RMR nodes with memory range descriptors for regions needing pre-OS DMA access
+### 18.3 Access Permission Configuration
 
-The platform should **not** install the IORT separately; SmmuDxe handles IORT installation.
+Platforms that support strict per-mapping DMA access permissions should set
+`gArmTokenSpaceGuid.PcdSmmuIoMmuStrictAccessPermissions` to `TRUE` in their platform DSC.
+This ensures `IoMmuSetAttribute` uses the caller's `IoMmuAccess` flags instead of granting
+full read+write access on every mapping.
 
-### 18.3 Pre-DXE Initialization
+### 18.4 Pre-DXE Initialization
 
 For continuous protection, the platform firmware (e.g., TF-A) should set the SMMU to abort
 mode before DXE, ensuring no unauthorized DMA can occur before SmmuDxe configures the
 hardware. SmmuDxe calls `SmmuV3SetGlobalBypass` during configuration to transition from
 abort to operational state.
 
-### 18.4 QEMU Support
+### 18.5 QEMU Support
 
 SMMUv3 is supported on QEMU v9.1.50+ (<https://gitlab.com/qemu-project/qemu>).
 
@@ -858,10 +934,12 @@ SMMUv3 is supported on QEMU v9.1.50+ (<https://gitlab.com/qemu-project/qemu>).
 3. **Stage 2 only** -- Stage 1 translation is bypassed
 4. **Identity mapping** -- virtual address == physical address (no arbitrary IOVA remapping)
 5. **Global page table** -- all stream IDs share one page table; no per-device isolation
-6. **Shared L2 page** -- 2-level stream tables use a single L2 page for all L1 entries
-7. **TLB invalidation broadcasts** -- invalidates all SMMUs on every unmap, not just the
-   relevant one
-8. **No backward compatibility** -- HOB version must match exactly
+6. **Broadcast TLB invalidation** -- mapping invalidation via
+   `IoMmuSetAttribute(IoMmuAccess == 0)` invalidates TLBs on every enabled SMMU, not just the
+   one serving the device (consequence of the global page table in #5). `IoMmuUnmap` itself
+   does not modify page tables or issue invalidations.
+7. **Access permissions may be platform-dependent** -- strict per-mapping access permissions
+   require `PcdSmmuIoMmuStrictAccessPermissions = TRUE`; default is full read+write
 
 ### Planned Enhancements
 
@@ -886,4 +964,6 @@ SMMUv3 is supported on QEMU v9.1.50+ (<https://gitlab.com/qemu-project/qemu>).
 
 ---
 
-*Copyright (c) Microsoft Corporation. SPDX-License-Identifier: BSD-2-Clause-Patent*
+*Copyright (c) Microsoft Corporation.*
+*Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.*
+*SPDX-License-Identifier: BSD-2-Clause-Patent*
