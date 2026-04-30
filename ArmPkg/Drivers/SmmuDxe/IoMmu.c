@@ -20,6 +20,7 @@
 #include <Library/SmmuConfigLib.h>
 #include <Library/TimerLib.h>
 #include <Library/UefiBootServicesTableLib.h>
+#include <Library/PcdLib.h>
 #include <Library/UefiDriverEntryPoint.h>
 #include <Protocol/IoMmu.h>
 #include "IoMmu.h"
@@ -613,7 +614,9 @@ IoMmuSetAttribute (
              mIoMmu->SmmuInfo->PageTableRoot,
              MapInfo->DeviceAddress,
              MapInfo->NumberOfBytes,
-             PAGE_TABLE_READ_WRITE_FROM_IOMMU_ACCESS ((EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE)), // TODO: https://github.com/microsoft/mu_silicon_arm_tiano/issues/375 debug issue on physical platform and revert the permissions
+             FeaturePcdGet (PcdSmmuIoMmuStrictAccessPermissions)
+               ? PAGE_TABLE_READ_WRITE_FROM_IOMMU_ACCESS (IoMmuAccess)
+               : PAGE_TABLE_READ_WRITE_FROM_IOMMU_ACCESS ((EDKII_IOMMU_ACCESS_READ | EDKII_IOMMU_ACCESS_WRITE)),
              (IoMmuAccess != 0)
              );
   if (EFI_ERROR (Status)) {

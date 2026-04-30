@@ -37,12 +37,16 @@
   BaseLib
   BaseMemoryLib
   IoLib
+  PcdLib
   UefiLib
   DebugLib
   MemoryAllocationLib
   SmmuConfigLib
   TimerLib
   UefiDriverEntryPoint
+
+[FeaturePcd]
+  gArmTokenSpaceGuid.PcdSmmuIoMmuStrictAccessPermissions
 
 [Protocols]
   gEdkiiIoMmuProtocolGuid                         ## PRODUCES
