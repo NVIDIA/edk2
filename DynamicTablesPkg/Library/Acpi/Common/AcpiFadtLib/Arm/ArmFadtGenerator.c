@@ -2,10 +2,11 @@
   ARM FADT Table Helpers
 
   Copyright (c) 2017 - 2023, Arm Limited. All rights reserved.
+  Copyright (c) 2026, NVIDIA CORPORATION. All rights reserved.
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Reference(s):
-  - ACPI 6.5 Specification, Aug 29, 2022
+  - ACPI 6.6 Specification, May 13, 2025
 
 **/
 
@@ -117,10 +118,23 @@ FadtArchUpdate (
   IN   OUT EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE      *Fadt
   )
 {
+  UINT32  StrippedFlags;
+
   ASSERT (CfgMgrProtocol != NULL);
   ASSERT (Fadt != NULL);
 
-  Fadt->Flags = FADT_FLAGS;
+  Fadt->Flags |= FADT_FLAGS;
+
+  StrippedFlags = Fadt->Flags & ~(VALID_HARDWARE_REDUCED_FLAG_MASK);
+  if (StrippedFlags != 0) {
+    DEBUG ((
+      DEBUG_WARN,
+      "FADT: Arm forces HW_REDUCED_ACPI; stripping non-hardware-reduced "
+      "Flags bits = 0x%x\n",
+      StrippedFlags
+      ));
+    Fadt->Flags &= VALID_HARDWARE_REDUCED_FLAG_MASK;
+  }
 
   return ArmFadtBootArchInfoUpdate (CfgMgrProtocol, Fadt);
 }
