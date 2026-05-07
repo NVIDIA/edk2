@@ -469,7 +469,7 @@ BuildFadtTable (
   //            specification errata.
   if (AcpiTableInfo->MinorRevision != 0) {
     if (((AcpiTableInfo->MinorRevision & 0xF) >=
-         EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE_MINOR_REVISION) &&
+         EFI_ACPI_6_2_FIXED_ACPI_DESCRIPTION_TABLE_MINOR_REVISION) &&
         ((AcpiTableInfo->MinorRevision & 0xF) <=
          EFI_ACPI_6_6_FIXED_ACPI_DESCRIPTION_TABLE_MINOR_REVISION))
     {

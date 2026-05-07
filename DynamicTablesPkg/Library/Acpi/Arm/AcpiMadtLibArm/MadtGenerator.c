@@ -146,7 +146,7 @@ AddGICC (
   Gicc->Reserved2 = EFI_ACPI_RESERVED_BYTE;
 
   // UINT16  SpeOverflowInterrupt
-  if (MadtRev > EFI_ACPI_6_6_MULTIPLE_APIC_DESCRIPTION_TABLE_REVISION) {
+  if (MadtRev > EFI_ACPI_6_2_MULTIPLE_APIC_DESCRIPTION_TABLE_REVISION) {
     Gicc->SpeOverflowInterrupt = GicCInfo->SpeOverflowInterrupt;
   } else {
     // Setting SpeOverflowInterrupt to 0 ensures backward compatibility with
@@ -156,7 +156,7 @@ AddGICC (
   }
 
   // UINT16  TrbeInterrupt
-  if (MadtRev > EFI_ACPI_6_6_MULTIPLE_APIC_DESCRIPTION_TABLE_REVISION) {
+  if (MadtRev > EFI_ACPI_6_4_MULTIPLE_APIC_DESCRIPTION_TABLE_REVISION) {
     Gicc->TrbeInterrupt = GicCInfo->TrbeInterrupt;
   }
 }
@@ -783,7 +783,7 @@ ACPI_TABLE_GENERATOR  MadtGenerator = {
   // ACPI Table Revision supported by this Generator
   EFI_ACPI_6_6_MULTIPLE_APIC_DESCRIPTION_TABLE_REVISION,
   // Minimum supported ACPI Table Revision
-  EFI_ACPI_6_6_MULTIPLE_APIC_DESCRIPTION_TABLE_REVISION,
+  EFI_ACPI_6_2_MULTIPLE_APIC_DESCRIPTION_TABLE_REVISION,
   // Creator ID
   TABLE_GENERATOR_CREATOR_ID_ARM,
   // Creator Revision
