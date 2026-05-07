@@ -135,7 +135,7 @@ AddGenericTimerInfo (
   Gtdt->PlatformTimerOffset = (PlatformTimerCount == 0) ? 0 :
                               sizeof (EFI_ACPI_6_6_GENERIC_TIMER_DESCRIPTION_TABLE);
 
-  if (AcpiTableRevision > EFI_ACPI_6_6_GENERIC_TIMER_DESCRIPTION_TABLE_REVISION) {
+  if (AcpiTableRevision > EFI_ACPI_6_2_GENERIC_TIMER_DESCRIPTION_TABLE_REVISION) {
     Gtdt->VirtualPL2TimerGSIV  = GenericTimerInfo->VirtualPL2TimerGSIV;
     Gtdt->VirtualPL2TimerFlags = GenericTimerInfo->VirtualPL2TimerFlags;
   }
@@ -722,7 +722,7 @@ ACPI_TABLE_GENERATOR  GtdtGenerator = {
   // ACPI Table Revision supported by this Generator
   EFI_ACPI_6_6_GENERIC_TIMER_DESCRIPTION_TABLE_REVISION,
   // Minimum ACPI Table Revision supported by this Generator
-  EFI_ACPI_6_6_GENERIC_TIMER_DESCRIPTION_TABLE_REVISION,
+  EFI_ACPI_6_2_GENERIC_TIMER_DESCRIPTION_TABLE_REVISION,
   // Creator ID
   TABLE_GENERATOR_CREATOR_ID_ARM,
   // Creator Revision
