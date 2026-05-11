@@ -48,6 +48,11 @@
 [FeaturePcd]
   gArmTokenSpaceGuid.PcdSmmuIoMmuStrictAccessPermissions
 
+[Pcd]
+  ## Selects ExitBootServices behaviour for every enabled SMMUv3 controller.
+  ## See ArmPkg.dec for the encoding (0=AUTO, 1=ABORT, 2=BYPASS).
+  gArmTokenSpaceGuid.PcdSmmuV3ExitBootServicesAction   ## CONSUMES
+
 [Protocols]
   gEdkiiIoMmuProtocolGuid                         ## PRODUCES
 

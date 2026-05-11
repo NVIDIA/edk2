@@ -20,6 +20,7 @@
 #include <Library/DebugLib.h>
 #include <Library/IoLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/PcdLib.h>
 #include <Library/SmmuConfigLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiDriverEntryPoint.h>
@@ -1145,7 +1146,17 @@ IoMmuDeInit (
 }
 
 /**
-  Disable SMMU translation and set SMMU to global bypass during ExitBootServices.
+  Disable SMMU translation and transition each enabled SMMU into either
+  GlobalAbort or GlobalBypass during ExitBootServices.
+
+  The action is selected by the dynamic PCD
+  PcdSmmuV3ExitBootServicesAction:
+    SMMU_V3_EBS_ACTION_AUTO   - honour each SMMU's per-instance
+                                EBSBehaviorAbort field (default; preserves
+                                legacy behaviour and RMR-driven bypass).
+    SMMU_V3_EBS_ACTION_ABORT  - force GlobalAbort for every enabled SMMU.
+    SMMU_V3_EBS_ACTION_BYPASS - force GlobalBypass for every enabled SMMU.
+  Any other PCD value is treated as AUTO.
 
   @param [in] Event    The event that triggered this notification function.
   @param [in] Context  Pointer to the notification function's context.
@@ -1160,6 +1171,8 @@ SmmuV3ExitBootServices (
   EFI_STATUS  Status;
   EFI_TPL     OldTpl;
   UINT32      SmmuIndex;
+  UINT8       EbsAction;
+  BOOLEAN     UseAbort;
 
   if (Event == NULL) {
     DEBUG ((DEBUG_ERROR, "%a: Invalid Event\n", __func__));
@@ -1174,6 +1187,17 @@ SmmuV3ExitBootServices (
     return;
   }
 
+  EbsAction = PcdGet8 (PcdSmmuV3ExitBootServicesAction);
+  DEBUG ((
+    DEBUG_INFO,
+    "%a: PcdSmmuV3ExitBootServicesAction=%u (%a)\n",
+    __func__,
+    (UINT32)EbsAction,
+    (EbsAction == SMMU_V3_EBS_ACTION_ABORT)  ? "force ABORT"  :
+    (EbsAction == SMMU_V3_EBS_ACTION_BYPASS) ? "force BYPASS" :
+    "AUTO (per-SMMU EBSBehaviorAbort)"
+    ));
+
   OldTpl = gBS->RaiseTPL (TPL_NOTIFY);
 
   for (SmmuIndex = 0; SmmuIndex < mIoMmu->SmmuCount; SmmuIndex++) {
@@ -1184,7 +1208,20 @@ SmmuV3ExitBootServices (
         ASSERT_EFI_ERROR (Status);
       }
 
-      if (mIoMmu->SmmuInfo[SmmuIndex].EBSBehaviorAbort) {
+      switch (EbsAction) {
+        case SMMU_V3_EBS_ACTION_ABORT:
+          UseAbort = TRUE;
+          break;
+        case SMMU_V3_EBS_ACTION_BYPASS:
+          UseAbort = FALSE;
+          break;
+        case SMMU_V3_EBS_ACTION_AUTO:
+        default:
+          UseAbort = mIoMmu->SmmuInfo[SmmuIndex].EBSBehaviorAbort;
+          break;
+      }
+
+      if (UseAbort) {
         Status = SmmuV3GlobalAbort (mIoMmu->SmmuInfo[SmmuIndex].SmmuBase);
         if (EFI_ERROR (Status)) {
           DEBUG ((DEBUG_ERROR, "%a: Failed to global abort smmu 0x%llx.\n", __func__, mIoMmu->SmmuInfo[SmmuIndex].SmmuBase));

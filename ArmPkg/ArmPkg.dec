@@ -365,3 +365,19 @@
   # the LinuxBoot payload.
   #
   gArmTokenSpaceGuid.PcdLinuxBootFileGuid|{0x0}|VOID*|0x0000005C
+
+[PcdsDynamic.common, PcdsDynamicEx.common]
+  ## Selects how SmmuDxe transitions each enabled SMMUv3 controller during
+  ## the ExitBootServices notification. Allowed values:
+  ##   0 - AUTO   : honour the per-SMMU EBSBehaviorAbort policy populated by
+  ##                the driver (default TRUE => abort; RMR mappings flip a
+  ##                given SMMU to bypass automatically). Preserves legacy
+  ##                behaviour and is the default.
+  ##   1 - ABORT  : force every enabled SMMU to GlobalAbort, blocking all
+  ##                DMA transactions until the OS reconfigures the SMMU.
+  ##   2 - BYPASS : force every enabled SMMU to GlobalBypass, letting all
+  ##                DMA pass through untranslated until the OS reconfigures
+  ##                the SMMU.
+  ## Any other value is reserved and treated as AUTO.
+  ## @Prompt Behaviour of SmmuDxe at ExitBootServices.
+  gArmTokenSpaceGuid.PcdSmmuV3ExitBootServicesAction|0|UINT8|0x00000068

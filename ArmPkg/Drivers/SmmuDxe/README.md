@@ -88,6 +88,12 @@ SMMUv3 Hardware         (stream table, page table, command queue, event queue)
 |-----|---------|---------|
 | `gArmTokenSpaceGuid.PcdSmmuIoMmuStrictAccessPermissions` | `FALSE` | When `TRUE`, `IoMmuSetAttribute` honours the caller-supplied `IoMmuAccess` flags (least-privilege). When `FALSE`, every mapping is granted full read+write access for compatibility with platforms that cannot yet restrict DMA permissions per-mapping. |
 
+### Dynamic PCD
+
+| PCD | Type | Default | Purpose |
+|-----|------|---------|---------|
+| `gArmTokenSpaceGuid.PcdSmmuV3ExitBootServicesAction` | `UINT8` (Dynamic / DynamicEx) | `0` (AUTO) | Selects how `SmmuV3ExitBootServices` transitions each enabled SMMU at the ExitBootServices event. `0 = AUTO` honours the per-SMMU `EBSBehaviorAbort` field (legacy behaviour: abort by default, bypass when an RMR mapping has been added). `1 = ABORT` forces `SmmuV3GlobalAbort` for every enabled SMMU. `2 = BYPASS` forces `SmmuV3SetGlobalBypass` for every enabled SMMU. Any other value is reserved and treated as `AUTO`. |
+
 ---
 
 ## 3. Driver Source Files
@@ -773,20 +779,27 @@ entries. Each entry is matched to the corresponding SMMU by base address and ins
 
 Registered as an `EVT_NOTIFY_SIGNAL` callback at `TPL_CALLBACK`:
 
-1. Raises TPL to `TPL_NOTIFY`
-2. For each enabled SMMU:
+1. Reads `PcdSmmuV3ExitBootServicesAction` (`AUTO` / `ABORT` / `BYPASS`); see §2 ("Dynamic PCD")
+2. Raises TPL to `TPL_NOTIFY`
+3. For each enabled SMMU:
    - Disables translation via `SmmuV3DisableTranslation`
-   - If `EBSBehaviorAbort == TRUE` (no RMR mappings): calls `SmmuV3GlobalAbort` to block
-     all transactions
-   - If `EBSBehaviorAbort == FALSE` (has RMR mappings): calls `SmmuV3SetGlobalBypass` to
-     allow traffic through without translation
-3. Restores TPL and closes the event
+   - Resolves the action for this SMMU:
+     - `ABORT`  -> always `SmmuV3GlobalAbort`
+     - `BYPASS` -> always `SmmuV3SetGlobalBypass`
+     - `AUTO` (default and reserved values) -> per-SMMU `EBSBehaviorAbort`:
+       - `EBSBehaviorAbort == TRUE` (no RMR mappings): `SmmuV3GlobalAbort`
+       - `EBSBehaviorAbort == FALSE` (has RMR mappings): `SmmuV3SetGlobalBypass`
+4. Restores TPL and closes the event
 
 The rationale:
 - SMMUs with RMR mappings have active device DMA that must not be aborted during the OS
   handoff. Bypass mode allows that traffic to continue.
 - SMMUs without RMR mappings can safely abort, as no active DMA is expected.
-- In both cases, translation is disabled, deferring to the OS to reconfigure.
+- The dynamic PCD `PcdSmmuV3ExitBootServicesAction` lets a platform (or a debug build)
+  override the per-SMMU policy globally -- for example, force `BYPASS` to leave DMA flowing
+  through untranslated when soak-testing soft-restart paths, or force `ABORT` to harden the
+  OS handoff.
+- In all cases, translation is disabled, deferring to the OS to reconfigure.
 - The PCD `PcdDisableBMEonEBS` should be used in conjunction to clear Bus Master Enable on
   PCI devices, preventing new DMA initiations between EBS and OS reconfiguration.
 

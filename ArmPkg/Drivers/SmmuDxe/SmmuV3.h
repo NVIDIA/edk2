@@ -190,6 +190,24 @@ typedef struct _SMMU_INFO {
   BOOLEAN       Enabled;
 } SMMU_INFO;
 
+//
+// Allowed values for PcdSmmuV3ExitBootServicesAction. Selects how
+// SmmuV3ExitBootServices() transitions each enabled SMMU at the
+// ExitBootServices event.
+//
+//   AUTO   : honour per-SMMU SMMU_INFO::EBSBehaviorAbort (legacy behaviour:
+//            abort by default, bypass when an RMR mapping was added).
+//   ABORT  : force GlobalAbort for every enabled SMMU, regardless of
+//            EBSBehaviorAbort.
+//   BYPASS : force GlobalBypass for every enabled SMMU, regardless of
+//            EBSBehaviorAbort.
+//
+// Any other value is reserved and treated as AUTO.
+//
+#define SMMU_V3_EBS_ACTION_AUTO    0U
+#define SMMU_V3_EBS_ACTION_ABORT   1U
+#define SMMU_V3_EBS_ACTION_BYPASS  2U
+
 // IoMmu configuration structure
 typedef struct _IOMMU_CONFIG {
   UINT32       SmmuCount;
