@@ -1,7 +1,8 @@
 ## @file SmmuConfigHobLib.inf
 #
 #  Default SmmuConfigLib implementation that reads SMMU configuration
-#  from the gSmmuConfigHobGuid HOB and parses the embedded IORT binary.
+#  from the gSmmuConfigHobGuid HOB, parses the embedded IORT binary, and
+#  publishes the IORT table when ACPI table services are available.
 #
 #  Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -12,9 +13,9 @@
   INF_VERSION                    = 0x00010006
   BASE_NAME                      = SmmuConfigHobLib
   FILE_GUID                      = A7D3E1F2-5B8C-4A9D-B6E0-1C3F7D8E2A54
-  MODULE_TYPE                    = BASE
+  MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
-  LIBRARY_CLASS                  = SmmuConfigLib
+  LIBRARY_CLASS                  = SmmuConfigLib|DXE_DRIVER
 
 [Sources]
   SmmuConfigHobLib.c
@@ -29,6 +30,11 @@
   DebugLib
   HobLib
   MemoryAllocationLib
+  UefiBootServicesTableLib
+  UefiLib
 
 [Guids]
   gSmmuConfigHobGuid
+
+[Protocols]
+  gEfiAcpiTableProtocolGuid                      ## SOMETIMES_CONSUMES

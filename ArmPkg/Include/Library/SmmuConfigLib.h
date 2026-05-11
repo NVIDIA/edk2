@@ -3,8 +3,9 @@
     Library class interface for providing SMMU configuration data to SmmuDxe.
 
     Platforms implement this library to supply SMMUv3 node information,
-    disabled-SMMU lists, RMR memory ranges, and optionally raw IORT data
-    for ACPI table installation.
+    disabled-SMMU lists, RMR memory ranges, and per-device bypass stream
+    queries. ACPI table publication is platform-specific and is not
+    performed by SmmuDxe.
 
     The default implementation (SmmuConfigHobLib) reads from the
     gSmmuConfigHobGuid HOB and parses the embedded IORT binary.
@@ -96,10 +97,10 @@ SmmuConfigGetRmrInfo (
   );
 
 /**
-  Retrieve raw IORT table data for ACPI installation.
+  Retrieve raw IORT table data for platform-specific consumers.
 
-  If the platform does not provide IORT data (e.g. Configuration Manager
-  handles IORT installation), this function returns EFI_NOT_FOUND.
+  If the platform does not provide IORT data, this function returns
+  EFI_NOT_FOUND. SmmuDxe does not call this API or install ACPI tables.
 
   The returned IortData pointer references library-managed memory and
   must NOT be freed by the caller.

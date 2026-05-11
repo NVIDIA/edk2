@@ -4,7 +4,6 @@
 
     This driver consumes platform SMMU configuration via SmmuConfigLib to configure the SMMU hardware.
     Initializes the SmmuV3 hardware to enable stage 2 translation and dma remapping.
-    Optionally installs the IORT ACPI table if the platform provides one via SmmuConfigLib.
     Implements the IoMmu protocol to provide a generic interface for mapping host memory to device memory.
 
     Copyright (c) Microsoft Corporation.
@@ -24,100 +23,11 @@
 #include <Library/SmmuConfigLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiDriverEntryPoint.h>
-#include <Protocol/AcpiTable.h>
 #include "IoMmu.h"
 #include "SmmuV3.h"
 
 // Global IOMMU/SMMU instance
 IOMMU_CONFIG  *mIoMmu;
-
-/**
-  Calculate and update the checksum of an ACPI table.
-
-  @param [in, out]  Buffer    Pointer to the ACPI table buffer.
-  @param [in]       Size      Size of the ACPI table buffer.
-
-  @retval EFI_SUCCESS            Success.
-  @retval EFI_INVALID_PARAMETER  Invalid parameter.
-**/
-STATIC
-EFI_STATUS
-AcpiPlatformChecksum (
-  IN OUT UINT8  *Buffer,
-  IN UINTN      Size
-  )
-{
-  UINTN  ChecksumOffset;
-
-  if ((Buffer == NULL) || (Size == 0)) {
-    DEBUG ((DEBUG_ERROR, "%a: Invalid Parameters\n", __func__));
-    return EFI_INVALID_PARAMETER;
-  }
-
-  ChecksumOffset = OFFSET_OF (EFI_ACPI_DESCRIPTION_HEADER, Checksum);
-
-  // Set checksum field to 0 since it is used as part of the calculation
-  Buffer[ChecksumOffset] = 0;
-
-  Buffer[ChecksumOffset] = CalculateCheckSum8 (Buffer, Size);
-
-  return EFI_SUCCESS;
-}
-
-/**
-  Add the IORT ACPI table.
-
-  @param [in]  AcpiTableProtocol    Pointer to the ACPI Table Protocol.
-  @param [in]  IortData             Pointer to the IORT.
-  @param [in]  IortSize             Size of the IORT table.
-
-  @retval EFI_SUCCESS               Success.
-  @retval EFI_OUT_OF_RESOURCES      Out of resources.
-  @retval EFI_INVALID_PARAMETER     Invalid parameter.
-**/
-STATIC
-EFI_STATUS
-AddIortTable (
-  IN EFI_ACPI_TABLE_PROTOCOL  *AcpiTable,
-  IN VOID                     *IortData,
-  IN UINT32                   IortSize
-  )
-{
-  EFI_STATUS  Status;
-  UINTN       TableHandle;
-  VOID        *IortCopy;
-
-  if ((AcpiTable == NULL) || (IortData == NULL) || (IortSize == 0)) {
-    DEBUG ((DEBUG_ERROR, "%a: Invalid Parameters\n", __func__));
-    return EFI_INVALID_PARAMETER;
-  }
-
-  IortCopy = AllocateCopyPool (IortSize, IortData);
-  if (IortCopy == NULL) {
-    DEBUG ((DEBUG_ERROR, "%a: Failed to allocate IORT copy\n", __func__));
-    return EFI_OUT_OF_RESOURCES;
-  }
-
-  Status = AcpiPlatformChecksum ((UINT8 *)IortCopy, IortSize);
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Failed to calculate checksum for IORT table\n", __func__));
-    FreePool (IortCopy);
-    return Status;
-  }
-
-  Status = AcpiTable->InstallAcpiTable (
-                        AcpiTable,
-                        (EFI_ACPI_COMMON_HEADER *)IortCopy,
-                        IortSize,
-                        &TableHandle
-                        );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Failed to install IORT table\n", __func__));
-  }
-
-  FreePool (IortCopy);
-  return Status;
-}
 
 /**
   Initialize a page table. Only initializes the root page table.
@@ -1297,7 +1207,6 @@ SmmuV3ExitBootServices (
 /**
   Entrypoint for SmmuDxe driver.
   Configures SMMUv3 hardware based on platform configuration data from SmmuConfigLib.
-  Optionally installs the IORT ACPI table if the platform provides one.
   Uses a linear stream table and stage 2 translation for dma remapping.
   Initializes IoMmu Protocol.
 
@@ -1318,27 +1227,13 @@ InitializeSmmuDxe (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EFI_STATUS               Status;
-  EFI_EVENT                Event;
-  UINT32                   SmmuIndex;
-  EFI_ACPI_TABLE_PROTOCOL  *AcpiTable;
-  PAGE_TABLE               *PageTableRoot;
-  VOID                     *IortData;
-  UINT32                   IortSize;
+  EFI_STATUS  Status;
+  EFI_EVENT   Event;
+  UINT32      SmmuIndex;
+  PAGE_TABLE  *PageTableRoot;
 
   Event         = NULL;
   PageTableRoot = NULL;
-
-  // Check if ACPI Table Protocol has been installed
-  Status = gBS->LocateProtocol (
-                  &gEfiAcpiTableProtocolGuid,
-                  NULL,
-                  (VOID **)&AcpiTable
-                  );
-  if (EFI_ERROR (Status)) {
-    DEBUG ((DEBUG_ERROR, "%a: Failed to locate ACPI Table Protocol\n", __func__));
-    return Status;
-  }
 
   Status = IoMmuConfigInit (&mIoMmu);
   if (EFI_ERROR (Status)) {
@@ -1353,19 +1248,6 @@ InitializeSmmuDxe (
   }
 
   DEBUG ((DEBUG_ERROR, "%a: Found %u SMMU(s) from platform config\n", __func__, mIoMmu->SmmuCount));
-
-  // Install IORT ACPI table if the platform provides one
-  Status = SmmuConfigGetIortData (&IortData, &IortSize);
-  if (!EFI_ERROR (Status)) {
-    Status = AddIortTable (AcpiTable, IortData, IortSize);
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_ERROR, "%a: Failed to add IORT table\n", __func__));
-      goto Error;
-    }
-  } else if (Status != EFI_NOT_FOUND) {
-    DEBUG ((DEBUG_ERROR, "%a: SmmuConfigGetIortData failed: %r\n", __func__, Status));
-    goto Error;
-  }
 
   // Global Page Table until TODO: IoMmu Protocol V2 is implemented
   PageTableRoot = PageTableInit ();
