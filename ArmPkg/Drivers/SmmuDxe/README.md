@@ -39,8 +39,7 @@ a uniform interface for mapping host memory to device-accessible addresses.
 - Supports linear and 2-level stream tables
 - Handles Reserved Memory Regions (RMR) via SmmuConfigLib
 - Provides bounce buffering for alignment and address-range constraints
-- Optionally installs the IORT ACPI table for OS-level SMMU awareness (if the
-  platform provides one via SmmuConfigLib)
+- Delegates IORT ACPI publication to SmmuConfigLib
 - Supports per-device bypass STE configuration via SmmuConfigLib
 - PCD-controlled access permission enforcement (`PcdSmmuIoMmuStrictAccessPermissions`)
 - Cleanly transitions SMMU state at ExitBootServices
@@ -71,18 +70,17 @@ SMMUv3 Hardware Layer   (SmmuV3Util.c -- register I/O, queues, TLB invalidation)
 SMMUv3 Hardware         (stream table, page table, command queue, event queue)
 ```
 
-### Protocol Dependencies
+### Protocols
 
 | Protocol | Role |
 |----------|------|
-| `gEfiAcpiTableProtocolGuid` | **Consumed** -- used to install the IORT ACPI table (if platform provides one) |
 | `gEdkiiIoMmuProtocolGuid`   | **Produced** -- the IOMMU protocol exposed to PCI subsystem |
 
 ### Library Dependency
 
 | Library | Purpose |
 |---------|---------|
-| `SmmuConfigLib` | Platform abstraction for SMMU node information, disabled-SMMU lists, RMR memory ranges, optional IORT data, and per-device bypass stream queries |
+| `SmmuConfigLib` | Platform abstraction for SMMU node information, disabled-SMMU lists, RMR memory ranges, optional ACPI publication, and per-device bypass stream queries |
 
 ### Feature PCD
 
@@ -130,7 +128,6 @@ Key APIs:
 | `SmmuConfigGetNodes` | Returns `SMMU_PLATFORM_NODE` array with base addresses, flags, and max stream IDs |
 | `SmmuConfigGetDisabledList` | Returns SMMU base addresses that should be bypassed |
 | `SmmuConfigGetRmrInfo` | Returns `SMMU_PLATFORM_RMR` entries (SMMU base, memory base, length) |
-| `SmmuConfigGetIortData` | Returns raw IORT table data for ACPI installation (or `EFI_NOT_FOUND` if the platform handles IORT installation separately) |
 | `SmmuConfigGetBypassStreamInfo` | Queries whether a device should bypass SMMU translation, returning the SMMU base and stream ID |
 
 The default implementation (`SmmuConfigHobLib`) reads from the `gSmmuConfigHobGuid` HOB.
@@ -255,13 +252,10 @@ The entry point performs the following steps in order:
    - Calls `SmmuConfigGetDisabledList()` to mark disabled SMMUs (`Enabled = FALSE`)
    - Calls `SmmuConfigGetRmrInfo()` to build per-SMMU RMR linked lists from
      `SMMU_PLATFORM_RMR` entries
+   - The selected SmmuConfigLib implementation may publish or defer platform-owned
+     SMMU ACPI tables as part of this configuration path
 
-4. **Optionally install IORT ACPI table** -- `SmmuConfigGetIortData()` is called. If the
-   platform provides IORT data, `AddIortTable()` calculates the checksum and installs it.
-   If the platform returns `EFI_NOT_FOUND` (e.g., Configuration Manager handles IORT
-   installation), this step is skipped.
-
-5. **Initialize global page table** -- `PageTableInit()` allocates the root page table. To support
+4. **Initialize global page table** -- `PageTableInit()` allocates the root page table. To support
    concatenated translation tables, the root is allocated as 16 contiguous pages aligned to
    `16 * EFI_PAGE_SIZE`.
 
@@ -352,12 +346,7 @@ This is the core hardware configuration function. Steps:
 - **DeInit**: Recursively walks the page table tree, freeing each allocated page from leaves
   to root. The root level frees 16 pages; all other levels free 1 page.
 
-### 5.4 `AcpiPlatformChecksum` / `AddIortTable`
-
-Standard ACPI checksum calculation (`CalculateCheckSum8`) followed by
-`AcpiTable->InstallAcpiTable` to register the IORT.
-
-### 5.5 `IoMmuDeInit`
+### 5.4 `IoMmuDeInit`
 
 Teardown function called on initialization failure:
 
@@ -742,11 +731,11 @@ This function (in SmmuDxe.c) orchestrates the SmmuConfigLib calls:
    (base address, length) with the SMMU that owns it. These are inserted into per-SMMU
    `RmrNodeList` linked lists as `RMR_NODE_INFO` nodes.
 
-### 12.2 Optional IORT Installation
+### 12.2 IORT Publication
 
-`SmmuConfigGetIortData` is called during initialization. If the platform provides IORT data,
-SmmuDxe installs it as an ACPI table. If the platform returns `EFI_NOT_FOUND` (e.g., a
-Configuration Manager handles IORT installation), this step is silently skipped.
+SmmuDxe does not consume ACPI protocols directly. It calls
+the existing SmmuConfigLib configuration APIs, and the selected implementation owns
+any IORT publication, deferral, or platform-specific no-op behavior.
 
 ### 12.3 Per-Device Bypass Queries
 
@@ -884,14 +873,13 @@ A bounce buffer is allocated in `IoMmuMap` when:
 ### 18.1 SmmuConfigLib Implementation
 
 Platforms must provide an implementation of the `SmmuConfigLib` library class. The library
-exposes five APIs that SmmuDxe calls during initialization and at runtime:
+exposes four APIs that SmmuDxe calls during initialization and at runtime:
 
 | API | When Called | Required Data |
 |-----|------------|---------------|
 | `SmmuConfigGetNodes` | Init | Array of `SMMU_PLATFORM_NODE` (SmmuBase, Flags, StreamTableEntryMax) |
 | `SmmuConfigGetDisabledList` | Init | Array of SMMU base addresses to disable (may be empty) |
 | `SmmuConfigGetRmrInfo` | Init | Array of `SMMU_PLATFORM_RMR` (SmmuBase, BaseAddress, Length) -- may be empty |
-| `SmmuConfigGetIortData` | Init | Raw IORT table, or `EFI_NOT_FOUND` if platform handles IORT installation |
 | `SmmuConfigGetBypassStreamInfo` | Runtime (`IoMmuSetAttribute`) | Per-device bypass query (SmmuBase, StreamId), or `EFI_NOT_FOUND` |
 
 The default implementation (`SmmuConfigHobLib`) reads from the `gSmmuConfigHobGuid` HOB.
@@ -900,9 +888,9 @@ Manager, or other mechanisms.
 
 ### 18.2 IORT Handling
 
-If the platform's SmmuConfigLib returns IORT data via `SmmuConfigGetIortData`, SmmuDxe
-installs it as an ACPI table. If the platform returns `EFI_NOT_FOUND` (e.g., Configuration
-Manager handles IORT installation separately), SmmuDxe does **not** install any IORT table.
+SmmuDxe does not consume `gEfiAcpiTableProtocolGuid`. It delegates SMMU-related
+ACPI publication to the selected SmmuConfigLib implementation through the existing
+configuration path, so any ACPI protocol dependency belongs to that implementation.
 
 ### 18.3 Access Permission Configuration
 

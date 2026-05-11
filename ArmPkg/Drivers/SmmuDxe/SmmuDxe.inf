@@ -50,7 +50,6 @@
 
 [Protocols]
   gEdkiiIoMmuProtocolGuid                         ## PRODUCES
-  gEfiAcpiTableProtocolGuid                       ## CONSUMES
 
 [Depex]
-  gEfiAcpiTableProtocolGuid                       ## CONSUMES
+  TRUE

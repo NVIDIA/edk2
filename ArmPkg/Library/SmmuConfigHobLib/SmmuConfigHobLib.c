@@ -1,7 +1,8 @@
 /** @file SmmuConfigHobLib.c
 
     Default implementation of SmmuConfigLib that reads SMMU configuration
-    from the gSmmuConfigHobGuid HOB and parses the embedded IORT binary.
+    from the gSmmuConfigHobGuid HOB, parses the embedded IORT binary, and
+    publishes the IORT table when ACPI table services are available.
 
     This provides backward compatibility for platforms that build a
     SMMU_CONFIG HOB with an embedded IORT table at PrePi/SEC time.
@@ -18,8 +19,21 @@
 #include <Library/HobLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/SmmuConfigLib.h>
+#include <Library/UefiBootServicesTableLib.h>
+#include <Library/UefiLib.h>
 #include <IndustryStandard/IoRemappingTable.h>
 #include <Guid/SmmuConfig.h>
+#include <Protocol/AcpiTable.h>
+
+STATIC EFI_EVENT  mAcpiTableNotifyEvent;
+STATIC VOID       *mAcpiTableNotifyRegistration;
+STATIC BOOLEAN    mIortInstalled;
+
+STATIC
+EFI_STATUS
+PublishIortTable (
+  VOID
+  );
 
 /**
   Retrieve and validate the SMMU_CONFIG HOB.
@@ -556,6 +570,11 @@ SmmuConfigGetNodes (
     return Status;
   }
 
+  Status = PublishIortTable ();
+  if (EFI_ERROR (Status) && (Status != EFI_NOT_FOUND)) {
+    return Status;
+  }
+
   Copy = AllocateCopyPool (mCachedNodeCount * sizeof (SMMU_PLATFORM_NODE), mCachedNodes);
   if (Copy == NULL) {
     return EFI_OUT_OF_RESOURCES;
@@ -664,6 +683,183 @@ SmmuConfigGetIortData (
 
   *IortData = (VOID *)((UINTN)mCachedSmmuConfig + (UINTN)mCachedSmmuConfig->IortOffset);
   *IortSize = mCachedSmmuConfig->IortSize;
+  return EFI_SUCCESS;
+}
+
+/**
+  Calculate and update the checksum of an ACPI table.
+
+  @param [in, out] Buffer  Pointer to the ACPI table buffer.
+  @param [in]      Size    Size of the ACPI table buffer.
+
+  @retval EFI_SUCCESS            Success.
+  @retval EFI_INVALID_PARAMETER  Invalid parameter.
+**/
+STATIC
+EFI_STATUS
+AcpiPlatformChecksum (
+  IN OUT UINT8  *Buffer,
+  IN UINTN      Size
+  )
+{
+  UINTN  ChecksumOffset;
+
+  if ((Buffer == NULL) || (Size == 0)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  ChecksumOffset = OFFSET_OF (EFI_ACPI_DESCRIPTION_HEADER, Checksum);
+
+  Buffer[ChecksumOffset] = 0;
+  Buffer[ChecksumOffset] = CalculateCheckSum8 (Buffer, Size);
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Install the HOB-provided IORT table if ACPI table services are available.
+
+  @retval EFI_SUCCESS            IORT table installed.
+  @retval EFI_NOT_FOUND          IORT data or ACPI table protocol not found.
+  @retval EFI_OUT_OF_RESOURCES   Memory allocation failure.
+  @retval EFI_INVALID_PARAMETER  Invalid table data.
+  @retval Others                 Error returned by InstallAcpiTable().
+**/
+STATIC
+EFI_STATUS
+InstallIortTable (
+  VOID
+  )
+{
+  EFI_STATUS               Status;
+  EFI_ACPI_TABLE_PROTOCOL  *AcpiTable;
+  UINTN                    TableHandle;
+  VOID                     *IortData;
+  VOID                     *IortCopy;
+  UINT32                   IortSize;
+
+  if (mIortInstalled) {
+    return EFI_SUCCESS;
+  }
+
+  Status = SmmuConfigGetIortData (&IortData, &IortSize);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  if ((IortData == NULL) || (IortSize == 0)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Status = gBS->LocateProtocol (
+                  &gEfiAcpiTableProtocolGuid,
+                  NULL,
+                  (VOID **)&AcpiTable
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  IortCopy = AllocateCopyPool (IortSize, IortData);
+  if (IortCopy == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  Status = AcpiPlatformChecksum ((UINT8 *)IortCopy, IortSize);
+  if (!EFI_ERROR (Status)) {
+    Status = AcpiTable->InstallAcpiTable (
+                          AcpiTable,
+                          IortCopy,
+                          IortSize,
+                          &TableHandle
+                          );
+  }
+
+  FreePool (IortCopy);
+
+  if (!EFI_ERROR (Status)) {
+    mIortInstalled = TRUE;
+  }
+
+  return Status;
+}
+
+/**
+  Notification callback used when ACPI table protocol is installed after SmmuDxe.
+
+  @param [in] Event    Event that was signaled.
+  @param [in] Context  Optional context.
+**/
+STATIC
+VOID
+EFIAPI
+AcpiTableProtocolNotify (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  )
+{
+  EFI_STATUS  Status;
+
+  Status = InstallIortTable ();
+  if (Status == EFI_NOT_FOUND) {
+    return;
+  }
+
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "%a: Failed to install IORT table: %r\n", __func__, Status));
+  }
+
+  if (mAcpiTableNotifyEvent != NULL) {
+    gBS->CloseEvent (mAcpiTableNotifyEvent);
+    mAcpiTableNotifyEvent        = NULL;
+    mAcpiTableNotifyRegistration = NULL;
+  }
+}
+
+/**
+  Publish the HOB-provided IORT table when possible.
+
+  @retval EFI_SUCCESS            IORT table installed or deferred.
+  @retval EFI_NOT_FOUND          No IORT data was found.
+  @retval EFI_OUT_OF_RESOURCES   Memory allocation failure.
+  @retval EFI_INVALID_PARAMETER  Invalid table data.
+  @retval Others                 Error returned by InstallAcpiTable().
+**/
+STATIC
+EFI_STATUS
+PublishIortTable (
+  VOID
+  )
+{
+  EFI_STATUS  Status;
+  VOID        *IortData;
+  UINT32      IortSize;
+
+  Status = SmmuConfigGetIortData (&IortData, &IortSize);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = InstallIortTable ();
+  if (Status != EFI_NOT_FOUND) {
+    return Status;
+  }
+
+  if (mAcpiTableNotifyEvent != NULL) {
+    return EFI_SUCCESS;
+  }
+
+  mAcpiTableNotifyEvent = EfiCreateProtocolNotifyEvent (
+                            &gEfiAcpiTableProtocolGuid,
+                            TPL_CALLBACK,
+                            AcpiTableProtocolNotify,
+                            NULL,
+                            &mAcpiTableNotifyRegistration
+                            );
+  if (mAcpiTableNotifyEvent == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
   return EFI_SUCCESS;
 }
 
