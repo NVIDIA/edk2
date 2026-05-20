@@ -6,6 +6,7 @@
 #  Copyright (c) 2018, Hewlett Packard Enterprise Development, L.P.<BR>
 #  Copyright (c) 2020 - 2021, ARM Limited. All rights reserved.<BR>
 #  Copyright (c) 2025 Qualcomm Technologies, Inc. All rights reserved.<BR>
+#  Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.<BR>
 #
 #  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
@@ -835,8 +836,11 @@ class Build():
         GlobalData.gModuleCacheHit = set()
 
     def StartAutoGen(self,mqueue, DataPipe,SkipAutoGen,PcdMaList,cqueue):
+        feedback_q = None
+        success = False
         try:
             if SkipAutoGen:
+                success = True
                 return True,0
             if sys.platform == "win32":
                 SafeThreadNumber = self.ThreadNumber
@@ -877,10 +881,10 @@ class Build():
 
             self.AutoGenMgr.join()
             rt = self.AutoGenMgr.Status
-            err = 0
-            if not rt:
-                err = UNKNOWN_ERROR
-            return rt, err
+            if rt:
+                success = True
+                return rt, 0
+            return rt, UNKNOWN_ERROR
         except OSError as e:
             if e.errno == errno.EMFILE:
                 EdkLogger.warn("build", RESOURCE_OVERFLOW, ExtraData="Reached file descriptor limit!\n")
@@ -889,6 +893,26 @@ class Build():
             return False, e.args[0]
         except:
             return False, UNKNOWN_ERROR
+        finally:
+            if not success:
+                # On any failure exit (AutoGenMgr.Status==False, FatalError, or
+                # bare except), workers may have exited early via error_event --
+                # set either by AutoGenManager on its own failure, or by the
+                # caller's TerminateWorkers() after we return False -- without
+                # draining mqueue.  mqueue is pre-filled by the caller, so the
+                # main process's QueueFeederThread may hold buffered items it
+                # cannot deliver: with no reader draining the pipe, the feeder
+                # blocks in write() and Python's atexit finalizer
+                # (Queue._finalize_join) hangs joining it at interpreter
+                # shutdown.  cancel_join_thread() removes that finalizer; any
+                # undelivered items are abandoned because no worker remains to
+                # consume them.  feedback_q is included defensively: today the
+                # main process does not put() to it, so no feeder exists here,
+                # but this guards against a future main-side put().
+                mqueue.cancel_join_thread()
+                cqueue.cancel_join_thread()
+                if feedback_q is not None:
+                    feedback_q.cancel_join_thread()
 
     ## Add TOOLCHAIN and FAMILY declared in DSC [BuildOptions] to ToolsDefTxtDatabase.
     #
