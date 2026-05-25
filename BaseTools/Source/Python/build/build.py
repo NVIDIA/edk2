@@ -819,6 +819,13 @@ class Build():
         success = False
         try:
             if SkipAutoGen:
+                # No workers are started on this path, so nothing will drain
+                # mqueue or cqueue.  Cancel the feeders so Python's atexit
+                # finalizer does not hang at interpreter shutdown trying to
+                # flush items that have no consumer.  See the failure-path
+                # finally below for the full hang description.
+                mqueue.cancel_join_thread()
+                cqueue.cancel_join_thread()
                 success = True
                 return True,0
             feedback_q = mp.Queue()
