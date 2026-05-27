@@ -26,3 +26,10 @@
       ImageInfoLib|ArmPkg/Library/ImageInfoLib/ImageInfoLib.inf
       PeCoffGetEntryPointLib|ArmPkg/Library/ImageInfoLib/GoogleTest/PeCoffGetEntryPointStubLib.inf
   }
+
+  ArmPkg/Library/ImageInfoFvLib/GoogleTest/ImageInfoFvLibGoogleTest.inf {
+    <LibraryClasses>
+      ImageInfoLib|ArmPkg/Library/ImageInfoFvLib/ImageInfoFvLib.inf
+      PeCoffGetEntryPointLib|ArmPkg/Library/ImageInfoLib/GoogleTest/PeCoffGetEntryPointStubLib.inf
+      PcdLib|ArmPkg/Library/ImageInfoFvLib/GoogleTest/PcdStubLib.inf
+  }

@@ -1,0 +1,37 @@
+## @file
+#  Firmware-volume instance of ImageInfoLib for pre-DXE contexts.
+#
+#  Walks the FV at PcdFvBaseAddress to resolve an address to the
+#  PE32 or TE image that contains it.  Intended for SEC, PEI, and
+#  PrePi where Phase 1a's loaded-image walker is unavailable.
+#
+#  Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = ImageInfoFvLib
+  FILE_GUID                      = 898bf38d-ba7a-4962-b7f0-4f2b7b9a6941
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = ImageInfoLib|BASE SEC PEI_CORE PEIM
+
+[Sources]
+  ImageInfoFvLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ArmPkg/ArmPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  BaseMemoryLib
+  DebugLib
+  PcdLib
+  PeCoffGetEntryPointLib
+
+[Pcd]
+  gArmTokenSpaceGuid.PcdFvBaseAddress

@@ -1,0 +1,30 @@
+## @file
+# Unit test suite for the ImageInfoFvLib using GoogleTest
+#
+# Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION         = 0x00010017
+  BASE_NAME           = ImageInfoFvLibGoogleTest
+  FILE_GUID           = 5c598ebf-dadf-4702-87ed-bf35cbc76c20
+  VERSION_STRING      = 1.0
+  MODULE_TYPE         = HOST_APPLICATION
+
+[Sources]
+  ImageInfoFvLibGoogleTest.cpp
+
+[Packages]
+  ArmPkg/ArmPkg.dec
+  MdePkg/MdePkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
+
+[LibraryClasses]
+  GoogleTestLib
+  ImageInfoLib
+  PcdLib
+
+[Pcd]
+  gArmTokenSpaceGuid.PcdFvBaseAddress

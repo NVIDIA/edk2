@@ -119,6 +119,7 @@
   ArmPkg/Library/DefaultExceptionHandlerLib/DefaultExceptionHandlerLib.inf
   ArmPkg/Library/ImageInfoLib/ImageInfoLib.inf
   ArmPkg/Library/ImageInfoNullLib/ImageInfoNullLib.inf
+  ArmPkg/Library/ImageInfoFvLib/ImageInfoFvLib.inf
   ArmPkg/Library/DefaultExceptionCallbackLibNull/DefaultExceptionCallbackLibNull.inf
   ArmPkg/Library/SemiHostingDebugLib/SemiHostingDebugLib.inf
   ArmPkg/Library/SemiHostingSerialPortLib/SemiHostingSerialPortLib.inf

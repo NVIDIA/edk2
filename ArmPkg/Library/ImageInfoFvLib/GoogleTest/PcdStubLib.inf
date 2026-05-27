@@ -1,0 +1,24 @@
+## @file
+#  Stub PcdLib for ImageInfoFvLib host-based tests.
+#
+#  Backs PcdGet64(PcdFvBaseAddress) with a test-controlled UINT64 so
+#  the fixture can point the library under test at a synthesised
+#  in-memory firmware volume.
+#
+#  Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+##
+
+[Defines]
+  INF_VERSION    = 0x00010005
+  BASE_NAME      = PcdStubLib
+  FILE_GUID      = 50015ced-82a6-4deb-9f21-64f56f1bcc41
+  MODULE_TYPE    = HOST_APPLICATION
+  VERSION_STRING = 1.0
+  LIBRARY_CLASS  = PcdLib|HOST_APPLICATION
+
+[Sources]
+  PcdStubLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
