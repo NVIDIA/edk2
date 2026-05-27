@@ -1,0 +1,27 @@
+## @file
+#  Null instance of ImageInfoLib.  Returns NULL for every query.
+#
+#  Intended for host-based unit-test builds and minimal firmware
+#  configurations that link the ImageInfoLib API but do not need to
+#  resolve runtime addresses to PE/COFF images.
+#
+#  Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = ImageInfoNullLib
+  FILE_GUID                      = 9a5b5368-7c93-4f39-92a1-61d89e836343
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = ImageInfoLib
+
+[Sources]
+  ImageInfoNullLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  ArmPkg/ArmPkg.dec
