@@ -1711,6 +1711,16 @@ LoadFormset (
     while (!IsNull (&HiiForm->StatementListHead, HiiStatementLink)) {
       HiiStatement = HII_STATEMENT_FROM_LINK (HiiStatementLink);
 
+      //
+      // GUID opcodes are used for IFR labels and vendor extensions. They do
+      // not have Redfish-configurable values, and their GUID payload can look
+      // like a valid prompt string ID if treated as a statement header.
+      //
+      if (HiiStatement->Operand == EFI_IFR_GUID_OP) {
+        HiiStatementLink = GetNextNode (&HiiForm->StatementListHead, HiiStatementLink);
+        continue;
+      }
+
       HiiStatementPrivate = AllocateZeroPool (sizeof (REDFISH_PLATFORM_CONFIG_STATEMENT_PRIVATE));
       if (HiiStatementPrivate == NULL) {
         DEBUG ((DEBUG_ERROR, "%a: No memory resource for REDFISH_PLATFORM_CONFIG_STATEMENT_PRIVATE.\n", __func__));
