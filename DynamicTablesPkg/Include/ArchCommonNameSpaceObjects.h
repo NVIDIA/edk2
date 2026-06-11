@@ -480,8 +480,6 @@ typedef struct CmArchCommonProcHierarchyInfo {
   UINT32             OverrideUid;
 } CM_ARCH_COMMON_PROC_HIERARCHY_INFO;
 
-#define SMBIOS_MAX_STRING_SIZE  (1024)
-
 /** A structure that describes the Cache Type Structure (Type 1) in PPTT
 
     ID: EArchCommonObjCacheInfo
@@ -510,11 +508,6 @@ typedef struct CmArchCommonCacheInfo {
   UINT16             LineSize;
   /// Unique ID for the cache
   UINT32             CacheId;
-  /// SMBIOS: Level of cache within the processor hierarchy
-  /// 0-2 = cache level 1-3
-  UINT32             Level;
-  /// SMBIOS: Designation of this cache on this socket
-  CHAR8              SocketDesignation[SMBIOS_MAX_STRING_SIZE];
 } CM_ARCH_COMMON_CACHE_INFO;
 
 /** A structure that describes the Cpc information.
