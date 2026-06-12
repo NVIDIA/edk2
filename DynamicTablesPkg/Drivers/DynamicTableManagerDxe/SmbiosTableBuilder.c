@@ -610,6 +610,17 @@ SmbiosProtocolReady (
     ));
 
   Status = ProcessSmbiosTables (TableFactoryProtocol, CfgMgrProtocol);
+  if (Status == EFI_NOT_FOUND) {
+    //
+    // SmbiosProtocol is not yet installed.  EfiCreateProtocolNotifyEvent
+    // signals the registered event once immediately at registration time,
+    // before any instance of the protocol may have been published.  Return
+    // without error and leave the event registered so it re-fires when a
+    // real instance becomes available.
+    //
+    return;
+  }
+
   if (EFI_ERROR (Status)) {
     DEBUG ((
       DEBUG_ERROR,

@@ -749,6 +749,17 @@ AcpiTableProtocolReady (
   }
 
   Status = ProcessAcpiTables (TableFactoryProtocol, CfgMgrProtocol);
+  if (Status == EFI_NOT_FOUND) {
+    //
+    // AcpiTableProtocol is not yet installed.  EfiCreateProtocolNotifyEvent
+    // signals the registered event once immediately at registration time,
+    // before any instance of the protocol may have been published.  Return
+    // without error; we will be re-invoked when a real instance becomes
+    // available.
+    //
+    return;
+  }
+
   if (EFI_ERROR (Status)) {
     DEBUG ((
       DEBUG_ERROR,
