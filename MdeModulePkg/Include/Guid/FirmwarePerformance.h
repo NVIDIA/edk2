@@ -1,6 +1,7 @@
 /** @file
   ACPI Firmware Performance Data Table (FPDT) implementation specific definitions.
 
+  Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.<BR>
   Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -60,9 +61,10 @@
 /// This structure will be installed into ACPI table as FPDT in normal boot path.
 ///
 typedef struct {
-  EFI_ACPI_DESCRIPTION_HEADER                                Header;            ///< Common ACPI description table header.
-  EFI_ACPI_5_0_FPDT_BOOT_PERFORMANCE_TABLE_POINTER_RECORD    BootPointerRecord; ///< Basic Boot Performance Table Pointer record.
-  EFI_ACPI_5_0_FPDT_S3_PERFORMANCE_TABLE_POINTER_RECORD      S3PointerRecord;   ///< S3 Performance Table Pointer record.
+  EFI_ACPI_DESCRIPTION_HEADER                                   Header;                           ///< Common ACPI description table header.
+  EFI_ACPI_5_0_FPDT_BOOT_PERFORMANCE_TABLE_POINTER_RECORD       BootPointerRecord;                ///< Basic Boot Performance Table Pointer record.
+  EFI_ACPI_5_0_FPDT_S3_PERFORMANCE_TABLE_POINTER_RECORD         S3PointerRecord;                  ///< S3 Performance Table Pointer record.
+  EFI_ACPI_6_6_FPDT_MICROCONTROLLER_BOOT_PERF_POINTER_RECORD    MicrocontrollerBootPointerRecord; ///< Microcontroller Boot Performance Table Pointer record (ACPI 6.6).
 } FIRMWARE_PERFORMANCE_TABLE;
 
 ///

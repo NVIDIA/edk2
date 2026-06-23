@@ -1,6 +1,7 @@
 /** @file
   ACPI 6.6 definitions from the ACPI Specification Revision 6.6 May, 2025.
 
+  Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.<BR>
   Copyright (c) 2017 - 2025, Intel Corporation. All rights reserved.<BR>
   Copyright (c) 2019 - 2024, ARM Ltd. All rights reserved.<BR>
   Copyright (c) 2023, Loongson Technology Corporation Limited. All rights reserved.<BR>
@@ -1450,14 +1451,16 @@ typedef struct {
 ///
 /// FPDT Performance Record Types
 ///
-#define EFI_ACPI_6_6_FPDT_RECORD_TYPE_FIRMWARE_BASIC_BOOT_POINTER   0x0000
-#define EFI_ACPI_6_6_FPDT_RECORD_TYPE_S3_PERFORMANCE_TABLE_POINTER  0x0001
+#define EFI_ACPI_6_6_FPDT_RECORD_TYPE_FIRMWARE_BASIC_BOOT_POINTER        0x0000
+#define EFI_ACPI_6_6_FPDT_RECORD_TYPE_S3_PERFORMANCE_TABLE_POINTER       0x0001
+#define EFI_ACPI_6_6_FPDT_RECORD_TYPE_MICROCONTROLLER_BOOT_PERF_POINTER  0x0002
 
 ///
 /// FPDT Performance Record Revision
 ///
-#define EFI_ACPI_6_6_FPDT_RECORD_REVISION_FIRMWARE_BASIC_BOOT_POINTER   0x01
-#define EFI_ACPI_6_6_FPDT_RECORD_REVISION_S3_PERFORMANCE_TABLE_POINTER  0x01
+#define EFI_ACPI_6_6_FPDT_RECORD_REVISION_FIRMWARE_BASIC_BOOT_POINTER        0x01
+#define EFI_ACPI_6_6_FPDT_RECORD_REVISION_S3_PERFORMANCE_TABLE_POINTER       0x01
+#define EFI_ACPI_6_6_FPDT_RECORD_REVISION_MICROCONTROLLER_BOOT_PERF_POINTER  0x01
 
 ///
 /// FPDT Runtime Performance Record Types
@@ -1515,6 +1518,15 @@ typedef struct {
 } EFI_ACPI_6_6_FPDT_S3_PERFORMANCE_TABLE_POINTER_RECORD;
 
 ///
+/// FPDT Microcontroller Boot Performance Table Pointer Record (ACPI 6.6 s5.2.24.1)
+///
+typedef struct {
+  EFI_ACPI_6_6_FPDT_PERFORMANCE_RECORD_HEADER    Header;
+  UINT32                                         Reserved;
+  UINT64                                         MbptAddress; ///< 64-bit processor-relative physical address of the MBPT
+} EFI_ACPI_6_6_FPDT_MICROCONTROLLER_BOOT_PERF_POINTER_RECORD;
+
+///
 /// FPDT Firmware Basic Boot Performance Record Structure
 ///
 typedef struct {
@@ -1569,6 +1581,16 @@ typedef struct {
 /// FPDT "S3PT" S3 Performance Table
 ///
 #define EFI_ACPI_6_6_FPDT_S3_PERFORMANCE_TABLE_SIGNATURE  SIGNATURE_32('S', '3', 'P', 'T')
+
+///
+/// "MBPT" Microcontroller Boot Performance Table signature
+///
+#define EFI_ACPI_6_6_MICROCONTROLLER_BOOT_PERFORMANCE_TABLE_SIGNATURE  SIGNATURE_32 ('M', 'B', 'P', 'T')
+
+///
+/// Microcontroller Boot Performance Table revision
+///
+#define EFI_ACPI_6_6_MICROCONTROLLER_BOOT_PERFORMANCE_TABLE_REVISION  0x01
 
 //
 // FPDT Firmware S3 Boot Performance Table

@@ -5,6 +5,7 @@
   for Firmware Basic Boot Performance Record and other boot performance records,
   and install FPDT to ACPI table.
 
+  Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.<BR>
   Copyright (c) 2011 - 2021, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
@@ -47,9 +48,19 @@ static EFI_EVENT  mExitBootServicesEvent;
 UINTN             mFirmwarePerformanceTableTemplateKey = 0;
 BOOLEAN           mDxeCoreReportStatusCodeEnable       = FALSE;
 
-BOOT_PERFORMANCE_TABLE  *mAcpiBootPerformanceTable         = NULL;
-BOOT_PERFORMANCE_TABLE  *mReceivedAcpiBootPerformanceTable = NULL;
-S3_PERFORMANCE_TABLE    *mAcpiS3PerformanceTable           = NULL;
+BOOT_PERFORMANCE_TABLE       *mAcpiBootPerformanceTable         = NULL;
+BOOT_PERFORMANCE_TABLE       *mReceivedAcpiBootPerformanceTable = NULL;
+S3_PERFORMANCE_TABLE         *mAcpiS3PerformanceTable           = NULL;
+EFI_ACPI_DESCRIPTION_HEADER  *mAcpiMbptTable                    = NULL;
+
+//
+// Points at the Microcontroller Boot Performance Table Pointer Record that is
+// actually published in mFirmwarePerformanceTableTemplate.  When S3 support is
+// disabled the record is relocated into the S3 record's slot, so the install
+// path must write MbptAddress through this pointer rather than to a fixed
+// struct member.  Initialized in FirmwarePerformanceDxeEntryPoint.
+//
+EFI_ACPI_6_6_FPDT_MICROCONTROLLER_BOOT_PERF_POINTER_RECORD  *mFpdtMbptPointerRecord = NULL;
 
 FIRMWARE_PERFORMANCE_TABLE  mFirmwarePerformanceTableTemplate = {
   {
@@ -89,6 +100,18 @@ FIRMWARE_PERFORMANCE_TABLE  mFirmwarePerformanceTableTemplate = {
     },
     0,  // Reserved
     0   // S3PerformanceTablePointer will be updated at runtime.
+  },
+  //
+  // Microcontroller Boot Performance Table Pointer Record (ACPI 6.6 s5.2.24.1).
+  //
+  {
+    {
+      EFI_ACPI_6_6_FPDT_RECORD_TYPE_MICROCONTROLLER_BOOT_PERF_POINTER,      // Type
+      sizeof (EFI_ACPI_6_6_FPDT_MICROCONTROLLER_BOOT_PERF_POINTER_RECORD),  // Length
+      EFI_ACPI_6_6_FPDT_RECORD_REVISION_MICROCONTROLLER_BOOT_PERF_POINTER   // Revision
+    },
+    0,  // Reserved
+    0   // MbptAddress will be updated at runtime.
   }
 };
 
@@ -289,6 +312,7 @@ InstallFirmwarePerformanceDataTable (
   FIRMWARE_PERFORMANCE_VARIABLE   PerformanceVariable;
   UINTN                           Size;
   EDKII_VARIABLE_POLICY_PROTOCOL  *VariablePolicyProtocol;
+  EFI_PHYSICAL_ADDRESS            MbptBuffer;
 
   //
   // Get AcpiTable Protocol.
@@ -306,6 +330,7 @@ InstallFirmwarePerformanceDataTable (
     return Status;
   }
 
+  ZeroMem (&PerformanceVariable, sizeof (PerformanceVariable));
   if (mReceivedAcpiBootPerformanceTable != NULL) {
     mAcpiBootPerformanceTable                     = mReceivedAcpiBootPerformanceTable;
     mAcpiBootPerformanceTable->BasicBoot.ResetEnd = mBootPerformanceTableTemplate.BasicBoot.ResetEnd;
@@ -314,15 +339,14 @@ InstallFirmwarePerformanceDataTable (
     // Try to allocate the same runtime buffer as last time boot.
     //
     BootPerformanceDataSize = sizeof (BOOT_PERFORMANCE_TABLE);
-    ZeroMem (&PerformanceVariable, sizeof (PerformanceVariable));
-    Size   = sizeof (PerformanceVariable);
-    Status = gRT->GetVariable (
-                    EFI_FIRMWARE_PERFORMANCE_VARIABLE_NAME,
-                    &gEfiFirmwarePerformanceGuid,
-                    NULL,
-                    &Size,
-                    &PerformanceVariable
-                    );
+    Size                    = sizeof (PerformanceVariable);
+    Status                  = gRT->GetVariable (
+                                     EFI_FIRMWARE_PERFORMANCE_VARIABLE_NAME,
+                                     &gEfiFirmwarePerformanceGuid,
+                                     NULL,
+                                     &Size,
+                                     &PerformanceVariable
+                                     );
     if (!EFI_ERROR (Status)) {
       Status = gBS->AllocatePages (
                       AllocateAddress,
@@ -359,6 +383,64 @@ InstallFirmwarePerformanceDataTable (
   BootPerformanceDataSize = mAcpiBootPerformanceTable->Header.Length;
 
   //
+  // Allocate and initialize stub Microcontroller Boot Performance Table before
+  // writing the FirmwarePerformance variable.  Doing so here ensures that if the
+  // allocation fails the variable has not yet been written or locked, so the
+  // boot/S3 tables can be freed without leaving the locked variable with stale
+  // physical addresses.
+  //
+  // Real microcontroller boot performance data can be filled by a platform
+  // driver via a future protocol or HOB; a valid minimal table header satisfies
+  // ACPI 6.6 firmware compliance checkers (e.g. fwts FPDTMicroBootPointerMissing).
+  //
+  // Cap the allocation below 4 GB: OS ACPI parsers (including Windows) require
+  // ACPI-reclaimable table memory below the 4 GB boundary even though the FPDT
+  // MBPT pointer record field is UINT64.
+  //
+  if (mAcpiMbptTable == NULL) {
+    MbptBuffer = MAX_UINT32;
+    Status     = gBS->AllocatePages (
+                        AllocateMaxAddress,
+                        EfiACPIReclaimMemory,
+                        EFI_SIZE_TO_PAGES (sizeof (EFI_ACPI_DESCRIPTION_HEADER)),
+                        &MbptBuffer
+                        );
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "FPDT: Failed to allocate MBPT memory: %r\n", Status));
+      if ((mAcpiBootPerformanceTable != NULL) && (mReceivedAcpiBootPerformanceTable == NULL)) {
+        FreePages (mAcpiBootPerformanceTable, EFI_SIZE_TO_PAGES (mAcpiBootPerformanceTable->Header.Length));
+        mAcpiBootPerformanceTable = NULL;
+      }
+
+      //
+      // Do not free mAcpiS3PerformanceTable here.  It is owned and managed by
+      // FpdtAllocateS3PerformanceTableMemory, which also saves the address to
+      // LockBox.  Freeing it here would leave the LockBox holding a dangling
+      // physical address that S3 resume would later write into freed memory.
+      //
+      return Status;
+    }
+
+    mAcpiMbptTable = (EFI_ACPI_DESCRIPTION_HEADER *)(UINTN)MbptBuffer;
+    ZeroMem (mAcpiMbptTable, sizeof (EFI_ACPI_DESCRIPTION_HEADER));
+    mAcpiMbptTable->Signature = EFI_ACPI_6_6_MICROCONTROLLER_BOOT_PERFORMANCE_TABLE_SIGNATURE;
+    mAcpiMbptTable->Length    = sizeof (EFI_ACPI_DESCRIPTION_HEADER);
+    mAcpiMbptTable->Revision  = EFI_ACPI_6_6_MICROCONTROLLER_BOOT_PERFORMANCE_TABLE_REVISION;
+    CopyMem (mAcpiMbptTable->OemId, PcdGetPtr (PcdAcpiDefaultOemId), sizeof (mAcpiMbptTable->OemId));
+    WriteUnaligned64 ((UINT64 *)&mAcpiMbptTable->OemTableId, PcdGet64 (PcdAcpiDefaultOemTableId));
+    mAcpiMbptTable->OemRevision     = PcdGet32 (PcdAcpiDefaultOemRevision);
+    mAcpiMbptTable->CreatorId       = PcdGet32 (PcdAcpiDefaultCreatorId);
+    mAcpiMbptTable->CreatorRevision = PcdGet32 (PcdAcpiDefaultCreatorRevision);
+    mAcpiMbptTable->Checksum        = CalculateCheckSum8 ((UINT8 *)mAcpiMbptTable, mAcpiMbptTable->Length);
+  }
+
+  //
+  // Write the MBPT address into the published pointer record.  mFpdtMbptPointerRecord
+  // tracks the record's actual location, which differs when S3 support is disabled.
+  //
+  mFpdtMbptPointerRecord->MbptAddress = (UINT64)(UINTN)mAcpiMbptTable;
+
+  //
   // Save Boot Performance Table address to Variable for use in S4 resume.
   //
   PerformanceVariable.BootPerformanceTablePointer = (EFI_PHYSICAL_ADDRESS)(UINTN)mAcpiBootPerformanceTable;
@@ -367,14 +449,22 @@ InstallFirmwarePerformanceDataTable (
   //
   mFirmwarePerformanceTableTemplate.BootPointerRecord.BootPerformanceTablePointer = (UINT64)(UINTN)mAcpiBootPerformanceTable;
 
-  //
-  // Save S3 Performance Table address to Variable for use in S4 resume.
-  //
-  PerformanceVariable.S3PerformanceTablePointer = (EFI_PHYSICAL_ADDRESS)(UINTN)mAcpiS3PerformanceTable;
-  //
-  // Update S3 Performance Table Pointer in template.
-  //
-  mFirmwarePerformanceTableTemplate.S3PointerRecord.S3PerformanceTablePointer = (UINT64)(UINTN)mAcpiS3PerformanceTable;
+  if (FeaturePcdGet (PcdFirmwarePerformanceDataTableS3Support)) {
+    //
+    // Save S3 Performance Table address to Variable for use in S4 resume.
+    //
+    PerformanceVariable.S3PerformanceTablePointer = (EFI_PHYSICAL_ADDRESS)(UINTN)mAcpiS3PerformanceTable;
+    //
+    // Update S3 Performance Table Pointer in template.
+    //
+    // Do not write S3PointerRecord when S3 is disabled: the MBPT pointer record
+    // is relocated into the S3PointerRecord slot in that case, and both structs
+    // are layout-compatible, so an unconditional write here would overwrite
+    // MbptAddress with NULL and defeat the MBPT publication.
+    //
+    mFirmwarePerformanceTableTemplate.S3PointerRecord.S3PerformanceTablePointer = (UINT64)(UINTN)mAcpiS3PerformanceTable;
+  }
+
   //
   // Save Runtime Performance Table pointers to Variable.
   // Don't check SetVariable return status. It doesn't impact FPDT table generation.
@@ -416,16 +506,24 @@ InstallFirmwarePerformanceDataTable (
                                 &mFirmwarePerformanceTableTemplateKey
                                 );
   if (EFI_ERROR (Status)) {
-    if (mAcpiBootPerformanceTable != NULL) {
+    if ((mAcpiBootPerformanceTable != NULL) && (mReceivedAcpiBootPerformanceTable == NULL)) {
       FreePages (mAcpiBootPerformanceTable, EFI_SIZE_TO_PAGES (BootPerformanceDataSize));
+      mAcpiBootPerformanceTable = NULL;
     }
 
-    if (mAcpiS3PerformanceTable != NULL) {
-      FreePages (mAcpiS3PerformanceTable, EFI_SIZE_TO_PAGES (sizeof (S3_PERFORMANCE_TABLE)));
+    //
+    // Do not free mAcpiS3PerformanceTable here.  It is owned and managed by
+    // FpdtAllocateS3PerformanceTableMemory, which also saves the address to
+    // LockBox.  Freeing it here would leave the LockBox holding a dangling
+    // physical address that S3 resume would later write into freed memory.
+    //
+
+    if (mAcpiMbptTable != NULL) {
+      FreePages (mAcpiMbptTable, EFI_SIZE_TO_PAGES (sizeof (EFI_ACPI_DESCRIPTION_HEADER)));
+      mAcpiMbptTable                      = NULL;
+      mFpdtMbptPointerRecord->MbptAddress = 0;
     }
 
-    mAcpiBootPerformanceTable = NULL;
-    mAcpiS3PerformanceTable   = NULL;
     return Status;
   }
 
@@ -545,7 +643,10 @@ FpdtStatusCodeListenerDxe (
     // Get the Boot performance table and then install it to ACPI table.
     //
     CopyMem (&mReceivedAcpiBootPerformanceTable, Data + 1, Data->Size);
-    InstallFirmwarePerformanceDataTable ();
+    Status = InstallFirmwarePerformanceDataTable ();
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR, "FPDT: InstallFirmwarePerformanceDataTable failed: %r\n", Status));
+    }
   } else if ((Data != NULL) && CompareGuid (&Data->Type, &gEfiFirmwarePerformanceGuid)) {
     DEBUG ((DEBUG_ERROR, "FpdtStatusCodeListenerDxe: Performance data reported through gEfiFirmwarePerformanceGuid will not be collected by FirmwarePerformanceDataTableDxe\n"));
     Status = EFI_UNSUPPORTED;
@@ -575,6 +676,8 @@ FpdtEndOfDxeEventNotify (
   IN VOID       *Context
   )
 {
+  EFI_STATUS  Status;
+
   //
   // When performance is enabled, the FPDT will be installed when DxeCorePerformanceLib report the data to FimwarePerformanceDxe.
   // This is used to install the FPDT for the basic boot recods when performance infrastructure is not enabled.
@@ -584,7 +687,10 @@ FpdtEndOfDxeEventNotify (
   }
 
   ASSERT (mReceivedAcpiBootPerformanceTable == NULL);
-  InstallFirmwarePerformanceDataTable ();
+  Status = InstallFirmwarePerformanceDataTable ();
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "FPDT: InstallFirmwarePerformanceDataTable failed: %r\n", Status));
+  }
 }
 
 /**
@@ -670,6 +776,11 @@ FirmwarePerformanceDxeEntryPoint (
   mFirmwarePerformanceTableTemplate.Header.CreatorRevision = PcdGet32 (PcdAcpiDefaultCreatorRevision);
 
   //
+  // By default the MBPT pointer record is published at its template slot.
+  //
+  mFpdtMbptPointerRecord = &mFirmwarePerformanceTableTemplate.MicrocontrollerBootPointerRecord;
+
+  //
   // Get Report Status Code Handler Protocol.
   //
   Status = gBS->LocateProtocol (&gEfiRscHandlerProtocolGuid, NULL, (VOID **)&mRscHandlerProtocol);
@@ -744,6 +855,25 @@ FirmwarePerformanceDxeEntryPoint (
     //
     // Exclude S3 Performance Table Pointer from FPDT table template.
     //
+    // The Microcontroller Boot Performance Table Pointer Record follows the S3
+    // record in the template, so move it up into the S3 record's slot before
+    // shrinking the table length.  Otherwise dropping the trailing bytes would
+    // truncate the MBPT record (which must always be published) instead of
+    // removing the S3 record.  Re-point mFpdtMbptPointerRecord so the install
+    // path writes MbptAddress into the relocated record.
+    //
+    STATIC_ASSERT (
+      sizeof (EFI_ACPI_6_6_FPDT_MICROCONTROLLER_BOOT_PERF_POINTER_RECORD) ==
+      sizeof (EFI_ACPI_5_0_FPDT_S3_PERFORMANCE_TABLE_POINTER_RECORD),
+      "MBPT pointer record must equal S3 pointer record size for slot reuse without length fixup"
+      );
+    CopyMem (
+      &mFirmwarePerformanceTableTemplate.S3PointerRecord,
+      &mFirmwarePerformanceTableTemplate.MicrocontrollerBootPointerRecord,
+      sizeof (EFI_ACPI_6_6_FPDT_MICROCONTROLLER_BOOT_PERF_POINTER_RECORD)
+      );
+    mFpdtMbptPointerRecord = (EFI_ACPI_6_6_FPDT_MICROCONTROLLER_BOOT_PERF_POINTER_RECORD *)
+                             &mFirmwarePerformanceTableTemplate.S3PointerRecord;
     mFirmwarePerformanceTableTemplate.Header.Length -= sizeof (EFI_ACPI_5_0_FPDT_S3_PERFORMANCE_TABLE_POINTER_RECORD);
   }
 
