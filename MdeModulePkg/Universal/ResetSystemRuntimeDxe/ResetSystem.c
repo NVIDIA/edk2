@@ -245,19 +245,21 @@ RuntimeServiceResetSystem (
   }
 
   mResetNotifyDepth++;
-  DEBUG ((
-    DEBUG_INFO,
-    "DXE ResetSystem2: ResetType %s, Call Depth = %d.\n",
-    mResetTypeStr[ResetType],
-    mResetNotifyDepth
-    ));
-
-  if ((ResetData != NULL) && (DataSize != 0)) {
+  if (!EfiAtRuntime ()) {
     DEBUG ((
       DEBUG_INFO,
-      "DXE ResetSystem2: ResetData: %s\n",
-      ResetData
+      "DXE ResetSystem2: ResetType %s, Call Depth = %d.\n",
+      mResetTypeStr[ResetType],
+      mResetNotifyDepth
       ));
+
+    if ((ResetData != NULL) && (DataSize != 0)) {
+      DEBUG ((
+        DEBUG_INFO,
+        "DXE ResetSystem2: ResetData: %s\n",
+        ResetData
+        ));
+    }
   }
 
   if (mResetNotifyDepth <= MAX_RESET_NOTIFY_DEPTH) {
@@ -310,7 +312,9 @@ RuntimeServiceResetSystem (
       ResetType = EfiResetCold;
     }
 
-    DEBUG ((DEBUG_ERROR, "DXE ResetSystem2: Maximum reset call depth is met. Use the current reset type: %s!\n", mResetTypeStr[ResetType]));
+    if (!EfiAtRuntime ()) {
+      DEBUG ((DEBUG_ERROR, "DXE ResetSystem2: Maximum reset call depth is met. Use the current reset type: %s!\n", mResetTypeStr[ResetType]));
+    }
   }
 
   switch (ResetType) {
