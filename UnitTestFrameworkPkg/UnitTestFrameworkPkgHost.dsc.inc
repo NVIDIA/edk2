@@ -107,8 +107,13 @@
   # Set GCC HOST_APPLICATION options
   #
   GCC:*_*_*_CC_FLAGS        =  -Wno-write-strings
-  GCC:*_*_IA32_DLINK_FLAGS  == -o $(BIN_DIR)/$(MODULE_NAME_GUID) -z noexecstack -m32 -no-pie
-  GCC:*_*_X64_DLINK_FLAGS   == -o $(BIN_DIR)/$(MODULE_NAME_GUID) -z noexecstack -m64 -no-pie
+  GCC:*_*_IA32_DLINK_FLAGS    == -o $(BIN_DIR)/$(MODULE_NAME_GUID) -z noexecstack -m32 -no-pie
+  GCC:*_*_X64_DLINK_FLAGS     == -o $(BIN_DIR)/$(MODULE_NAME_GUID) -z noexecstack -m64 -no-pie
+  #
+  # AARCH64 host applications build with the native compiler, so no -m32/-m64
+  # architecture-selection flag is used (unlike IA32/X64).
+  #
+  GCC:*_*_AARCH64_DLINK_FLAGS == -o $(BIN_DIR)/$(MODULE_NAME_GUID) -no-pie
 !if $(UNIT_TESTING_ADDRESS_SANITIZER_ENABLE)
   #
   # Enable Address Sanitizer linker options
