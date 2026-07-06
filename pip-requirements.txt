@@ -17,4 +17,4 @@ edk2-pytool-extensions~=0.29.11
 antlr4-python3-runtime==4.9
 lcov-cobertura==2.1.1
 regex==2024.11.6
-setuptools<80.9
+setuptools<83.1
